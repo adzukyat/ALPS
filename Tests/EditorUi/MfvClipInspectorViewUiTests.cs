@@ -452,17 +452,48 @@ namespace ManeuverForVRC.Tests
             var view = new MfvClipInspectorView(set);
             var effect = view.Query<MfvEffectView>().First();
             var blackout = view.Query<MfvToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
+            var fadeFrame = view.Q<MfvFadeSlider>().parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "Forward has no return leg.");
 
             set.phase.mode = MfvPhaseMode.PingPong;
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
+            Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value, "Fades wait for the switch.");
+
+            brightness.blackoutOnReturn = true;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, fadeFrame.style.display.value);
+            Assert.IsNull(fadeFrame.Q<Label>(className: "mfv-sub__title"), "The fade frame is untitled.");
 
             // Own phase takes over which leg is the return.
             brightness.brightness.useOwnPhase = true;
             brightness.brightness.ownPhase.mode = MfvPhaseMode.Forward;
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
+            Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value);
+        }
+
+        [Test]
+        public void FadeSlider_MirrorsTheOutTrackAndResetsEachSide()
+        {
+            var fade = new MfvFadeSlider("フェード", 50f, "%") { DefaultValue = new Vector2(10f, 20f) };
+            fade.SetValueWithoutNotify(new Vector2(25f, 40f));
+
+            var tracks = fade.Query<MfvSliderTrack>().ToList();
+            Assert.AreEqual(2, tracks.Count);
+            Assert.AreEqual(0.5f, tracks[0].High, 0.0001f, "Fade in fills from the left edge.");
+            Assert.AreEqual(0f, tracks[0].Origin);
+            Assert.AreEqual(0.2f, tracks[1].High, 0.0001f, "Fade out fills from the right edge.");
+            Assert.AreEqual(1f, tracks[1].Origin);
+
+            fade.SetValueWithoutNotify(new Vector2(80f, -5f));
+            Assert.AreEqual(new Vector2(50f, 0f), fade.value, "Each side stays within its own half.");
+
+            fade.SetValueWithoutNotify(new Vector2(30f, 30f));
+            fade.ResetToDefault(true);
+            Assert.AreEqual(new Vector2(10f, 30f), fade.value, "Only the clicked side comes back.");
+            fade.ResetToDefault(false);
+            Assert.AreEqual(new Vector2(10f, 20f), fade.value);
         }
 
         [UnityTest]

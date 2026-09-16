@@ -448,6 +448,11 @@
     border-radius: 3px;
 }
 
+/* The fade slider's two tracks stay apart by more than their overhanging thumbs. */
+.mfv-root .mfv-fade__out {
+    margin-left: 18px;
+}
+
 /*
  * A parameter row is [ slider ][ R ][ S ]. The slider must take the space left after
  * the flags, so its base size is zero and it grows. With flex-basis auto its content

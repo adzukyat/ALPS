@@ -81,6 +81,8 @@ namespace ManeuverForVRC.Tests
             var brightness = set.Add(MfvEffectKind.Brightness);
             brightness.brightness.value = 100f;
             brightness.blackoutOnReturn = true;
+            brightness.blackoutFadeIn = 0.1f;
+            brightness.blackoutFadeOut = 0.35f;
 
             // Gobo: a blink sequence (OFF appears twice) with the + picker open, so the
             // audit lays out the picker's full row of OFF plus every patterned gobo.

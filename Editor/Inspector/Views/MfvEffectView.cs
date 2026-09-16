@@ -263,17 +263,36 @@ namespace ManeuverForVRC.Editor
 
         private void BuildBrightness(VisualElement body)
         {
+            MfvAnimatableView view = null;
+
+            // Untitled frame for the fades, which run inside the outbound leg.
+            var fadeFrame = new VisualElement();
+            fadeFrame.AddToClassList("mfv-sub");
+            var fade = new MfvFadeSlider("フェード", 50f, "%", "0")
+            {
+                Snaps = new[] { 25f },
+                DefaultValue = new Vector2(_defaults.blackoutFadeIn, _defaults.blackoutFadeOut) * 100f,
+            };
+            fade.SetValueWithoutNotify(new Vector2(_effect.blackoutFadeIn, _effect.blackoutFadeOut) * 100f);
+            fade.RegisterValueChangedCallback(evt =>
+            {
+                _effect.blackoutFadeIn = evt.newValue.x / 100f;
+                _effect.blackoutFadeOut = evt.newValue.y / 100f;
+                _onChanged?.Invoke();
+            });
+            fadeFrame.Add(fade);
+
             var blackout = new MfvToggleSwitch("復路で消灯");
             blackout.SetValueWithoutNotify(_effect.blackoutOnReturn);
             blackout.RegisterValueChangedCallback(evt =>
             {
                 _effect.blackoutOnReturn = evt.newValue;
+                ApplyBlackout();
                 _onChanged?.Invoke();
             });
 
             // The return leg belongs to whichever phase drives brightness, so switching
             // own phase or its mode inside the row has to re-evaluate the switch too.
-            MfvAnimatableView view = null;
             view = new MfvAnimatableView(
                 "明るさ",
                 _effect.brightness,
@@ -289,10 +308,13 @@ namespace ManeuverForVRC.Editor
             _animatables.Add(view);
             body.Add(view);
             body.Add(blackout);
+            body.Add(fadeFrame);
 
             void ApplyBlackout()
             {
-                MfvPhaseSettingsView.Show(blackout, view.GoverningPhase.mode == MfvPhaseMode.PingPong);
+                var pingPong = view.GoverningPhase.mode == MfvPhaseMode.PingPong;
+                MfvPhaseSettingsView.Show(blackout, pingPong);
+                MfvPhaseSettingsView.Show(fadeFrame, pingPong && _effect.blackoutOnReturn);
             }
 
             RefreshHooks += ApplyBlackout;

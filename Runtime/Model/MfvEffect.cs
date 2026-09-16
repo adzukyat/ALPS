@@ -60,6 +60,10 @@ namespace ManeuverForVRC
         /// ping-pong return leg, so the beams fly out one way only.
         /// </summary>
         public bool blackoutOnReturn;
+        /// <summary>Fade in at the start of the outbound leg, as a fraction of that leg (0 to 0.5).</summary>
+        [Range(0f, 0.5f)] public float blackoutFadeIn;
+        /// <summary>Fade out at the end of the outbound leg, as a fraction of that leg (0 to 0.5).</summary>
+        [Range(0f, 0.5f)] public float blackoutFadeOut;
 
         // --- Flicker ---
         public float flickerSpeed = 12f;
@@ -110,6 +114,8 @@ namespace ManeuverForVRC
 
             brightness = new MfvAnimatableValue(other.brightness);
             blackoutOnReturn = other.blackoutOnReturn;
+            blackoutFadeIn = other.blackoutFadeIn;
+            blackoutFadeOut = other.blackoutFadeOut;
 
             flickerSpeed = other.flickerSpeed;
             flickerStrength = other.flickerStrength;

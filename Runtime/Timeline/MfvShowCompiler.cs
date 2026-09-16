@@ -304,6 +304,8 @@ namespace ManeuverForVRC
                     case MfvEffectKind.Brightness:
                         AddParameter(effect.brightness);
                         row[MfvShowEvaluator.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
+                        row[MfvShowEvaluator.EffectScalarB] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
+                        row[MfvShowEvaluator.EffectScalarC] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
                         break;
                     case MfvEffectKind.Flicker:
                         row[MfvShowEvaluator.EffectScalarA] = effect.flickerSpeed;

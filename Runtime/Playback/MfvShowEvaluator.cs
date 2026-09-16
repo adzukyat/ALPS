@@ -91,9 +91,9 @@ namespace ManeuverForVRC
         public const int EffectPaletteCount = 4;
         /// <summary>Move mode, brightness blackout on return, flicker speed, gobo beats per turn.</summary>
         public const int EffectScalarA = 5;
-        /// <summary>Pan/tilt phase offset, flicker strength, gobo stagger degrees.</summary>
+        /// <summary>Pan/tilt phase offset, brightness blackout fade in, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
-        /// <summary>Track speed, flicker stagger.</summary>
+        /// <summary>Track speed, brightness blackout fade out, flicker stagger.</summary>
         public const int EffectScalarC = 7;
         /// <summary>Tracked user name index.</summary>
         public const int EffectScalarD = 8;
@@ -424,15 +424,19 @@ namespace ManeuverForVRC
                 }
                 else if (kind == KindBrightness)
                 {
-                    if (effects[effectRow + EffectScalarA] > 0.5f && IsParamReturnLeg(clips, parameters, row, paramStart, beats, k))
+                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameBrightness, frame, written);
+                    if (effects[effectRow + EffectScalarA] > 0.5f)
                     {
-                        // Blackout on return: the lamp goes dark and covers lower layers.
-                        frame[FrameBrightness] = 0f;
-                        written[FrameBrightness] = 1f;
-                    }
-                    else
-                    {
-                        WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameBrightness, frame, written);
+                        // Blackout on return: dark on the return leg, still covering lower layers.
+                        frame[FrameBrightness] *= BlackoutScale(
+                            clips,
+                            parameters,
+                            row,
+                            paramStart,
+                            beats,
+                            k,
+                            effects[effectRow + EffectScalarB],
+                            effects[effectRow + EffectScalarC]);
                     }
                 }
                 else if (kind == KindColor)
@@ -613,14 +617,42 @@ namespace ManeuverForVRC
             written[channel] = 1f;
         }
 
-        /// <summary>True while the phase governing a parameter is on a ping-pong return leg.</summary>
-        public static bool IsParamReturnLeg(float[] clips, float[] parameters, int clipRow, int param, float beats, int k)
+        /// <summary>
+        /// Brightness multiplier for blackout on return, following the phase that governs
+        /// <paramref name="param"/>. 0 on a ping-pong return leg. On the outbound leg it ramps
+        /// up over <paramref name="fadeIn"/> and down over <paramref name="fadeOut"/>, both
+        /// fractions of that leg. 1 when the phase has no return leg.
+        /// </summary>
+        public static float BlackoutScale(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float fadeIn, float fadeOut)
         {
             var paramRow = param * ParamStride;
             var own = parameters[paramRow + ParamUseOwnPhase] > 0.5f;
             var mode = own ? ToInt(parameters[paramRow + ParamOwnPhase + PhaseMode]) : ToInt(clips[clipRow + ClipPhase + PhaseMode]);
+            if (mode != PhasePingPong)
+            {
+                return 1f;
+            }
+
             var ratio = own ? parameters[paramRow + ParamOwnPhase + PhaseRatio] : clips[clipRow + ClipPhase + PhaseRatio];
-            return IsReturnLeg(mode, ratio, ParamCycles(clips, parameters, clipRow, param, beats, k, 0f));
+            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
+            if (IsReturnLeg(mode, ratio, cycles))
+            {
+                return 0f;
+            }
+
+            var u = (cycles - Mathf.Floor(cycles)) / Mathf.Clamp(ratio, 0.001f, 0.999f);
+            var scale = 1f;
+            if (fadeIn > 0f)
+            {
+                scale = Mathf.Min(scale, u / fadeIn);
+            }
+
+            if (fadeOut > 0f)
+            {
+                scale = Mathf.Min(scale, (1f - u) / fadeOut);
+            }
+
+            return Mathf.Clamp01(scale);
         }
 
         /// <summary>Unwrapped cycles for a parameter, honoring its own phase.</summary>

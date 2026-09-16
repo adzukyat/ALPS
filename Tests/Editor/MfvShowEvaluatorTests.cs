@@ -381,6 +381,25 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
+        public void BlackoutOnReturn_FadesInAndOutInsideTheOutboundLeg()
+        {
+            // One beat per cycle, half of it outbound: the outbound leg is 0 to 0.5.
+            var set = Set(MfvPhaseMode.PingPong);
+            set.phase.pingPongRatio = 0.5f;
+            var effect = set.Add(MfvEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            effect.blackoutFadeIn = 0.25f;
+            effect.blackoutFadeOut = 0.5f;
+            var show = Compile(1, set);
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.0625f)[MfvShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade in.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[MfvShowEvaluator.FrameBrightness], 0.01f, "Between the two fades.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[MfvShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade out.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[MfvShowEvaluator.FrameBrightness], 0.001f, "Dark on the return leg.");
+        }
+
+        [Test]
         public void BlackoutOnReturn_FollowsTheOwnPhaseOfBrightness()
         {
             // The clip ping-pongs, but brightness runs on its own forward phase with no return leg.
@@ -796,6 +815,8 @@ namespace ManeuverForVRC.Tests
             brightness.brightness.isRange = true;
             brightness.brightness.timing = MfvTimingMode.PerCycle;
             brightness.blackoutOnReturn = true;
+            brightness.blackoutFadeIn = 0.2f;
+            brightness.blackoutFadeOut = 0.3f;
 
             set.Add(MfvEffectKind.Flicker);
 
