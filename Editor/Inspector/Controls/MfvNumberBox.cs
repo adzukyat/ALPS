@@ -20,7 +20,8 @@ namespace ManeuverForVRC.Editor
         private readonly TextField _text;
         private bool _editing;
 
-        public MfvNumberBox(string unit = "", string format = "0.###")
+        /// <param name="textClass">Class for the text field. Hosts with their own box styling pass their own.</param>
+        public MfvNumberBox(string unit = "", string format = "0.###", string textClass = null)
             : base(null, new VisualElement())
         {
             Unit = unit;
@@ -30,7 +31,7 @@ namespace ManeuverForVRC.Editor
             container.AddToClassList(ussClassName + "__input");
 
             _text = new TextField { isDelayed = true };
-            _text.AddToClassList(ussClassName);
+            _text.AddToClassList(textClass ?? ussClassName);
             _text.RegisterValueChangedCallback(OnTextChanged);
             _text.RegisterCallback<FocusInEvent>(_ => SetEditing(true));
             // The delayed commit runs after these callbacks and needs the typed text, and an

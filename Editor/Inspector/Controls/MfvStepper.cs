@@ -1,22 +1,23 @@
-using System.Globalization;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ManeuverForVRC.Editor
 {
-    /// <summary>Speed / rotation speed: a beats stepper with - / + buttons and an optional trailing hint.</summary>
+    /// <summary>
+    /// Speed / rotation speed: a beats stepper with - / + buttons and an optional trailing hint.
+    /// The value between the buttons is a number box, so clicking it edits the number directly.
+    /// </summary>
     public class MfvStepper : BaseField<float>
     {
         public new static readonly string ussClassName = "mfv-stepper";
 
-        private readonly Label _valueLabel;
+        private readonly MfvNumberBox _box;
         private readonly Label _hint;
 
         public MfvStepper(string label, string unit = "拍", float step = 1f, string hint = null)
             : base(label, new VisualElement())
         {
             AddToClassList(ussClassName);
-            Unit = unit;
             Step = step;
 
             var container = this.Q(className: BaseField<float>.inputUssClassName);
@@ -29,15 +30,17 @@ namespace ManeuverForVRC.Editor
             minus.AddToClassList(ussClassName + "__button");
             minus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Max(Minimum, value - Step));
 
-            _valueLabel = new Label();
-            _valueLabel.AddToClassList(ussClassName + "__value");
+            _box = new MfvNumberBox(unit, textClass: ussClassName + "__text");
+            _box.AddToClassList(ussClassName + "__value");
+            _box.RegisterValueChangedCallback(evt => value = evt.newValue);
+            Minimum = 0f;
 
             var plus = new Label("+");
             plus.AddToClassList(ussClassName + "__button");
             plus.RegisterCallback<PointerDownEvent>(_ => value += Step);
 
             box.Add(minus);
-            box.Add(_valueLabel);
+            box.Add(_box);
             box.Add(plus);
             container.Add(box);
 
@@ -49,18 +52,25 @@ namespace ManeuverForVRC.Editor
             SetValueWithoutNotify(0f);
         }
 
-        public string Unit { get; set; }
+        public string Unit
+        {
+            get => _box.Unit;
+            set { _box.Unit = value; SetValueWithoutNotify(this.value); }
+        }
 
         public float Step { get; set; }
 
-        public float Minimum { get; set; }
+        public float Minimum
+        {
+            get => _box.Limit.x;
+            set { _box.Limit = new Vector2(value, float.MaxValue); SetValueWithoutNotify(this.value); }
+        }
 
         public override void SetValueWithoutNotify(float newValue)
         {
             newValue = Mathf.Max(Minimum, newValue);
             base.SetValueWithoutNotify(newValue);
-            var text = newValue.ToString("0.###", CultureInfo.InvariantCulture);
-            _valueLabel.text = string.IsNullOrEmpty(Unit) ? text : text + " " + Unit;
+            _box.SetValueWithoutNotify(newValue);
         }
     }
 }

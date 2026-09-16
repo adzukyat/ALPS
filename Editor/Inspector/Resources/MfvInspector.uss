@@ -488,14 +488,38 @@
     -unity-text-align: middle-center;
 }
 
-.mfv-stepper__value {
-    padding: 4px 12px 4px 12px;
+/* The value is an MfvNumberBox, a BaseField, so the frame needs .mfv-root to beat the base field margins. */
+.mfv-root .mfv-stepper__value {
+    margin: 0;
     border-left-width: 1px;
     border-right-width: 1px;
     border-color: var(--mfv-line-strong);
     min-width: 76px;
+}
+
+.mfv-root .mfv-stepper__value .unity-base-field__input {
+    flex-grow: 1;
+}
+
+.mfv-stepper__text {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.mfv-stepper__text .unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    padding: 4px 12px 4px 12px;
+    margin: 0;
     color: var(--mfv-text-value);
     -unity-text-align: middle-center;
+}
+
+.mfv-stepper__text .unity-text-element--inner-input-field-component {
+    padding: 0;
+    margin: 0;
 }
 
 /* ---------------------------------------------------------- easing grid */
