@@ -1,4 +1,3 @@
-using ManeuverForVRC.Ui;
 using UnityEngine;
 
 namespace ManeuverForVRC.Tests
@@ -27,14 +26,16 @@ namespace ManeuverForVRC.Tests
             set.phase.beatsPerCycle = 2f;
             set.phase.inverse = false;
 
-            // Move: both axes ranged, Pan on its own Forward phase.
+            // Move: both axes ranged, Tilt as a spread range and Pan on its own Forward phase,
+            // so the range frame and the spread frame are both measured.
             var move = set.Add(MfvEffectKind.Move);
             move.tilt.isRange = true;
             move.tilt.range = new Vector2(-40f, 35f);
-            move.tilt.spread = 0f;
+            move.tilt.value = 10f;
+            move.tilt.hasSpread = true;
+            move.tilt.spreadRange = new Vector2(-10f, 20f);
             move.pan.isRange = true;
             move.pan.range = new Vector2(-90f, 90f);
-            move.pan.spread = 12f;
             move.pan.useOwnPhase = true;
             move.pan.ownPhase.mode = MfvPhaseMode.Forward;
             move.pan.ownPhase.ease = MfvEaseType.Linear;
@@ -44,13 +45,23 @@ namespace ManeuverForVRC.Tests
             move.pan.ownPhase.inverse = true;
             move.panTiltPhaseOffsetDegrees = 90f;
 
+            // Move again: the odd copy turns in a circle, so those rows get measured too.
+            var circle = set.Add(MfvEffectKind.Move);
+            circle.moveMode = MfvMoveMode.Circle;
+            circle.circleCenterTilt.value = 35f;
+            circle.circleCenterPan.value = -120f;
+            circle.circleCenterPan.hasSpread = true;
+            circle.circleCenterPan.spread = -15f;
+            circle.circleRadius.isRange = true;
+            circle.circleRadius.range = new Vector2(5f, 22.5f);
+            circle.circleAspect = 1.5f;
+
             // Cone
             var cone = set.Add(MfvEffectKind.Cone);
             cone.coneWidth.isRange = true;
             cone.coneWidth.range = new Vector2(8f, 30f);
             cone.coneLength.isRange = true;
             cone.coneLength.range = new Vector2(0f, 14f);
-            cone.coneLength.spread = 2f;
 
             // Color: palette of red / blue / gradient (selected) / black, split even / odd.
             var color = set.Add(MfvEffectKind.Color);
@@ -72,13 +83,12 @@ namespace ManeuverForVRC.Tests
             brightness.brightness.value = 100f;
 
             // Gobo: a blink sequence (OFF appears twice) with the + picker open, so the
-            // audit lays out the picker's full row of OFF plus every built-in gobo.
+            // audit lays out the picker's full row of OFF plus every patterned gobo.
             var gobo = set.Add(MfvEffectKind.Gobo);
-            var builtIn = MfvGoboLibrary.LoadBuiltIn();
             gobo.goboStops.Add(new MfvGoboStop());
-            gobo.goboStops.Add(new MfvGoboStop(builtIn[0]));
+            gobo.goboStops.Add(new MfvGoboStop(2));
             gobo.goboStops.Add(new MfvGoboStop());
-            gobo.goboStops.Add(new MfvGoboStop(builtIn[1]));
+            gobo.goboStops.Add(new MfvGoboStop(3));
             gobo.selectedGoboStop = 1;
             gobo.goboPickerExpanded = true;
             gobo.goboPhasing.isRange = true;

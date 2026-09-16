@@ -4,8 +4,6 @@
   "references": [
     "ManeuverForVRC.Runtime",
     "ManeuverForVRC.Editor",
-    "Iridescenent.SLM.Runtime",
-    "Iridescenent.SLM.Editor",
     "VRSL.Core",
     "VRC.SDKBase",
     "UdonSharp.Runtime",

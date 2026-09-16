@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using ManeuverForVRC.Ui;
-using ManeuverForVRC.Ui.Editor;
+using ManeuverForVRC.Editor;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -378,18 +377,14 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void GoboTextures_LoadFromThePackageResources()
+        public void GoboThumbnails_LoadFromTheVRSLPackage()
         {
-            // The + picker loads from Resources inside the package. A broken path would
-            // only show as a short picker.
-            for (var i = 1; i <= 8; i++)
+            // The palette reads its thumbnails from the VR Stage Lighting package. A broken path
+            // would only show as empty tiles.
+            for (var index = 1; index <= MfvGoboLibrary.GoboCount; index++)
             {
-                Assert.NotNull(
-                    Resources.Load<Texture2D>("SLMAssets/GoboTextures/Gobo" + i),
-                    $"Gobo{i} did not load from the package Resources folder.");
+                Assert.NotNull(MfvGoboLibrary.Load(index), $"Gobo {index} did not load from the VRSL package.");
             }
-
-            Assert.AreEqual(MfvGoboLibrary.BuiltInCount, MfvGoboLibrary.LoadBuiltIn().Count);
         }
 
         [UnityTest]

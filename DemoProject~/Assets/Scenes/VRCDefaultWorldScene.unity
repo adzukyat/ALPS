@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.33220646, g: 0.36271727, b: 0.46474233, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -233,9 +233,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2439597}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2439596}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &2439593 stripped
@@ -268,33 +265,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2439594}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 2439597}
-  vrslFixture: {fileID: 2439595}
---- !u!114 &2439597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2439594}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 2439597}
-  stageLightChannels:
-  - {fileID: 2439596}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 0
+  target: {fileID: 2439595}
 --- !u!1001 &21936859
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -397,9 +371,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 21936864}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 21936863}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &21936860 stripped
@@ -432,33 +403,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 21936861}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 21936864}
-  vrslFixture: {fileID: 21936862}
---- !u!114 &21936864
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 21936861}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 21936864}
-  stageLightChannels:
-  - {fileID: 21936863}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 2
+  target: {fileID: 21936862}
 --- !u!1001 &48340476
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -569,9 +517,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 48340481}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 48340480}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &48340477 stripped
@@ -604,33 +549,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 48340478}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 48340481}
-  vrslFixture: {fileID: 48340479}
---- !u!114 &48340481
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 48340478}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 48340481}
-  stageLightChannels:
-  - {fileID: 48340480}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 3
+  target: {fileID: 48340479}
 --- !u!1 &182557432
 GameObject:
   m_ObjectHideFlags: 0
@@ -676,16 +598,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 182557432}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab75922e2f354de1a10fea79fc2da0c0, type: 3}
+  m_Script: {fileID: 11500000, guid: cbebbd1bc8f84c4ea9726bbe048a4d13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 2439597}
-  - {fileID: 530328242}
-  - {fileID: 799084969}
-  - {fileID: 48340481}
-  weight: 1
-  stageLightFixtureOrderSettings: []
+  fixtures:
+  - {fileID: 2439596}
+  - {fileID: 530328241}
+  - {fileID: 799084968}
+  - {fileID: 48340480}
 --- !u!1001 &237324845
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -788,9 +708,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 237324850}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 237324849}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &237324846 stripped
@@ -823,33 +740,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 237324847}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 237324850}
-  vrslFixture: {fileID: 237324848}
---- !u!114 &237324850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 237324847}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 237324850}
-  stageLightChannels:
-  - {fileID: 237324849}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 7
+  target: {fileID: 237324848}
 --- !u!1 &358170787
 GameObject:
   m_ObjectHideFlags: 0
@@ -951,6 +845,7 @@ Transform:
   - {fileID: 930694293}
   - {fileID: 182557433}
   - {fileID: 1247740770}
+  - {fileID: 1106358580}
   m_Father: {fileID: 1051979279}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!320 &379265005
@@ -968,20 +863,44 @@ PlayableDirector:
   m_DirectorUpdateMode: 1
   m_InitialTime: 0
   m_SceneBindings:
-  - key: {fileID: -7224192005156784325, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 930694294}
-  - key: {fileID: -8870153802146140932, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 182557434}
-  - key: {fileID: 1222262737276718280, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 930694294}
-  - key: {fileID: -4831709753356931566, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 182557434}
-  - key: {fileID: 439767140666425792, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: 0}
     value: {fileID: 1247740771}
-  - key: {fileID: 788100099608027530, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 930694294}
+  - key: {fileID: 0}
     value: {fileID: 182557434}
-  - key: {fileID: 3359325662279424656, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 1247740771}
+  - key: {fileID: 0}
+    value: {fileID: 930694294}
+  - key: {fileID: 0}
+    value: {fileID: 182557434}
+  - key: {fileID: 0}
+    value: {fileID: 1247740771}
+  - key: {fileID: 0}
+    value: {fileID: 930694294}
+  - key: {fileID: 0}
+    value: {fileID: 182557434}
+  - key: {fileID: 6896319949882314377, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 1247740771}
+  - key: {fileID: 6609116655955925432, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 930694294}
+  - key: {fileID: -7678863050653181020, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 182557434}
   m_ExposedReferences:
     m_References: []
 --- !u!1001 &403381932
@@ -1086,9 +1005,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 403381937}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 403381936}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &403381933 stripped
@@ -1121,33 +1037,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 403381934}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 403381937}
-  vrslFixture: {fileID: 403381935}
---- !u!114 &403381937
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 403381934}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 403381937}
-  stageLightChannels:
-  - {fileID: 403381936}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: Assets/StageLightManeuver/Profiles/FixtureProfiles/<LightName>
-  order: 1
+  target: {fileID: 403381935}
 --- !u!1001 &437298896
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1262,9 +1155,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 437298901}
-    - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 437298900}
   m_SourcePrefab: {fileID: 100100000, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
 --- !u!4 &437298897 stripped
@@ -1297,33 +1187,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 437298898}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 437298901}
-  vrslFixture: {fileID: 437298899}
---- !u!114 &437298901
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 437298898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 437298901}
-  stageLightChannels:
-  - {fileID: 437298900}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 0
+  target: {fileID: 437298899}
 --- !u!1001 &530328237
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1434,9 +1301,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 530328242}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 530328241}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &530328238 stripped
@@ -1469,33 +1333,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 530328239}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 530328242}
-  vrslFixture: {fileID: 530328240}
---- !u!114 &530328242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 530328239}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 530328242}
-  stageLightChannels:
-  - {fileID: 530328241}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 1
+  target: {fileID: 530328240}
 --- !u!1001 &530991461
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1610,9 +1451,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 530991466}
-    - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 530991465}
   m_SourcePrefab: {fileID: 100100000, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
 --- !u!4 &530991462 stripped
@@ -1645,33 +1483,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 530991463}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 530991466}
-  vrslFixture: {fileID: 530991464}
---- !u!114 &530991466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 530991463}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 530991466}
-  stageLightChannels:
-  - {fileID: 530991465}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 2
+  target: {fileID: 530991464}
 --- !u!1001 &619920090
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1770,9 +1585,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 619920095}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 619920094}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &619920091 stripped
@@ -1805,33 +1617,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 619920092}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 619920095}
-  vrslFixture: {fileID: 619920093}
---- !u!114 &619920095
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619920092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 619920095}
-  stageLightChannels:
-  - {fileID: 619920094}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: Assets/StageLightManeuver/Profiles/FixtureProfiles/<LightName>
-  order: 0
+  target: {fileID: 619920093}
 --- !u!1001 &699291260
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1934,9 +1723,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 699291265}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 699291264}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &699291261 stripped
@@ -1969,33 +1755,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 699291262}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 699291265}
-  vrslFixture: {fileID: 699291263}
---- !u!114 &699291265
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 699291262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 699291265}
-  stageLightChannels:
-  - {fileID: 699291264}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 6
+  target: {fileID: 699291263}
 --- !u!1001 &781439966
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2110,9 +1873,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 781439971}
-    - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 781439970}
   m_SourcePrefab: {fileID: 100100000, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
 --- !u!4 &781439967 stripped
@@ -2145,33 +1905,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 781439968}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 781439971}
-  vrslFixture: {fileID: 781439969}
---- !u!114 &781439971
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 781439968}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 781439971}
-  stageLightChannels:
-  - {fileID: 781439970}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 1
+  target: {fileID: 781439969}
 --- !u!1001 &799084964
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2282,9 +2019,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 799084969}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 799084968}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &799084965 stripped
@@ -2317,33 +2051,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 799084966}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 799084969}
-  vrslFixture: {fileID: 799084967}
---- !u!114 &799084969
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 799084966}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 799084969}
-  stageLightChannels:
-  - {fileID: 799084968}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 2
+  target: {fileID: 799084967}
 --- !u!1 &930694292
 GameObject:
   m_ObjectHideFlags: 0
@@ -2393,20 +2104,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 930694292}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab75922e2f354de1a10fea79fc2da0c0, type: 3}
+  m_Script: {fileID: 11500000, guid: cbebbd1bc8f84c4ea9726bbe048a4d13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 619920095}
-  - {fileID: 403381937}
-  - {fileID: 21936864}
-  - {fileID: 1518864965}
-  - {fileID: 2128102297}
-  - {fileID: 1461307563}
-  - {fileID: 699291265}
-  - {fileID: 237324850}
-  weight: 1
-  stageLightFixtureOrderSettings: []
+  fixtures:
+  - {fileID: 619920094}
+  - {fileID: 403381936}
+  - {fileID: 21936863}
+  - {fileID: 1518864964}
+  - {fileID: 2128102296}
+  - {fileID: 1461307562}
+  - {fileID: 699291264}
+  - {fileID: 237324849}
 --- !u!1001 &967059903
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2521,9 +2230,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 967059908}
-    - targetCorrespondingSourceObject: {fileID: 6940587089561379141, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 967059907}
   m_SourcePrefab: {fileID: 100100000, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
 --- !u!4 &967059904 stripped
@@ -2556,33 +2262,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 967059905}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 967059908}
-  vrslFixture: {fileID: 967059906}
---- !u!114 &967059908
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 967059905}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 967059908}
-  stageLightChannels:
-  - {fileID: 967059907}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 3
+  target: {fileID: 967059906}
 --- !u!1 &1051979278
 GameObject:
   m_ObjectHideFlags: 0
@@ -2707,6 +2390,99 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1106358579
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1106358580}
+  - component: {fileID: 1106358582}
+  - component: {fileID: 1106358581}
+  m_Layer: 0
+  m_Name: MFV Show Player
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1106358580
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106358579}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 379265004}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1106358581
+MonoBehaviour:
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106358579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactTextPlacement: {fileID: 0}
+  interactText: Use
+  interactTextGO: {fileID: 0}
+  proximity: 2
+  SynchronizePosition: 0
+  AllowCollisionOwnershipTransfer: 0
+  Reliable: 0
+  _syncMethod: 1
+  serializedProgramAsset: {fileID: 11400000, guid: 05872ffb29caf4158bf5dd69b9163e58, type: 2}
+  programSource: {fileID: 11400000, guid: 782c6888164f149eeaee38c95292aa2a, type: 2}
+  serializedPublicVariablesBytesString: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABgIAAAAAAAAAAi8CAAAAAUkAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAGAAMQBbAFsAUwB5AHMAdABlAG0ALgBJAG4AdAAzADIALAAgAG0AcwBjAG8AcgBsAGkAYgBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAIAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAR8AAABfAF8AXwBVAGQAbwBuAFMAaABhAHIAcABCAGUAaABhAHYAaQBvAHUAcgBWAGUAcgBzAGkAbwBuAF8AXwBfACcBBAAAAHQAeQBwAGUAARYAAABTAHkAcwB0AGUAbQAuAEkAbgB0ADMAMgAsACAAbQBzAGMAbwByAGwAaQBiABcBBQAAAFYAYQBsAHUAZQACAAAABwUCLwMAAAABdQAAAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAC4AVQBkAG8AbgBWAGEAcgBpAGEAYgBsAGUAYAAxAFsAWwBVAG4AaQB0AHkARQBuAGcAaQBuAGUALgBQAGwAYQB5AGEAYgBsAGUAcwAuAFAAbABhAHkAYQBiAGwAZQBEAGkAcgBlAGMAdABvAHIALAAgAFUAbgBpAHQAeQBFAG4AZwBpAG4AZQAuAEQAaQByAGUAYwB0AG8AcgBNAG8AZAB1AGwAZQBdAF0ALAAgAFYAUgBDAC4AVQBkAG8AbgAuAEMAbwBtAG0AbwBuAAMAAAAGAgAAAAAAAAAnAQQAAAB0AHkAcABlAAEXAAAAUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwAsACAAbQBzAGMAbwByAGwAaQBiACcBCgAAAFMAeQBtAGIAbwBsAE4AYQBtAGUAAQgAAABkAGkAcgBlAGMAdABvAHIAJwEEAAAAdAB5AHAAZQABQgAAAFUAbgBpAHQAeQBFAG4AZwBpAG4AZQAuAFAAbABhAHkAYQBiAGwAZQBzAC4AUABsAGEAeQBhAGIAbABlAEQAaQByAGUAYwB0AG8AcgAsACAAVQBuAGkAdAB5AEUAbgBnAGkAbgBlAC4ARABpAHIAZQBjAHQAbwByAE0AbwBkAHUAbABlAAsBBQAAAFYAYQBsAHUAZQAAAAAABwUHBQcF
+  publicVariablesUnityEngineObjects:
+  - {fileID: 379265005}
+  publicVariablesSerializationDataFormat: 0
+--- !u!114 &1106358582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106358579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dac9ff2f85004b519ea80e25f24b496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  _udonSharpBackingUdonBehaviour: {fileID: 1106358581}
+  director: {fileID: 379265005}
+  clips: []
+  effects: []
+  parameters: []
+  colors: []
+  gobos: []
+  userNames: []
+  groupCount: 
+  groupIndex: 
+  fixtureAdapter: 
+  vrslFixtures: []
+  aimTransforms: []
 --- !u!1 &1247740769
 GameObject:
   m_ObjectHideFlags: 0
@@ -2752,16 +2528,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1247740769}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab75922e2f354de1a10fea79fc2da0c0, type: 3}
+  m_Script: {fileID: 11500000, guid: cbebbd1bc8f84c4ea9726bbe048a4d13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 437298901}
-  - {fileID: 781439971}
-  - {fileID: 530991466}
-  - {fileID: 967059908}
-  weight: 1
-  stageLightFixtureOrderSettings: []
+  fixtures:
+  - {fileID: 437298900}
+  - {fileID: 781439970}
+  - {fileID: 530991465}
+  - {fileID: 967059907}
 --- !u!1001 &1461307558
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2864,9 +2638,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1461307563}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1461307562}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &1461307559 stripped
@@ -2899,33 +2670,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1461307560}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 1461307563}
-  vrslFixture: {fileID: 1461307561}
---- !u!114 &1461307563
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1461307560}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 1461307563}
-  stageLightChannels:
-  - {fileID: 1461307562}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 5
+  target: {fileID: 1461307561}
 --- !u!1001 &1518864960
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3028,9 +2776,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1518864965}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1518864964}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &1518864961 stripped
@@ -3063,33 +2808,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1518864962}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 1518864965}
-  vrslFixture: {fileID: 1518864963}
---- !u!114 &1518864965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1518864962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 1518864965}
-  stageLightChannels:
-  - {fileID: 1518864964}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 3
+  target: {fileID: 1518864963}
 --- !u!1 &1787983409
 GameObject:
   m_ObjectHideFlags: 0
@@ -3286,9 +3008,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2128102297}
-    - targetCorrespondingSourceObject: {fileID: 5815942200957144780, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2128102296}
   m_SourcePrefab: {fileID: 100100000, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
 --- !u!4 &2128102293 stripped
@@ -3321,33 +3040,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2128102294}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca9d49c8774eb47c89e76d7143232610, type: 3}
+  m_Script: {fileID: 11500000, guid: a3548c62f4204dc6938f220cd8f00d74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  updateOrder: 0
-  offsetDuration: 0
-  parentStageLightFixture: {fileID: 2128102297}
-  vrslFixture: {fileID: 2128102295}
---- !u!114 &2128102297
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2128102294}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d1c8e0991a34e9bb76553b0a3fd8a70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  stageLightFixtures:
-  - {fileID: 2128102297}
-  stageLightChannels:
-  - {fileID: 2128102296}
-  lightFixtureProfile: {fileID: 0}
-  syncReferenceProfile: 0
-  profileExportPath: 
-  order: 4
+  target: {fileID: 2128102295}
 --- !u!114 &3231720197660963110
 MonoBehaviour:
   m_ObjectHideFlags: 0

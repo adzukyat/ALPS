@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using ManeuverForVRC.Ui;
-using ManeuverForVRC.Ui.Editor;
+using System.Reflection;
+using ManeuverForVRC.Editor;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -64,7 +64,7 @@ namespace ManeuverForVRC.Tests
         [Test]
         public void CustomEditor_BuildsTheInspectorAndResolvesTheStyleSheet()
         {
-            var asset = ScriptableObject.CreateInstance<MfvClipEffectSetAsset>();
+            var asset = ScriptableObject.CreateInstance<MfvTimelineClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -72,9 +72,9 @@ namespace ManeuverForVRC.Tests
             try
             {
                 inspector = UnityEditor.Editor.CreateEditor(asset);
-                Assert.IsInstanceOf<MfvClipEffectSetAssetEditor>(
+                Assert.IsInstanceOf<MfvTimelineClipInspector>(
                     inspector,
-                    "MfvClipEffectSetAsset must use MfvClipEffectSetAssetEditor.");
+                    "MfvTimelineClip must use MfvTimelineClipInspector.");
 
                 var host = inspector.CreateInspectorGUI();
                 Assert.NotNull(host);
@@ -101,6 +101,106 @@ namespace ManeuverForVRC.Tests
             }
         }
 
+        [Test]
+        public void CustomEditor_DrawsThroughTheImguiClipInspector()
+        {
+            // The timeline clip inspector only calls OnInspectorGUI on the clip asset editor.
+            // Without an override, Unity falls back to the default fields and the MFV UI is lost.
+            var method = typeof(MfvTimelineClipInspector).GetMethod(
+                "OnInspectorGUI",
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.NotNull(method);
+            Assert.AreEqual(
+                typeof(MfvTimelineClipInspector),
+                method.DeclaringType,
+                "The editor must override OnInspectorGUI for the timeline clip inspector.");
+
+            Assert.IsTrue(
+                MfvImguiHost.IsAvailable,
+                "This Unity version no longer exposes the IMGUI container stack, so the view cannot be hung on it.");
+        }
+
+        [Test]
+        public void CustomEditor_HangsTheViewAfterTheImguiContainer()
+        {
+            var asset = ScriptableObject.CreateInstance<MfvTimelineClip>();
+            asset.hideFlags = HideFlags.HideAndDontSave;
+            asset.data = BuildFullSet();
+
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            var inspectorElement = new VisualElement();
+            var container = new IMGUIContainer(() => { });
+            inspectorElement.Add(container);
+            window.rootVisualElement.Add(inspectorElement);
+
+            MfvTimelineClipInspector inspector = null;
+            try
+            {
+                inspector = (MfvTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+
+                Assert.IsTrue(inspector.AttachTo(container));
+                Assert.AreEqual(2, inspectorElement.childCount, "The view is a sibling of the IMGUI block.");
+                var injected = inspectorElement[1];
+                Assert.AreEqual(
+                    inspectorElement.IndexOf(container) + 1,
+                    inspectorElement.IndexOf(injected),
+                    "The view follows the IMGUI block it belongs to.");
+                Assert.NotNull(injected.Q<MfvClipInspectorView>(), "The injected element is the MFV view.");
+
+                // Redrawing keeps one view rather than stacking copies.
+                Assert.IsTrue(inspector.AttachTo(container));
+                Assert.AreEqual(2, inspectorElement.childCount);
+
+                Assert.IsFalse(inspector.AttachTo(null), "Outside IMGUI there is nothing to hang on.");
+                Assert.AreEqual(1, inspectorElement.childCount, "The view is taken down with the inspector.");
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                Object.DestroyImmediate(window);
+                Object.DestroyImmediate(asset);
+            }
+        }
+
+        [Test]
+        public void CustomEditor_WaitsForRepaintBeforeTouchingTheHierarchy()
+        {
+            // Unity throws when the hierarchy changes while the panel measures itself, and the
+            // clip inspector runs its IMGUI block inside that pass.
+            var asset = ScriptableObject.CreateInstance<MfvTimelineClip>();
+            asset.hideFlags = HideFlags.HideAndDontSave;
+            asset.data = BuildFullSet();
+
+            var parent = new VisualElement();
+            var container = new IMGUIContainer(() => { });
+            parent.Add(container);
+
+            MfvTimelineClipInspector inspector = null;
+            try
+            {
+                inspector = (MfvTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+
+                Assert.IsTrue(inspector.AttachTo(container, false));
+                Assert.AreEqual(1, parent.childCount, "Nothing moves while the panel is laying out.");
+
+                Assert.IsTrue(inspector.AttachTo(container, true));
+                Assert.AreEqual(2, parent.childCount, "Repainting is when the view can be moved.");
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                Object.DestroyImmediate(asset);
+            }
+        }
+
         [UnityTest]
         public IEnumerator Undo_RestoresTheModelAndRebindsTheInspector()
         {
@@ -114,7 +214,7 @@ namespace ManeuverForVRC.Tests
                 AssetDatabase.CreateFolder("Assets", "MfvUndoTest");
             }
 
-            var asset = ScriptableObject.CreateInstance<MfvClipEffectSetAsset>();
+            var asset = ScriptableObject.CreateInstance<MfvTimelineClip>();
             asset.data = new MfvClipEffectSet();
             asset.data.Add(MfvEffectKind.Brightness);
             AssetDatabase.CreateAsset(asset, path);
@@ -248,6 +348,128 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
+        public void Frames_AreTitledRangeAndSpread()
+        {
+            var set = new MfvClipEffectSet();
+            set.phase.mode = MfvPhaseMode.Forward;
+            var move = set.Add(MfvEffectKind.Move);
+            move.tilt.hasSpread = true;
+            move.tilt.isRange = true;
+            move.tilt.spreadRange = new Vector2(-10f, 10f);
+
+            var view = new MfvClipInspectorView(set);
+            var tilt = view.Query<MfvAnimatableView>().First();
+            var frames = tilt.Children().Where(c => c.ClassListContains("mfv-sub")).ToList();
+            var titles = frames.Select(f => f.Q<Label>(className: "mfv-sub__title")).ToList();
+
+            CollectionAssert.AreEqual(new[] { "レンジ", "広がり" }, titles.Select(t => t.text).ToArray());
+            Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.Flex));
+            Assert.IsTrue(frames[0].Children().OfType<MfvSegmentedControl>().Any(c => c.label == "タイミング"), "Timing lives in the range frame.");
+            Assert.IsTrue(frames[1].Query<MfvValueSlider>().ToList().Any(s => s.label == "オフセット"), "The offset lives in the spread frame.");
+
+            // Without a range the frame has nothing to hold, and without spread neither does the other.
+            move.tilt.isRange = false;
+            move.tilt.hasSpread = false;
+            tilt.Refresh();
+            Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.None));
+
+            // Cancel on return still mutes a fixed value, so its frame opens untitled.
+            set.phase.mode = MfvPhaseMode.PingPong;
+            tilt.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
+            Assert.AreEqual(DisplayStyle.None, titles[0].parent.style.display.value);
+        }
+
+        [UnityTest]
+        public IEnumerator SpreadFlag_TurnsTheRowIntoASpreadAndRChoosesWhichRanges()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new MfvClipEffectSet();
+            set.phase.mode = MfvPhaseMode.Forward;
+            var move = set.Add(MfvEffectKind.Move);
+            move.tilt.value = 10f;
+            move.tilt.spread = 12f;
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new MfvClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var tilt = view.Query<MfvAnimatableView>().First();
+                var flags = tilt.Query<MfvRangeFlag>().ToList();
+                var singles = tilt.Query<MfvValueSlider>().ToList().Where(s => s.label == "Tilt").ToList();
+                var ranges = tilt.Query<MfvRangeSlider>().ToList().Where(s => s.label == "Tilt").ToList();
+                var frames = tilt.Children().Where(c => c.ClassListContains("mfv-sub")).ToList();
+                var offset = frames[1].Q<MfvValueSlider>();
+                var timing = frames[0].Q<MfvSegmentedControl>();
+
+                Assert.AreEqual(2, flags.Count, "One row, two letters.");
+                Assert.AreEqual("R", flags[0].Q<Label>().text);
+                Assert.AreEqual("S", flags[1].Q<Label>().text);
+                Assert.AreEqual(2, singles.Count, "The value and the spread keep the property's name.");
+                Assert.AreEqual(DisplayStyle.None, frames[1].style.display.value);
+
+                flags[1].value = true;
+                Assert.IsTrue(move.tilt.hasSpread);
+                Assert.AreEqual(DisplayStyle.None, singles[0].style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, singles[1].style.display.value, "The row now edits the spread.");
+                Assert.AreEqual(12f, singles[1].value, 0.001f);
+                Assert.AreEqual(DisplayStyle.Flex, frames[1].style.display.value);
+                Assert.AreEqual(10f, offset.value, 0.001f, "The value moves into the frame as the offset.");
+
+                offset.value = 20f;
+                Assert.AreEqual(20f, move.tilt.value, 0.001f);
+                Assert.AreEqual(20f, singles[0].value, 0.001f, "Both sliders show the same value.");
+
+                flags[0].value = true;
+                Assert.IsTrue(move.tilt.isRange);
+                Assert.AreEqual(new Vector2(0f, 12f), move.tilt.spreadRange, "The spread range starts closed and opens to the current spread.");
+                Assert.AreEqual(DisplayStyle.Flex, ranges[1].style.display.value, "R with S ranges the spread.");
+                Assert.AreEqual(DisplayStyle.None, ranges[0].style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, timing.style.display.value);
+
+                // Dragging the spread range shut hides its options again.
+                ranges[1].value = new Vector2(5f, 5f);
+                Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
+
+                flags[1].value = false;
+                Assert.AreEqual(DisplayStyle.Flex, ranges[0].style.display.value, "Without S, R ranges the value again.");
+                Assert.AreEqual(DisplayStyle.None, frames[1].style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void ValueSlider_FillsFromZeroWhenTheLimitsSpanIt()
+        {
+            VisualElement Fill(MfvValueSlider slider) => slider.Q(className: "mfv-slider__fill");
+
+            var signed = new MfvValueSlider("signed", new Vector2(-10f, 10f));
+            signed.SetValueWithoutNotify(5f);
+            Assert.AreEqual(50f, Fill(signed).style.left.value.value, 0.01f, "The fill starts at zero.");
+            Assert.AreEqual(25f, Fill(signed).style.right.value.value, 0.01f);
+
+            signed.SetValueWithoutNotify(-5f);
+            Assert.AreEqual(25f, Fill(signed).style.left.value.value, 0.01f, "Negative values fill to the left of zero.");
+            Assert.AreEqual(50f, Fill(signed).style.right.value.value, 0.01f);
+
+            var positive = new MfvValueSlider("positive", new Vector2(0f, 10f));
+            positive.SetValueWithoutNotify(5f);
+            Assert.AreEqual(0f, Fill(positive).style.left.value.value, 0.01f, "Without negatives the fill starts at the left edge.");
+            Assert.AreEqual(50f, Fill(positive).style.right.value.value, 0.01f);
+        }
+
+        [Test]
         public void RangeToggle_SwapsSingleSliderForRangeSlider()
         {
             var set = new MfvClipEffectSet();
@@ -341,25 +563,91 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void MoveEffect_TabSwitchesBetweenAngleAndUserTracking()
+        public void MoveEffect_TabSwitchesBetweenAngleCircleAndUserTracking()
         {
             var set = new MfvClipEffectSet();
             var move = set.Add(MfvEffectKind.Move);
             var view = new MfvClipInspectorView(set);
 
-            var tilt = view.Query<MfvValueSlider>().ToList().First(s => s.label == "Tilt");
-            var follow = view.Query<MfvValueSlider>().ToList().First(s => s.label == "追従速度");
+            MfvValueSlider Row(string label) => view.Query<MfvValueSlider>().ToList().First(s => s.label == label);
 
-            Assert.IsTrue(IsShown(tilt), "角度で指定 must show the Tilt row.");
-            Assert.IsFalse(IsShown(follow), "追従速度 belongs to the ユーザーを追跡 tab only.");
+            var tilt = Row("Tilt");
+            var radius = Row("半径");
+            var follow = Row("追従速度");
+
+            Assert.IsTrue(IsShown(tilt), "角度指定 must show the Tilt row.");
+            Assert.IsFalse(IsShown(radius), "半径 belongs to the 円 tab only.");
+            Assert.IsFalse(IsShown(follow), "追従速度 belongs to the ユーザー追跡 tab only.");
+
+            move.moveMode = MfvMoveMode.Circle;
+            view.Query<MfvEffectView>().First().Refresh();
+
+            Assert.IsFalse(IsShown(tilt), "Switching to 円 must hide the angle rows.");
+            Assert.IsTrue(IsShown(Row("中心 Tilt")));
+            Assert.IsTrue(IsShown(Row("半径")));
+            Assert.IsFalse(IsShown(Row("追従速度")));
 
             move.moveMode = MfvMoveMode.TrackUser;
             view.Query<MfvEffectView>().First().Refresh();
 
-            Assert.IsFalse(IsShown(tilt), "Switching to ユーザーを追跡 must hide the angle rows.");
-            Assert.IsTrue(IsShown(follow));
+            Assert.IsFalse(IsShown(Row("Tilt")), "Switching to ユーザー追跡 must hide the angle rows.");
+            Assert.IsFalse(IsShown(Row("半径")));
+            Assert.IsTrue(IsShown(Row("追従速度")));
         }
 
+        [UnityTest]
+        public IEnumerator MoveEffect_CircleRowsWriteToTheModel()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new MfvClipEffectSet();
+            var move = set.Add(MfvEffectKind.Move);
+            move.moveMode = MfvMoveMode.Circle;
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new MfvClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                MfvValueSlider Row(string label) => view.Query<MfvValueSlider>().ToList().First(s => s.label == label);
+
+                Row("中心 Tilt").value = 33f;
+                Row("中心 Pan").value = -15f;
+                Row("半径").value = 8f;
+                Row("縦横比").value = 2f;
+
+                Assert.AreEqual(33f, move.circleCenterTilt.value, 0.001f);
+                Assert.AreEqual(-15f, move.circleCenterPan.value, 0.001f);
+                Assert.AreEqual(8f, move.circleRadius.value, 0.001f);
+                Assert.AreEqual(2f, move.circleAspect, 0.001f);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void SpreadAndDelay_AcceptNegativeValues()
+        {
+            var cone = new MfvAnimatableView("幅", new MfvAnimatableValue(5f, new Vector2(0f, 40f)), new MfvPhaseSettings(), null);
+            var spread = cone.Query<MfvValueSlider>().ToList().Where(s => s.label == "幅").ElementAt(1);
+            Assert.AreEqual(-40f, spread.Limit.x, 0.001f, "A negative spread fans the other way.");
+            Assert.AreEqual(40f, spread.Limit.y, 0.001f, "Both directions reach as far as the value's span.");
+
+            var set = new MfvClipEffectSet();
+            set.Add(MfvEffectKind.Move);
+            var view = new MfvClipInspectorView(set);
+            var sliders = view.Query<MfvValueSlider>().ToList();
+
+            var delay = sliders.First(s => s.label == "ディレイ");
+            Assert.AreEqual(-1f, delay.Limit.x, 0.001f, "A negative delay runs the order backwards.");
+            Assert.AreEqual(1f, delay.Limit.y, 0.001f);
+        }
 
         [Test]
         public void CopyButton_CopiesParametersInsteadOfDuplicatingTheCard()
@@ -506,7 +794,7 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void ColorPlus_AddsWhiteRightAfterTheSelection()
+        public void ColorPlus_DuplicatesTheSelectionRightAfterIt()
         {
             var set = new MfvClipEffectSet();
             var empty = set.Add(MfvEffectKind.Color);
@@ -514,7 +802,7 @@ namespace ManeuverForVRC.Tests
 
             first.RequestAdd();
             Assert.AreEqual(1, empty.colorStops.Count);
-            Assert.AreEqual(Color.white, empty.colorStops[0].color);
+            Assert.AreEqual(Color.white, empty.colorStops[0].color, "An empty palette has nothing to copy, so it starts from white.");
             Assert.AreEqual(0, first.SelectedIndex);
             Assert.AreEqual(DisplayStyle.Flex, first.Q(className: "mfv-palette__editor").style.display.value,
                 "The added stop is selected, so its picker is right there.");
@@ -523,9 +811,13 @@ namespace ManeuverForVRC.Tests
             palette.RequestAdd();
 
             CollectionAssert.AreEqual(
-                new[] { Color.red, Color.green, Color.white, Color.blue },
-                color.colorStops.Select(stop => stop.color).ToArray());
+                new[] { Color.red, Color.green, Color.green, Color.blue },
+                color.colorStops.Select(stop => stop.color).ToArray(),
+                "With a selection, + copies it.");
             Assert.AreEqual(2, color.selectedColorStop, "The new stop becomes the selection.");
+
+            color.colorStops[2].color = Color.yellow;
+            Assert.AreEqual(Color.green, color.colorStops[1].color, "The copy is edited on its own.");
         }
 
         [UnityTest]
@@ -628,24 +920,25 @@ namespace ManeuverForVRC.Tests
             var picker = palette.Q(className: "mfv-gobo-picker");
             Assert.IsNotNull(picker);
             var tiles = picker.Query(className: "mfv-swatch").ToList();
-            Assert.AreEqual(MfvGoboLibrary.BuiltInCount + 1, tiles.Count, "OFF plus every built-in gobo.");
+            Assert.AreEqual(MfvGoboLibrary.GoboCount, tiles.Count, "OFF plus every patterned gobo.");
             Assert.IsTrue(palette.CatalogStops[0].IsOff);
+            Assert.AreEqual(MfvGoboLibrary.FirstPatternIndex, palette.CatalogStops[1].goboIndex);
 
-            // OFF / Gobo3 / OFF: a blink sequence needs OFF more than once.
+            // OFF / gobo 4 / OFF: a blink sequence needs OFF more than once.
             var builtIn = palette.CatalogStops;
             palette.AddStop(new MfvGoboStop(builtIn[0]));
             palette.AddStop(new MfvGoboStop(builtIn[3]));
             palette.AddStop(new MfvGoboStop(builtIn[0]));
             Assert.AreEqual(3, gobo.goboStops.Count);
             Assert.IsTrue(gobo.goboStops[0].IsOff);
-            Assert.AreSame(builtIn[3].texture, gobo.goboStops[1].texture);
+            Assert.AreEqual(builtIn[3].goboIndex, gobo.goboStops[1].goboIndex);
             Assert.IsTrue(gobo.goboStops[2].IsOff);
             Assert.AreEqual(2, gobo.selectedGoboStop);
 
             // Adding goes right after the selection, not to the end.
             palette.Select(0);
             palette.AddStop(new MfvGoboStop(builtIn[5]));
-            Assert.AreSame(builtIn[5].texture, gobo.goboStops[1].texture);
+            Assert.AreEqual(builtIn[5].goboIndex, gobo.goboStops[1].goboIndex);
             Assert.AreEqual(1, gobo.selectedGoboStop);
 
             Assert.IsNotNull(palette.Q(className: "mfv-gobo-picker"), "The picker stays open between additions.");
@@ -660,7 +953,7 @@ namespace ManeuverForVRC.Tests
         {
             var palette = BuildGoboPalette(out var gobo);
             gobo.goboStops.Add(new MfvGoboStop());
-            gobo.goboStops.Add(new MfvGoboStop(palette.CatalogStops[1].texture));
+            gobo.goboStops.Add(new MfvGoboStop(palette.CatalogStops[1]));
             palette.Select(0);
 
             palette.DuplicateSelected();
@@ -784,34 +1077,23 @@ namespace ManeuverForVRC.Tests
         [Test]
         public void PhaseSettings_PingPongRatioMovesThePeak()
         {
-            var settings = new MfvPhaseSettings
-            {
-                mode = MfvPhaseMode.PingPong,
-                ease = MfvEaseType.Linear,
-                pingPongRatio = 0.25f,
-                fixtureGroupSize = 1,
-                delay = 0f,
-            };
+            // 往復比 0.25 puts the triangle's peak a quarter of the way into the cycle.
+            float Phase(float cycles) => MfvShowEvaluator.Phase(
+                MfvShowEvaluator.PhasePingPong, (int)MfvEaseType.Linear, 0.25f, false, cycles, 0, 0);
 
-            Assert.AreEqual(1f, settings.Evaluate(0.25f, 0), 0.01f, "The peak sits at 往復比.");
-            Assert.AreEqual(0.5f, settings.Evaluate(0.125f, 0), 0.01f);
-            Assert.AreEqual(0.5f, settings.Evaluate(0.625f, 0), 0.01f);
+            Assert.AreEqual(1f, Phase(0.25f), 0.01f, "The peak sits at 往復比.");
+            Assert.AreEqual(0.5f, Phase(0.125f), 0.01f);
+            Assert.AreEqual(0.5f, Phase(0.625f), 0.01f);
         }
 
         [Test]
         public void PhaseSettings_FixtureGroupSizeBundlesNeighbours()
         {
-            var settings = new MfvPhaseSettings
-            {
-                mode = MfvPhaseMode.Forward,
-                ease = MfvEaseType.Linear,
-                fixtureGroupSize = 2,
-                delay = 0.25f,
-            };
-
             // A fixture group size of 2 means fixtures 0 and 1 share a phase, 2 and 3 share the next.
-            Assert.AreEqual(settings.Evaluate(0.5f, 0), settings.Evaluate(0.5f, 1), 0.0001f);
-            Assert.AreNotEqual(settings.Evaluate(0.5f, 0), settings.Evaluate(0.5f, 2));
+            int Position(int fixture) => MfvShowEvaluator.OrderPosition(MfvShowEvaluator.OrderNormal, 0, fixture, 4, 2);
+
+            Assert.AreEqual(Position(0), Position(1));
+            Assert.AreNotEqual(Position(0), Position(2));
         }
     }
 }

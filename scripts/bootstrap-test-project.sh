@@ -12,11 +12,20 @@ download_package() {
   local name="$1"
   local url="$2"
   local sha256="$3"
-  local zip_path="${CACHE_DIR}/${name}.zip"
+  # Optional path of the package folder inside the archive, for repository archives.
+  local package_path="${4:-}"
+  local zip_path="${CACHE_DIR}/${name}-${sha256:0:12}.zip"
   local tmp_dir="${CACHE_DIR}/${name}.tmp"
   local target_dir="${PACKAGES_DIR}/${name}"
+  local source_marker="${target_dir}/.mfv-bootstrap-source"
 
-  if [[ -f "${target_dir}/package.json" ]]; then
+  if [[ -f "${target_dir}/package.json" && -f "${source_marker}" && "$(cat "${source_marker}")" == "${sha256}" ]]; then
+    return 0
+  fi
+
+  # Older harnesses installed packages without a marker. Keep those when the source is unchanged.
+  if [[ -f "${target_dir}/package.json" && ! -f "${source_marker}" && -z "${package_path}" ]]; then
+    echo "${sha256}" > "${source_marker}"
     return 0
   fi
 
@@ -45,13 +54,19 @@ download_package() {
   fi
 
   local extracted
-  extracted="$(find "${tmp_dir}" -maxdepth 3 -type f -name package.json -print -quit)"
+  if [[ -n "${package_path}" ]]; then
+    extracted="$(find "${tmp_dir}" -path "*/${package_path}/package.json" -type f -print -quit)"
+  else
+    extracted="$(find "${tmp_dir}" -maxdepth 3 -type f -name package.json -print -quit)"
+  fi
+
   if [[ -z "${extracted}" ]]; then
     echo "No package.json found in ${zip_path}" >&2
     exit 1
   fi
 
   mv "$(dirname "${extracted}")" "${target_dir}"
+  echo "${sha256}" > "${source_marker}"
   rm -rf "${tmp_dir}"
 }
 
@@ -112,10 +127,12 @@ download_package \
   "https://github.com/llealloo/audiolink/releases/download/3.1.2/com.llealloo.audiolink-3.1.2.zip" \
   "f52f2fe04b7c6b86e79468ffa70e1e8fa1726a5c618f782f8e6d62e02da7c236"
 
+# VRSL with the gobo rotation patch that lets scripts turn gobos while DMX is off.
 download_package \
   "com.acchosen.vr-stage-lighting" \
-  "https://github.com/AcChosen/VR-Stage-Lighting/releases/download/v2.8.1/com.acchosen.vr-stage-lighting.zip" \
-  "7b2e7c3ae697d398a494aab022425f539ac2238ff87f01f27c7281b4af50529a"
+  "https://codeload.github.com/adzukyat/VR-Stage-Lighting/zip/89eaa5a5152ccc6ee3539d5b70db40aeb5ab19ab" \
+  "0819ff7f3be810932c112da86f9c32df182d43fa8dfb0767cf40e4ab92962173" \
+  "Packages/com.acchosen.vr-stage-lighting"
 
 patch_udonsharp_batchmode_guard
 patch_udonsharp_runtime_watcher_batchmode_guard

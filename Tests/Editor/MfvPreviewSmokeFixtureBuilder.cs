@@ -1,40 +1,48 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ManeuverForVRC.Editor;
-using StageLightManeuver;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
-using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 using VRSL;
 using Object = UnityEngine.Object;
 
 namespace ManeuverForVRC.Tests
 {
+    /// <summary>
+    /// Builds the committed PreviewSmoke scene and timeline: two VRSL fixtures in a group,
+    /// a base MFV track, an accent MFV track layered above it, and the activation and
+    /// animation tracks a build must keep.
+    /// </summary>
     internal static class MfvPreviewSmokeFixtureBuilder
     {
         public const string FolderPath = "Assets/MfvTestFixtures";
-        public const string BakeOutputRoot = FolderPath + "/Baked";
         public const string ScenePath = FolderPath + "/PreviewSmoke.unity";
         public const string TimelinePath = FolderPath + "/PreviewSmoke.playable";
-        public const float PreviewTime = 1f;
-        public const float ExpectedPan = 30f;
-        public const float ExpectedVrslPan = -ExpectedPan;
-        public const float ExpectedTilt = 60f;
-        public const float ExpectedVrslTilt = ExpectedTilt + MfvVRSLTiltUtility.DefaultVrslTiltOffset;
-        public const float ExpectedIntensity = 0.7f;
-        public const float ExpectedConeWidth = 2.75f;
-        public const float ExpectedConeLength = 5.25f;
-        public const int ExpectedGobo = 4;
-        public const double ExpectedActivationStart = 0.25;
-        public const double ExpectedActivationDuration = 1.25;
-        public const double ExpectedAnimationStart = 0.5;
-        public const double ExpectedAnimationDuration = 1.0;
-        public static readonly Color ExpectedColor = new Color(0.25f, 0.5f, 1f, 1f);
+
+        public const float Bpm = 60f;
+        public const float BaseTime = 1f;
+        public const float AccentTime = 1.75f;
+
+        public const float BaseBrightness = 70f;
+        public const float AccentBrightness = 30f;
+        public const float Pan = 30f;
+        public const float PanSpread = 10f;
+        public const float Tilt = 60f;
+        public const float ConeWidth = 45f;
+        public const float ConeLength = 25f;
+        public const int Gobo = 4;
+        public static readonly Color Tint = new Color(0.25f, 0.5f, 1f, 1f);
+
+        public const float ExpectedVrslConeWidth = 2.75f;
+        public const float ExpectedVrslConeLength = 5.25f;
+
+        public const double ActivationStart = 0.25;
+        public const double ActivationDuration = 1.25;
+        public const double AnimationStart = 0.5;
+        public const double AnimationDuration = 1.0;
 
         [MenuItem("ManeuverForVRC/Tests/Regenerate Preview Smoke Fixture")]
         public static void RegenerateAssets()
@@ -43,189 +51,112 @@ namespace ManeuverForVRC.Tests
             AssetDatabase.DeleteAsset(ScenePath);
             AssetDatabase.DeleteAsset(TimelinePath);
 
-            var timeline = CreateTimelineAsset(out var slmTrack, out var activationTrack, out var animationTrack);
+            CreateTimelineAsset();
             AssetDatabase.SaveAssets();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            CreateSceneObjects(timeline, slmTrack, activationTrack, animationTrack);
+
+            // Opening a new scene can swap the in-memory timeline for a freshly loaded one,
+            // so bind against the asset as it is on disk.
+            CreateSceneObjects(AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath));
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
         }
 
-        public static void EnsureAssets()
+        public static Context OpenFreshScene()
         {
-            if (HasCompleteAssets())
+            if (!HasCompleteAssets())
             {
-                return;
+                RegenerateAssets();
             }
 
-            RegenerateAssets();
-        }
-
-        public static FixtureContext OpenFreshScene()
-        {
-            EnsureAssets();
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            return FindContext();
+            return new Context();
         }
 
-        public static PreviewSample EvaluatePreview(FixtureContext context, float time)
+        private static bool HasCompleteAssets()
         {
-            var before = FixtureState.Capture(context.Fixture);
-            context.Director.time = time;
-            context.Director.Evaluate();
-            var after = FixtureState.Capture(context.Fixture);
-            return new PreviewSample(before, after);
+            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
+            return timeline != null &&
+                File.Exists(ScenePath) &&
+                timeline.GetRootTracks().OfType<MfvTimelineTrack>().Count() == 2 &&
+                timeline.GetRootTracks().OfType<ActivationTrack>().Any() &&
+                timeline.GetRootTracks().OfType<AnimationTrack>().Any();
         }
 
-        public static string CreateTemporaryBakeFolder()
-        {
-            CleanBakeOutputRoot();
-            var folder = $"{BakeOutputRoot}/Run_{Guid.NewGuid():N}";
-            EnsureFolder(folder);
-            return folder;
-        }
-
-        public static void CleanBakeOutputRoot()
-        {
-            if (AssetDatabase.IsValidFolder(BakeOutputRoot))
-            {
-                AssetDatabase.DeleteAsset(BakeOutputRoot);
-                AssetDatabase.SaveAssets();
-            }
-        }
-
-        public static string BuildDiagnostics(FixtureContext context, FixtureState before, FixtureState after)
-        {
-            var directorExists = context.Director != null;
-            var assetPath = context.Timeline != null ? AssetDatabase.GetAssetPath(context.Timeline) : "<missing>";
-            var slmTrackCount = context.Timeline != null
-                ? GetAllTracks(context.Timeline).Count(track => track is StageLightTimelineTrack)
-                : 0;
-            var binding = context.Director != null && context.SlmTrack != null
-                ? context.Director.GetGenericBinding(context.SlmTrack)
-                : null;
-            var hasClock = context.SlmClip != null &&
-                context.SlmClip.StageLightQueueData.TryGetActiveProperty<ClockProperty>() != null;
-
-            return string.Join(
-                "\n",
-                $"director exists: {directorExists}",
-                $"director.playableAsset: {(context.Director != null ? context.Director.playableAsset : null)}",
-                $"timeline name/path: {(context.Timeline != null ? context.Timeline.name : "<missing>")} / {assetPath}",
-                $"SLM track count: {slmTrackCount}",
-                $"binding object: {binding}",
-                $"channel exists: {context.Channel != null}",
-                $"channel.vrslFixture assigned: {(context.Channel != null && context.Channel.vrslFixture != null)}",
-                $"SLM clip has ClockProperty: {hasClock}",
-                $"channel.lastFrame before/after: {context.LastFrameBefore} -> {(context.Channel != null ? FormatFrame(context.Channel.lastFrame) : "<missing>")}",
-                $"fixture fields before: {before}",
-                $"fixture fields after: {after}");
-        }
-
-        public static string BuildBakeDiagnostics(
-            FixtureState preview,
-            MfvBakeResult result,
-            FixtureState runtime,
-            FixtureContext context)
-        {
-            var asset = result != null ? result.bakedAsset : null;
-            var uploadTracks = result != null && result.uploadTimeline != null
-                ? string.Join(", ", result.uploadTimeline.GetOutputTracks().Select(track => track.GetType().Name + ":" + track.name))
-                : "<missing>";
-
-            return string.Join(
-                "\n",
-                BuildDiagnostics(context, preview, runtime),
-                $"preview values: {preview}",
-                $"runtime values: {runtime}",
-                $"baked asset exists: {asset != null}",
-                $"baked fixtures: {(result != null && result.fixtures != null ? result.fixtures.Length : -1)}",
-                $"continuous tracks/key arrays: {asset?.ContinuousTrackCount ?? -1} / {asset?.keyTimes?.Length ?? -1} / {asset?.keyValues?.Length ?? -1}",
-                $"event tracks/event arrays: {asset?.EventTrackCount ?? -1} / {asset?.eventTimes?.Length ?? -1} / {asset?.eventValues?.Length ?? -1}",
-                $"uploadTimeline tracks: {uploadTracks}");
-        }
-
-        public static FixtureState ResetFixtureForRuntime(FixtureContext context)
-        {
-            context.Fixture.enableDMXChannels = true;
-            context.Fixture.enableStrobe = true;
-            context.Fixture.panOffsetBlueGreen = 0f;
-            context.Fixture.tiltOffsetBlue = 90f;
-            context.Fixture.globalIntensity = 0f;
-            context.Fixture.lightColorTint = Color.black;
-            context.Fixture.coneWidth = 0f;
-            context.Fixture.coneLength = 0.5f;
-            context.Fixture.selectGOBO = 1;
-            context.Fixture._UpdateInstancedProperties();
-            return FixtureState.Capture(context.Fixture);
-        }
-
-        private static TimelineAsset CreateTimelineAsset(
-            out StageLightTimelineTrack slmTrack,
-            out ActivationTrack activationTrack,
-            out AnimationTrack animationTrack)
+        private static TimelineAsset CreateTimelineAsset()
         {
             var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
             timeline.name = "PreviewSmoke";
             AssetDatabase.CreateAsset(timeline, TimelinePath);
-
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
             timeline.fixedDuration = 2.0;
 
-            slmTrack = timeline.CreateTrack<StageLightTimelineTrack>(null, "PreviewSmoke SLM");
-            var clip = slmTrack.CreateClip<StageLightTimelineClip>();
-            clip.displayName = "PreviewSmoke Cue";
-            clip.start = 0.0;
-            clip.duration = 2.0;
-            ConfigureStageLightClip((StageLightTimelineClip)clip.asset);
+            var baseTrack = timeline.CreateTrack<MfvTimelineTrack>(null, "Base");
+            baseTrack.bpm = Bpm;
+            var baseClip = baseTrack.CreateClip<MfvTimelineClip>();
+            baseClip.displayName = "Base Cue";
+            baseClip.start = 0.0;
+            baseClip.duration = 2.0;
+            ((MfvTimelineClip)baseClip.asset).data = BuildBaseSet();
 
-            activationTrack = timeline.CreateTrack<ActivationTrack>(null, "Activation Retained");
+            var accentTrack = timeline.CreateTrack<MfvTimelineTrack>(null, "Accent");
+            accentTrack.bpm = Bpm;
+            var accentClip = accentTrack.CreateClip<MfvTimelineClip>();
+            accentClip.displayName = "Accent Cue";
+            accentClip.start = 1.5;
+            accentClip.duration = 0.5;
+            var accent = new MfvClipEffectSet();
+            accent.Add(MfvEffectKind.Brightness).brightness.value = AccentBrightness;
+            ((MfvTimelineClip)accentClip.asset).data = accent;
+
+            var activationTrack = timeline.CreateTrack<ActivationTrack>(null, "Activation Retained");
             var activationClip = activationTrack.CreateDefaultClip();
-            activationClip.displayName = "Activation Retained Clip";
-            activationClip.start = ExpectedActivationStart;
-            activationClip.duration = ExpectedActivationDuration;
+            activationClip.start = ActivationStart;
+            activationClip.duration = ActivationDuration;
 
-            animationTrack = timeline.CreateTrack<AnimationTrack>(null, "Animation Retained");
-            var retainedAnimation = new AnimationClip
-            {
-                name = "PreviewSmoke Retained AnimationClip",
-                frameRate = 30f
-            };
+            var animationTrack = timeline.CreateTrack<AnimationTrack>(null, "Animation Retained");
+            var retainedAnimation = new AnimationClip { name = "PreviewSmoke Retained AnimationClip", frameRate = 30f };
             AnimationUtility.SetEditorCurve(
                 retainedAnimation,
                 EditorCurveBinding.FloatCurve("", typeof(Transform), "m_LocalPosition.x"),
                 AnimationCurve.Linear(0f, 0f, 1f, 1f));
             AssetDatabase.AddObjectToAsset(retainedAnimation, timeline);
             var animationClip = animationTrack.CreateClip(retainedAnimation);
-            animationClip.displayName = "Animation Retained Clip";
-            animationClip.start = ExpectedAnimationStart;
-            animationClip.duration = ExpectedAnimationDuration;
+            animationClip.start = AnimationStart;
+            animationClip.duration = AnimationDuration;
 
             EditorUtility.SetDirty(timeline);
             return timeline;
         }
 
-        private static void ConfigureStageLightClip(StageLightTimelineClip clip)
+        private static MfvClipEffectSet BuildBaseSet()
         {
-            clip.behaviour.stageLightQueueData.stageLightProperties = new List<SlmProperty>
-            {
-                new ClockProperty(),
-                new StageLightOrderProperty(),
-                CreateIntensity(7f),
-                CreateColor(ExpectedColor),
-                CreateLight(90f, 50f),
-                CreatePan(ExpectedPan),
-                CreateTilt(ExpectedTilt),
-                CreateGobo(ExpectedGobo)
-            };
+            var set = new MfvClipEffectSet();
+
+            var move = set.Add(MfvEffectKind.Move);
+            move.pan.value = Pan;
+            move.pan.hasSpread = true;
+            move.pan.spread = PanSpread;
+            move.tilt.value = Tilt;
+
+            var cone = set.Add(MfvEffectKind.Cone);
+            cone.coneWidth.value = ConeWidth;
+            cone.coneLength.value = ConeLength;
+
+            var color = set.Add(MfvEffectKind.Color);
+            color.colorStops.Add(new MfvColorStop(Tint));
+
+            set.Add(MfvEffectKind.Brightness).brightness.value = BaseBrightness;
+
+            var gobo = set.Add(MfvEffectKind.Gobo);
+            gobo.goboStops.Add(new MfvGoboStop(Gobo));
+            gobo.goboRotationBeats = 0f;
+            gobo.goboFixtureStaggerDegrees = 0f;
+            return set;
         }
 
-        private static void CreateSceneObjects(
-            TimelineAsset timeline,
-            StageLightTimelineTrack slmTrack,
-            ActivationTrack activationTrack,
-            AnimationTrack animationTrack)
+        private static void CreateSceneObjects(TimelineAsset timeline)
         {
             var directorObject = new GameObject("PreviewSmoke Director");
             var director = directorObject.AddComponent<PlayableDirector>();
@@ -234,231 +165,81 @@ namespace ManeuverForVRC.Tests
             director.timeUpdateMode = DirectorUpdateMode.Manual;
             director.extrapolationMode = DirectorWrapMode.Hold;
 
-            var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            fixtureObject.name = "Fixture";
-            var renderer = fixtureObject.GetComponent<MeshRenderer>();
-            var stageLightFixture = fixtureObject.AddComponent<StageLightFixture>();
-            var channel = fixtureObject.AddComponent<MfvVRSLFixtureChannel>();
-            var vrslFixture = fixtureObject.AddComponent<VRStageLighting_DMX_Static>();
-            vrslFixture.objRenderers = new[] { renderer };
-            vrslFixture.enableDMXChannels = true;
-            vrslFixture.enableStrobe = true;
-            vrslFixture.globalIntensity = 0f;
-            vrslFixture.lightColorTint = Color.black;
-            vrslFixture.coneWidth = 0f;
-            vrslFixture.coneLength = 0.5f;
-            vrslFixture.selectGOBO = 1;
-            channel.vrslFixture = vrslFixture;
-            stageLightFixture.Init();
-
-            if (slmTrack == null)
+            var groupObject = new GameObject("PreviewSmoke Fixtures");
+            var group = groupObject.AddComponent<MfvFixtureGroup>();
+            for (var i = 0; i < 2; i++)
             {
-                throw new InvalidOperationException("PreviewSmoke timeline does not contain a StageLightTimelineTrack after creation.");
+                var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                fixtureObject.name = "Fixture " + (i + 1);
+                fixtureObject.transform.SetParent(groupObject.transform, false);
+                var vrslFixture = fixtureObject.AddComponent<VRStageLighting_DMX_Static>();
+                vrslFixture.objRenderers = new[] { fixtureObject.GetComponent<MeshRenderer>() };
+                vrslFixture.enableDMXChannels = true;
+                vrslFixture.enableStrobe = true;
+                vrslFixture.globalIntensity = 0f;
+                vrslFixture.lightColorTint = Color.black;
+                vrslFixture.coneWidth = 0f;
+                vrslFixture.coneLength = 0.5f;
+                vrslFixture.selectGOBO = 1;
+                var mfvFixture = fixtureObject.AddComponent<MfvVRSLFixture>();
+                mfvFixture.target = vrslFixture;
+                group.fixtures.Add(mfvFixture);
             }
 
-            director.SetGenericBinding(slmTrack, stageLightFixture);
-
-            var activationTarget = new GameObject("Retained Activation Target");
-            director.SetGenericBinding(activationTrack, activationTarget);
-
-            var animationTarget = new GameObject("Retained Animation Target");
-            var animator = animationTarget.AddComponent<Animator>();
-            director.SetGenericBinding(animationTrack, animator);
-        }
-
-        private static FixtureContext FindContext()
-        {
-            var director = Object.FindObjectOfType<PlayableDirector>();
-            var timeline = director != null ? director.playableAsset as TimelineAsset : null;
-            var slmTrack = timeline != null ? FindSlmTrack(timeline) : null;
-            var slmClip = slmTrack != null
-                ? slmTrack.GetClips().Select(clip => clip.asset as StageLightTimelineClip).FirstOrDefault(clip => clip != null)
-                : null;
-            var binding = director != null && slmTrack != null
-                ? director.GetGenericBinding(slmTrack) as StageLightFixture
-                : null;
-            var channel = binding != null ? binding.GetComponent<MfvVRSLFixtureChannel>() : null;
-            var fixture = channel != null ? channel.vrslFixture : null;
-            var activationTrack = timeline != null ? FindTrack<ActivationTrack>(timeline) : null;
-            var animationTrack = timeline != null ? FindTrack<AnimationTrack>(timeline) : null;
-
-            return new FixtureContext(director, timeline, slmTrack, slmClip, binding, channel, fixture, activationTrack, animationTrack);
-        }
-
-        private static bool HasCompleteAssets()
-        {
-            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
-            if (timeline == null || FindSlmTrack(timeline) == null || !File.Exists(ScenePath))
+            foreach (var track in timeline.GetRootTracks())
             {
-                return false;
+                if (track is MfvTimelineTrack)
+                {
+                    director.SetGenericBinding(track, group);
+                }
+                else if (track is ActivationTrack)
+                {
+                    director.SetGenericBinding(track, new GameObject("Retained Activation Target"));
+                }
+                else if (track is AnimationTrack)
+                {
+                    director.SetGenericBinding(track, new GameObject("Retained Animation Target").AddComponent<Animator>());
+                }
             }
-
-            var activationTrack = FindTrack<ActivationTrack>(timeline);
-            var animationTrack = FindTrack<AnimationTrack>(timeline);
-            var animationPlayable = animationTrack != null
-                ? animationTrack.GetClips().Select(clip => clip.asset as AnimationPlayableAsset).FirstOrDefault(asset => asset != null)
-                : null;
-
-            return activationTrack != null &&
-                activationTrack.GetClips().Any() &&
-                animationPlayable != null &&
-                animationPlayable.clip != null &&
-                AnimationUtility.GetCurveBindings(animationPlayable.clip).Length > 0;
-        }
-
-        private static IEnumerable<TrackAsset> GetAllTracks(TimelineAsset timeline)
-        {
-            return timeline.GetRootTracks()
-                .Concat(timeline.GetOutputTracks())
-                .Concat(timeline.outputs.Select(output => output.sourceObject).OfType<TrackAsset>())
-                .Distinct();
-        }
-
-        private static StageLightTimelineTrack FindSlmTrack(TimelineAsset timeline)
-        {
-            return FindTrack<StageLightTimelineTrack>(timeline);
-        }
-
-        private static T FindTrack<T>(TimelineAsset timeline)
-            where T : TrackAsset
-        {
-            return GetAllTracks(timeline).OfType<T>().SingleOrDefault();
-        }
-
-        private static LightIntensityProperty CreateIntensity(float value)
-        {
-            var property = new LightIntensityProperty();
-            property.lightToggleIntensity.value.mode = StageLightManeuver.AnimationMode.Constant;
-            property.lightToggleIntensity.value.constant = value;
-            return property;
-        }
-
-        private static LightColorProperty CreateColor(Color color)
-        {
-            var property = new LightColorProperty();
-            var gradient = new Gradient();
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(color, 0f),
-                    new GradientColorKey(color, 1f)
-                },
-                new[]
-                {
-                    new GradientAlphaKey(color.a, 0f),
-                    new GradientAlphaKey(color.a, 1f)
-                });
-            property.lightToggleColor.value = gradient;
-            return property;
-        }
-
-        private static LightProperty CreateLight(float spotAngle, float range)
-        {
-            var property = new LightProperty();
-            property.spotAngle.value.mode = StageLightManeuver.AnimationMode.Constant;
-            property.spotAngle.value.constant = spotAngle;
-            property.range.value.mode = StageLightManeuver.AnimationMode.Constant;
-            property.range.value.constant = range;
-            return property;
-        }
-
-        private static PanProperty CreatePan(float value)
-        {
-            var property = new PanProperty();
-            property.rollTransform.value.mode = StageLightManeuver.AnimationMode.Constant;
-            property.rollTransform.value.constant = value;
-            return property;
-        }
-
-        private static TiltProperty CreateTilt(float value)
-        {
-            var property = new TiltProperty();
-            property.rollTransform.value.mode = StageLightManeuver.AnimationMode.Constant;
-            property.rollTransform.value.constant = value;
-            return property;
-        }
-
-        private static MfvVRSLGoboProperty CreateGobo(int value)
-        {
-            var property = new MfvVRSLGoboProperty();
-            property.goboIndex.value = value;
-            return property;
         }
 
         private static void EnsureFolder(string folder)
         {
-            var parts = folder.Split('/');
-            var current = parts[0];
-            for (var i = 1; i < parts.Length; i++)
+            if (!AssetDatabase.IsValidFolder(folder))
             {
-                var next = $"{current}/{parts[i]}";
-                if (!AssetDatabase.IsValidFolder(next))
-                {
-                    AssetDatabase.CreateFolder(current, parts[i]);
-                }
-
-                current = next;
+                AssetDatabase.CreateFolder("Assets", folder.Substring("Assets/".Length));
             }
         }
 
-        private static string FormatFrame(MfvVRSLFrame frame)
-        {
-            return $"pan={frame.pan:0.###}, tilt={frame.tilt:0.###}, intensity={frame.intensity:0.###}, color={frame.color}, coneWidth={frame.coneWidth:0.###}, coneLength={frame.coneLength:0.###}, gobo={frame.gobo}";
-        }
-
-        internal sealed class FixtureContext
+        /// <summary>The objects of the open PreviewSmoke scene.</summary>
+        internal sealed class Context
         {
             public readonly PlayableDirector Director;
             public readonly TimelineAsset Timeline;
-            public readonly StageLightTimelineTrack SlmTrack;
-            public readonly StageLightTimelineClip SlmClip;
-            public readonly StageLightFixture StageLightFixture;
-            public readonly MfvVRSLFixtureChannel Channel;
-            public readonly VRStageLighting_DMX_Static Fixture;
-            public readonly ActivationTrack ActivationTrack;
-            public readonly AnimationTrack AnimationTrack;
-            public readonly string LastFrameBefore;
+            public readonly MfvFixtureGroup Group;
+            public readonly VRStageLighting_DMX_Static[] Fixtures;
 
-            public FixtureContext(
-                PlayableDirector director,
-                TimelineAsset timeline,
-                StageLightTimelineTrack slmTrack,
-                StageLightTimelineClip slmClip,
-                StageLightFixture stageLightFixture,
-                MfvVRSLFixtureChannel channel,
-                VRStageLighting_DMX_Static fixture,
-                ActivationTrack activationTrack,
-                AnimationTrack animationTrack)
+            public Context()
             {
-                Director = director;
-                Timeline = timeline;
-                SlmTrack = slmTrack;
-                SlmClip = slmClip;
-                StageLightFixture = stageLightFixture;
-                Channel = channel;
-                Fixture = fixture;
-                ActivationTrack = activationTrack;
-                AnimationTrack = animationTrack;
-                LastFrameBefore = channel != null ? FormatFrame(channel.lastFrame) : "<missing>";
+                Director = Object.FindObjectOfType<PlayableDirector>();
+                Timeline = Director != null ? Director.playableAsset as TimelineAsset : null;
+                Group = Object.FindObjectOfType<MfvFixtureGroup>();
+                Fixtures = Group != null
+                    ? Group.fixtures.Select(f => ((MfvVRSLFixture)f).target).ToArray()
+                    : Array.Empty<VRStageLighting_DMX_Static>();
             }
-        }
 
-        internal readonly struct PreviewSample
-        {
-            public readonly FixtureState Before;
-            public readonly FixtureState After;
-
-            public PreviewSample(FixtureState before, FixtureState after)
+            public FixtureState[] Sample(float time)
             {
-                Before = before;
-                After = after;
+                Director.time = time;
+                Director.Evaluate();
+                return Fixtures.Select(FixtureState.Capture).ToArray();
             }
         }
 
         internal readonly struct FixtureState
         {
             public readonly bool EnableDmx;
-            public readonly bool EnableStrobe;
             public readonly float Pan;
             public readonly float Tilt;
             public readonly float Intensity;
@@ -470,7 +251,6 @@ namespace ManeuverForVRC.Tests
             private FixtureState(VRStageLighting_DMX_Static fixture)
             {
                 EnableDmx = fixture.enableDMXChannels;
-                EnableStrobe = fixture.enableStrobe;
                 Pan = fixture.panOffsetBlueGreen;
                 Tilt = fixture.tiltOffsetBlue;
                 Intensity = fixture.globalIntensity;
@@ -487,7 +267,7 @@ namespace ManeuverForVRC.Tests
 
             public override string ToString()
             {
-                return $"dmx={EnableDmx}, strobe={EnableStrobe}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, gobo={Gobo}";
+                return $"dmx={EnableDmx}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, gobo={Gobo}";
             }
         }
     }

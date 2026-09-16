@@ -2,7 +2,7 @@
   "name": "ManeuverForVRC.Runtime",
   "rootNamespace": "ManeuverForVRC",
   "references": [
-    "Iridescenent.SLM.Runtime",
+    "Unity.Timeline",
     "VRSL.Core",
     "VRC.SDKBase",
     "UdonSharp.Runtime"

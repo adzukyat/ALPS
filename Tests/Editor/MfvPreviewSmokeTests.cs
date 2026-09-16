@@ -1,640 +1,289 @@
-using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using ManeuverForVRC.Editor;
 using NUnit.Framework;
-using StageLightManeuver;
-using UnityEditor;
-using UnityEditor.Timeline;
-using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.TestTools;
-using UnityEngine.Timeline;
-
-#if UDONSHARP
 using UdonSharp;
 using UdonSharpEditor;
-#endif
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Timeline;
+using static ManeuverForVRC.Tests.MfvPreviewSmokeFixtureBuilder;
 
 namespace ManeuverForVRC.Tests
 {
+    /// <summary>
+    /// Level 3 evaluates the real PreviewSmoke timeline in edit mode. Level 4 applies the
+    /// show the way a build does and checks the Udon player reproduces the preview.
+    /// </summary>
     public class MfvPreviewSmokeTests
     {
-        private const string MenuPlayerName = "ManeuverForVRC Baked Player";
-        private const string DefaultBakeRoot = "Assets/ManeuverForVRC";
+        private const float Tolerance = 0.0005f;
 
-        [UnityTest]
-        public IEnumerator Level3_RealTimelinePreview_UpdatesChannelAndVrslFixture()
+        [TearDown]
+        public void CloseScene()
         {
-            var context = MfvPreviewSmokeFixtureBuilder.OpenFreshScene();
-            AssertPreviewContext(context);
-
-            MfvPreviewSmokeFixtureBuilder.ResetFixtureForRuntime(context);
-            context.Channel.lastFrame = MfvVRSLFrame.Default();
-            var sample = MfvPreviewSmokeFixtureBuilder.EvaluatePreview(context, MfvPreviewSmokeFixtureBuilder.PreviewTime);
-            yield return null;
-
-            var diagnostics = MfvPreviewSmokeFixtureBuilder.BuildDiagnostics(context, sample.Before, sample.After);
-            AssertFixtureChanged(sample.Before, sample.After, diagnostics);
-            Assert.That(context.Channel.lastFrame.pan, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedPan).Within(0.0001f), diagnostics);
-            Assert.That(context.Channel.lastFrame.tilt, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedTilt).Within(0.0001f), diagnostics);
-            Assert.That(context.Channel.lastFrame.intensity, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedIntensity).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Pan, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedVrslPan).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Tilt, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedVrslTilt).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Intensity, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedIntensity).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Color.r, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedColor.r).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Color.g, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedColor.g).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Color.b, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedColor.b).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.ConeWidth, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedConeWidth).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.ConeLength, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedConeLength).Within(0.0001f), diagnostics);
-            Assert.That(sample.After.Gobo, Is.EqualTo(MfvPreviewSmokeFixtureBuilder.ExpectedGobo), diagnostics);
-            Assert.IsFalse(sample.After.EnableDmx, diagnostics);
-            Assert.IsFalse(sample.After.EnableStrobe, diagnostics);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
         [Test]
-        public void Level3_FreshTimelineClipEditorAndEvaluation_DoesNotLogErrors()
+        public void Level3_PreviewDrivesTheVrslFixtures()
         {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            var directorObject = new GameObject("Fresh Timeline Director");
-            var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
+            var context = OpenFreshScene();
+            var states = context.Sample(BaseTime);
+            var diagnostics = string.Join("\n", states.Select(s => s.ToString()));
+
+            for (var i = 0; i < states.Length; i++)
             {
-                timeline.name = "Fresh Timeline Clip Smoke";
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "Fresh SLM");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                clip.start = 0;
-                clip.duration = 1;
-                var slmClip = (StageLightTimelineClip)clip.asset;
-                slmClip.behaviour.stageLightQueueData.stageLightProperties.Add(new LightProperty());
-                slmClip.behaviour.stageLightQueueData.stageLightProperties.Add(new LightIntensityProperty());
-                slmClip.behaviour.stageLightQueueData.stageLightProperties.Add(new LightColorProperty());
-
-                var clipEditor = new StageLightTimelineClipEditor();
-                Assert.DoesNotThrow(() => clipEditor.OnClipChanged(clip));
-                AssertClockOverridesInitialized(slmClip);
-
-                slmClip.track = null;
-                track.drawCustomClip = false;
-                Assert.DoesNotThrow(() => clipEditor.DrawBackground(
-                    clip,
-                    new ClipBackgroundRegion(new Rect(0f, 0f, 160f, 18f), 0, clip.duration)));
-
-                var director = directorObject.AddComponent<PlayableDirector>();
-                director.playableAsset = timeline;
-                director.playOnAwake = false;
-                director.timeUpdateMode = DirectorUpdateMode.Manual;
-                var stageLightFixture = fixtureObject.AddComponent<StageLightFixture>();
-                var channel = fixtureObject.AddComponent<MfvVRSLFixtureChannel>();
-                var vrslFixture = fixtureObject.AddComponent<VRSL.VRStageLighting_DMX_Static>();
-                vrslFixture.objRenderers = new[] { fixtureObject.GetComponent<MeshRenderer>() };
-                channel.vrslFixture = vrslFixture;
-                stageLightFixture.Init();
-                director.SetGenericBinding(track, stageLightFixture);
-
-                Assert.DoesNotThrow(() =>
-                {
-                    director.time = 0.5;
-                    director.Evaluate();
-                });
-                LogAssert.NoUnexpectedReceived();
-            }
-            finally
-            {
-                Object.DestroyImmediate(timeline);
-                Object.DestroyImmediate(directorObject);
-                Object.DestroyImmediate(fixtureObject);
+                var state = states[i];
+                Assert.IsFalse(state.EnableDmx, diagnostics);
+                Assert.AreEqual(-(Pan + PanSpread * i), state.Pan, Tolerance, "Pan spread adds per fixture.\n" + diagnostics);
+                Assert.AreEqual(Tilt + MfvShowPlayer.VrslDefaultTiltOffset, state.Tilt, Tolerance, diagnostics);
+                Assert.AreEqual(BaseBrightness / 100f, state.Intensity, Tolerance, diagnostics);
+                Assert.AreEqual(Tint.r, state.Color.r, Tolerance, diagnostics);
+                Assert.AreEqual(Tint.g, state.Color.g, Tolerance, diagnostics);
+                Assert.AreEqual(Tint.b, state.Color.b, Tolerance, diagnostics);
+                Assert.AreEqual(ExpectedVrslConeWidth, state.ConeWidth, Tolerance, diagnostics);
+                Assert.AreEqual(ExpectedVrslConeLength, state.ConeLength, Tolerance, diagnostics);
+                Assert.AreEqual(Gobo, state.Gobo, diagnostics);
             }
         }
 
         [Test]
-        public void Level3_FreshTimelineClipWithoutBinding_DoesNotWarnOnEvaluate()
+        public void Level3_LaterTrackOverridesOnlyItsOwnChannels()
         {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            var directorObject = new GameObject("Unbound Fresh Timeline Director");
+            var context = OpenFreshScene();
+            var states = context.Sample(AccentTime);
+
+            Assert.AreEqual(AccentBrightness / 100f, states[0].Intensity, Tolerance, "The accent track sets brightness.");
+            Assert.AreEqual(Tint.b, states[0].Color.b, Tolerance, "Color still comes from the base track.");
+        }
+
+        [Test]
+        public void Level3_ClipEditsReachThePreviewWithoutRebuildingTheGraph()
+        {
+            var context = OpenFreshScene();
+            context.Sample(BaseTime);
+
+            var clip = (MfvTimelineClip)context.Timeline.GetRootTracks().OfType<MfvTimelineTrack>().First().GetClips().First().asset;
+            var brightness = clip.data.effects.First(e => e.kind == MfvEffectKind.Brightness);
+            brightness.brightness.value = 12f;
+            MfvPreviewDriver.MarkDirty();
+
+            var states = context.Sample(BaseTime);
+            Assert.AreEqual(0.12f, states[0].Intensity, Tolerance);
+        }
+
+        [Test]
+        public void Level3_StoppingTheTimelinePreviewRevertsTheFixtures()
+        {
+            var context = OpenFreshScene();
+            var authored = context.Fixtures.Select(FixtureState.Capture).ToArray();
+
+            // Stand in for the Timeline window: gather the track properties inside animation mode.
+            var driver = ScriptableObject.CreateInstance<AnimationModeDriver>();
+            var collector = new AnimationModeCollector();
+            AnimationMode.StartAnimationMode(driver);
             try
             {
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "Unbound Fresh SLM");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                clip.start = 0;
-                clip.duration = 1;
-
-                var clipEditor = new StageLightTimelineClipEditor();
-                Assert.DoesNotThrow(() => clipEditor.OnCreate(clip, track, null));
-
-                var director = directorObject.AddComponent<PlayableDirector>();
-                director.playableAsset = timeline;
-                director.playOnAwake = false;
-                director.timeUpdateMode = DirectorUpdateMode.Manual;
-
-                Assert.DoesNotThrow(() =>
+                foreach (var track in context.Timeline.GetOutputTracks().OfType<MfvTimelineTrack>())
                 {
-                    director.time = 0.5;
-                    director.Evaluate();
-                });
-                LogAssert.NoUnexpectedReceived();
+                    track.GatherProperties(context.Director, collector);
+                }
+
+                foreach (var fixture in context.Fixtures)
+                {
+                    Assert.That(collector.Registered, Has.Some.EqualTo(((Component)fixture, "enableDMXChannels")));
+                    Assert.That(collector.Registered, Has.Some.EqualTo(((Component)fixture, "lightColorTint.b")));
+                }
+
+                Assert.IsFalse(context.Sample(BaseTime)[0].EnableDmx, "The preview drives the fixtures.");
             }
             finally
             {
-                Object.DestroyImmediate(timeline);
-                Object.DestroyImmediate(directorObject);
+                AnimationMode.StopAnimationMode(driver);
+                Object.DestroyImmediate(driver);
+            }
+
+            MfvPreviewDriver.EndPreviewSession();
+            AssertRestored(context, authored);
+        }
+
+        [Test]
+        public void Level3_RebuiltGraphKeepsTheAuthoredDefaults()
+        {
+            var context = OpenFreshScene();
+            var authored = context.Fixtures.Select(FixtureState.Capture).ToArray();
+            context.Sample(BaseTime);
+
+            // Move the base clip away and rebuild, like a clip drag in the Timeline window.
+            var baseClip = context.Timeline.GetRootTracks().OfType<MfvTimelineTrack>().First().GetClips().First();
+            var start = baseClip.start;
+            var duration = baseClip.duration;
+            try
+            {
+                baseClip.start = 1.0;
+                baseClip.duration = 1.0;
+                context.Director.RebuildGraph();
+
+                var states = context.Sample(0.5f);
+                for (var i = 0; i < states.Length; i++)
+                {
+                    var diagnostics = $"authored: {authored[i]}\nnow: {states[i]}";
+                    Assert.AreEqual(authored[i].Pan, states[i].Pan, Tolerance, "Undriven channels fall back to the authored state.\n" + diagnostics);
+                    Assert.AreEqual(authored[i].Intensity, states[i].Intensity, Tolerance, diagnostics);
+                    Assert.AreEqual(authored[i].Color, states[i].Color, diagnostics);
+                    Assert.AreEqual(authored[i].Gobo, states[i].Gobo, diagnostics);
+                }
+            }
+            finally
+            {
+                baseClip.start = start;
+                baseClip.duration = duration;
+            }
+        }
+
+        private static void AssertRestored(Context context, FixtureState[] authored)
+        {
+            for (var i = 0; i < context.Fixtures.Length; i++)
+            {
+                var restored = FixtureState.Capture(context.Fixtures[i]);
+                var diagnostics = $"authored: {authored[i]}\nrestored: {restored}";
+                Assert.AreEqual(authored[i].EnableDmx, restored.EnableDmx, diagnostics);
+                Assert.IsTrue(context.Fixtures[i].enableStrobe, "Strobe was authored on.\n" + diagnostics);
+                Assert.AreEqual(authored[i].Intensity, restored.Intensity, Tolerance, diagnostics);
+                Assert.AreEqual(authored[i].Pan, restored.Pan, Tolerance, diagnostics);
+                Assert.AreEqual(authored[i].Color, restored.Color, diagnostics);
+                Assert.AreEqual(authored[i].Gobo, restored.Gobo, diagnostics);
+            }
+        }
+
+        /// <summary>Registers gathered properties with animation mode, like the Timeline window does.</summary>
+        private sealed class AnimationModeCollector : IPropertyCollector
+        {
+            public readonly List<(Component, string)> Registered = new List<(Component, string)>();
+
+            public void AddFromName(Component component, string name)
+            {
+                var property = new SerializedObject(component).FindProperty(name);
+                Assert.NotNull(property, $"{component.GetType().Name} has no serialized property '{name}'.");
+
+                string value;
+                switch (property.propertyType)
+                {
+                    case SerializedPropertyType.Boolean:
+                        value = property.boolValue ? "1" : "0";
+                        break;
+                    case SerializedPropertyType.Integer:
+                        value = property.intValue.ToString(CultureInfo.InvariantCulture);
+                        break;
+                    default:
+                        value = property.floatValue.ToString("R", CultureInfo.InvariantCulture);
+                        break;
+                }
+
+                AnimationMode.AddPropertyModification(
+                    EditorCurveBinding.FloatCurve(string.Empty, component.GetType(), name),
+                    new PropertyModification { target = component, propertyPath = name, value = value },
+                    false);
+                Registered.Add((component, name));
+            }
+
+            public void PushActiveGameObject(GameObject gameObject) { }
+            public void PopActiveGameObject() { }
+            public void AddFromClip(AnimationClip clip) { }
+            public void AddFromClips(IEnumerable<AnimationClip> clips) { }
+            public void AddFromName<T>(string name) where T : Component { }
+            public void AddFromName(string name) { }
+            public void AddFromClip(GameObject obj, AnimationClip clip) { }
+            public void AddFromClips(GameObject obj, IEnumerable<AnimationClip> clips) { }
+            public void AddFromName<T>(GameObject obj, string name) where T : Component { }
+            public void AddFromName(GameObject obj, string name) { }
+            public void AddFromComponent(GameObject obj, Component component) { }
+            public void AddObjectProperties(Object obj, AnimationClip clip) { }
+        }
+
+        [Test]
+        public void Level4_AppliedShowMatchesThePreviewAndKeepsOtherTracks()
+        {
+            var context = OpenFreshScene();
+            var preview = context.Sample(AccentTime);
+
+            // Swapping the timeline out and back gives the build conversion a fresh graph.
+            context.Director.playableAsset = null;
+            context.Director.playableAsset = context.Timeline;
+
+            var player = MfvShowSetup.GetOrCreatePlayer(context.Director);
+            Assert.IsFalse(player.gameObject.activeSelf, "The player waits inactive in the authoring scene.");
+
+            var sourceActivation = context.Timeline.GetRootTracks().OfType<ActivationTrack>().Single();
+            var sourceAnimation = context.Timeline.GetRootTracks().OfType<AnimationTrack>().Single();
+            var activationBinding = context.Director.GetGenericBinding(sourceActivation);
+            var animationBinding = context.Director.GetGenericBinding(sourceAnimation);
+
+            var errors = new List<string>();
+            try
+            {
+                Assert.IsTrue(MfvShowApplier.Apply(context.Director.gameObject.scene, true, errors), string.Join("\n", errors));
+
+                var build = context.Director.playableAsset as TimelineAsset;
+                Assert.NotNull(build);
+                Assert.AreNotSame(context.Timeline, build, "The director switches to the build timeline.");
+                Assert.IsFalse(MfvBuildTimeline.HasMfvTracks(build), "MFV tracks are replaced by the player.");
+                Assert.IsTrue(MfvBuildTimeline.HasMfvTracks(context.Timeline), "The authoring timeline is left alone.");
+
+                var buildActivation = build.GetRootTracks().OfType<ActivationTrack>().Single();
+                var buildAnimation = build.GetRootTracks().OfType<AnimationTrack>().Single();
+                Assert.AreEqual(ActivationStart, buildActivation.GetClips().Single().start, 0.0001);
+                Assert.AreEqual(AnimationDuration, buildAnimation.GetClips().Single().duration, 0.0001);
+                Assert.AreSame(activationBinding, context.Director.GetGenericBinding(buildActivation));
+                Assert.AreSame(animationBinding, context.Director.GetGenericBinding(buildAnimation));
+
+                Assert.IsTrue(player.gameObject.activeSelf);
+                Assert.IsNull(Object.FindObjectOfType<MfvFixture>(), "Authoring components are stripped.");
+                Assert.IsNull(Object.FindObjectOfType<MfvFixtureGroup>());
+
+                player.EvaluateAt(AccentTime);
+                for (var i = 0; i < context.Fixtures.Length; i++)
+                {
+                    var runtime = FixtureState.Capture(context.Fixtures[i]);
+                    var diagnostics = $"preview: {preview[i]}\nruntime: {runtime}";
+                    Assert.AreEqual(preview[i].Pan, runtime.Pan, Tolerance, diagnostics);
+                    Assert.AreEqual(preview[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
+                    Assert.AreEqual(preview[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
+                    Assert.AreEqual(preview[i].Color, runtime.Color, diagnostics);
+                    Assert.AreEqual(preview[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
+                    Assert.AreEqual(preview[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
+                    Assert.AreEqual(preview[i].Gobo, runtime.Gobo, diagnostics);
+                }
+
+                var programAsset = UdonSharpProgramAsset.GetProgramAssetForClass(typeof(MfvShowPlayer));
+                Assert.NotNull(programAsset, "No UdonSharp program asset was created for the player.");
+                Assert.NotNull(programAsset.GetRealProgram(), "The player did not compile to Udon.");
+                var backing = UdonSharpEditorUtility.GetBackingUdonBehaviour(player);
+                Assert.NotNull(backing, "The player has no backing UdonBehaviour.");
+                Assert.IsTrue(UdonSharpEditorUtility.IsUdonSharpBehaviour(backing));
+            }
+            finally
+            {
+                if (AssetDatabase.IsValidFolder(MfvShowSetup.GeneratedFolder))
+                {
+                    AssetDatabase.DeleteAsset(MfvShowSetup.GeneratedFolder);
+                }
             }
         }
 
         [Test]
-        public void Level3_FreshTimelineClipEvaluation_AddsScalarVrslPropertiesFromFixtureDefaults()
+        public void Level4_ValidationReportsAMissingPlayer()
         {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            var directorObject = new GameObject("Fresh Timeline Defaults Director");
-            var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
-            {
-                timeline.name = "Fresh Timeline Defaults";
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "Fresh SLM Defaults");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                clip.start = 0;
-                clip.duration = 1;
-                var slmClip = (StageLightTimelineClip)clip.asset;
+            var context = OpenFreshScene();
+            var errors = new List<string>();
+            var warnings = new List<string>();
 
-                var director = directorObject.AddComponent<PlayableDirector>();
-                director.playableAsset = timeline;
-                director.playOnAwake = false;
-                director.timeUpdateMode = DirectorUpdateMode.Manual;
+            MfvShowApplier.Validate(context.Director.gameObject.scene, errors, warnings);
 
-                var stageLightFixture = fixtureObject.AddComponent<StageLightFixture>();
-                var channel = fixtureObject.AddComponent<MfvVRSLFixtureChannel>();
-                var vrslFixture = fixtureObject.AddComponent<VRSL.VRStageLighting_DMX_Static>();
-                vrslFixture.objRenderers = new[] { fixtureObject.GetComponent<MeshRenderer>() };
-                vrslFixture.enableDMXChannels = true;
-                vrslFixture.enableStrobe = true;
-                vrslFixture.panOffsetBlueGreen = 12f;
-                vrslFixture.tiltOffsetBlue = 34f;
-                vrslFixture.globalIntensity = 0.65f;
-                vrslFixture.lightColorTint = new Color(0.2f, 0.4f, 0.8f, 1f);
-                vrslFixture.coneWidth = 2.2f;
-                vrslFixture.coneLength = 7f;
-                vrslFixture.selectGOBO = 6;
-                channel.vrslFixture = vrslFixture;
-                stageLightFixture.Init();
-                director.SetGenericBinding(track, stageLightFixture);
-
-                director.time = 0.5;
-                director.Evaluate();
-
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<LightIntensityProperty>());
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<LightColorProperty>());
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<LightProperty>());
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<PanProperty>());
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<TiltProperty>());
-                Assert.NotNull(slmClip.StageLightQueueData.TryGetActiveProperty<MfvVRSLGoboProperty>());
-                Assert.IsNull(slmClip.StageLightQueueData.TryGetActiveProperty<LightFlickerProperty>());
-                Assert.IsNull(slmClip.StageLightQueueData.TryGetActiveProperty<ManualLightArrayProperty>());
-                Assert.IsNull(slmClip.StageLightQueueData.TryGetActiveProperty<ManualColorArrayProperty>());
-                Assert.IsNull(slmClip.StageLightQueueData.TryGetActiveProperty<ManualPanTiltProperty>());
-                Assert.That(channel.lastFrame.pan, Is.EqualTo(-12f).Within(0.0001f));
-                Assert.That(channel.lastFrame.tilt, Is.EqualTo(-56f).Within(0.0001f));
-                Assert.That(channel.lastFrame.intensity, Is.EqualTo(0.65f).Within(0.0001f));
-                Assert.That(channel.lastFrame.color.r, Is.EqualTo(0.2f).Within(0.0001f));
-                Assert.That(channel.lastFrame.color.g, Is.EqualTo(0.4f).Within(0.0001f));
-                Assert.That(channel.lastFrame.color.b, Is.EqualTo(0.8f).Within(0.0001f));
-                Assert.That(channel.lastFrame.coneWidth, Is.EqualTo(2.2f).Within(0.0001f));
-                Assert.That(channel.lastFrame.coneLength, Is.EqualTo(7f).Within(0.0001f));
-                Assert.That(channel.lastFrame.gobo, Is.EqualTo(6));
-                Assert.That(vrslFixture.globalIntensity, Is.EqualTo(0.65f).Within(0.0001f));
-                Assert.That(vrslFixture.lightColorTint.r, Is.EqualTo(0.2f).Within(0.0001f));
-                Assert.That(vrslFixture.lightColorTint.g, Is.EqualTo(0.4f).Within(0.0001f));
-                Assert.That(vrslFixture.lightColorTint.b, Is.EqualTo(0.8f).Within(0.0001f));
-                Assert.That(vrslFixture.coneWidth, Is.EqualTo(2.2f).Within(0.0001f));
-                Assert.That(vrslFixture.coneLength, Is.EqualTo(7f).Within(0.0001f));
-                Assert.That(vrslFixture.selectGOBO, Is.EqualTo(6));
-                Assert.IsFalse(vrslFixture.enableDMXChannels);
-                Assert.IsFalse(vrslFixture.enableStrobe);
-                LogAssert.NoUnexpectedReceived();
-            }
-            finally
-            {
-                Object.DestroyImmediate(timeline);
-                Object.DestroyImmediate(directorObject);
-                Object.DestroyImmediate(fixtureObject);
-            }
-        }
-
-        [Test]
-        public void Level3_AddablePropertyTypes_AreFilteredToBoundChannels()
-        {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            var directorObject = new GameObject("Addable Property Director");
-            var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
-            {
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "SLM Addable Filter");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                var slmClip = (StageLightTimelineClip)clip.asset;
-
-                var director = directorObject.AddComponent<PlayableDirector>();
-                director.playableAsset = timeline;
-                director.playOnAwake = false;
-                director.timeUpdateMode = DirectorUpdateMode.Manual;
-
-                var stageLightFixture = fixtureObject.AddComponent<StageLightFixture>();
-                fixtureObject.AddComponent<LightChannel>();
-                fixtureObject.AddComponent<LightPanChannel>();
-                stageLightFixture.Init();
-                director.SetGenericBinding(track, stageLightFixture);
-
-                var addableTypes = slmClip.GetAddablePropertyTypes(director);
-
-                Assert.That(addableTypes, Has.Member(typeof(LightProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(LightColorProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(LightIntensityProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(LightFlickerProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(ManualLightArrayProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(ManualColorArrayProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(PanProperty)));
-                Assert.That(addableTypes, Has.Member(typeof(ManualPanTiltProperty)));
-                Assert.That(addableTypes, Has.No.Member(typeof(MaterialFloatProperty)));
-                Assert.That(addableTypes, Has.No.Member(typeof(MaterialColorProperty)));
-                Assert.That(addableTypes, Has.No.Member(typeof(EnvironmentProperty)));
-                Assert.That(addableTypes, Has.No.Member(typeof(ReflectionProbeProperty)));
-            }
-            finally
-            {
-                Object.DestroyImmediate(timeline);
-                Object.DestroyImmediate(directorObject);
-                Object.DestroyImmediate(fixtureObject);
-            }
-        }
-
-        [Test]
-        public void Level3_ManualAddProperty_DoesNotAutoAddLightColor()
-        {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            var directorObject = new GameObject("Manual Add Property Director");
-            var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            try
-            {
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "SLM Manual Add");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                var slmClip = (StageLightTimelineClip)clip.asset;
-
-                var director = directorObject.AddComponent<PlayableDirector>();
-                director.playableAsset = timeline;
-                director.playOnAwake = false;
-                director.timeUpdateMode = DirectorUpdateMode.Manual;
-
-                var stageLightFixture = fixtureObject.AddComponent<StageLightFixture>();
-                var channel = fixtureObject.AddComponent<MfvVRSLFixtureChannel>();
-                var vrslFixture = fixtureObject.AddComponent<VRSL.VRStageLighting_DMX_Static>();
-                vrslFixture.objRenderers = new[] { fixtureObject.GetComponent<MeshRenderer>() };
-                vrslFixture.panOffsetBlueGreen = 12f;
-                channel.vrslFixture = vrslFixture;
-                stageLightFixture.Init();
-                director.SetGenericBinding(track, stageLightFixture);
-
-                Assert.IsTrue(SlmEditorUtility.AddPropertyInClip(slmClip, typeof(PanProperty), director, false));
-                Assert.DoesNotThrow(() => new StageLightTimelineClipEditor().OnClipChanged(clip));
-
-                var pan = slmClip.StageLightQueueData.TryGetActiveProperty<PanProperty>();
-                Assert.NotNull(pan);
-                Assert.That(pan.rollTransform.value.constant, Is.EqualTo(-12f).Within(0.0001f));
-                Assert.IsNull(slmClip.StageLightQueueData.TryGetActiveProperty<LightColorProperty>());
-            }
-            finally
-            {
-                Object.DestroyImmediate(timeline);
-                Object.DestroyImmediate(directorObject);
-                Object.DestroyImmediate(fixtureObject);
-            }
-        }
-
-        [Test]
-        public void Level3_StageLightPropertiesDrawer_OrderedViewKeepsSerializedPropertyMapping()
-        {
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            try
-            {
-                var track = timeline.CreateTrack<StageLightTimelineTrack>(null, "SLM Drawer Mapping");
-                var clip = track.CreateClip<StageLightTimelineClip>();
-                var slmClip = (StageLightTimelineClip)clip.asset;
-                var properties = new List<SlmProperty>
-                {
-                    new ClockProperty(),
-                    new StageLightOrderProperty(),
-                    new LightIntensityProperty(),
-                    new LightColorProperty(),
-                    new LightProperty()
-                };
-                slmClip.behaviour.stageLightQueueData.stageLightProperties = properties;
-
-                using var serializedObject = new SerializedObject(slmClip);
-                var serializedProperties = serializedObject
-                    .FindProperty("behaviour")
-                    .FindPropertyRelative("stageLightQueueData")
-                    .FindPropertyRelative("stageLightProperties");
-
-                var drawerType = typeof(StageLightPropertiesDrawer);
-                var createOrderedView = drawerType.GetMethod(
-                    "CreateOrderedPropertyView",
-                    BindingFlags.NonPublic | BindingFlags.Static);
-                var getArrayElementForPropertyInstance = drawerType.GetMethod(
-                    "GetArrayElementForPropertyInstance",
-                    BindingFlags.NonPublic | BindingFlags.Static);
-                Assert.NotNull(createOrderedView);
-                Assert.NotNull(getArrayElementForPropertyInstance);
-
-                var orderedView = (List<SlmProperty>)createOrderedView.Invoke(null, new object[] { properties });
-                var lightProperty = orderedView.OfType<LightProperty>().Single();
-                var serializedLightProperty = (SerializedProperty)getArrayElementForPropertyInstance.Invoke(
-                    null,
-                    new object[] { serializedProperties, properties, lightProperty });
-
-                Assert.That(properties.Select(stageLightProperty => stageLightProperty.GetType()), Is.EqualTo(new[]
-                {
-                    typeof(ClockProperty),
-                    typeof(StageLightOrderProperty),
-                    typeof(LightIntensityProperty),
-                    typeof(LightColorProperty),
-                    typeof(LightProperty)
-                }));
-                Assert.NotNull(serializedLightProperty);
-                Assert.That(
-                    serializedLightProperty.FindPropertyRelative("propertyName").stringValue,
-                    Is.EqualTo("Light"));
-            }
-            finally
-            {
-                Object.DestroyImmediate(timeline);
-            }
-        }
-
-        [Test]
-        public void Level4_BakeConsistency_MatchesPreviewAndKeepsUploadTimeline()
-        {
-            var context = MfvPreviewSmokeFixtureBuilder.OpenFreshScene();
-            AssertPreviewContext(context);
-
-            MfvPreviewSmokeFixtureBuilder.ResetFixtureForRuntime(context);
-            var preview = MfvPreviewSmokeFixtureBuilder
-                .EvaluatePreview(context, MfvPreviewSmokeFixtureBuilder.PreviewTime)
-                .After;
-            var stateBeforeBake = preview;
-
-            var settings = MfvBakeSettings.CreateDefault();
-            settings.internalSampleRate = 30f;
-            var outputFolder = MfvPreviewSmokeFixtureBuilder.CreateTemporaryBakeFolder();
-            MfvBakeResult result = null;
-            try
-            {
-                result = BakePreviewFixture(context, settings, outputFolder);
-
-                var afterBake = MfvPreviewSmokeFixtureBuilder.FixtureState.Capture(context.Fixture);
-                var diagnostics = MfvPreviewSmokeFixtureBuilder.BuildBakeDiagnostics(preview, result, afterBake, context);
-                Assert.NotNull(result, diagnostics);
-                Assert.NotNull(result.bakedAsset, diagnostics);
-                Assert.That(result.fixtures, Has.Length.EqualTo(1), diagnostics);
-                Assert.That(result.bakedAsset.FixtureCount, Is.EqualTo(1), diagnostics);
-                Assert.That(result.bakedAsset.ContinuousTrackCount, Is.GreaterThan(0), diagnostics);
-                Assert.That(result.bakedAsset.keyTimes, Is.Not.Empty, diagnostics);
-                Assert.That(result.bakedAsset.keyValues, Is.Not.Empty, diagnostics);
-                Assert.That(result.bakedAsset.EventTrackCount, Is.GreaterThan(0), diagnostics);
-                Assert.That(result.bakedAsset.eventTimes, Is.Not.Empty, diagnostics);
-                Assert.That(result.bakedAsset.eventValues, Is.Not.Empty, diagnostics);
-                Assert.NotNull(result.uploadTimeline, diagnostics);
-
-                var uploadTracks = GetAllTracks(result.uploadTimeline);
-                Assert.IsFalse(uploadTracks.Any(track => track is StageLightTimelineTrack), diagnostics);
-                var uploadActivation = uploadTracks.OfType<ActivationTrack>().SingleOrDefault();
-                var uploadAnimation = uploadTracks.OfType<AnimationTrack>().SingleOrDefault();
-                AssertRetainedTrackClips(
-                    context.ActivationTrack,
-                    uploadActivation,
-                    MfvPreviewSmokeFixtureBuilder.ExpectedActivationStart,
-                    MfvPreviewSmokeFixtureBuilder.ExpectedActivationDuration,
-                    "ActivationTrack",
-                    diagnostics);
-                AssertRetainedTrackClips(
-                    context.AnimationTrack,
-                    uploadAnimation,
-                    MfvPreviewSmokeFixtureBuilder.ExpectedAnimationStart,
-                    MfvPreviewSmokeFixtureBuilder.ExpectedAnimationDuration,
-                    "AnimationTrack",
-                    diagnostics);
-                AssertAnimationClipCurvesRetained(uploadAnimation, diagnostics);
-                Assert.IsTrue(context.Timeline.GetOutputTracks().Any(track => track is StageLightTimelineTrack),
-                    "Bake should not delete SLM tracks from the source Timeline.\n" + diagnostics);
-                AssertFixtureClose(stateBeforeBake, afterBake, "Bake should restore the source fixture state.", diagnostics);
-
-                var playerObject = new GameObject("Runtime Player");
-                try
-                {
-                    var player = playerObject.AddComponent<MfvVRSLTimelinePlayer>();
-                    MfvBakeUtility.ConfigurePlayer(player, context.Director, result);
-                    MfvPreviewSmokeFixtureBuilder.ResetFixtureForRuntime(context);
-                    player.EvaluateAt(MfvPreviewSmokeFixtureBuilder.PreviewTime);
-                    var runtime = MfvPreviewSmokeFixtureBuilder.FixtureState.Capture(context.Fixture);
-                    diagnostics = MfvPreviewSmokeFixtureBuilder.BuildBakeDiagnostics(preview, result, runtime, context);
-
-                    AssertFixtureClose(preview, runtime, "Runtime player should match real Timeline preview at the sampled time.", diagnostics);
-                }
-                finally
-                {
-                    Object.DestroyImmediate(playerObject);
-                }
-            }
-            finally
-            {
-                Object.DestroyImmediate(settings);
-                MfvPreviewSmokeFixtureBuilder.CleanBakeOutputRoot();
-            }
-        }
-
-#if UDONSHARP
-        [Test]
-        public void Level4_BakeMenu_CreatesUploadReadyUdonSharpPlayer()
-        {
-            var context = MfvPreviewSmokeFixtureBuilder.OpenFreshScene();
-            AssertPreviewContext(context);
-
-            var hadDefaultBakeRoot = AssetDatabase.IsValidFolder(DefaultBakeRoot);
-            var hadDefaultBakeOutput = AssetDatabase.IsValidFolder(MfvBakeUtility.DefaultOutputFolder);
-            var hadProgramAssetFolder = AssetDatabase.IsValidFolder(MfvBakeUtility.UdonSharpProgramAssetFolder);
-            var hadProgramAsset = AssetDatabase.LoadAssetAtPath<UdonSharpProgramAsset>(MfvBakeUtility.UdonSharpPlayerProgramAssetPath) != null;
-            string generatedSerializedProgramPath = null;
-
-            try
-            {
-                Selection.activeGameObject = context.Director.gameObject;
-                MfvBakeMenu.BakeSelectedDirector();
-
-                var programAsset = UdonSharpProgramAsset.GetProgramAssetForClass(typeof(MfvVRSLTimelinePlayer));
-                Assert.NotNull(programAsset, "Bake menu did not create a UdonSharpProgramAsset for MfvVRSLTimelinePlayer.");
-                if (!hadProgramAsset && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(programAsset, out var programGuid, out long _))
-                {
-                    generatedSerializedProgramPath = $"Assets/SerializedUdonPrograms/{programGuid}.asset";
-                }
-
-                var playerTransform = context.Director.transform.Find(MenuPlayerName);
-                Assert.NotNull(playerTransform, "Bake menu did not create the ManeuverForVRC baked player.");
-
-                var player = playerTransform.GetComponent<MfvVRSLTimelinePlayer>();
-                Assert.NotNull(player, "Baked player is missing MfvVRSLTimelinePlayer.");
-                Assert.That(player.fixtures, Has.Length.EqualTo(1), "Baked player should reference the baked VRSL fixture.");
-                Assert.That(player.keyTimes, Is.Not.Empty, "Baked player should receive continuous key data.");
-
-                var backingBehaviour = UdonSharpEditorUtility.GetBackingUdonBehaviour(player);
-                Assert.NotNull(backingBehaviour, "Baked player has no backing UdonBehaviour.");
-                Assert.IsTrue(
-                    UdonSharpEditorUtility.IsUdonSharpBehaviour(backingBehaviour),
-                    "Baked player's backing UdonBehaviour is not associated with a valid U# program asset.");
-                Assert.NotNull(backingBehaviour.programSource, "Baked player's Udon Program Source is not assigned.");
-                Assert.NotZero(backingBehaviour.ProgramId, "Baked player's serialized Udon program is not assigned.");
-            }
-            finally
-            {
-                Selection.activeObject = null;
-
-                if (!hadProgramAsset && string.IsNullOrEmpty(generatedSerializedProgramPath))
-                {
-                    var programAsset = AssetDatabase.LoadAssetAtPath<UdonSharpProgramAsset>(MfvBakeUtility.UdonSharpPlayerProgramAssetPath);
-                    if (programAsset != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(programAsset, out var programGuid, out long _))
-                    {
-                        generatedSerializedProgramPath = $"Assets/SerializedUdonPrograms/{programGuid}.asset";
-                    }
-                }
-
-                if (!hadDefaultBakeOutput && AssetDatabase.IsValidFolder(MfvBakeUtility.DefaultOutputFolder))
-                {
-                    AssetDatabase.DeleteAsset(MfvBakeUtility.DefaultOutputFolder);
-                }
-
-                if (!hadProgramAsset && AssetDatabase.LoadAssetAtPath<UdonSharpProgramAsset>(MfvBakeUtility.UdonSharpPlayerProgramAssetPath) != null)
-                {
-                    AssetDatabase.DeleteAsset(MfvBakeUtility.UdonSharpPlayerProgramAssetPath);
-                }
-
-                if (!string.IsNullOrEmpty(generatedSerializedProgramPath) && AssetDatabase.LoadAssetAtPath<Object>(generatedSerializedProgramPath) != null)
-                {
-                    AssetDatabase.DeleteAsset(generatedSerializedProgramPath);
-                }
-
-                if (!hadProgramAssetFolder && AssetDatabase.IsValidFolder(MfvBakeUtility.UdonSharpProgramAssetFolder))
-                {
-                    AssetDatabase.DeleteAsset(MfvBakeUtility.UdonSharpProgramAssetFolder);
-                }
-
-                if (!hadDefaultBakeRoot && AssetDatabase.IsValidFolder(DefaultBakeRoot))
-                {
-                    AssetDatabase.DeleteAsset(DefaultBakeRoot);
-                }
-            }
-        }
-#endif
-
-        private static MfvBakeResult BakePreviewFixture(
-            MfvPreviewSmokeFixtureBuilder.FixtureContext context,
-            MfvBakeSettings settings,
-            string outputFolder)
-        {
-            return MfvBakeUtility.Bake(context.Director, settings, outputFolder);
-        }
-
-        private static void AssertPreviewContext(MfvPreviewSmokeFixtureBuilder.FixtureContext context)
-        {
-            Assert.NotNull(context.Director, "PreviewSmoke Director was not found.");
-            Assert.NotNull(context.Director.playableAsset, "PreviewSmoke Director has no playableAsset.");
-            Assert.NotNull(context.Timeline, "PreviewSmoke playableAsset is not a TimelineAsset.");
-            Assert.NotNull(context.SlmTrack, "PreviewSmoke Timeline has no StageLightTimelineTrack.");
-            Assert.NotNull(context.SlmClip, "PreviewSmoke SLM track has no StageLightTimelineClip.");
-            Assert.NotNull(context.StageLightFixture, "PreviewSmoke SLM track is not bound to a StageLightFixture.");
-            Assert.NotNull(context.Channel, "PreviewSmoke Fixture has no MfvVRSLFixtureChannel.");
-            Assert.NotNull(context.Channel.vrslFixture, "PreviewSmoke channel.vrslFixture is null.");
-            Assert.NotNull(context.ActivationTrack, "PreviewSmoke Timeline has no retained ActivationTrack.");
-            Assert.NotNull(context.AnimationTrack, "PreviewSmoke Timeline has no retained AnimationTrack.");
-            Assert.NotNull(context.SlmClip.StageLightQueueData.TryGetActiveProperty<ClockProperty>(),
-                "PreviewSmoke SLM queue has no active ClockProperty; MfvVRSLFrameEvaluator will ignore the queue.");
-        }
-
-        private static void AssertFixtureClose(
-            MfvPreviewSmokeFixtureBuilder.FixtureState expected,
-            MfvPreviewSmokeFixtureBuilder.FixtureState actual,
-            string reason,
-            string diagnostics)
-        {
-            Assert.That(actual.Intensity, Is.EqualTo(expected.Intensity).Within(0.02f), reason + "\n" + diagnostics);
-            Assert.That(actual.Color.r, Is.EqualTo(expected.Color.r).Within(2f / 255f + 0.01f), reason + "\n" + diagnostics);
-            Assert.That(actual.Color.g, Is.EqualTo(expected.Color.g).Within(2f / 255f + 0.01f), reason + "\n" + diagnostics);
-            Assert.That(actual.Color.b, Is.EqualTo(expected.Color.b).Within(2f / 255f + 0.01f), reason + "\n" + diagnostics);
-            Assert.That(actual.ConeWidth, Is.EqualTo(expected.ConeWidth).Within(0.02f), reason + "\n" + diagnostics);
-            Assert.That(actual.ConeLength, Is.EqualTo(expected.ConeLength).Within(0.02f), reason + "\n" + diagnostics);
-            Assert.That(actual.Pan, Is.EqualTo(expected.Pan).Within(0.5f), reason + "\n" + diagnostics);
-            Assert.That(actual.Tilt, Is.EqualTo(expected.Tilt).Within(0.5f), reason + "\n" + diagnostics);
-            Assert.That(actual.Gobo, Is.EqualTo(expected.Gobo), reason + "\n" + diagnostics);
-            Assert.That(actual.EnableDmx, Is.EqualTo(expected.EnableDmx), reason + "\n" + diagnostics);
-            Assert.That(actual.EnableStrobe, Is.EqualTo(expected.EnableStrobe), reason + "\n" + diagnostics);
-        }
-
-        private static void AssertClockOverridesInitialized(StageLightTimelineClip clip)
-        {
-            foreach (var property in clip.StageLightQueueData.stageLightProperties.OfType<SlmAdditionalProperty>())
-            {
-                Assert.NotNull(property.clockOverride, $"{property.propertyName} clockOverride should be initialized.");
-                Assert.NotNull(property.clockOverride.value, $"{property.propertyName} clockOverride.value should be initialized.");
-                Assert.NotNull(property.clockOverride.value.arrayStaggerValue, $"{property.propertyName} clockOverride array stagger should be initialized.");
-            }
-        }
-
-        private static void AssertFixtureChanged(
-            MfvPreviewSmokeFixtureBuilder.FixtureState before,
-            MfvPreviewSmokeFixtureBuilder.FixtureState after,
-            string diagnostics)
-        {
-            Assert.That(Mathf.Abs(after.Pan - before.Pan), Is.GreaterThan(0.001f), "Preview should change pan.\n" + diagnostics);
-            Assert.That(Mathf.Abs(after.Tilt - before.Tilt), Is.GreaterThan(0.001f), "Preview should change tilt.\n" + diagnostics);
-            Assert.That(Mathf.Abs(after.Intensity - before.Intensity), Is.GreaterThan(0.001f), "Preview should change intensity.\n" + diagnostics);
-            Assert.That(Mathf.Abs(after.ConeWidth - before.ConeWidth), Is.GreaterThan(0.001f), "Preview should change coneWidth.\n" + diagnostics);
-            Assert.That(Mathf.Abs(after.ConeLength - before.ConeLength), Is.GreaterThan(0.001f), "Preview should change coneLength.\n" + diagnostics);
-            Assert.That(after.Gobo, Is.Not.EqualTo(before.Gobo), "Preview should change gobo.\n" + diagnostics);
-            Assert.That(after.EnableDmx, Is.Not.EqualTo(before.EnableDmx), "Preview should disable DMX channels.\n" + diagnostics);
-            Assert.That(after.EnableStrobe, Is.Not.EqualTo(before.EnableStrobe), "Preview should disable strobe.\n" + diagnostics);
-        }
-
-        private static TrackAsset[] GetAllTracks(TimelineAsset timeline)
-        {
-            return timeline.GetRootTracks()
-                .Concat(timeline.GetOutputTracks())
-                .Concat(timeline.outputs.Select(output => output.sourceObject).OfType<TrackAsset>())
-                .Distinct()
-                .ToArray();
-        }
-
-        private static void AssertRetainedTrackClips(
-            TrackAsset sourceTrack,
-            TrackAsset uploadTrack,
-            double expectedStart,
-            double expectedDuration,
-            string trackName,
-            string diagnostics)
-        {
-            Assert.NotNull(sourceTrack, $"Source {trackName} is missing.\n{diagnostics}");
-            Assert.NotNull(uploadTrack, $"Upload Timeline is missing {trackName}.\n{diagnostics}");
-
-            var sourceClips = sourceTrack.GetClips().ToArray();
-            var uploadClips = uploadTrack.GetClips().ToArray();
-            Assert.That(sourceClips, Is.Not.Empty, $"Source {trackName} has no clips.\n{diagnostics}");
-            Assert.That(uploadClips, Has.Length.EqualTo(sourceClips.Length), $"Upload {trackName} clip count changed.\n{diagnostics}");
-            Assert.That(uploadClips[0].start, Is.EqualTo(expectedStart).Within(0.001), $"Upload {trackName} clip start changed.\n{diagnostics}");
-            Assert.That(uploadClips[0].duration, Is.EqualTo(expectedDuration).Within(0.001), $"Upload {trackName} clip duration changed.\n{diagnostics}");
-            Assert.NotNull(uploadClips[0].asset, $"Upload {trackName} clip asset was lost.\n{diagnostics}");
-        }
-
-        private static void AssertAnimationClipCurvesRetained(AnimationTrack uploadAnimation, string diagnostics)
-        {
-            var timelineClip = uploadAnimation.GetClips().FirstOrDefault();
-            var playableAsset = timelineClip != null ? timelineClip.asset as AnimationPlayableAsset : null;
-            Assert.NotNull(playableAsset, "Upload AnimationTrack clip is not an AnimationPlayableAsset.\n" + diagnostics);
-            Assert.NotNull(playableAsset.clip, "Upload AnimationTrack lost its AnimationClip.\n" + diagnostics);
-            Assert.That(AnimationUtility.GetCurveBindings(playableAsset.clip), Is.Not.Empty, "Upload AnimationTrack AnimationClip lost its curves.\n" + diagnostics);
+            Assert.That(errors, Has.Some.Contains("Set Up Show Player"));
         }
     }
 }

@@ -2,7 +2,7 @@
   "name": "me.adzuki.maneuver-for-vrc",
   "version": "0.1.0",
   "displayName": "Maneuver For VRC",
-  "description": "VRChat-compatible Stage Light Maneuver authoring, baker, and VRSL runtime player.",
+  "description": "Timeline based lighting shows for VRChat worlds, previewed in the editor and played by an Udon player on VR Stage Lighting fixtures.",
   "unity": "2022.3",
   "author": {
     "name": "Adzukyat"

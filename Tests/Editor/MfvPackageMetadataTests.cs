@@ -11,7 +11,7 @@ namespace ManeuverForVRC.Tests
         [Test]
         public void PackageImportableFiles_AllHaveMetaFiles()
         {
-            var packageInfo = PackageInfo.FindForAssembly(typeof(MfvBakeUtility).Assembly);
+            var packageInfo = PackageInfo.FindForAssembly(typeof(MfvShowSetup).Assembly);
             Assert.NotNull(packageInfo, "Could not resolve the Maneuver For VRC package from its editor assembly.");
 
             var missing = new List<string>();

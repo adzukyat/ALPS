@@ -2,8 +2,8 @@
   "name": "ManeuverForVRC.Editor",
   "rootNamespace": "ManeuverForVRC.Editor",
   "references": [
+    "Unity.Timeline.Editor",
     "ManeuverForVRC.Runtime",
-    "Iridescenent.SLM.Runtime",
     "VRSL.Core",
     "VRC.SDKBase",
     "VRC.Udon",

@@ -1,212 +1,89 @@
 # Maneuver For VRC
 
-Maneuver For VRC includes a VRChat-compatible Stage Light Maneuver (SLM) authoring layer and plays baked lighting back through VR Stage Lighting (VRSL) in VRChat worlds.
+Maneuver For VRC (MFV) is a Timeline based lighting show tool for VRChat worlds. Shows are authored as effect cues on Timeline tracks, previewed live in the Unity Editor, and played back in VRChat by an Udon player that drives VR Stage Lighting (VRSL) fixtures.
 
-The intended workflow is:
+The effect parameters themselves travel to the Udon player. Nothing is sampled into keyframes, so editor preview and VRChat run the same evaluator on the same data.
 
-1. Use SLM Timeline tracks for authoring and Unity Editor preview.
-2. Keep Unity Timeline `ActivationTrack` and `AnimationTrack` for non-lighting show direction.
-3. Bake only the SLM lighting tracks into compact VRSL/Udon runtime data before upload.
-4. Let the baked runtime player follow `PlayableDirector.time` so lighting stays synced with the rest of the Timeline.
+## Installation
 
-## Setup
+This repository is a UPM package at the repository root. Add it to a VCC world project with the normal Git URL workflow, without a `?path=` suffix.
 
-### Installation Prerequisites
-
-This repository is a UPM package at the repository root. Add it to an existing Unity project with the normal Git URL workflow; do not add a `?path=` suffix.
-
-Install the external runtime dependencies before adding this package, or use a VCC world project that already resolves them:
+The project must already resolve these packages:
 
 - VR Stage Lighting `com.acchosen.vr-stage-lighting` `2.8.4`
 - VRChat SDK Base `com.vrchat.base` `3.10.2`
 - VRChat SDK Worlds `com.vrchat.worlds` `3.10.2`
 
-Do not install the external `jp.iridescent.stagelightmaneuver` package alongside Maneuver For VRC. This package already includes its SLM authoring layer under `StageLightManeuver/`.
+Gobo rotation needs VRSL shaders that accept a script driven gobo angle. The patch lives on the `mfv-gobo-rotation` branch of [adzukyat/VR-Stage-Lighting](https://github.com/adzukyat/VR-Stage-Lighting/tree/mfv-gobo-rotation). With stock VRSL everything else works and gobos simply do not turn.
 
-The committed `TestProject~` harness bootstraps the VRC/VRSL/AudioLink packages locally for tests, but a normal user project should resolve those dependencies through VCC or the registries/package sources used by that project.
+## Setup
 
-### 1. Place VRSL Fixtures
+### 1. Fixtures
 
-Add VRSL DMX Static fixtures to the scene. The initial implementation targets `VRStageLighting_DMX_Static` fixtures, such as:
+Add `MFV VRSL Fixture` (`Maneuver For VRC > MFV VRSL Fixture`) to each VRSL DMX Static fixture, for example `VRSL-DMX-Mover-Spotlight-H-13CH`. Its `Target` is found in children when left empty.
 
-- `VRSL-DMX-Mover-Spotlight-H-13CH`
-- `VRSL-DMX-Mover-WashLight-H-13CH`
-- other DMX Static fixtures using `VRStageLighting_DMX_Static`
+### 2. Fixture groups
 
-AudioLink fixtures are treated as VRSL-owned behavior and are not driven by Maneuver For VRC in the initial version.
+Add `MFV Fixture Group` to a parent object and list its fixtures. The list order is the fixture number used by the order, the odd and even split, and every per fixture offset. `Find Fixtures In Children` in the component menu fills the list.
 
-### 2. Add the SLM Adapter Components
+### 3. Timeline
 
-On each VRSL-controlled fixture object, or on a nearby control object, add:
+Add an `MfvTimelineTrack` to a Timeline and bind it to a fixture group. Set the track's `Bpm` and `Beat Origin` so cycles line up with the song. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
 
-- `StageLightFixture`
-- `MfvVRSLFixtureChannel`
+Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTrack` are left untouched.
 
-`MfvVRSLFixtureChannel` appears in Unity's Add Component menu as:
+### 4. Clips
 
-`Maneuver For VRC > MFV VRSL Fixture Channel`
+Select an MFV clip to edit it in the Inspector:
 
-Assign the target `VRStageLighting_DMX_Static` component to `MfvVRSLFixtureChannel.vrslFixture`.
+- **Order**: normal, reverse, symmetric or random fixture order. Symmetric counts outward from the middle and mirrors pan, so a pan spread opens into a fan. Each parameter row has R for a range and S for a spread. With S on the value becomes a fixed offset and R ranges the spread instead. Spread and delay can be negative to run the other way.
+- **Shared settings**: the phase every ranged parameter and palette follows (mode, easing, ping-pong ratio, fixture grouping, delay, speed in beats, invert).
+- **Effects**: move, cone, color, brightness, flicker and gobo. Move aims by angle, turns the beam in a circle around a center direction, or follows a user. Adding an effect that is already on the clip splits it into an even and an odd copy.
+- **Profile**: save the clip to a profile asset, load it into other clips, or let a clip follow a profile.
 
-If the field is left empty, the channel tries to find a `VRStageLighting_DMX_Static` in children, but explicit assignment is recommended.
+### 5. Show player
 
-### 3. Group Multiple Fixtures
+Select the `PlayableDirector` and run `ManeuverForVRC > Set Up Show Player`. This adds an inactive `MFV Show Player` under the director. It stays empty in the authoring scene.
 
-For multiple fixtures, create an empty GameObject and add:
+## Preview
 
-- `StageLightUniverse`
+Scrub or play the Timeline. MFV writes the evaluated show to the VRSL fixtures. When the Timeline window stops previewing, the fixture properties are reverted to their authored values and the scene is not marked dirty.
 
-Then add each `StageLightFixture` to `StageLightUniverse.stageLightFixtures`.
+## Building and play mode
 
-For a single fixture, binding the Timeline track directly to `StageLightFixture` is enough.
+Nothing needs to be baked by hand.
 
-## Timeline Authoring
+- **VRChat Build & Test or Upload**: before the build starts, MFV validates every open show and writes a build copy of each Timeline without the MFV tracks to `Assets/ManeuverForVRC/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. The authoring scene and Timeline are never modified.
+- **Play mode and ClientSim**: the same conversion runs on the play mode scene, so what plays there is what VRChat plays.
 
-Create or select a GameObject with a `PlayableDirector`, then assign a Timeline asset.
+A build stops with an error when a director has MFV tracks but no show player, or when a fixture has no target.
 
-Add an SLM `StageLightTimelineTrack` and bind it to:
+## Current limitations
 
-- `StageLightFixture` for one fixture
-- `StageLightUniverse` for multiple fixtures
-
-You can also use Unity Timeline tracks alongside the SLM lighting track:
-
-- `ActivationTrack`
-- `AnimationTrack`
-
-These standard Timeline tracks are kept as-is for upload.
-
-## Supported SLM Properties
-
-The initial version supports these lighting controls:
-
-- `Clock`
-- `StageLight Order`
-- `Dimmer`
-- `Light Color`
-- `Light`
-- `Flicker`
-- `Pan`
-- `Tilt`
-- `Manual Pan Tilt`
-- `Manual Light Array`
-- `Manual Color Array`
-- `VRSL Gobo`
-
-`VRSL Gobo` is provided by this package as `MfvVRSLGoboProperty`. It controls VRSL's built-in gobo index from `1` to `8`.
-
-## Editor Preview
-
-Scrub or play the Timeline in Unity.
-
-During preview, `MfvVRSLFixtureChannel` evaluates the SLM cue data and writes directly to the assigned VRSL fixture:
-
-- `enableDMXChannels = false`
-- `enableStrobe = false`
-- `panOffsetBlueGreen`
-- `tiltOffsetBlue`
-- `globalIntensity`
-- `lightColorTint`
-- `coneWidth`
-- `coneLength`
-- `selectGOBO`
-
-The channel calls `_UpdateInstancedProperties()` once per fixture update.
-
-## Baking For Upload
-
-Before uploading the world, select the GameObject with the target `PlayableDirector` and run:
-
-`ManeuverForVRC > Bake Selected Director`
-
-The baker will:
-
-- sample SLM lighting at 120Hz internally
-- simplify continuous curves with tolerance-based key reduction
-- save a `MfvBakedShowAsset`
-- create an upload Timeline variant with SLM tracks removed
-- keep `ActivationTrack` and `AnimationTrack`
-- create or update a child `MfvVRSLTimelinePlayer`
-- copy flattened runtime arrays into the player
-
-The original Timeline and scene authoring data are not intentionally modified by the bake process.
-
-## Runtime Playback
-
-In VRChat, `MfvVRSLTimelinePlayer` reads `PlayableDirector.time` and drives the baked VRSL fixture values.
-
-This keeps baked VRSL lighting synced with the Timeline's remaining `ActivationTrack` and `AnimationTrack` content.
-
-Continuous values are interpolated at runtime. Discrete values such as gobo changes are stored as events.
-
-## Bake Settings
-
-Default bake settings:
-
-- internal sample rate: `120Hz`
-- pan/tilt tolerance: `0.5 deg`
-- intensity tolerance: `0.005`
-- color tolerance: `2/255` per channel
-- cone width/length tolerance: `0.01`
-
-The initial implementation prioritizes variable key reduction over fixed-frame storage to avoid large world sizes.
-
-## Current Limitations
-
-The initial version intentionally does not support:
-
-- `ControlTrack`
-- `SignalTrack`
-- `ReflectionProbe`
-- `Decal`
-- arbitrary Material channels
-- `VLB`
-- `LensFlare`
-- `Environment`
-- AudioLink fixture control
-
-If unsupported Timeline tracks or unsupported SLM channels are found during bake, the bake fails with an explicit error in the Unity Console.
+- Only VRSL DMX Static fixtures are driven. The fixture and adapter split is ready for other fixture types.
+- Tracking a user (`Move > Track user`) only runs in VRChat and ClientSim. Its pan and tilt mapping still needs checking against real fixtures.
+- Clips do not snap to beats yet.
 
 ## Validation
 
-This repository stays as a UPM package at the root. `TestProject~` is the committed Unity test harness and references this package with `file:../..`.
-
-### Local CLI
-
-Run the committed test harness with the local Unity Editor:
+`TestProject~` is the committed Unity test harness and references this package with `file:../..`.
 
 ```sh
-scripts/bootstrap-test-project.sh
-scripts/test-editmode.sh
+scripts/test-all.sh
 ```
 
-The test script defaults to `TestProject~` and Unity `2022.3.22f1` installed by Unity Hub. If Unity is installed elsewhere, set `UNITY_EXECUTABLE`:
+This runs the metadata check, the EditMode tests (`ManeuverForVRC.EditorTests`) and the UI tests (`ManeuverForVRC.EditorUiTests`) with Unity `2022.3.22f1`. Set `UNITY_EXECUTABLE` when Unity is installed elsewhere. Results are written to `TestProject~/TestResults~/`.
 
-```sh
-UNITY_EXECUTABLE="/Applications/Unity/Hub/Editor/2022.3.22f1/Unity.app/Contents/MacOS/Unity" scripts/test-editmode.sh
-```
+`scripts/bootstrap-test-project.sh` downloads the VRChat SDK, AudioLink, and the patched VRSL into the harness.
 
-Results are written to:
+Test levels:
 
-- `TestProject~/TestResults~/editmode-results.xml`
-- `TestProject~/TestResults~/editor.log`
+- Level 1: evaluator math on compiled arrays (order, phase, ranges, palettes, layers, blending).
+- Level 3: the real `PreviewSmoke` Timeline previewed in edit mode.
+- Level 4: the build conversion applied to that scene, with the Udon player matching the preview and other tracks kept.
 
-### Unity Hub
+`ManeuverForVRC > Tests > Regenerate Preview Smoke Fixture` rebuilds the test scene, and `ManeuverForVRC > Demo > Rebuild Example` in `DemoProject~` rebuilds the demo show.
 
-For manual inspection:
+## Third party notices
 
-1. Run `scripts/bootstrap-test-project.sh` once to download the VRC/VRSL/AudioLink packages used by the harness.
-2. Open `TestProject~` in Unity `2022.3.22f1`.
-3. Open `Assets/MfvTestFixtures/PreviewSmoke.unity`.
-4. Scrub or play `Assets/MfvTestFixtures/PreviewSmoke.playable` and confirm the VRSL fixture fields change.
-
-If the fixture assets need to be rebuilt, use `ManeuverForVRC > Tests > Regenerate Preview Smoke Fixture`.
-
-### Test Levels
-
-- Level 1 pure unit: key reduction, frame evaluator conversion, deterministic flicker, runtime interpolation, seek-back, and gobo events.
-- Level 2 component integration: `MfvVRSLFixtureChannel.EvaluateQue`, `MfvVRSLFixtureApplier.Apply`, and missing `vrslFixture` detection.
-- Level 3 real Timeline preview: opens `PreviewSmoke.unity`, evaluates a real SLM `StageLightTimelineTrack`, and verifies channel plus VRSL fixture fields.
-- Level 4 bake consistency: bakes the same PreviewSmoke Timeline, validates baked arrays/upload Timeline, and compares baked runtime playback against real preview values.
-
-The same EditMode assembly is used by the local CLI script and Unity Test Runner: `ManeuverForVRC.EditorTests`.
+See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
