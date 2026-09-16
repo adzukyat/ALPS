@@ -925,6 +925,45 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
+        public void SharedSettings_CopyAndPasteAcrossClips()
+        {
+            var source = new MfvClipEffectSet();
+            source.phase.mode = MfvPhaseMode.Random;
+            source.phase.delay = -0.25f;
+            source.phase.beatsPerCycle = 8f;
+
+            var target = new MfvClipEffectSet();
+            target.Add(MfvEffectKind.Brightness);
+
+            var sourceCard = new MfvClipInspectorView(source).Query<MfvEffectCard>().First();
+            var targetView = new MfvClipInspectorView(target);
+            var targetCard = targetView.Query<MfvEffectCard>().First();
+            Assert.AreEqual("共通設定", targetCard.Title);
+            Assert.IsFalse(targetCard.PasteAvailable, "貼り付け must be hidden with an empty clipboard.");
+
+            var effect = MfvEffect.Create(MfvEffectKind.Cone);
+            MfvEffectClipboard.Copy(effect);
+            sourceCard.RequestCopy();
+            Assert.IsTrue(MfvEffectClipboard.CanPasteInto(effect), "Copying shared settings keeps a copied effect.");
+
+            var refreshed = new MfvClipInspectorView(target);
+            var refreshedCard = refreshed.Query<MfvEffectCard>().First();
+            Assert.IsTrue(refreshedCard.PasteAvailable);
+
+            var changed = 0;
+            refreshed.Changed += () => changed++;
+            refreshedCard.RequestPaste();
+
+            Assert.Greater(changed, 0, "貼り付け reports the edit so the host records undo.");
+            Assert.AreNotSame(source.phase, target.phase, "貼り付け copies the values, not the instance.");
+            Assert.AreEqual(MfvPhaseMode.Random, target.phase.mode);
+            Assert.AreEqual(-0.25f, target.phase.delay, 0.0001f);
+            Assert.AreEqual(8f, target.phase.beatsPerCycle, 0.0001f);
+            Assert.AreEqual(1, target.effects.Count, "貼り付け leaves the effects alone.");
+            Assert.IsFalse(HasVisibleText(refreshed, "イージング"), "The rebuilt view shows the pasted mode.");
+        }
+
+        [Test]
         public void PasteButton_AppearsOnlyWhileACompatiblePayloadExists()
         {
             var set = new MfvClipEffectSet();

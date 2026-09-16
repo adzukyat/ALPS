@@ -18,7 +18,7 @@ namespace ManeuverForVRC.Editor
 
         private readonly MfvClipEffectSet _set;
         private readonly VisualElement _effectContainer;
-        private readonly MfvPhaseSettingsView _phaseView;
+        private MfvPhaseSettingsView _phaseView;
         private readonly MfvEffectCard _phaseCard;
         private readonly MfvAddEffectCatalog _catalog;
         private readonly List<MfvEffectView> _effectViews = new List<MfvEffectView>();
@@ -48,20 +48,27 @@ namespace ManeuverForVRC.Editor
             _phaseCard = new MfvEffectCard(
                 "共通設定",
                 "Rangeとパレットの動作を調整できます。",
-                showActions: false);
+                showActions: true,
+                showDelete: false);
             _phaseCard.ExpandedChanged += expanded =>
             {
                 set.phaseExpanded = expanded;
                 RaiseChanged();
             };
 
-            _phaseView = new MfvPhaseSettingsView(set.phase, () =>
+            _phaseCard.CopyRequested += () => MfvEffectClipboard.CopyPhase(_set.phase);
+            _phaseCard.PasteRequested += PastePhase;
+            RegisterCallback<AttachToPanelEvent>(_ =>
             {
-                RefreshEffects();
-                RaiseChanged();
+                MfvEffectClipboard.Changed += RefreshPhasePasteAvailability;
+                RefreshPhasePasteAvailability();
             });
-            _phaseCard.Body.Add(_phaseView);
+            RegisterCallback<DetachFromPanelEvent>(_ =>
+                MfvEffectClipboard.Changed -= RefreshPhasePasteAvailability);
+
+            BuildPhaseView();
             _phaseCard.Expanded = set.phaseExpanded;
+            RefreshPhasePasteAvailability();
             Add(_phaseCard);
 
             var divider = new VisualElement();
@@ -117,6 +124,38 @@ namespace ManeuverForVRC.Editor
         private void RaiseChanged()
         {
             Changed?.Invoke();
+        }
+
+        private void BuildPhaseView()
+        {
+            _phaseView?.RemoveFromHierarchy();
+            _phaseView = new MfvPhaseSettingsView(_set.phase, () =>
+            {
+                RefreshEffects();
+                RaiseChanged();
+            });
+            _phaseCard.Body.Add(_phaseView);
+        }
+
+        private void RefreshPhasePasteAvailability()
+        {
+            _phaseCard.SetPasteAvailable(MfvEffectClipboard.HasPhasePayload);
+        }
+
+        private void PastePhase()
+        {
+            var pasted = MfvEffectClipboard.PastePhase();
+            if (pasted == null)
+            {
+                return;
+            }
+
+            // Effect views hold the clip phase they were built with, so they are rebuilt
+            // along with the shared settings view.
+            _set.phase = pasted;
+            BuildPhaseView();
+            RebuildEffects();
+            RaiseChanged();
         }
 
         private void RebuildEffects()

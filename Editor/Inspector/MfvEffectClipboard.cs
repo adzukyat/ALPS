@@ -9,10 +9,14 @@ namespace ManeuverForVRC.Editor
     ///
     /// The payload lives for the editor session and holds a deep copy, so texture and
     /// gradient references survive without a serialisation round trip.
+    ///
+    /// Shared settings have a payload of their own, so copying them does not drop a
+    /// copied effect and the other way round.
     /// </summary>
     public static class MfvEffectClipboard
     {
         private static MfvEffect _payload;
+        private static MfvPhaseSettings _phasePayload;
 
         /// <summary>Raised when the payload changes, so open cards can show or hide paste.</summary>
         public static event Action Changed;
@@ -52,9 +56,24 @@ namespace ManeuverForVRC.Editor
             };
         }
 
+        public static bool HasPhasePayload => _phasePayload != null;
+
+        public static void CopyPhase(MfvPhaseSettings settings)
+        {
+            _phasePayload = settings == null ? null : new MfvPhaseSettings(settings);
+            Changed?.Invoke();
+        }
+
+        /// <summary>A fresh copy of the copied shared settings, or null while nothing is copied.</summary>
+        public static MfvPhaseSettings PastePhase()
+        {
+            return _phasePayload == null ? null : new MfvPhaseSettings(_phasePayload);
+        }
+
         public static void Clear()
         {
             _payload = null;
+            _phasePayload = null;
             Changed?.Invoke();
         }
     }

@@ -22,7 +22,7 @@ namespace ManeuverForVRC.Editor
 
         private bool _expanded = true;
 
-        public MfvEffectCard(string title, string description, bool showActions)
+        public MfvEffectCard(string title, string description, bool showActions, bool showDelete = true)
         {
             AddToClassList("mfv-card");
 
@@ -70,8 +70,11 @@ namespace ManeuverForVRC.Editor
 
                 _actions.Add(BuildAction(MfvIcons.Copy, "パラメーターをコピー",
                     new Color(0.918f, 0.918f, 0.918f), RequestCopy));
-                _actions.Add(BuildAction(MfvIcons.Trash, "削除", new Color(0.910f, 0.647f, 0.647f),
-                    () => DeleteRequested?.Invoke()));
+                if (showDelete)
+                {
+                    _actions.Add(BuildAction(MfvIcons.Trash, "削除", new Color(0.910f, 0.647f, 0.647f),
+                        () => DeleteRequested?.Invoke()));
+                }
             }
 
             // The whole header toggles, including the title, description, and the empty
@@ -115,7 +118,7 @@ namespace ManeuverForVRC.Editor
         public event Action DeleteRequested;
         public event Action<bool> ExpandedChanged;
 
-        /// <summary>Paste only exists while the clipboard holds a compatible effect.</summary>
+        /// <summary>Paste only exists while the clipboard holds a compatible payload.</summary>
         public bool PasteAvailable { get; private set; }
 
         public void SetPasteAvailable(bool available)
