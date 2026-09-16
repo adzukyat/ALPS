@@ -15,7 +15,7 @@ namespace ManeuverForVRC
         public MfvPhaseMode mode = MfvPhaseMode.PingPong;
 
         /// <summary>Easing function. Ignored while <see cref="mode"/> is Random.</summary>
-        public MfvEaseType ease = MfvEaseType.InOutCubic;
+        public MfvEaseType ease = MfvEaseType.InOutSine;
 
         /// <summary>Ping-pong ratio: where the triangle wave peaks. PingPong only.</summary>
         [Range(0f, 1f)] public float pingPongRatio = 0.5f;

@@ -132,7 +132,7 @@ MonoBehaviour:
     phaseExpanded: 1
     phase:
       mode: 1
-      ease: 6
+      ease: 3
       pingPongRatio: 0.5
       fixtureGroupSize: 1
       delay: 0
@@ -155,7 +155,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -173,7 +173,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -194,7 +194,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -212,7 +212,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -230,7 +230,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -249,7 +249,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -267,7 +267,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -287,7 +287,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -305,7 +305,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -329,7 +329,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -353,7 +353,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -371,7 +371,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -392,7 +392,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -410,7 +410,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -428,7 +428,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -447,7 +447,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -465,7 +465,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -485,7 +485,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -503,7 +503,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -527,7 +527,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -551,7 +551,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -569,7 +569,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -590,7 +590,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -608,7 +608,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -626,7 +626,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -645,7 +645,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -663,7 +663,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -715,7 +715,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -733,7 +733,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -757,7 +757,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -781,7 +781,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -799,7 +799,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -820,7 +820,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -838,7 +838,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -856,7 +856,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -875,7 +875,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -893,7 +893,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -913,7 +913,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -931,7 +931,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -955,7 +955,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -979,7 +979,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -997,7 +997,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1018,7 +1018,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1036,7 +1036,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1054,7 +1054,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1073,7 +1073,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1091,7 +1091,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1111,7 +1111,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1129,7 +1129,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1154,7 +1154,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1219,7 +1219,7 @@ MonoBehaviour:
     phaseExpanded: 1
     phase:
       mode: 1
-      ease: 6
+      ease: 3
       pingPongRatio: 0.5
       fixtureGroupSize: 1
       delay: 0
@@ -1242,7 +1242,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1260,7 +1260,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1281,7 +1281,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1299,7 +1299,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1317,7 +1317,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1336,7 +1336,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1354,7 +1354,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1374,7 +1374,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1392,7 +1392,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
@@ -1416,7 +1416,7 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 6
+          ease: 3
           pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
