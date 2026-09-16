@@ -434,11 +434,35 @@ namespace ManeuverForVRC.Tests
             tilt.Refresh();
             Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.None));
 
-            // Cancel on return still mutes a fixed value, so its frame opens untitled.
+            // Ping-pong alone gives a fixed value nothing to put in the range frame.
             set.phase.mode = MfvPhaseMode.PingPong;
             tilt.Refresh();
-            Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
-            Assert.AreEqual(DisplayStyle.None, titles[0].parent.style.display.value);
+            Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
+        }
+
+        [Test]
+        public void BlackoutOnReturn_ShowsWhileThePhaseDrivingBrightnessPingPongs()
+        {
+            var set = new MfvClipEffectSet();
+            set.phase.mode = MfvPhaseMode.Forward;
+            var brightness = set.Add(MfvEffectKind.Brightness);
+            brightness.brightness.isRange = true;
+            brightness.brightness.range = new Vector2(0f, 100f);
+
+            var view = new MfvClipInspectorView(set);
+            var effect = view.Query<MfvEffectView>().First();
+            var blackout = view.Query<MfvToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "Forward has no return leg.");
+
+            set.phase.mode = MfvPhaseMode.PingPong;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
+
+            // Own phase takes over which leg is the return.
+            brightness.brightness.useOwnPhase = true;
+            brightness.brightness.ownPhase.mode = MfvPhaseMode.Forward;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
         }
 
         [UnityTest]

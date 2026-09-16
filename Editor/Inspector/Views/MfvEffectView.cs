@@ -263,7 +263,40 @@ namespace ManeuverForVRC.Editor
 
         private void BuildBrightness(VisualElement body)
         {
-            body.Add(Animatable("明るさ", _effect.brightness, _defaults.brightness, "%", "0"));
+            var blackout = new MfvToggleSwitch("復路で消灯");
+            blackout.SetValueWithoutNotify(_effect.blackoutOnReturn);
+            blackout.RegisterValueChangedCallback(evt =>
+            {
+                _effect.blackoutOnReturn = evt.newValue;
+                _onChanged?.Invoke();
+            });
+
+            // The return leg belongs to whichever phase drives brightness, so switching
+            // own phase or its mode inside the row has to re-evaluate the switch too.
+            MfvAnimatableView view = null;
+            view = new MfvAnimatableView(
+                "明るさ",
+                _effect.brightness,
+                _clipPhase,
+                () =>
+                {
+                    ApplyBlackout();
+                    _onChanged?.Invoke();
+                },
+                "%",
+                "0",
+                defaults: _defaults.brightness);
+            _animatables.Add(view);
+            body.Add(view);
+            body.Add(blackout);
+
+            void ApplyBlackout()
+            {
+                MfvPhaseSettingsView.Show(blackout, view.GoverningPhase.mode == MfvPhaseMode.PingPong);
+            }
+
+            RefreshHooks += ApplyBlackout;
+            ApplyBlackout();
         }
 
         // ---------------------------------------------------------- Flicker

@@ -2,7 +2,7 @@ using UnityEngine.UIElements;
 
 namespace ManeuverForVRC.Editor
 {
-    /// <summary>Invert / cancel on return / own phase: a pill-shaped switch.</summary>
+    /// <summary>Invert / own phase / blackout on return: a pill-shaped switch.</summary>
     public class MfvToggleSwitch : BaseField<bool>
     {
         public new static readonly string ussClassName = "mfv-switch";

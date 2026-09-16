@@ -366,18 +366,37 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void CancelOnReturn_MutesBrightnessOnTheReturnLeg()
+        public void BlackoutOnReturn_MutesBrightnessOnTheReturnLeg()
         {
             var set = Set(MfvPhaseMode.PingPong);
             set.phase.pingPongRatio = 0.5f;
-            var brightness = set.Add(MfvEffectKind.Brightness).brightness;
-            brightness.isRange = true;
-            brightness.range = new Vector2(50f, 100f);
-            brightness.cancelOnReturn = true;
+            var effect = set.Add(MfvEffectKind.Brightness);
+            effect.brightness.isRange = true;
+            effect.brightness.range = new Vector2(50f, 100f);
+            effect.blackoutOnReturn = true;
             var show = Compile(1, set);
 
             Assert.AreEqual(75f, Evaluate(show, 0, 0.25f)[MfvShowEvaluator.FrameBrightness], 0.01f);
             Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[MfvShowEvaluator.FrameBrightness], 0.001f);
+        }
+
+        [Test]
+        public void BlackoutOnReturn_FollowsTheOwnPhaseOfBrightness()
+        {
+            // The clip ping-pongs, but brightness runs on its own forward phase with no return leg.
+            var set = Set(MfvPhaseMode.PingPong);
+            set.phase.pingPongRatio = 0.5f;
+            var effect = set.Add(MfvEffectKind.Brightness);
+            effect.brightness.isRange = true;
+            effect.brightness.range = new Vector2(50f, 100f);
+            effect.brightness.useOwnPhase = true;
+            effect.brightness.ownPhase.mode = MfvPhaseMode.Forward;
+            effect.brightness.ownPhase.ease = MfvEaseType.Linear;
+            effect.brightness.ownPhase.beatsPerCycle = 1f;
+            effect.blackoutOnReturn = true;
+            var show = Compile(1, set);
+
+            Assert.AreEqual(87.5f, Evaluate(show, 0, 0.75f)[MfvShowEvaluator.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -767,7 +786,6 @@ namespace ManeuverForVRC.Tests
 
             var cone = set.Add(MfvEffectKind.Cone);
             cone.coneWidth.isRange = true;
-            cone.coneWidth.cancelOnReturn = true;
 
             var color = set.Add(MfvEffectKind.Color);
             color.colorStops.Add(new MfvColorStop(Color.red));
@@ -777,6 +795,7 @@ namespace ManeuverForVRC.Tests
             var brightness = set.Add(MfvEffectKind.Brightness);
             brightness.brightness.isRange = true;
             brightness.brightness.timing = MfvTimingMode.PerCycle;
+            brightness.blackoutOnReturn = true;
 
             set.Add(MfvEffectKind.Flicker);
 

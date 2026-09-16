@@ -73,7 +73,6 @@ namespace ManeuverForVRC.Tests
             color.selectedColorStop = 2;
             color.colorPhasing.isRange = true;
             color.colorPhasing.timing = MfvTimingMode.PerCycle;
-            color.colorPhasing.cancelOnReturn = true;
 
             set.Add(MfvEffectKind.Color);
             set.effects[set.IndexOf(MfvEffectKind.Color, MfvParity.Odd)].expanded = false;
@@ -81,6 +80,7 @@ namespace ManeuverForVRC.Tests
             // Brightness
             var brightness = set.Add(MfvEffectKind.Brightness);
             brightness.brightness.value = 100f;
+            brightness.blackoutOnReturn = true;
 
             // Gobo: a blink sequence (OFF appears twice) with the + picker open, so the
             // audit lays out the picker's full row of OFF plus every patterned gobo.

@@ -89,7 +89,7 @@ namespace ManeuverForVRC
         public const int EffectParamStart = 2;
         public const int EffectPaletteStart = 3;
         public const int EffectPaletteCount = 4;
-        /// <summary>Move mode, flicker speed, gobo beats per turn.</summary>
+        /// <summary>Move mode, brightness blackout on return, flicker speed, gobo beats per turn.</summary>
         public const int EffectScalarA = 5;
         /// <summary>Pan/tilt phase offset, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
@@ -112,9 +112,8 @@ namespace ManeuverForVRC
         public const int ParamSpreadMax = 6;
         public const int ParamHasSpread = 7;
         public const int ParamTiming = 8;
-        public const int ParamCancelOnReturn = 9;
-        public const int ParamUseOwnPhase = 10;
-        public const int ParamOwnPhase = 11;
+        public const int ParamUseOwnPhase = 9;
+        public const int ParamOwnPhase = 10;
         public const int ParamStride = ParamOwnPhase + PhaseStride;
 
         // --- Color palette rows ------------------------------------------------------------
@@ -420,12 +419,21 @@ namespace ManeuverForVRC
                 }
                 else if (kind == KindCone)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameConeWidth, false, 0f, frame, written);
-                    WriteScalar(clips, parameters, row, paramStart + 1, k, beats, seed, 0f, FrameConeLength, false, 0f, frame, written);
+                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameConeWidth, frame, written);
+                    WriteScalar(clips, parameters, row, paramStart + 1, k, beats, seed, 0f, FrameConeLength, frame, written);
                 }
                 else if (kind == KindBrightness)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameBrightness, true, 0f, frame, written);
+                    if (effects[effectRow + EffectScalarA] > 0.5f && IsParamReturnLeg(clips, parameters, row, paramStart, beats, k))
+                    {
+                        // Blackout on return: the lamp goes dark and covers lower layers.
+                        frame[FrameBrightness] = 0f;
+                        written[FrameBrightness] = 1f;
+                    }
+                    else
+                    {
+                        WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameBrightness, frame, written);
+                    }
                 }
                 else if (kind == KindColor)
                 {
@@ -493,8 +501,8 @@ namespace ManeuverForVRC
                 var bothRanged = parameters[tiltRow + ParamIsRange] > 0.5f && parameters[panRow + ParamIsRange] > 0.5f;
                 var panOffsetCycles = bothRanged ? effects[effectRow + EffectScalarB] / 360f : 0f;
 
-                WriteScalar(clips, parameters, clipRow, paramStart, k, beats, seed, 0f, FrameTilt, false, 0f, frame, written);
-                WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, panOffsetCycles, FramePan, false, 0f, frame, written);
+                WriteScalar(clips, parameters, clipRow, paramStart, k, beats, seed, 0f, FrameTilt, frame, written);
+                WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, panOffsetCycles, FramePan, frame, written);
             }
 
             if (written[FramePan] > 0.5f && IsMirrored(order, fixtureIndex, fixtureCount, groupSize))
@@ -529,12 +537,6 @@ namespace ManeuverForVRC
             var tiltParam = paramStart + 2;
             var panParam = paramStart + 3;
             var radiusParam = paramStart + 4;
-            if (IsCancelled(clips, parameters, clipRow, tiltParam, beats, k, 0f)
-                || IsCancelled(clips, parameters, clipRow, panParam, beats, k, 0f)
-                || IsCancelled(clips, parameters, clipRow, radiusParam, beats, k, 0f))
-            {
-                return;
-            }
 
             var phaseRow = clipRow + ClipPhase;
             var cycles = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, 0f);
@@ -593,11 +595,7 @@ namespace ManeuverForVRC
             written[FramePan] = 1f;
         }
 
-        /// <summary>
-        /// Resolves one animatable parameter and writes it to <paramref name="channel"/>.
-        /// On a cancelled return leg the channel gets <paramref name="cancelValue"/> when
-        /// <paramref name="writeOnCancel"/>, and is left alone otherwise.
-        /// </summary>
+        /// <summary>Resolves one animatable parameter and writes it to <paramref name="channel"/>.</summary>
         private static void WriteScalar(
             float[] clips,
             float[] parameters,
@@ -608,39 +606,21 @@ namespace ManeuverForVRC
             int seed,
             float extraCycles,
             int channel,
-            bool writeOnCancel,
-            float cancelValue,
             float[] frame,
             float[] written)
         {
-            if (IsCancelled(clips, parameters, clipRow, param, beats, k, extraCycles))
-            {
-                if (writeOnCancel)
-                {
-                    frame[channel] = cancelValue;
-                    written[channel] = 1f;
-                }
-
-                return;
-            }
-
             frame[channel] = ResolveScalar(clips, parameters, clipRow, param, k, beats, seed, extraCycles);
             written[channel] = 1f;
         }
 
-        /// <summary>True while a parameter with cancel on return is on its return leg.</summary>
-        public static bool IsCancelled(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float extraCycles)
+        /// <summary>True while the phase governing a parameter is on a ping-pong return leg.</summary>
+        public static bool IsParamReturnLeg(float[] clips, float[] parameters, int clipRow, int param, float beats, int k)
         {
             var paramRow = param * ParamStride;
-            if (parameters[paramRow + ParamCancelOnReturn] < 0.5f)
-            {
-                return false;
-            }
-
             var own = parameters[paramRow + ParamUseOwnPhase] > 0.5f;
             var mode = own ? ToInt(parameters[paramRow + ParamOwnPhase + PhaseMode]) : ToInt(clips[clipRow + ClipPhase + PhaseMode]);
             var ratio = own ? parameters[paramRow + ParamOwnPhase + PhaseRatio] : clips[clipRow + ClipPhase + PhaseRatio];
-            return IsReturnLeg(mode, ratio, ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles));
+            return IsReturnLeg(mode, ratio, ParamCycles(clips, parameters, clipRow, param, beats, k, 0f));
         }
 
         /// <summary>Unwrapped cycles for a parameter, honoring its own phase.</summary>
@@ -762,25 +742,10 @@ namespace ManeuverForVRC
                 return;
             }
 
-            var paramRow = param * ParamStride;
             var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
-            var mode = parameters[paramRow + ParamUseOwnPhase] > 0.5f
-                ? ToInt(parameters[paramRow + ParamOwnPhase + PhaseMode])
-                : ToInt(clips[clipRow + ClipPhase + PhaseMode]);
-            var ratio = parameters[paramRow + ParamUseOwnPhase] > 0.5f
-                ? parameters[paramRow + ParamOwnPhase + PhaseRatio]
-                : clips[clipRow + ClipPhase + PhaseRatio];
-
             written[FrameRed] = 1f;
             written[FrameGreen] = 1f;
             written[FrameBlue] = 1f;
-            if (parameters[paramRow + ParamCancelOnReturn] > 0.5f && IsReturnLeg(mode, ratio, cycles))
-            {
-                frame[FrameRed] = 0f;
-                frame[FrameGreen] = 0f;
-                frame[FrameBlue] = 0f;
-                return;
-            }
 
             var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, scratch);
             var colorRow = (ToInt(effects[effectRow + EffectPaletteStart]) + stop) * ColorStride;
@@ -832,21 +797,7 @@ namespace ManeuverForVRC
                 return;
             }
 
-            var paramRow = param * ParamStride;
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
-            var mode = parameters[paramRow + ParamUseOwnPhase] > 0.5f
-                ? ToInt(parameters[paramRow + ParamOwnPhase + PhaseMode])
-                : ToInt(clips[clipRow + ClipPhase + PhaseMode]);
-            var ratio = parameters[paramRow + ParamUseOwnPhase] > 0.5f
-                ? parameters[paramRow + ParamOwnPhase + PhaseRatio]
-                : clips[clipRow + ClipPhase + PhaseRatio];
-
             written[FrameGobo] = 1f;
-            if (parameters[paramRow + ParamCancelOnReturn] > 0.5f && IsReturnLeg(mode, ratio, cycles))
-            {
-                frame[FrameGobo] = GoboOff;
-                return;
-            }
 
             var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, scratch);
             frame[FrameGobo] = gobos[ToInt(effects[effectRow + EffectPaletteStart]) + stop];

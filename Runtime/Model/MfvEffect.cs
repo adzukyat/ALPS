@@ -49,12 +49,17 @@ namespace ManeuverForVRC
         /// </summary>
         public List<MfvColorStop> colorStops = new List<MfvColorStop>();
         public int selectedColorStop;
-        /// <summary>Carries timing / cancel on return / own phase for the palette.</summary>
+        /// <summary>Carries timing / own phase for the palette.</summary>
         public MfvAnimatableValue colorPhasing = new MfvAnimatableValue(0f, new Vector2(0f, 1f));
 
         // --- Brightness ---
         /// <summary>Stored on the 0–100 scale the inspector shows.</summary>
         public MfvAnimatableValue brightness = new MfvAnimatableValue(100f, new Vector2(0f, 100f));
+        /// <summary>
+        /// Blackout on return: brightness drops to 0 while the phase driving it is on a
+        /// ping-pong return leg, so the beams fly out one way only.
+        /// </summary>
+        public bool blackoutOnReturn;
 
         // --- Flicker ---
         public float flickerSpeed = 12f;
@@ -104,6 +109,7 @@ namespace ManeuverForVRC
             colorPhasing = new MfvAnimatableValue(other.colorPhasing);
 
             brightness = new MfvAnimatableValue(other.brightness);
+            blackoutOnReturn = other.blackoutOnReturn;
 
             flickerSpeed = other.flickerSpeed;
             flickerStrength = other.flickerStrength;

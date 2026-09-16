@@ -303,6 +303,7 @@ namespace ManeuverForVRC
                         break;
                     case MfvEffectKind.Brightness:
                         AddParameter(effect.brightness);
+                        row[MfvShowEvaluator.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
                         break;
                     case MfvEffectKind.Flicker:
                         row[MfvShowEvaluator.EffectScalarA] = effect.flickerSpeed;
@@ -343,7 +344,6 @@ namespace ManeuverForVRC
                 row[MfvShowEvaluator.ParamSpreadMax] = value.spreadRange.y;
                 row[MfvShowEvaluator.ParamHasSpread] = value.hasSpread ? 1f : 0f;
                 row[MfvShowEvaluator.ParamTiming] = (int)value.timing;
-                row[MfvShowEvaluator.ParamCancelOnReturn] = value.cancelOnReturn ? 1f : 0f;
                 row[MfvShowEvaluator.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;
                 WritePhase(row, MfvShowEvaluator.ParamOwnPhase, value.ownPhase ?? new MfvPhaseSettings());
                 _parameters.AddRange(row);

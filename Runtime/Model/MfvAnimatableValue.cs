@@ -6,7 +6,7 @@ namespace ManeuverForVRC
     /// <summary>
     /// Animatable: the value side of the model. A scalar that can be widened
     /// into a range and then read with the clip phase, plus the per-parameter switches
-    /// (range / spread / timing / cancel on return / own phase).
+    /// (range / spread / timing / own phase).
     /// </summary>
     [Serializable]
     public class MfvAnimatableValue
@@ -36,9 +36,6 @@ namespace ManeuverForVRC
 
         public MfvTimingMode timing = MfvTimingMode.WithinCycle;
 
-        /// <summary>Cancel on return: mute this value while the phase is on the return leg.</summary>
-        public bool cancelOnReturn;
-
         /// <summary>Own phase: opt out of the clip phase and use <see cref="ownPhase"/>.</summary>
         public bool useOwnPhase;
 
@@ -64,7 +61,6 @@ namespace ManeuverForVRC
             spread = other.spread;
             spreadRange = other.spreadRange;
             timing = other.timing;
-            cancelOnReturn = other.cancelOnReturn;
             useOwnPhase = other.useOwnPhase;
             ownPhase = new MfvPhaseSettings(other.ownPhase);
         }

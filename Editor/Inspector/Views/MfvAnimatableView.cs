@@ -14,9 +14,8 @@ namespace ManeuverForVRC.Editor
     /// Visibility rules:
     ///   R / S ..................... everything except palettes
     ///   Spread frame .............. S is on
-    ///   Range frame ............... the options below have something to show
+    ///   Range frame ............... timing / own phase are shown
     ///   Timing / own phase ........ a range with two distinct ends, or a palette with two or more stops
-    ///   Cancel on return .......... the governing phase is PingPong
     ///   Own phase ON .............. the shared settings panel opens right below
     /// </summary>
     public class MfvAnimatableView : VisualElement
@@ -50,7 +49,6 @@ namespace ManeuverForVRC.Editor
         private readonly VisualElement _rangeFrame;
         private readonly VisualElement _rangeLegend;
         private readonly MfvSegmentedControl _timing;
-        private readonly MfvToggleSwitch _cancelOnReturn;
         private readonly MfvToggleSwitch _ownPhase;
         private readonly MfvPhaseSettingsView _ownPhaseView;
 
@@ -180,15 +178,6 @@ namespace ManeuverForVRC.Editor
             });
             _rangeFrame.Add(_timing);
 
-            _cancelOnReturn = new MfvToggleSwitch("復路でキャンセル");
-            _cancelOnReturn.SetValueWithoutNotify(model.cancelOnReturn);
-            _cancelOnReturn.RegisterValueChangedCallback(evt =>
-            {
-                model.cancelOnReturn = evt.newValue;
-                Changed();
-            });
-            _rangeFrame.Add(_cancelOnReturn);
-
             _ownPhase = new MfvToggleSwitch("独自の動き");
             _ownPhase.SetValueWithoutNotify(model.useOwnPhase);
             _ownPhase.RegisterValueChangedCallback(evt =>
@@ -225,7 +214,7 @@ namespace ManeuverForVRC.Editor
         }
 
         /// <summary>The phase that actually drives this parameter.</summary>
-        private MfvPhaseSettings GoverningPhase => _model.useOwnPhase ? _model.ownPhase : _clipPhase;
+        public MfvPhaseSettings GoverningPhase => _model.useOwnPhase ? _model.ownPhase : _clipPhase;
 
         private bool HasMultipleStops =>
             _isPalette
@@ -245,18 +234,14 @@ namespace ManeuverForVRC.Editor
             }
 
             var multiple = HasMultipleStops;
-            var pingPong = GoverningPhase.mode == MfvPhaseMode.PingPong;
-
-            MfvPhaseSettingsView.Show(_cancelOnReturn, pingPong);
             MfvPhaseSettingsView.Show(_timing, multiple);
             MfvPhaseSettingsView.Show(_ownPhase, multiple);
             MfvPhaseSettingsView.Show(_ownPhaseView, multiple && _model.useOwnPhase);
             _ownPhaseView.Refresh();
 
-            // Cancel on return also mutes a fixed value, so the frame can open for it alone.
-            // It is only titled as a range when a range is what it holds.
-            MfvPhaseSettingsView.Show(_rangeFrame, multiple || pingPong);
-            var titled = !_isPalette && _model.isRange;
+            // A palette's frame holds the same options but is not titled as a range.
+            MfvPhaseSettingsView.Show(_rangeFrame, multiple);
+            var titled = !_isPalette;
             MfvPhaseSettingsView.Show(_rangeLegend, titled);
             _rangeFrame.EnableInClassList(LegendFrameClass, titled);
         }
