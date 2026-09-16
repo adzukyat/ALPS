@@ -59,7 +59,8 @@ namespace ManeuverForVRC.Editor
             string unit = "",
             string format = "0.###",
             VisualElement paletteRow = null,
-            Func<int> paletteCount = null)
+            Func<int> paletteCount = null,
+            Func<Vector2, float[]> snaps = null)
         {
             _model = model;
             _clipPhase = clipPhase;
@@ -75,6 +76,14 @@ namespace ManeuverForVRC.Editor
             var span = Mathf.Max(1f, model.limit.y - model.limit.x);
             var spreadLimit = new Vector2(-span, span);
 
+            // The spread sliders are signed, so zero always snaps even when the value has no points.
+            var valueSnaps = snaps != null ? snaps(model.limit) : MfvSnapPoints.None;
+            var spreadSnaps = MfvSnapPoints.Zero(spreadLimit);
+            if (snaps != null)
+            {
+                spreadSnaps = MergeSnaps(spreadSnaps, snaps(spreadLimit));
+            }
+
             if (_isPalette)
             {
                 _valueRow.Add(paletteRow);
@@ -82,12 +91,12 @@ namespace ManeuverForVRC.Editor
             }
             else
             {
-                _valueSlider = new MfvValueSlider(label, model.limit, unit, format);
+                _valueSlider = new MfvValueSlider(label, model.limit, unit, format) { Snaps = valueSnaps };
                 _valueSlider.AddToClassList(FieldClass);
                 _valueSlider.SetValueWithoutNotify(model.value);
                 _valueSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
 
-                _rangeSlider = new MfvRangeSlider(label, model.limit, unit, format);
+                _rangeSlider = new MfvRangeSlider(label, model.limit, unit, format) { Snaps = valueSnaps };
                 _rangeSlider.AddToClassList(FieldClass);
                 _rangeSlider.SetValueWithoutNotify(model.range);
                 _rangeSlider.RegisterValueChangedCallback(evt =>
@@ -97,7 +106,7 @@ namespace ManeuverForVRC.Editor
                     Changed();
                 });
 
-                _spreadSlider = new MfvValueSlider(label, spreadLimit, unit, format);
+                _spreadSlider = new MfvValueSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps };
                 _spreadSlider.AddToClassList(FieldClass);
                 _spreadSlider.SetValueWithoutNotify(model.spread);
                 _spreadSlider.RegisterValueChangedCallback(evt =>
@@ -106,7 +115,7 @@ namespace ManeuverForVRC.Editor
                     Changed();
                 });
 
-                _spreadRange = new MfvRangeSlider(label, spreadLimit, unit, format);
+                _spreadRange = new MfvRangeSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps };
                 _spreadRange.AddToClassList(FieldClass);
                 _spreadRange.SetValueWithoutNotify(model.spreadRange);
                 _spreadRange.RegisterValueChangedCallback(evt =>
@@ -193,7 +202,7 @@ namespace ManeuverForVRC.Editor
             {
                 _spreadFrame = Frame("広がり", out _);
 
-                _offsetSlider = new MfvValueSlider("オフセット", model.limit, unit, format);
+                _offsetSlider = new MfvValueSlider("オフセット", model.limit, unit, format) { Snaps = valueSnaps };
                 _offsetSlider.SetValueWithoutNotify(model.value);
                 _offsetSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
                 _spreadFrame.Add(_offsetSlider);
@@ -270,6 +279,14 @@ namespace ManeuverForVRC.Editor
 
             frame.Add(legend);
             return frame;
+        }
+
+        private static float[] MergeSnaps(float[] a, float[] b)
+        {
+            var merged = new float[a.Length + b.Length];
+            a.CopyTo(merged, 0);
+            b.CopyTo(merged, a.Length);
+            return merged;
         }
 
         /// <summary>The row slider and the offset slider edit the same value.</summary>

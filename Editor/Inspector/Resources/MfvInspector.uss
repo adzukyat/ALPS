@@ -23,6 +23,7 @@
     --mfv-line-soft: #262626;
     --mfv-line-tile: #171717;
     --mfv-track: #282828;
+    --mfv-tick: #6e6e6e;
 
     --mfv-accent: #2a78d6;
     --mfv-accent-line: #1d5fae;
@@ -426,6 +427,15 @@
     height: 4px;
     border-radius: 2px;
     background-color: var(--mfv-accent-soft);
+}
+
+/* Snap marks hang just under the rail, and the thumb hides the one it sits on. */
+.mfv-slider__tick {
+    position: absolute;
+    top: 10px;
+    width: 1px;
+    height: 4px;
+    background-color: var(--mfv-tick);
 }
 
 .mfv-slider__thumb {

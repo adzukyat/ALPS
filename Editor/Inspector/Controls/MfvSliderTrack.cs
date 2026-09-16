@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,10 +16,15 @@ namespace ManeuverForVRC.Editor
     {
         public new static readonly string ussClassName = "mfv-slider";
 
+        /// <summary>How close, in pixels, a dragged thumb has to come to a snap point to land on it.</summary>
+        public const float SnapDistance = 5f;
+
         private readonly VisualElement _fill;
         private readonly VisualElement _minThumb;
         private readonly VisualElement _maxThumb;
         private readonly bool _isRange;
+        private readonly List<VisualElement> _ticks = new List<VisualElement>();
+        private float[] _snaps = new float[0];
 
         private float _low;
         private float _high = 1f;
@@ -80,6 +86,78 @@ namespace ManeuverForVRC.Editor
 
         /// <summary>Raised while dragging with the new normalized (low, high) pair.</summary>
         public event Action<float, float> Changed;
+
+        /// <summary>
+        /// Normalized points a dragged thumb sticks to, each marked by a tick under the rail.
+        /// Typed values are not affected.
+        /// </summary>
+        public void SetSnaps(float[] normalized)
+        {
+            _snaps = normalized ?? new float[0];
+
+            foreach (var tick in _ticks)
+            {
+                tick.RemoveFromHierarchy();
+            }
+
+            _ticks.Clear();
+
+            // Right after the rail, so the fill and the thumbs draw over the ticks.
+            var index = 1;
+            foreach (var snap in _snaps)
+            {
+                var tick = new VisualElement { pickingMode = PickingMode.Ignore };
+                tick.AddToClassList(ussClassName + "__tick");
+                tick.style.left = Length.Percent(snap * 100f);
+                Insert(index++, tick);
+                _ticks.Add(tick);
+            }
+        }
+
+        /// <summary>
+        /// The nearest snap point when it lies within <paramref name="threshold"/> of
+        /// <paramref name="t"/>, otherwise <paramref name="t"/> itself.
+        /// </summary>
+        public static float Snap(float t, float[] snaps, float threshold)
+        {
+            var result = t;
+            var best = threshold;
+            foreach (var snap in snaps)
+            {
+                var distance = Mathf.Abs(t - snap);
+                if (distance <= best)
+                {
+                    best = distance;
+                    result = snap;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The snap distance in normalized units. Close points shrink it so the rail between
+        /// two neighbouring ticks never becomes entirely sticky.
+        /// </summary>
+        private float SnapThreshold()
+        {
+            var width = contentRect.width;
+            if (_snaps.Length == 0 || width <= 0f)
+            {
+                return 0f;
+            }
+
+            var gap = 1f;
+            var previous = 0f;
+            foreach (var snap in _snaps)
+            {
+                gap = Mathf.Min(gap, snap - previous);
+                previous = snap;
+            }
+
+            gap = Mathf.Min(gap, 1f - previous);
+            return Mathf.Min(SnapDistance / width, gap * 0.3f);
+        }
 
         public void SetWithoutNotify(float low, float high)
         {
@@ -158,6 +236,8 @@ namespace ManeuverForVRC.Editor
 
         private void Apply(float t)
         {
+            t = Snap(t, _snaps, SnapThreshold());
+
             if (_isRange && _draggingThumb == 0)
             {
                 _low = Mathf.Min(t, _high);

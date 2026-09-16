@@ -300,6 +300,7 @@ namespace ManeuverForVRC.Tests
                 ("mfv-switch__knob", 12f, 12f),
                 ("mfv-slider__thumb", 11f, 14f),
                 ("mfv-slider__rail", -1f, 4f),
+                ("mfv-slider__tick", 1f, 4f),
                 ("mfv-swatch", 28f, 28f),
                 ("mfv-add__item", 137.33f, -1f),
                 ("mfv-add__thumb", -1f, 26f),

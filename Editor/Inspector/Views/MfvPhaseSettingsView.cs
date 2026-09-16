@@ -76,7 +76,8 @@ namespace ManeuverForVRC.Editor
             });
             Add(_easing);
 
-            _pingPongRatio = new MfvValueSlider("往復比", new Vector2(0f, 100f), "%", "0");
+            // 50% spends the same time going out and coming back.
+            _pingPongRatio = new MfvValueSlider("往復比", new Vector2(0f, 100f), "%", "0") { Snaps = new[] { 50f } };
             _pingPongRatio.SetValueWithoutNotify(settings.pingPongRatio * 100f);
             _pingPongRatio.RegisterValueChangedCallback(evt =>
             {
@@ -97,6 +98,7 @@ namespace ManeuverForVRC.Editor
 
             // Negative delay runs the order backwards, for example from the edges in.
             var delay = new MfvValueSlider("ディレイ", new Vector2(-1f, 1f), string.Empty, "0.###");
+            delay.Snaps = MfvSnapPoints.Zero(delay.Limit);
             delay.SetValueWithoutNotify(settings.delay);
             delay.RegisterValueChangedCallback(evt =>
             {

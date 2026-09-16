@@ -531,6 +531,41 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
+        public void ValueSlider_MarksSnapPointsInsideTheLimits()
+        {
+            List<float> Ticks(VisualElement slider) => slider.Query(className: "mfv-slider__tick").ToList()
+                .Select(t => t.style.left.value.value)
+                .ToList();
+
+            var tilt = new MfvValueSlider("Tilt", new Vector2(-90f, 90f), "°");
+            tilt.Snaps = MfvSnapPoints.Angles(tilt.Limit);
+            CollectionAssert.AreEqual(new[] { 25f, 50f, 75f }, Ticks(tilt), "45 degree steps without the limits.");
+
+            var pan = new MfvRangeSlider("Pan", new Vector2(-360f, 360f), "°");
+            pan.Snaps = MfvSnapPoints.Angles(pan.Limit);
+            Assert.AreEqual(7, Ticks(pan).Count, "Dense angle steps widen to 90 degrees.");
+
+            var ratio = new MfvValueSlider("ratio", new Vector2(0f, 100f)) { Snaps = new[] { 0f, 50f, 100f } };
+            CollectionAssert.AreEqual(new[] { 50f }, Ticks(ratio), "Points on the limits get no tick.");
+
+            ratio.Limit = new Vector2(0f, 200f);
+            CollectionAssert.AreEqual(new[] { 25f, 50f }, Ticks(ratio), "A wider limit brings the dropped point back.");
+
+            CollectionAssert.IsEmpty(MfvSnapPoints.Zero(new Vector2(0f, 1f)));
+            CollectionAssert.AreEqual(new[] { 0f }, MfvSnapPoints.Zero(new Vector2(-1f, 1f)));
+        }
+
+        [Test]
+        public void SliderTrack_SnapsOnlyWithinTheThreshold()
+        {
+            var snaps = new[] { 0.25f, 0.5f };
+            Assert.AreEqual(0.5f, MfvSliderTrack.Snap(0.52f, snaps, 0.03f));
+            Assert.AreEqual(0.25f, MfvSliderTrack.Snap(0.23f, snaps, 0.03f));
+            Assert.AreEqual(0.4f, MfvSliderTrack.Snap(0.4f, snaps, 0.03f), "Far from every point the value is kept.");
+            Assert.AreEqual(0.52f, MfvSliderTrack.Snap(0.52f, MfvSnapPoints.None, 0.03f));
+        }
+
+        [Test]
         public void RangeToggle_SwapsSingleSliderForRangeSlider()
         {
             var set = new MfvClipEffectSet();

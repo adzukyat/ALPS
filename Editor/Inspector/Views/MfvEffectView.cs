@@ -109,9 +109,10 @@ namespace ManeuverForVRC.Editor
             string label,
             MfvAnimatableValue model,
             string unit = "",
-            string format = "0.###")
+            string format = "0.###",
+            Func<Vector2, float[]> snaps = null)
         {
-            var view = new MfvAnimatableView(label, model, _clipPhase, _onChanged, unit, format);
+            var view = new MfvAnimatableView(label, model, _clipPhase, _onChanged, unit, format, snaps: snaps);
             _animatables.Add(view);
             return view;
         }
@@ -129,12 +130,13 @@ namespace ManeuverForVRC.Editor
 
             var anglePane = new VisualElement();
             anglePane.AddToClassList("mfv-flow9");
-            var tilt = Animatable("Tilt", _effect.tilt, "°", "0.#");
-            var pan = Animatable("Pan", _effect.pan, "°", "0.#");
+            var tilt = Animatable("Tilt", _effect.tilt, "°", "0.#", MfvSnapPoints.Angles);
+            var pan = Animatable("Pan", _effect.pan, "°", "0.#", MfvSnapPoints.Angles);
             anglePane.Add(tilt);
             anglePane.Add(pan);
 
             var phaseOffset = new MfvValueSlider("位相差", new Vector2(0f, 360f), "°", "0");
+            phaseOffset.Snaps = MfvSnapPoints.Angles(phaseOffset.Limit);
             phaseOffset.SetValueWithoutNotify(_effect.panTiltPhaseOffsetDegrees);
             phaseOffset.RegisterValueChangedCallback(evt =>
             {
@@ -146,11 +148,12 @@ namespace ManeuverForVRC.Editor
 
             var circlePane = new VisualElement();
             circlePane.AddToClassList("mfv-flow9");
-            circlePane.Add(Animatable("中心 Tilt", _effect.circleCenterTilt, "°", "0.#"));
-            circlePane.Add(Animatable("中心 Pan", _effect.circleCenterPan, "°", "0.#"));
-            circlePane.Add(Animatable("半径", _effect.circleRadius, "°", "0.#"));
+            circlePane.Add(Animatable("中心 Tilt", _effect.circleCenterTilt, "°", "0.#", MfvSnapPoints.Angles));
+            circlePane.Add(Animatable("中心 Pan", _effect.circleCenterPan, "°", "0.#", MfvSnapPoints.Angles));
+            circlePane.Add(Animatable("半径", _effect.circleRadius, "°", "0.#", MfvSnapPoints.Angles));
 
-            var aspect = new MfvValueSlider("縦横比", new Vector2(0.1f, 4f), string.Empty, "0.##");
+            // 1 draws a true circle.
+            var aspect = new MfvValueSlider("縦横比", new Vector2(0.1f, 4f), string.Empty, "0.##") { Snaps = new[] { 1f } };
             aspect.SetValueWithoutNotify(_effect.circleAspect);
             aspect.RegisterValueChangedCallback(evt =>
             {
@@ -204,7 +207,7 @@ namespace ManeuverForVRC.Editor
 
         private void BuildCone(VisualElement body)
         {
-            body.Add(Animatable("幅", _effect.coneWidth, "°", "0.#"));
+            body.Add(Animatable("幅", _effect.coneWidth, "°", "0.#", MfvSnapPoints.Angles));
             body.Add(Animatable("長さ", _effect.coneLength, "m", "0.#"));
         }
 
@@ -298,8 +301,10 @@ namespace ManeuverForVRC.Editor
             });
             body.Add(rotation);
 
-            body.Add(BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
-                "°", "0", v => _effect.goboFixtureStaggerDegrees = v));
+            var goboStagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
+                "°", "0", v => _effect.goboFixtureStaggerDegrees = v);
+            goboStagger.Snaps = MfvSnapPoints.Angles(goboStagger.Limit);
+            body.Add(goboStagger);
         }
 
         // ------------------------------------------------------------ helpers
