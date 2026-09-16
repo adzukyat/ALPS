@@ -302,11 +302,15 @@ namespace ManeuverForVRC
             WriteNeutralFrame(frame, offset);
             frame[offset + MfvShowEvaluator.FramePan] = -fixture.panOffsetBlueGreen;
             frame[offset + MfvShowEvaluator.FrameTilt] = fixture.tiltOffsetBlue - VrslDefaultTiltOffset;
-            frame[offset + MfvShowEvaluator.FrameBrightness] = fixture.globalIntensity * 100f;
+            // An HDR tint such as VRSL's default white of 2 becomes brightness above 100%
+            // over an SDR color, the inverse of ApplyVRSL.
             var color = fixture.lightColorTint;
-            frame[offset + MfvShowEvaluator.FrameRed] = color.r;
-            frame[offset + MfvShowEvaluator.FrameGreen] = color.g;
-            frame[offset + MfvShowEvaluator.FrameBlue] = color.b;
+            var peak = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
+            var excess = peak > 1f ? peak : 1f;
+            frame[offset + MfvShowEvaluator.FrameBrightness] = fixture.globalIntensity * 100f * excess;
+            frame[offset + MfvShowEvaluator.FrameRed] = color.r / excess;
+            frame[offset + MfvShowEvaluator.FrameGreen] = color.g / excess;
+            frame[offset + MfvShowEvaluator.FrameBlue] = color.b / excess;
             frame[offset + MfvShowEvaluator.FrameConeWidth] =
                 Mathf.Clamp01(fixture.coneWidth / VrslMaxConeWidth) * ModelConeWidthLimit;
             frame[offset + MfvShowEvaluator.FrameConeLength] =
@@ -324,11 +328,15 @@ namespace ManeuverForVRC
             fixture.enableAutoSpin = false;
             fixture.panOffsetBlueGreen = -frame[offset + MfvShowEvaluator.FramePan];
             fixture.tiltOffsetBlue = frame[offset + MfvShowEvaluator.FrameTilt] + VrslDefaultTiltOffset;
-            fixture.globalIntensity = Mathf.Clamp01(brightness / 100f);
+            // White at 100% is a tint of 1. VRSL caps global intensity at 1, so brightness
+            // above 100% scales the tint instead, reaching VRSL's default white of 2 at 200%.
+            var intensity = Mathf.Max(0f, brightness / 100f);
+            var tintScale = intensity > 1f ? intensity : 1f;
+            fixture.globalIntensity = Mathf.Min(intensity, 1f);
             fixture.lightColorTint = new Color(
-                frame[offset + MfvShowEvaluator.FrameRed],
-                frame[offset + MfvShowEvaluator.FrameGreen],
-                frame[offset + MfvShowEvaluator.FrameBlue],
+                frame[offset + MfvShowEvaluator.FrameRed] * tintScale,
+                frame[offset + MfvShowEvaluator.FrameGreen] * tintScale,
+                frame[offset + MfvShowEvaluator.FrameBlue] * tintScale,
                 1f);
             fixture.coneWidth = Mathf.Clamp01(frame[offset + MfvShowEvaluator.FrameConeWidth] / ModelConeWidthLimit) * VrslMaxConeWidth;
             fixture.coneLength = Mathf.Lerp(

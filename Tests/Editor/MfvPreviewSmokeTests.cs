@@ -144,6 +144,35 @@ namespace ManeuverForVRC.Tests
             }
         }
 
+        [Test]
+        public void Level3_BrightnessAbove100ScalesTheTintAndCapturesBack()
+        {
+            var fixture = OpenFreshScene().Fixtures[0];
+            var frame = new float[MfvShowEvaluator.FrameStride];
+            var block = new MaterialPropertyBlock();
+
+            // VRSL's default HDR white reads as white at 200%.
+            fixture.globalIntensity = 1f;
+            fixture.lightColorTint = new Color(2f, 2f, 2f, 1f);
+            MfvShowPlayer.CaptureVRSL(fixture, frame, 0);
+            Assert.AreEqual(200f, frame[MfvShowEvaluator.FrameBrightness], Tolerance);
+            Assert.AreEqual(1f, frame[MfvShowEvaluator.FrameRed], Tolerance);
+
+            MfvShowPlayer.ApplyVRSL(fixture, frame, 0, block);
+            Assert.AreEqual(1f, fixture.globalIntensity, Tolerance);
+            Assert.AreEqual(2f, fixture.lightColorTint.r, Tolerance, "The captured default applies back unchanged.");
+
+            frame[MfvShowEvaluator.FrameBrightness] = 150f;
+            MfvShowPlayer.ApplyVRSL(fixture, frame, 0, block);
+            Assert.AreEqual(1f, fixture.globalIntensity, Tolerance);
+            Assert.AreEqual(1.5f, fixture.lightColorTint.g, Tolerance, "Above 100% the tint carries the rest.");
+
+            frame[MfvShowEvaluator.FrameBrightness] = 50f;
+            MfvShowPlayer.ApplyVRSL(fixture, frame, 0, block);
+            Assert.AreEqual(0.5f, fixture.globalIntensity, Tolerance);
+            Assert.AreEqual(1f, fixture.lightColorTint.b, Tolerance, "White at or below 100% is a tint of 1.");
+        }
+
         private static void AssertRestored(Context context, FixtureState[] authored)
         {
             for (var i = 0; i < context.Fixtures.Length; i++)

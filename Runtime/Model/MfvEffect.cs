@@ -53,8 +53,8 @@ namespace ManeuverForVRC
         public MfvAnimatableValue colorPhasing = new MfvAnimatableValue(0f, new Vector2(0f, 1f));
 
         // --- Brightness ---
-        /// <summary>Stored on the 0–100 scale the inspector shows.</summary>
-        public MfvAnimatableValue brightness = new MfvAnimatableValue(100f, new Vector2(0f, 100f));
+        /// <summary>Stored on the 0–200 scale the inspector shows. 100 is white at a tint of 1.</summary>
+        public MfvAnimatableValue brightness = new MfvAnimatableValue(100f, new Vector2(0f, 200f)) { range = new Vector2(0f, 100f) };
         /// <summary>
         /// Blackout on return: brightness drops to 0 while the phase driving it is on a
         /// ping-pong return leg, so the beams fly out one way only.

@@ -265,6 +265,9 @@ namespace ManeuverForVRC.Editor
         {
             MfvAnimatableView view = null;
 
+            // Effects saved before brightness reached 200% still carry the old limit.
+            _effect.brightness.limit = _defaults.brightness.limit;
+
             // Untitled frame for the fades, which run inside the outbound leg.
             var fadeFrame = new VisualElement();
             fadeFrame.AddToClassList("mfv-sub");
@@ -304,6 +307,7 @@ namespace ManeuverForVRC.Editor
                 },
                 "%",
                 "0",
+                snaps: limit => MfvSnapPoints.Multiples(limit, 100f),
                 defaults: _defaults.brightness);
             _animatables.Add(view);
             body.Add(view);
