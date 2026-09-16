@@ -201,6 +201,67 @@ namespace ManeuverForVRC.Tests
             }
         }
 
+        [Test]
+        public void CustomEditor_FollowsTheClipInspectorFoldout()
+        {
+            // Timeline stops calling OnInspectorGUI while its asset title bar is collapsed. The
+            // view sits outside IMGUI, so it has to hide itself when a repaint skips the draw.
+            var asset = ScriptableObject.CreateInstance<MfvTimelineClip>();
+            asset.hideFlags = HideFlags.HideAndDontSave;
+            asset.data = BuildFullSet();
+
+            var expanded = true;
+            MfvTimelineClipInspector inspector = null;
+            System.Action original = null;
+            var parent = new VisualElement();
+            var container = new IMGUIContainer();
+            parent.Add(container);
+
+            try
+            {
+                inspector = (MfvTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                var target = inspector;
+                original = () =>
+                {
+                    if (expanded)
+                    {
+                        target.MarkDrawn();
+                    }
+                };
+                container.onGUIHandler = original;
+
+                Assert.IsTrue(inspector.AttachTo(container, true));
+                Assert.AreNotSame(original, container.onGUIHandler, "The container handler is watched.");
+                var injected = parent[1];
+
+                inspector.RunContainerPass(true);
+                Assert.AreEqual(DisplayStyle.Flex, injected.style.display.value, "Expanded shows the view.");
+
+                expanded = false;
+                inspector.RunContainerPass(false);
+                Assert.AreEqual(DisplayStyle.Flex, injected.style.display.value, "Only a repaint decides.");
+
+                inspector.RunContainerPass(true);
+                Assert.AreEqual(DisplayStyle.None, injected.style.display.value, "Collapsed hides the view.");
+
+                expanded = true;
+                inspector.RunContainerPass(true);
+                Assert.AreEqual(DisplayStyle.Flex, injected.style.display.value, "Expanding shows it again.");
+
+                Assert.IsFalse(inspector.AttachTo(null, true));
+                Assert.AreSame(original, container.onGUIHandler, "Detaching restores the container handler.");
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                Object.DestroyImmediate(asset);
+            }
+        }
+
         [UnityTest]
         public IEnumerator Undo_RestoresTheModelAndRebindsTheInspector()
         {

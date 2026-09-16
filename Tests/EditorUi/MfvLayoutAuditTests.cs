@@ -308,9 +308,9 @@ namespace ManeuverForVRC.Tests
             yield return Measure(476f, view =>
             {
                 Assert.AreEqual(
-                    new Color32(0x33, 0x33, 0x33, 0xFF),
-                    (Color32)view.resolvedStyle.backgroundColor,
-                    "Card background token drifted.");
+                    0,
+                    ((Color32)view.resolvedStyle.backgroundColor).a,
+                    "The root must stay transparent so the native inspector background shows through.");
 
                 Assert.AreEqual(12.5f, view.resolvedStyle.fontSize, 0.01f);
 

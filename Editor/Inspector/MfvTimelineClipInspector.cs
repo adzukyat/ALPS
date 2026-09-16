@@ -14,6 +14,10 @@ namespace ManeuverForVRC.Editor
     /// after the IMGUI container the clip inspector runs in. Selecting the asset on its own
     /// still goes through CreateInspectorGUI.
     ///
+    /// The clip inspector puts the asset editor under its own foldout title bar and stops
+    /// calling OnInspectorGUI while that is collapsed. The view lives outside IMGUI, so the
+    /// container handler is wrapped to notice a repaint without a draw and hide the view.
+    ///
     /// The view mutates the model object directly rather than going through
     /// SerializedProperty bindings, so undo has to be handled explicitly: snapshot before
     /// an interaction starts, and rebuild afterwards. Deserializing an undo step replaces
@@ -24,6 +28,10 @@ namespace ManeuverForVRC.Editor
     public class MfvTimelineClipInspector : UnityEditor.Editor
     {
         private VisualElement _injected;
+        private IMGUIContainer _watched;
+        private System.Action _watchedHandler;
+        private System.Action _wrapper;
+        private bool _drawnThisPass;
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -32,6 +40,8 @@ namespace ManeuverForVRC.Editor
 
         public override void OnInspectorGUI()
         {
+            MarkDrawn();
+
             if (targets.Length > 1)
             {
                 Detach();
@@ -83,7 +93,66 @@ namespace ManeuverForVRC.Editor
                 parent.Insert(index < 0 ? parent.childCount : index + 1, _injected);
             }
 
+            Watch(container);
             return true;
+        }
+
+        /// <summary>Records that the clip inspector drew this editor in the current pass.</summary>
+        internal void MarkDrawn()
+        {
+            _drawnThisPass = true;
+        }
+
+        /// <summary>
+        /// Runs the watched container's own handler. On a repaint the view follows whether that
+        /// handler reached OnInspectorGUI, which it does not while the foldout is collapsed.
+        /// </summary>
+        internal void RunContainerPass(bool repaint)
+        {
+            if (repaint)
+            {
+                _drawnThisPass = false;
+            }
+
+            _watchedHandler?.Invoke();
+
+            if (repaint && _injected != null)
+            {
+                _injected.style.display = _drawnThisPass ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        private void Watch(IMGUIContainer container)
+        {
+            if (_watched == container && _wrapper != null && container.onGUIHandler == _wrapper)
+            {
+                return;
+            }
+
+            Unwatch();
+            if (_wrapper == null)
+            {
+                _wrapper = () =>
+                {
+                    var current = Event.current;
+                    RunContainerPass(current != null && current.type == EventType.Repaint);
+                };
+            }
+
+            _watched = container;
+            _watchedHandler = container.onGUIHandler;
+            container.onGUIHandler = _wrapper;
+        }
+
+        private void Unwatch()
+        {
+            if (_watched != null && _watched.onGUIHandler == _wrapper)
+            {
+                _watched.onGUIHandler = _watchedHandler;
+            }
+
+            _watched = null;
+            _watchedHandler = null;
         }
 
         /// <summary>
@@ -104,6 +173,7 @@ namespace ManeuverForVRC.Editor
 
         private void Detach()
         {
+            Unwatch();
             var injected = _injected;
             _injected = null;
             if (injected == null)

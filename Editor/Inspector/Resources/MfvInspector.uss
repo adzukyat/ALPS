@@ -45,7 +45,9 @@
 
     font-size: 12.5px;
     color: var(--mfv-text);
-    background-color: var(--mfv-card-bg);
+    /* Transparent so the native inspector background shows through and the view reads as
+       part of the IMGUI clip inspector above it. */
+    background-color: rgba(0, 0, 0, 0);
     padding: 11px 12px 14px 12px;
     /* The inspector is laid out for a 476px card. Below that the host scrolls rather than
        letting segmented controls overrun their row. */
