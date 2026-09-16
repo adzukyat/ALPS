@@ -51,10 +51,13 @@ namespace ManeuverForVRC
         TrackUser,
     }
 
-    /// <summary>Easing functions offered as thumbnails. Order drives the tile grid.</summary>
+    /// <summary>Easing functions offered as thumbnails. Order drives the tile grid and matches <see cref="MfvShowEvaluator.Ease"/>.</summary>
     public enum MfvEaseType
     {
         Linear,
+        InSine,
+        OutSine,
+        InOutSine,
         InQuad,
         OutQuad,
         InOutCubic,
@@ -66,9 +69,6 @@ namespace ManeuverForVRC
         InCubic,
         OutCubic,
         InOutQuad,
-        InSine,
-        OutSine,
-        InOutSine,
         InBack,
         InOutBack,
         InBounce,

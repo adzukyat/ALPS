@@ -64,7 +64,7 @@ namespace ManeuverForVRC.Editor
             });
             Add(mode);
 
-            _easing = new MfvEasingGrid("イージング", compact ? 4 : 9);
+            _easing = new MfvEasingGrid("イージング");
             if (compact)
             {
                 _easing.AddToClassList("mfv-easegrid--compact");

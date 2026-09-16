@@ -156,20 +156,20 @@ namespace ManeuverForVRC
         public static float Ease(int type, float t)
         {
             t = Mathf.Clamp01(t);
-            if (type == 1) return t * t;
-            if (type == 2) return 1f - (1f - t) * (1f - t);
-            if (type == 3) return t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) * 0.5f;
-            if (type == 4) return t <= 0f ? 0f : Mathf.Pow(2f, 10f * t - 10f);
-            if (type == 5) return t >= 1f ? 1f : 1f - Mathf.Pow(2f, -10f * t);
-            if (type == 6) return 1f + 2.70158f * Mathf.Pow(t - 1f, 3f) + 1.70158f * Mathf.Pow(t - 1f, 2f);
-            if (type == 7) return OutBounce(t);
-            if (type == 8) return t < 0.5f ? 0f : 1f;
-            if (type == 9) return t * t * t;
-            if (type == 10) return 1f - Mathf.Pow(1f - t, 3f);
-            if (type == 11) return t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
-            if (type == 12) return 1f - Mathf.Cos(t * Mathf.PI * 0.5f);
-            if (type == 13) return Mathf.Sin(t * Mathf.PI * 0.5f);
-            if (type == 14) return -(Mathf.Cos(Mathf.PI * t) - 1f) * 0.5f;
+            if (type == 1) return 1f - Mathf.Cos(t * Mathf.PI * 0.5f);
+            if (type == 2) return Mathf.Sin(t * Mathf.PI * 0.5f);
+            if (type == 3) return -(Mathf.Cos(Mathf.PI * t) - 1f) * 0.5f;
+            if (type == 4) return t * t;
+            if (type == 5) return 1f - (1f - t) * (1f - t);
+            if (type == 6) return t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) * 0.5f;
+            if (type == 7) return t <= 0f ? 0f : Mathf.Pow(2f, 10f * t - 10f);
+            if (type == 8) return t >= 1f ? 1f : 1f - Mathf.Pow(2f, -10f * t);
+            if (type == 9) return 1f + 2.70158f * Mathf.Pow(t - 1f, 3f) + 1.70158f * Mathf.Pow(t - 1f, 2f);
+            if (type == 10) return OutBounce(t);
+            if (type == 11) return t < 0.5f ? 0f : 1f;
+            if (type == 12) return t * t * t;
+            if (type == 13) return 1f - Mathf.Pow(1f - t, 3f);
+            if (type == 14) return t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
             if (type == 15) return 2.70158f * t * t * t - 1.70158f * t * t;
             if (type == 16)
             {

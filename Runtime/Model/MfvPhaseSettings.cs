@@ -18,7 +18,7 @@ namespace ManeuverForVRC
         public MfvEaseType ease = MfvEaseType.InOutCubic;
 
         /// <summary>Ping-pong ratio: where the triangle wave peaks. PingPong only.</summary>
-        [Range(0f, 1f)] public float pingPongRatio = 0.65f;
+        [Range(0f, 1f)] public float pingPongRatio = 0.5f;
 
         /// <summary>Fixture group size: how many neighbouring fixtures share one phase.</summary>
         [Min(1)] public int fixtureGroupSize = 1;

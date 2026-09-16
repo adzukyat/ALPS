@@ -550,13 +550,6 @@
     border-color: var(--mfv-accent-soft);
 }
 
-.mfv-easegrid__more {
-    color: #e2e2e2;
-    font-size: 11px;
-    -unity-text-align: middle-center;
-    padding: 0;
-}
-
 .mfv-easegrid__curve {
     width: 24px;
     height: 18px;

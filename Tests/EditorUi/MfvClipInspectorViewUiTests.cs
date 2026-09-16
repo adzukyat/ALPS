@@ -1240,8 +1240,8 @@ namespace ManeuverForVRC.Tests
         public void EasingThumbnails_MatchTheRuntimeCurves()
         {
             // The grid draws MfvEase directly, so the contract worth pinning is that the
-            // curve library is monotone-anchored at both ends for the featured set.
-            foreach (var type in MfvEasingGrid.Featured)
+            // curve library is anchored at both ends for every curve.
+            foreach (MfvEaseType type in System.Enum.GetValues(typeof(MfvEaseType)))
             {
                 Assert.AreEqual(0f, MfvEase.Evaluate(type, 0f), 0.001f, $"{type} must start at 0.");
                 Assert.AreEqual(1f, MfvEase.Evaluate(type, 1f), 0.001f, $"{type} must end at 1.");

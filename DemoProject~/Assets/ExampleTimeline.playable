@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7678863050653181020
+--- !u!114 &-7558050606659912597
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -24,10 +24,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: -7287974097138309314}
+    m_Asset: {fileID: 3072458022094229627}
     m_Duration: 26
     m_TimeScale: 1
-    m_ParentTrack: {fileID: -7678863050653181020}
+    m_ParentTrack: {fileID: -7558050606659912597}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -94,2501 +94,7 @@ MonoBehaviour:
     m_Objects: []
   bpm: 120
   beatOrigin: 0
---- !u!114 &-7298225822473048811
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
-  m_EditorClassIdentifier: 
-  data:
-    order: 0
-    phaseExpanded: 1
-    phase:
-      mode: 0
-      ease: 2
-      pingPongRatio: 0.65
-      fixtureGroupSize: 1
-      delay: 0.15
-      beatsPerCycle: 2
-      inverse: 0
-    effects:
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 1
-        color: {r: 1, g: 1, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 0.1, g: 0.9, b: 1, a: 1}
-          key1: {r: 0.6, g: 0.1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &-7287974097138309314
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
-  m_EditorClassIdentifier: 
-  data:
-    order: 0
-    phaseExpanded: 1
-    phase:
-      mode: 0
-      ease: 0
-      pingPongRatio: 0.65
-      fixtureGroupSize: 1
-      delay: 0
-      beatsPerCycle: 4
-      inverse: 0
-    effects:
-    - kind: 5
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops:
-      - goboIndex: 4
-      - goboIndex: 7
-      - goboIndex: 1
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 1
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 2
-      goboFixtureStaggerDegrees: 45
-    - kind: 1
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 20
-        range: {x: 8, y: 30}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 45
-        range: {x: 0, y: 14}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 0
-        color: {r: 0.3, g: 0.5, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 80
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &-5525998879628948677
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
-  m_EditorClassIdentifier: 
-  data:
-    order: 0
-    phaseExpanded: 1
-    phase:
-      mode: 1
-      ease: 3
-      pingPongRatio: 0.65
-      fixtureGroupSize: 1
-      delay: 0
-      beatsPerCycle: 8
-      inverse: 0
-    effects:
-    - kind: 0
-      parity: 1
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: -25
-        range: {x: -40, y: 35}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 0
-      parity: 2
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 25
-        range: {x: -40, y: 35}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 0
-        color: {r: 1, g: 1, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 4
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 8
-      flickerStrength: 0.35
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
-  m_Name: ExampleTimeline
-  m_EditorClassIdentifier: 
-  m_Version: 0
-  m_Tracks:
-  - {fileID: 6896319949882314377}
-  - {fileID: 6609116655955925432}
-  - {fileID: -7678863050653181020}
-  m_FixedDuration: 26
-  m_EditorSettings:
-    m_Framerate: 60
-    m_ScenePreview: 1
-  m_DurationMode: 1
-  m_MarkerTrack: {fileID: 0}
---- !u!114 &2224785539475944457
+--- !u!114 &-4418448837389485852
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2605,8 +111,8 @@ MonoBehaviour:
     phaseExpanded: 1
     phase:
       mode: 1
-      ease: 14
-      pingPongRatio: 0.65
+      ease: 3
+      pingPongRatio: 0.5
       fixtureGroupSize: 1
       delay: 0.12
       beatsPerCycle: 4
@@ -2629,8 +135,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2648,8 +154,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2670,8 +176,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2689,8 +195,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2708,8 +214,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2728,8 +234,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2747,8 +253,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2768,8 +274,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2787,8 +293,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2812,8 +318,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2837,8 +343,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2856,8 +362,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2878,8 +384,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2897,8 +403,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2916,8 +422,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2936,8 +442,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -2955,8 +461,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3072,8 +578,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3091,8 +597,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3116,8 +622,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3141,8 +647,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3160,8 +666,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3182,8 +688,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3201,8 +707,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3220,8 +726,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3240,8 +746,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3259,8 +765,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3280,8 +786,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3299,8 +805,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3324,8 +830,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -3336,7 +842,7 @@ MonoBehaviour:
     profileExpanded: 0
   profile: {fileID: 0}
   syncProfile: 0
---- !u!114 &4108531126052145142
+--- !u!114 &-2353719271481016041
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3354,899 +860,7 @@ MonoBehaviour:
     phase:
       mode: 0
       ease: 0
-      pingPongRatio: 0.65
-      fixtureGroupSize: 1
-      delay: 0.12
-      beatsPerCycle: 4
-      inverse: 0
-    effects:
-    - kind: 0
-      parity: 0
-      expanded: 1
-      moveMode: 1
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -40, y: 35}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 12
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 1
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 12
-        range: {x: 8, y: 30}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 40
-        range: {x: 0, y: 14}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 0
-        color: {r: 1, g: 1, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 100}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        cancelOnReturn: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.65
-          fixtureGroupSize: 1
-          delay: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &4796488960782538368
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
-  m_EditorClassIdentifier: 
-  data:
-    order: 0
-    phaseExpanded: 1
-    phase:
-      mode: 0
-      ease: 0
-      pingPongRatio: 0.65
+      pingPongRatio: 0.5
       fixtureGroupSize: 1
       delay: 0
       beatsPerCycle: 0.5
@@ -4269,8 +883,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4288,8 +902,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4310,8 +924,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4329,8 +943,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4348,8 +962,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4368,8 +982,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4387,8 +1001,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4408,8 +1022,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4427,8 +1041,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4452,8 +1066,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4477,8 +1091,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4496,8 +1110,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4518,8 +1132,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4537,8 +1151,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4556,8 +1170,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4576,8 +1190,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4595,8 +1209,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4680,8 +1294,8 @@ MonoBehaviour:
         useOwnPhase: 1
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4699,8 +1313,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4724,8 +1338,8 @@ MonoBehaviour:
         useOwnPhase: 0
         ownPhase:
           mode: 1
-          ease: 3
-          pingPongRatio: 0.65
+          ease: 6
+          pingPongRatio: 0.5
           fixtureGroupSize: 1
           delay: 0
           beatsPerCycle: 2
@@ -4736,7 +1350,7 @@ MonoBehaviour:
     profileExpanded: 0
   profile: {fileID: 0}
   syncProfile: 0
---- !u!114 &6609116655955925432
+--- !u!114 &-1039081587614033729
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4760,10 +1374,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 4108531126052145142}
+    m_Asset: {fileID: -433246812798371102}
     m_Duration: 13.5
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 6609116655955925432}
+    m_ParentTrack: {fileID: -1039081587614033729}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -4829,10 +1443,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 13
     m_ClipIn: 0
-    m_Asset: {fileID: 4796488960782538368}
+    m_Asset: {fileID: -2353719271481016041}
     m_Duration: 13
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 6609116655955925432}
+    m_ParentTrack: {fileID: -1039081587614033729}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -4899,7 +1513,2917 @@ MonoBehaviour:
     m_Objects: []
   bpm: 120
   beatOrigin: 0
---- !u!114 &6896319949882314377
+--- !u!114 &-433246812798371102
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: MfvTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 0
+    phaseExpanded: 1
+    phase:
+      mode: 0
+      ease: 0
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      delay: 0.12
+      beatsPerCycle: 4
+      inverse: 0
+    effects:
+    - kind: 0
+      parity: 0
+      expanded: 1
+      moveMode: 1
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -40, y: 35}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 12
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 1
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 12
+        range: {x: 8, y: 30}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 40
+        range: {x: 0, y: 14}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 0
+        color: {r: 1, g: 1, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: ExampleTimeline
+  m_EditorClassIdentifier: 
+  m_Version: 0
+  m_Tracks:
+  - {fileID: 3791063704051122235}
+  - {fileID: -1039081587614033729}
+  - {fileID: -7558050606659912597}
+  m_FixedDuration: 26
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 1
+  m_MarkerTrack: {fileID: 0}
+--- !u!114 &2734742493845691836
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: MfvTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 0
+    phaseExpanded: 1
+    phase:
+      mode: 1
+      ease: 6
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      delay: 0
+      beatsPerCycle: 8
+      inverse: 0
+    effects:
+    - kind: 0
+      parity: 1
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: -25
+        range: {x: -40, y: 35}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 0
+      parity: 2
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 25
+        range: {x: -40, y: 35}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 0
+        color: {r: 1, g: 1, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 4
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 8
+      flickerStrength: 0.35
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
+--- !u!114 &3072458022094229627
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: MfvTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 0
+    phaseExpanded: 1
+    phase:
+      mode: 0
+      ease: 0
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      delay: 0
+      beatsPerCycle: 4
+      inverse: 0
+    effects:
+    - kind: 5
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops:
+      - goboIndex: 4
+      - goboIndex: 7
+      - goboIndex: 1
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 1
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 2
+      goboFixtureStaggerDegrees: 45
+    - kind: 1
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 20
+        range: {x: 8, y: 30}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 45
+        range: {x: 0, y: 14}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 0
+        color: {r: 0.3, g: 0.5, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 80
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
+--- !u!114 &3791063704051122235
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4923,10 +4447,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: 2224785539475944457}
+    m_Asset: {fileID: -4418448837389485852}
     m_Duration: 8.5
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 6896319949882314377}
+    m_ParentTrack: {fileID: 3791063704051122235}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -4992,10 +4516,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 8
     m_ClipIn: 0
-    m_Asset: {fileID: -7298225822473048811}
+    m_Asset: {fileID: 7289994748019971732}
     m_Duration: 8.5
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 6896319949882314377}
+    m_ParentTrack: {fileID: 3791063704051122235}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -5061,10 +4585,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 16
     m_ClipIn: 0
-    m_Asset: {fileID: -5525998879628948677}
+    m_Asset: {fileID: 2734742493845691836}
     m_Duration: 10
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 6896319949882314377}
+    m_ParentTrack: {fileID: 3791063704051122235}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -5131,3 +4655,479 @@ MonoBehaviour:
     m_Objects: []
   bpm: 120
   beatOrigin: 0
+--- !u!114 &7289994748019971732
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: MfvTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 0
+    phaseExpanded: 1
+    phase:
+      mode: 0
+      ease: 5
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      delay: 0.15
+      beatsPerCycle: 2
+      inverse: 0
+    effects:
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 1
+        color: {r: 1, g: 1, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 0.1, g: 0.9, b: 1, a: 1}
+          key1: {r: 0.6, g: 0.1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        cancelOnReturn: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 6
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          delay: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
