@@ -13,6 +13,9 @@ namespace ManeuverForVRC.Editor
     public class MfvEffectView : VisualElement
     {
         private readonly MfvEffect _effect;
+
+        /// <summary>A fresh effect of the same kind. Double clicking a slider thumb restores its value.</summary>
+        private readonly MfvEffect _defaults;
         private readonly MfvPhaseSettings _clipPhase;
         private readonly Action _onChanged;
         private readonly List<MfvAnimatableView> _animatables = new List<MfvAnimatableView>();
@@ -25,6 +28,7 @@ namespace ManeuverForVRC.Editor
             Action onDelete)
         {
             _effect = effect;
+            _defaults = MfvEffect.Create(effect.kind);
             _clipPhase = clipPhase;
             _onChanged = onChanged;
 
@@ -108,11 +112,12 @@ namespace ManeuverForVRC.Editor
         private MfvAnimatableView Animatable(
             string label,
             MfvAnimatableValue model,
+            MfvAnimatableValue defaults,
             string unit = "",
             string format = "0.###",
             Func<Vector2, float[]> snaps = null)
         {
-            var view = new MfvAnimatableView(label, model, _clipPhase, _onChanged, unit, format, snaps: snaps);
+            var view = new MfvAnimatableView(label, model, _clipPhase, _onChanged, unit, format, snaps: snaps, defaults: defaults);
             _animatables.Add(view);
             return view;
         }
@@ -130,12 +135,15 @@ namespace ManeuverForVRC.Editor
 
             var anglePane = new VisualElement();
             anglePane.AddToClassList("mfv-flow9");
-            var tilt = Animatable("Tilt", _effect.tilt, "°", "0.#", MfvSnapPoints.Angles);
-            var pan = Animatable("Pan", _effect.pan, "°", "0.#", MfvSnapPoints.Angles);
+            var tilt = Animatable("Tilt", _effect.tilt, _defaults.tilt, "°", "0.#", MfvSnapPoints.Angles);
+            var pan = Animatable("Pan", _effect.pan, _defaults.pan, "°", "0.#", MfvSnapPoints.Angles);
             anglePane.Add(tilt);
             anglePane.Add(pan);
 
-            var phaseOffset = new MfvValueSlider("位相差", new Vector2(0f, 360f), "°", "0");
+            var phaseOffset = new MfvValueSlider("位相差", new Vector2(0f, 360f), "°", "0")
+            {
+                DefaultValue = _defaults.panTiltPhaseOffsetDegrees,
+            };
             phaseOffset.Snaps = MfvSnapPoints.Angles(phaseOffset.Limit);
             phaseOffset.SetValueWithoutNotify(_effect.panTiltPhaseOffsetDegrees);
             phaseOffset.RegisterValueChangedCallback(evt =>
@@ -148,12 +156,16 @@ namespace ManeuverForVRC.Editor
 
             var circlePane = new VisualElement();
             circlePane.AddToClassList("mfv-flow9");
-            circlePane.Add(Animatable("中心 Tilt", _effect.circleCenterTilt, "°", "0.#", MfvSnapPoints.Angles));
-            circlePane.Add(Animatable("中心 Pan", _effect.circleCenterPan, "°", "0.#", MfvSnapPoints.Angles));
-            circlePane.Add(Animatable("半径", _effect.circleRadius, "°", "0.#", MfvSnapPoints.Angles));
+            circlePane.Add(Animatable("中心 Tilt", _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", MfvSnapPoints.Angles));
+            circlePane.Add(Animatable("中心 Pan", _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", MfvSnapPoints.Angles));
+            circlePane.Add(Animatable("半径", _effect.circleRadius, _defaults.circleRadius, "°", "0.#", MfvSnapPoints.Angles));
 
             // 1 draws a true circle.
-            var aspect = new MfvValueSlider("縦横比", new Vector2(0.1f, 4f), string.Empty, "0.##") { Snaps = new[] { 1f } };
+            var aspect = new MfvValueSlider("縦横比", new Vector2(0.1f, 4f), string.Empty, "0.##") 
+            {
+                Snaps = new[] { 1f },
+                DefaultValue = _defaults.circleAspect,
+            };
             aspect.SetValueWithoutNotify(_effect.circleAspect);
             aspect.RegisterValueChangedCallback(evt =>
             {
@@ -172,7 +184,10 @@ namespace ManeuverForVRC.Editor
             });
             trackPane.Add(userName);
 
-            var followSpeed = new MfvValueSlider("追従速度", new Vector2(0f, 20f), string.Empty, "0.#");
+            var followSpeed = new MfvValueSlider("追従速度", new Vector2(0f, 20f), string.Empty, "0.#")
+            {
+                DefaultValue = _defaults.trackSpeed,
+            };
             followSpeed.SetValueWithoutNotify(_effect.trackSpeed);
             followSpeed.RegisterValueChangedCallback(evt =>
             {
@@ -207,8 +222,8 @@ namespace ManeuverForVRC.Editor
 
         private void BuildCone(VisualElement body)
         {
-            body.Add(Animatable("幅", _effect.coneWidth, "°", "0.#", MfvSnapPoints.Angles));
-            body.Add(Animatable("長さ", _effect.coneLength, "m", "0.#"));
+            body.Add(Animatable("幅", _effect.coneWidth, _defaults.coneWidth, "°", "0.#", MfvSnapPoints.Angles));
+            body.Add(Animatable("長さ", _effect.coneLength, _defaults.coneLength, "m", "0.#"));
         }
 
         // ------------------------------------------------------------ Color
@@ -248,19 +263,19 @@ namespace ManeuverForVRC.Editor
 
         private void BuildBrightness(VisualElement body)
         {
-            body.Add(Animatable("明るさ", _effect.brightness, "%", "0"));
+            body.Add(Animatable("明るさ", _effect.brightness, _defaults.brightness, "%", "0"));
         }
 
         // ---------------------------------------------------------- Flicker
 
         private void BuildFlicker(VisualElement body)
         {
-            body.Add(BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed, string.Empty, "0.#",
-                v => _effect.flickerSpeed = v));
-            body.Add(BuildSimpleSlider("強さ", new Vector2(0f, 100f), _effect.flickerStrength * 100f, "%", "0",
-                v => _effect.flickerStrength = Mathf.Clamp01(v / 100f)));
+            body.Add(BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed,
+                _defaults.flickerSpeed, string.Empty, "0.#", v => _effect.flickerSpeed = v));
+            body.Add(BuildSimpleSlider("強さ", new Vector2(0f, 100f), _effect.flickerStrength * 100f,
+                _defaults.flickerStrength * 100f, "%", "0", v => _effect.flickerStrength = Mathf.Clamp01(v / 100f)));
             body.Add(BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 2f), _effect.flickerFixtureStagger,
-                string.Empty, "0.##", v => _effect.flickerFixtureStagger = v));
+                _defaults.flickerFixtureStagger, string.Empty, "0.##", v => _effect.flickerFixtureStagger = v));
         }
 
         // ------------------------------------------------------------- Gobo
@@ -302,7 +317,7 @@ namespace ManeuverForVRC.Editor
             body.Add(rotation);
 
             var goboStagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
-                "°", "0", v => _effect.goboFixtureStaggerDegrees = v);
+                _defaults.goboFixtureStaggerDegrees, "°", "0", v => _effect.goboFixtureStaggerDegrees = v);
             goboStagger.Snaps = MfvSnapPoints.Angles(goboStagger.Limit);
             body.Add(goboStagger);
         }
@@ -315,11 +330,12 @@ namespace ManeuverForVRC.Editor
             string label,
             Vector2 limit,
             float initial,
+            float defaultValue,
             string unit,
             string format,
             Action<float> setter)
         {
-            var slider = new MfvValueSlider(label, limit, unit, format);
+            var slider = new MfvValueSlider(label, limit, unit, format) { DefaultValue = defaultValue };
             slider.SetValueWithoutNotify(initial);
             slider.RegisterValueChangedCallback(evt =>
             {

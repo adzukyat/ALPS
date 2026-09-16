@@ -488,7 +488,7 @@ namespace ManeuverForVRC.Tests
 
                 flags[0].value = true;
                 Assert.IsTrue(move.tilt.isRange);
-                Assert.AreEqual(new Vector2(0f, 12f), move.tilt.spreadRange, "The spread range starts closed and opens to the current spread.");
+                Assert.AreEqual(new Vector2(0f, 45f), move.tilt.spreadRange, "A spread too small to part the thumbs opens to a quarter of the span.");
                 Assert.AreEqual(DisplayStyle.Flex, ranges[1].style.display.value, "R with S ranges the spread.");
                 Assert.AreEqual(DisplayStyle.None, ranges[0].style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
@@ -563,6 +563,84 @@ namespace ManeuverForVRC.Tests
             Assert.AreEqual(0.25f, MfvSliderTrack.Snap(0.23f, snaps, 0.03f));
             Assert.AreEqual(0.4f, MfvSliderTrack.Snap(0.4f, snaps, 0.03f), "Far from every point the value is kept.");
             Assert.AreEqual(0.52f, MfvSliderTrack.Snap(0.52f, MfvSnapPoints.None, 0.03f));
+        }
+
+        [Test]
+        public void SliderTrack_SlidesARangeWithoutChangingItsWidth()
+        {
+            var none = MfvSnapPoints.None;
+            AssertVector(new Vector2(0.4f, 0.6f), MfvSliderTrack.Slide(0.2f, 0.4f, 0.4f, none, 0f), "The width is kept.");
+            AssertVector(new Vector2(0f, 0.2f), MfvSliderTrack.Slide(0.2f, 0.4f, -0.3f, none, 0f), "The low end stops at the left edge.");
+            AssertVector(new Vector2(0.8f, 1f), MfvSliderTrack.Slide(0.2f, 0.4f, 0.95f, none, 0f), "The high end stops at the right edge.");
+
+            var snaps = new[] { 0.5f, 0.75f };
+            AssertVector(new Vector2(0.5f, 0.7f), MfvSliderTrack.Slide(0.2f, 0.4f, 0.51f, snaps, 0.03f), "The low end snaps.");
+            AssertVector(new Vector2(0.55f, 0.75f), MfvSliderTrack.Slide(0.2f, 0.4f, 0.54f, snaps, 0.03f), "The high end snaps.");
+            AssertVector(new Vector2(0.5f, 0.74f), MfvSliderTrack.Slide(0.2f, 0.44f, 0.49f, snaps, 0.03f), "The smaller shift wins.");
+        }
+
+        private static void AssertVector(Vector2 expected, Vector2 actual, string message)
+        {
+            Assert.AreEqual(expected.x, actual.x, 0.0001f, message);
+            Assert.AreEqual(expected.y, actual.y, 0.0001f, message);
+        }
+
+        [Test]
+        public void Sliders_ResetToTheirDefaultValue()
+        {
+            var single = new MfvValueSlider("single", new Vector2(0f, 10f));
+            single.SetValueWithoutNotify(7f);
+            single.ResetToDefault();
+            Assert.AreEqual(7f, single.value, "Without a default the value stays.");
+
+            single.DefaultValue = 3f;
+            single.ResetToDefault();
+            Assert.AreEqual(3f, single.value);
+
+            var range = new MfvRangeSlider("range", new Vector2(0f, 10f)) { DefaultValue = new Vector2(2f, 8f) };
+            range.SetValueWithoutNotify(new Vector2(4f, 6f));
+            range.ResetToDefault(MfvSliderTrack.ThumbLow);
+            Assert.AreEqual(new Vector2(2f, 6f), range.value, "Only the clicked end comes back.");
+            range.ResetToDefault(MfvSliderTrack.ThumbHigh);
+            Assert.AreEqual(new Vector2(2f, 8f), range.value);
+
+            range.SetValueWithoutNotify(new Vector2(0f, 1f));
+            range.ResetToDefault(MfvSliderTrack.ThumbLow);
+            Assert.AreEqual(new Vector2(2f, 8f), range.value, "An end that would pass the other brings back the whole range.");
+        }
+
+        [UnityTest]
+        public IEnumerator EffectSliders_ResetToTheValuesOfAFreshEffect()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new MfvClipEffectSet();
+            var move = set.Add(MfvEffectKind.Move);
+            move.tilt.isRange = true;
+            move.tilt.range = new Vector2(-10f, 10f);
+            move.panTiltPhaseOffsetDegrees = 180f;
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new MfvClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var tilt = view.Query<MfvRangeSlider>().ToList().First(s => s.label == "Tilt");
+                tilt.ResetToDefault(MfvSliderTrack.ThumbHigh);
+                Assert.AreEqual(new Vector2(-10f, 35f), move.tilt.range, "The high end returns to the Move default.");
+
+                var offset = view.Query<MfvValueSlider>().ToList().First(s => s.label == "位相差");
+                offset.ResetToDefault();
+                Assert.AreEqual(90f, move.panTiltPhaseOffsetDegrees, 0.001f);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
         }
 
         [Test]

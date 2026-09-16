@@ -24,6 +24,12 @@ namespace ManeuverForVRC.Editor
         /// <summary>Marks the growing half of a [ control ][ R ][ S ] row.</summary>
         private const string FieldClass = "mfv-animatable__field";
 
+        /// <summary>
+        /// The least a seeded spread range opens, as a fraction of the value's span. The spread
+        /// track covers twice the span, so this keeps the two thumbs an eighth of the track apart.
+        /// </summary>
+        private const float SpreadRangeOpening = 0.25f;
+
         /// <summary>Makes room at the top of a frame for its title.</summary>
         private const string LegendFrameClass = "mfv-sub--legend";
 
@@ -60,7 +66,8 @@ namespace ManeuverForVRC.Editor
             string format = "0.###",
             VisualElement paletteRow = null,
             Func<int> paletteCount = null,
-            Func<Vector2, float[]> snaps = null)
+            Func<Vector2, float[]> snaps = null,
+            MfvAnimatableValue defaults = null)
         {
             _model = model;
             _clipPhase = clipPhase;
@@ -91,12 +98,12 @@ namespace ManeuverForVRC.Editor
             }
             else
             {
-                _valueSlider = new MfvValueSlider(label, model.limit, unit, format) { Snaps = valueSnaps };
+                _valueSlider = new MfvValueSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
                 _valueSlider.AddToClassList(FieldClass);
                 _valueSlider.SetValueWithoutNotify(model.value);
                 _valueSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
 
-                _rangeSlider = new MfvRangeSlider(label, model.limit, unit, format) { Snaps = valueSnaps };
+                _rangeSlider = new MfvRangeSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.range };
                 _rangeSlider.AddToClassList(FieldClass);
                 _rangeSlider.SetValueWithoutNotify(model.range);
                 _rangeSlider.RegisterValueChangedCallback(evt =>
@@ -106,7 +113,7 @@ namespace ManeuverForVRC.Editor
                     Changed();
                 });
 
-                _spreadSlider = new MfvValueSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps };
+                _spreadSlider = new MfvValueSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps, DefaultValue = 0f };
                 _spreadSlider.AddToClassList(FieldClass);
                 _spreadSlider.SetValueWithoutNotify(model.spread);
                 _spreadSlider.RegisterValueChangedCallback(evt =>
@@ -115,7 +122,11 @@ namespace ManeuverForVRC.Editor
                     Changed();
                 });
 
-                _spreadRange = new MfvRangeSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps };
+                _spreadRange = new MfvRangeSlider(label, spreadLimit, unit, format)
+                {
+                    Snaps = spreadSnaps,
+                    DefaultValue = new Vector2(0f, span * SpreadRangeOpening),
+                };
                 _spreadRange.AddToClassList(FieldClass);
                 _spreadRange.SetValueWithoutNotify(model.spreadRange);
                 _spreadRange.RegisterValueChangedCallback(evt =>
@@ -202,7 +213,7 @@ namespace ManeuverForVRC.Editor
             {
                 _spreadFrame = Frame("広がり", out _);
 
-                _offsetSlider = new MfvValueSlider("オフセット", model.limit, unit, format) { Snaps = valueSnaps };
+                _offsetSlider = new MfvValueSlider("オフセット", model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
                 _offsetSlider.SetValueWithoutNotify(model.value);
                 _offsetSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
                 _spreadFrame.Add(_offsetSlider);
@@ -300,7 +311,8 @@ namespace ManeuverForVRC.Editor
 
         /// <summary>
         /// A collapsed spread range has nothing to animate, so its options would stay hidden.
-        /// Start it closed and open to the current spread, or to a tenth of the span.
+        /// Start it closed and open to the current spread. A spread too small to pull the
+        /// thumbs apart opens to <see cref="SpreadRangeOpening"/> of the span in its direction.
         /// </summary>
         private void SeedSpreadRange(float span)
         {
@@ -309,7 +321,10 @@ namespace ManeuverForVRC.Editor
                 return;
             }
 
-            var end = Mathf.Approximately(_model.spread, 0f) ? span * 0.1f : _model.spread;
+            var opening = span * SpreadRangeOpening;
+            var end = Mathf.Abs(_model.spread) >= opening
+                ? _model.spread
+                : (_model.spread < 0f ? -opening : opening);
             _model.spreadRange = new Vector2(0f, end);
             _spreadRange.SetValueWithoutNotify(_model.spreadRange);
         }

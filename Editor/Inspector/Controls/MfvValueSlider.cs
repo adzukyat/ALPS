@@ -26,6 +26,7 @@ namespace ManeuverForVRC.Editor
 
             _track = new MfvSliderTrack(false) { Origin = OriginOf(limit) };
             _track.Changed += (_, high) => value = _snaps.ToValue(_limit, high);
+            _track.ResetRequested += _ => ResetToDefault();
             container.Add(_track);
 
             _box = new MfvNumberBox(unit, format) { Limit = limit };
@@ -57,6 +58,17 @@ namespace ManeuverForVRC.Editor
             {
                 _snaps.Values = value;
                 _track.SetSnaps(_snaps.Normalize(_limit));
+            }
+        }
+
+        /// <summary>What a double click on the thumb restores. Null leaves the thumb as it is.</summary>
+        public float? DefaultValue { get; set; }
+
+        public void ResetToDefault()
+        {
+            if (DefaultValue.HasValue)
+            {
+                value = DefaultValue.Value;
             }
         }
 
@@ -110,6 +122,7 @@ namespace ManeuverForVRC.Editor
             _track.Changed += (low, high) => value = new Vector2(
                 _snaps.ToValue(_limit, low),
                 _snaps.ToValue(_limit, high));
+            _track.ResetRequested += ResetToDefault;
             container.Add(_track);
 
             _maxBox = new MfvNumberBox(unit, format) { Limit = limit };
@@ -142,6 +155,29 @@ namespace ManeuverForVRC.Editor
                 _snaps.Values = value;
                 _track.SetSnaps(_snaps.Normalize(_limit));
             }
+        }
+
+        /// <summary>What a double click on a thumb restores, per end. Null leaves the thumbs as they are.</summary>
+        public Vector2? DefaultValue { get; set; }
+
+        /// <summary>
+        /// Restores the end shown by <paramref name="thumb"/>. When the restored end would pass
+        /// the other one, the whole default range comes back instead.
+        /// </summary>
+        public void ResetToDefault(int thumb)
+        {
+            if (!DefaultValue.HasValue)
+            {
+                return;
+            }
+
+            var defaults = DefaultValue.Value;
+            var current = value;
+            var restored = thumb == MfvSliderTrack.ThumbLow
+                ? new Vector2(defaults.x, current.y)
+                : new Vector2(current.x, defaults.y);
+
+            value = restored.x <= restored.y ? restored : defaults;
         }
 
         public string Unit

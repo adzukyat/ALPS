@@ -19,6 +19,16 @@ namespace ManeuverForVRC.Editor
         /// <summary>How close, in pixels, a dragged thumb has to come to a snap point to land on it.</summary>
         public const float SnapDistance = 5f;
 
+        /// <summary>Thumb identifiers used by <see cref="ResetRequested"/>. A single-thumb track only uses the high one.</summary>
+        public const int ThumbLow = 0;
+        public const int ThumbHigh = 1;
+
+        /// <summary>Drag state for moving both thumbs of a range together.</summary>
+        private const int DragBar = 2;
+
+        /// <summary>Half of the 11px thumb in MfvInspector.uss.</summary>
+        private const float ThumbHalfWidth = 5.5f;
+
         private readonly VisualElement _fill;
         private readonly VisualElement _minThumb;
         private readonly VisualElement _maxThumb;
@@ -30,6 +40,7 @@ namespace ManeuverForVRC.Editor
         private float _high = 1f;
         private float _origin;
         private int _draggingThumb = -1;
+        private float _grabOffset;
 
         public MfvSliderTrack(bool isRange)
         {
@@ -86,6 +97,9 @@ namespace ManeuverForVRC.Editor
 
         /// <summary>Raised while dragging with the new normalized (low, high) pair.</summary>
         public event Action<float, float> Changed;
+
+        /// <summary>Raised when a thumb is double clicked, with <see cref="ThumbLow"/> or <see cref="ThumbHigh"/>.</summary>
+        public event Action<int> ResetRequested;
 
         /// <summary>
         /// Normalized points a dragged thumb sticks to, each marked by a tick under the rail.
@@ -193,22 +207,85 @@ namespace ManeuverForVRC.Editor
             return width <= 0f ? 0f : Mathf.Clamp01(localPosition.x / width);
         }
 
+        /// <summary>
+        /// Which end a thumb element shows. The left thumb draws the smaller end, so a range
+        /// stored backwards maps it to <see cref="ThumbHigh"/>. -1 when the target is not a thumb.
+        /// </summary>
+        private int ThumbOf(IEventHandler target)
+        {
+            if (!_isRange)
+            {
+                return target == _minThumb ? ThumbHigh : -1;
+            }
+
+            var lowIsLeft = _low <= _high;
+            if (target == _minThumb)
+            {
+                return lowIsLeft ? ThumbLow : ThumbHigh;
+            }
+
+            if (target == _maxThumb)
+            {
+                return lowIsLeft ? ThumbHigh : ThumbLow;
+            }
+
+            return -1;
+        }
+
+        private float PositionOf(int thumb)
+        {
+            return thumb == ThumbLow ? _low : _high;
+        }
+
         private void OnPointerDown(PointerDownEvent evt)
         {
             var t = NormalizedAt(evt.localPosition);
+            var thumb = ThumbOf(evt.target);
 
-            if (_isRange)
+            if (evt.clickCount == 2 && thumb >= 0)
             {
-                _draggingThumb = Mathf.Abs(t - _low) <= Mathf.Abs(t - _high) ? 0 : 1;
+                ResetRequested?.Invoke(thumb);
+                evt.StopPropagation();
+                return;
+            }
+
+            _grabOffset = 0f;
+            if (thumb >= 0)
+            {
+                // Grabbing a thumb off centre keeps the value, so a click alone never moves it.
+                _draggingThumb = thumb;
+                _grabOffset = PositionOf(thumb) - t;
+            }
+            else if (_isRange && IsBetweenThumbs(evt.localPosition.x))
+            {
+                _draggingThumb = DragBar;
+                _grabOffset = _low - t;
+            }
+            else if (_isRange)
+            {
+                _draggingThumb = Mathf.Abs(t - _low) <= Mathf.Abs(t - _high) ? ThumbLow : ThumbHigh;
             }
             else
             {
-                _draggingThumb = 1;
+                _draggingThumb = ThumbHigh;
             }
 
             this.CapturePointer(evt.pointerId);
-            Apply(t);
+            if (thumb < 0 && _draggingThumb != DragBar)
+            {
+                Apply(t);
+            }
+
             evt.StopPropagation();
+        }
+
+        /// <summary>True on the rail strictly between the two thumbs, clear of both of them.</summary>
+        private bool IsBetweenThumbs(float x)
+        {
+            var width = contentRect.width;
+            var left = Mathf.Min(_low, _high) * width + ThumbHalfWidth;
+            var right = Mathf.Max(_low, _high) * width - ThumbHalfWidth;
+            return x > left && x < right;
         }
 
         private void OnPointerMove(PointerMoveEvent evt)
@@ -236,23 +313,73 @@ namespace ManeuverForVRC.Editor
 
         private void Apply(float t)
         {
-            t = Snap(t, _snaps, SnapThreshold());
+            t += _grabOffset;
 
-            if (_isRange && _draggingThumb == 0)
+            if (_draggingThumb == DragBar)
             {
-                _low = Mathf.Min(t, _high);
+                var slid = Slide(_low, _high, t, _snaps, SnapThreshold());
+                _low = slid.x;
+                _high = slid.y;
             }
             else if (_isRange)
             {
-                _high = Mathf.Max(t, _low);
+                t = Snap(Mathf.Clamp01(t), _snaps, SnapThreshold());
+
+                // A thumb dragged past the other one takes over its end, so a closed range
+                // opens in whichever direction the drag goes.
+                if (_draggingThumb == ThumbLow && t > _high)
+                {
+                    _low = _high;
+                    _draggingThumb = ThumbHigh;
+                }
+                else if (_draggingThumb == ThumbHigh && t < _low)
+                {
+                    _high = _low;
+                    _draggingThumb = ThumbLow;
+                }
+
+                if (_draggingThumb == ThumbLow)
+                {
+                    _low = t;
+                }
+                else
+                {
+                    _high = t;
+                }
             }
             else
             {
-                _high = t;
+                _high = Snap(Mathf.Clamp01(t), _snaps, SnapThreshold());
             }
 
             Refresh();
             Changed?.Invoke(_low, _high);
+        }
+
+        /// <summary>
+        /// Moves the range so its low end sits at <paramref name="low"/> while keeping its width
+        /// and staying inside the track. When either end comes within
+        /// <paramref name="threshold"/> of a snap point the whole range shifts onto it, and
+        /// the end that needs the smaller shift wins.
+        /// </summary>
+        public static Vector2 Slide(float currentLow, float currentHigh, float low, float[] snaps, float threshold)
+        {
+            var width = currentHigh - currentLow;
+            var min = Mathf.Max(0f, -width);
+            var max = Mathf.Min(1f, 1f - width);
+            low = Mathf.Clamp(low, min, max);
+
+            var high = low + width;
+            var lowShift = Snap(low, snaps, threshold) - low;
+            var highShift = Snap(high, snaps, threshold) - high;
+            var shift = lowShift;
+            if (Mathf.Approximately(lowShift, 0f) || (!Mathf.Approximately(highShift, 0f) && Mathf.Abs(highShift) < Mathf.Abs(lowShift)))
+            {
+                shift = highShift;
+            }
+
+            low = Mathf.Clamp(low + shift, min, max);
+            return new Vector2(low, low + width);
         }
     }
 }

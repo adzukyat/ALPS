@@ -29,6 +29,8 @@ namespace ManeuverForVRC.Editor
             _onChanged = onChanged;
             _compact = compact;
 
+            var defaults = new MfvPhaseSettings();
+
             if (compact)
             {
                 AddToClassList("mfv-nested");
@@ -77,7 +79,11 @@ namespace ManeuverForVRC.Editor
             Add(_easing);
 
             // 50% spends the same time going out and coming back.
-            _pingPongRatio = new MfvValueSlider("往復比", new Vector2(0f, 100f), "%", "0") { Snaps = new[] { 50f } };
+            _pingPongRatio = new MfvValueSlider("往復比", new Vector2(0f, 100f), "%", "0") 
+            {
+                Snaps = new[] { 50f },
+                DefaultValue = defaults.pingPongRatio * 100f,
+            };
             _pingPongRatio.SetValueWithoutNotify(settings.pingPongRatio * 100f);
             _pingPongRatio.RegisterValueChangedCallback(evt =>
             {
@@ -86,7 +92,7 @@ namespace ManeuverForVRC.Editor
             });
             Add(_pingPongRatio);
 
-            var group = new MfvValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0");
+            var group = new MfvValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0") { DefaultValue = defaults.fixtureGroupSize };
             group.SetValueWithoutNotify(settings.fixtureGroupSize);
             group.RegisterValueChangedCallback(evt =>
             {
@@ -97,7 +103,7 @@ namespace ManeuverForVRC.Editor
             Add(group);
 
             // Negative delay runs the order backwards, for example from the edges in.
-            var delay = new MfvValueSlider("ディレイ", new Vector2(-1f, 1f), string.Empty, "0.###");
+            var delay = new MfvValueSlider("ディレイ", new Vector2(-1f, 1f), string.Empty, "0.###") { DefaultValue = defaults.delay };
             delay.Snaps = MfvSnapPoints.Zero(delay.Limit);
             delay.SetValueWithoutNotify(settings.delay);
             delay.RegisterValueChangedCallback(evt =>
