@@ -7,8 +7,8 @@ namespace ManeuverForVRC.Editor
 {
     /// <summary>
     /// The small right-aligned value box beside every slider. Shows the number with its
-    /// unit ("65 %", "90°") and stays editable: typing parses the leading number
-    /// and the unit is re-applied on commit.
+    /// unit ("65 %", "90°") and stays editable: focusing drops the unit so only the
+    /// number is edited, and the unit is re-applied on commit.
     /// </summary>
     public class MfvNumberBox : BaseField<float>
     {
@@ -18,6 +18,7 @@ namespace ManeuverForVRC.Editor
             new Regex(@"^\s*[-+]?[0-9]*\.?[0-9]+", RegexOptions.Compiled);
 
         private readonly TextField _text;
+        private bool _editing;
 
         public MfvNumberBox(string unit = "", string format = "0.###")
             : base(null, new VisualElement())
@@ -31,6 +32,17 @@ namespace ManeuverForVRC.Editor
             _text = new TextField { isDelayed = true };
             _text.AddToClassList(ussClassName);
             _text.RegisterValueChangedCallback(OnTextChanged);
+            _text.RegisterCallback<FocusInEvent>(_ => SetEditing(true));
+            // The delayed commit runs after these callbacks and needs the typed text, and an
+            // unchanged number commits without a ChangeEvent, so restore the unit a tick later.
+            _text.RegisterCallback<FocusOutEvent>(_ => _text.schedule.Execute(EndEditing));
+            _text.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+                {
+                    _text.schedule.Execute(() => SetEditing(false));
+                }
+            });
             container.Add(_text);
 
             style.flexGrow = 0;
@@ -52,10 +64,25 @@ namespace ManeuverForVRC.Editor
             _text.SetValueWithoutNotify(FormatValue(newValue));
         }
 
+        private void EndEditing()
+        {
+            var focused = _text.focusController?.focusedElement as VisualElement;
+            if (focused == null || !_text.Contains(focused))
+            {
+                SetEditing(false);
+            }
+        }
+
+        private void SetEditing(bool editing)
+        {
+            _editing = editing;
+            _text.SetValueWithoutNotify(FormatValue(value));
+        }
+
         private string FormatValue(float number)
         {
             var text = number.ToString(Format, CultureInfo.InvariantCulture);
-            if (string.IsNullOrEmpty(Unit))
+            if (_editing || string.IsNullOrEmpty(Unit))
             {
                 return text;
             }
@@ -74,7 +101,7 @@ namespace ManeuverForVRC.Editor
             }
 
             // Re-render so the unit comes back even when the entry was rejected.
-            _text.SetValueWithoutNotify(FormatValue(value));
+            SetEditing(false);
         }
     }
 }
