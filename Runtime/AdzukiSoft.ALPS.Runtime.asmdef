@@ -1,0 +1,19 @@
+{
+  "name": "AdzukiSoft.ALPS.Runtime",
+  "rootNamespace": "AdzukiSoft.ALPS",
+  "references": [
+    "Unity.Timeline",
+    "VRSL.Core",
+    "VRC.SDKBase",
+    "UdonSharp.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

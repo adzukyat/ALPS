@@ -32,8 +32,8 @@
 /TestProject~/.audiolink_pipeline
 /TestProject~/ProjectSettings/*
 !/TestProject~/ProjectSettings/ProjectVersion.txt
-/TestProject~/Assets/MfvTestFixtures/Baked/
-/TestProject~/Assets/MfvTestFixtures/Baked.meta
+/TestProject~/Assets/AlpsTestFixtures/Baked/
+/TestProject~/Assets/AlpsTestFixtures/Baked.meta
 /TestProject~/Assets/UdonSharp/
 /TestProject~/Assets/UdonSharp.meta
 /TestProject~/Assets/SerializedUdonPrograms/

@@ -17,7 +17,7 @@ download_package() {
   local zip_path="${CACHE_DIR}/${name}-${sha256:0:12}.zip"
   local tmp_dir="${CACHE_DIR}/${name}.tmp"
   local target_dir="${PACKAGES_DIR}/${name}"
-  local source_marker="${target_dir}/.mfv-bootstrap-source"
+  local source_marker="${target_dir}/.alps-bootstrap-source"
 
   if [[ -f "${target_dir}/package.json" && -f "${source_marker}" && "$(cat "${source_marker}")" == "${sha256}" ]]; then
     return 0
@@ -72,7 +72,7 @@ download_package() {
 
 patch_udonsharp_batchmode_guard() {
   local file="${PACKAGES_DIR}/com.vrchat.worlds/Integrations/UdonSharp/Editor/UdonSharpEditorManager.cs"
-  local marker="MFV test harness: skip GUI-only inspector Harmony patch in batchmode."
+  local marker="test harness: skip GUI-only inspector Harmony patch in batchmode."
 
   if [[ ! -f "${file}" ]] || grep -q "${marker}" "${file}"; then
     return 0
@@ -83,7 +83,7 @@ patch_udonsharp_batchmode_guard() {
     exit 1
   fi
 
-  perl -0pi -e 's/(private static void PatchInspectorTitleIfNeeded\(\)\s*\{\s*)if \(_inspectorTitlePatched\) return;/${1}\/\/ MFV test harness: skip GUI-only inspector Harmony patch in batchmode.\n            if (Application.isBatchMode) return;\n            if (_inspectorTitlePatched) return;/s' "${file}"
+  perl -0pi -e 's/(private static void PatchInspectorTitleIfNeeded\(\)\s*\{\s*)if \(_inspectorTitlePatched\) return;/${1}\/\/ ALPS test harness: skip GUI-only inspector Harmony patch in batchmode.\n            if (Application.isBatchMode) return;\n            if (_inspectorTitlePatched) return;/s' "${file}"
 
   if ! grep -q "${marker}" "${file}"; then
     echo "[bootstrap] Failed to patch UdonSharp batchmode guard in ${file}" >&2
@@ -93,7 +93,7 @@ patch_udonsharp_batchmode_guard() {
 
 patch_udonsharp_runtime_watcher_batchmode_guard() {
   local file="${PACKAGES_DIR}/com.vrchat.worlds/Integrations/UdonSharp/Editor/UdonSharpRuntimeLogWatcher.cs"
-  local marker="MFV test harness: skip VRChat runtime log watcher in batchmode."
+  local marker="test harness: skip VRChat runtime log watcher in batchmode."
 
   if [[ ! -f "${file}" ]] || grep -q "${marker}" "${file}"; then
     return 0
@@ -104,7 +104,7 @@ patch_udonsharp_runtime_watcher_batchmode_guard() {
     exit 1
   fi
 
-  perl -0pi -e 's/(public static void InitLogWatcher\(\)\s*\{\s*)EditorApplication\.update \+= OnEditorUpdate;/${1}\/\/ MFV test harness: skip VRChat runtime log watcher in batchmode.\n            if (Application.isBatchMode) return;\n\n            EditorApplication.update += OnEditorUpdate;/s' "${file}"
+  perl -0pi -e 's/(public static void InitLogWatcher\(\)\s*\{\s*)EditorApplication\.update \+= OnEditorUpdate;/${1}\/\/ ALPS test harness: skip VRChat runtime log watcher in batchmode.\n            if (Application.isBatchMode) return;\n\n            EditorApplication.update += OnEditorUpdate;/s' "${file}"
 
   if ! grep -q "${marker}" "${file}"; then
     echo "[bootstrap] Failed to patch UdonSharp runtime watcher batchmode guard in ${file}" >&2

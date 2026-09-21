@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "me.adzuki.maneuver-for-vrc": "file:../..",
+    "me.adzuki.live-performance-system": "file:../..",
     "com.acchosen.vr-stage-lighting": "file:com.acchosen.vr-stage-lighting",
     "com.llealloo.audiolink": "file:com.llealloo.audiolink",
     "com.vrchat.base": "file:com.vrchat.base",
@@ -43,6 +43,6 @@
     "com.unity.modules.xr": "1.0.0"
   },
   "testables": [
-    "me.adzuki.maneuver-for-vrc"
+    "me.adzuki.live-performance-system"
   ]
 }

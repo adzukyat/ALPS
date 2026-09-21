@@ -1,238 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-6574813762604422847
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
-  m_Name: Universe_MovingWashLight
-  m_EditorClassIdentifier: 
-  m_Version: 3
-  m_AnimClip: {fileID: 0}
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_Curves: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 0
-    m_ClipIn: 0
-    m_Asset: {fileID: -1414169605960213440}
-    m_Duration: 8.5
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: -6574813762604422847}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Wash Sweep
-  - m_Version: 1
-    m_Start: 8
-    m_ClipIn: 0
-    m_Asset: {fileID: -3819895971202682147}
-    m_Duration: 8.5
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: -6574813762604422847}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Wash Chase
-  - m_Version: 1
-    m_Start: 16
-    m_ClipIn: 0
-    m_Asset: {fileID: -1322506119460184827}
-    m_Duration: 10
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: -6574813762604422847}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Wash Odd Even
-  m_Markers:
-    m_Objects: []
-  bpm: 120
-  beatOrigin: 0
---- !u!114 &-4744297733827010744
+--- !u!114 &-6823805261865431713
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -242,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
+  m_Name: AlpsTimelineClip
   m_EditorClassIdentifier: 
   data:
     order: 0
@@ -252,13 +20,234 @@ MonoBehaviour:
       ease: 0
       pingPongRatio: 0.5
       fixtureGroupSize: 1
-      spread: 0
+      spread: 1
       spreadBeats: 0
       spreadInBeats: 0
-      beatsPerCycle: 0.5
+      beatsPerCycle: 4
       inverse: 0
     effects:
-    - kind: 3
+    - kind: 0
+      parity: 0
+      expanded: 1
+      moveMode: 1
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -40, y: 35}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 12
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 1
       parity: 0
       expanded: 1
       moveMode: 0
@@ -368,8 +357,8 @@ MonoBehaviour:
       circleAspect: 1
       coneWidth:
         limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
+        value: 12
+        range: {x: 8, y: 30}
         isRange: 0
         hasSpread: 0
         spread: 0
@@ -388,8 +377,8 @@ MonoBehaviour:
           inverse: 0
       coneLength:
         limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
+        value: 40
+        range: {x: 0, y: 14}
         isRange: 0
         hasSpread: 0
         spread: 0
@@ -432,11 +421,11 @@ MonoBehaviour:
         limit: {x: 0, y: 200}
         value: 100
         range: {x: 0, y: 100}
-        isRange: 1
+        isRange: 0
         hasSpread: 0
         spread: 0
         spreadRange: {x: 0, y: 0}
-        timing: 1
+        timing: 0
         useOwnPhase: 0
         ownPhase:
           mode: 1
@@ -629,39 +618,7 @@ MonoBehaviour:
           inverse: 0
       colorStops:
       - isGradient: 0
-        color: {r: 1, g: 0.85, b: 0.1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      - isGradient: 0
-        color: {r: 1, g: 0.45, b: 0.05, a: 1}
+        color: {r: 1, g: 1, b: 1, a: 1}
         gradient:
           serializedVersion: 2
           key0: {r: 1, g: 1, b: 1, a: 1}
@@ -701,8 +658,229 @@ MonoBehaviour:
         hasSpread: 0
         spread: 0
         spreadRange: {x: 0, y: 0}
-        timing: 1
-        useOwnPhase: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
         ownPhase:
           mode: 1
           ease: 3
@@ -768,101 +946,7 @@ MonoBehaviour:
     profileExpanded: 0
   profile: {fileID: 0}
   syncProfile: 0
---- !u!114 &-4514665565308429177
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
-  m_Name: Universe_MovingBeamLight_Gobo
-  m_EditorClassIdentifier: 
-  m_Version: 3
-  m_AnimClip: {fileID: 0}
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_Curves: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 0
-    m_ClipIn: 0
-    m_Asset: {fileID: -3190645927007417605}
-    m_Duration: 26
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: -4514665565308429177}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Gobo Spin
-  m_Markers:
-    m_Objects: []
-  bpm: 120
-  beatOrigin: 0
---- !u!114 &-3819895971202682147
+--- !u!114 &-6766170883598091437
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -872,7 +956,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
+  m_Name: AlpsTimelineClip
   m_EditorClassIdentifier: 
   data:
     order: 0
@@ -1366,7 +1450,7 @@ MonoBehaviour:
     profileExpanded: 0
   profile: {fileID: 0}
   syncProfile: 0
---- !u!114 &-3190645927007417605
+--- !u!114 &-6159563437665549721
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1375,947 +1459,92 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
+  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
+  m_Name: Universe_MovingBeamLight_Gobo
   m_EditorClassIdentifier: 
-  data:
-    order: 0
-    phaseExpanded: 1
-    phase:
-      mode: 0
-      ease: 0
-      pingPongRatio: 0.5
-      fixtureGroupSize: 1
-      spread: 0
-      spreadBeats: 0
-      spreadInBeats: 0
-      beatsPerCycle: 4
-      inverse: 0
-    effects:
-    - kind: 5
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 0
+    m_ClipIn: 0
+    m_Asset: {fileID: -3080951952710131363}
+    m_Duration: 26
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: -6159563437665549721}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
         value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
         value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops:
-      - goboIndex: 4
-      - goboIndex: 7
-      - goboIndex: 1
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 1
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 2
-      goboFixtureStaggerDegrees: 45
-    - kind: 1
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 20
-        range: {x: 8, y: 30}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 45
-        range: {x: 0, y: 14}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 0
-        color: {r: 0.3, g: 0.5, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 80
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &-1414169605960213440
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Gobo Spin
+  m_Markers:
+    m_Objects: []
+  bpm: 120
+  beatOrigin: 0
+--- !u!114 &-6104443272371119222
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2325,796 +1554,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
-  m_EditorClassIdentifier: 
-  data:
-    order: 2
-    phaseExpanded: 1
-    phase:
-      mode: 1
-      ease: 3
-      pingPongRatio: 0.5
-      fixtureGroupSize: 1
-      spread: 0.5
-      spreadBeats: 0
-      spreadInBeats: 0
-      beatsPerCycle: 4
-      inverse: 0
-    effects:
-    - kind: 0
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -30, y: 30}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 2
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops:
-      - isGradient: 0
-        color: {r: 1, g: 0.1, b: 0.2, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      - isGradient: 0
-        color: {r: 0.9, g: 0.2, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      - isGradient: 0
-        color: {r: 0.2, g: 0.3, b: 1, a: 1}
-        gradient:
-          serializedVersion: 2
-          key0: {r: 1, g: 1, b: 1, a: 1}
-          key1: {r: 1, g: 1, b: 1, a: 1}
-          key2: {r: 0, g: 0, b: 0, a: 0}
-          key3: {r: 0, g: 0, b: 0, a: 0}
-          key4: {r: 0, g: 0, b: 0, a: 0}
-          key5: {r: 0, g: 0, b: 0, a: 0}
-          key6: {r: 0, g: 0, b: 0, a: 0}
-          key7: {r: 0, g: 0, b: 0, a: 0}
-          ctime0: 0
-          ctime1: 65535
-          ctime2: 0
-          ctime3: 0
-          ctime4: 0
-          ctime5: 0
-          ctime6: 0
-          ctime7: 0
-          atime0: 0
-          atime1: 65535
-          atime2: 0
-          atime3: 0
-          atime4: 0
-          atime5: 0
-          atime6: 0
-          atime7: 0
-          m_Mode: 0
-          m_ColorSpace: -1
-          m_NumColorKeys: 2
-          m_NumAlphaKeys: 2
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 1
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 1
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    - kind: 3
-      parity: 0
-      expanded: 1
-      moveMode: 0
-      tilt:
-        limit: {x: -90, y: 90}
-        value: 0
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      pan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      panTiltPhaseOffsetDegrees: 90
-      trackUserName: 
-      trackSpeed: 5.5
-      circleCenterTilt:
-        limit: {x: -90, y: 90}
-        value: 30
-        range: {x: -90, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleCenterPan:
-        limit: {x: -180, y: 180}
-        value: 0
-        range: {x: -180, y: 180}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleRadius:
-        limit: {x: 0, y: 90}
-        value: 10
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      circleAspect: 1
-      coneWidth:
-        limit: {x: 0, y: 90}
-        value: 15
-        range: {x: 0, y: 90}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      coneLength:
-        limit: {x: 0, y: 50}
-        value: 14
-        range: {x: 0, y: 50}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      colorStops: []
-      selectedColorStop: 0
-      colorPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      brightness:
-        limit: {x: 0, y: 200}
-        value: 100
-        range: {x: 0, y: 100}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      blackoutOnReturn: 0
-      blackoutFadeIn: 0
-      blackoutFadeOut: 0
-      flickerSpeed: 12
-      flickerStrength: 0.3
-      flickerFixtureStagger: 0.6
-      goboStops: []
-      selectedGoboStop: 0
-      goboPickerExpanded: 0
-      goboPhasing:
-        limit: {x: 0, y: 1}
-        value: 0
-        range: {x: 0, y: 1}
-        isRange: 0
-        hasSpread: 0
-        spread: 0
-        spreadRange: {x: 0, y: 0}
-        timing: 0
-        useOwnPhase: 0
-        ownPhase:
-          mode: 1
-          ease: 3
-          pingPongRatio: 0.5
-          fixtureGroupSize: 1
-          spread: 0
-          spreadBeats: 0
-          spreadInBeats: 0
-          beatsPerCycle: 2
-          inverse: 0
-      goboRotationBeats: 8
-      goboFixtureStaggerDegrees: 45
-    addCatalogExpanded: 0
-    profileExpanded: 0
-  profile: {fileID: 0}
-  syncProfile: 0
---- !u!114 &-1322506119460184827
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
+  m_Name: AlpsTimelineClip
   m_EditorClassIdentifier: 
   data:
     order: 0
@@ -4271,193 +2711,7 @@ MonoBehaviour:
     profileExpanded: 0
   profile: {fileID: 0}
   syncProfile: 0
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
-  m_Name: ExampleTimeline
-  m_EditorClassIdentifier: 
-  m_Version: 0
-  m_Tracks:
-  - {fileID: -6574813762604422847}
-  - {fileID: 5669078302061443133}
-  - {fileID: -4514665565308429177}
-  m_FixedDuration: 26
-  m_EditorSettings:
-    m_Framerate: 60
-    m_ScenePreview: 1
-  m_DurationMode: 1
-  m_MarkerTrack: {fileID: 0}
---- !u!114 &5669078302061443133
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
-  m_Name: Universe_MovingBeamLight
-  m_EditorClassIdentifier: 
-  m_Version: 3
-  m_AnimClip: {fileID: 0}
-  m_Locked: 0
-  m_Muted: 0
-  m_CustomPlayableFullTypename: 
-  m_Curves: {fileID: 0}
-  m_Parent: {fileID: 11400000}
-  m_Children: []
-  m_Clips:
-  - m_Version: 1
-    m_Start: 0
-    m_ClipIn: 0
-    m_Asset: {fileID: 6088671786991269958}
-    m_Duration: 13.5
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 5669078302061443133}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Beam Circle
-  - m_Version: 1
-    m_Start: 13
-    m_ClipIn: 0
-    m_Asset: {fileID: -4744297733827010744}
-    m_Duration: 13
-    m_TimeScale: 1
-    m_ParentTrack: {fileID: 5669078302061443133}
-    m_EaseInDuration: 0
-    m_EaseOutDuration: 0
-    m_BlendInDuration: -1
-    m_BlendOutDuration: -1
-    m_MixInCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_MixOutCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 1
-        value: 0
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    m_BlendInCurveMode: 0
-    m_BlendOutCurveMode: 0
-    m_ExposedParameterNames: []
-    m_AnimationCurves: {fileID: 0}
-    m_Recordable: 0
-    m_PostExtrapolationMode: 0
-    m_PreExtrapolationMode: 0
-    m_PostExtrapolationTime: 0
-    m_PreExtrapolationTime: 0
-    m_DisplayName: Beam Pulse
-  m_Markers:
-    m_Objects: []
-  bpm: 120
-  beatOrigin: 0
---- !u!114 &6088671786991269958
+--- !u!114 &-3080951952710131363
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4467,7 +2721,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
-  m_Name: MfvTimelineClip
+  m_Name: AlpsTimelineClip
   m_EditorClassIdentifier: 
   data:
     order: 0
@@ -4477,20 +2731,20 @@ MonoBehaviour:
       ease: 0
       pingPongRatio: 0.5
       fixtureGroupSize: 1
-      spread: 1
+      spread: 0
       spreadBeats: 0
       spreadInBeats: 0
       beatsPerCycle: 4
       inverse: 0
     effects:
-    - kind: 0
+    - kind: 5
       parity: 0
       expanded: 1
-      moveMode: 1
+      moveMode: 0
       tilt:
         limit: {x: -90, y: 90}
         value: 0
-        range: {x: -40, y: 35}
+        range: {x: -90, y: 90}
         isRange: 0
         hasSpread: 0
         spread: 0
@@ -4510,7 +2764,7 @@ MonoBehaviour:
       pan:
         limit: {x: -180, y: 180}
         value: 0
-        range: {x: -90, y: 90}
+        range: {x: -180, y: 180}
         isRange: 0
         hasSpread: 0
         spread: 0
@@ -4572,7 +2826,7 @@ MonoBehaviour:
           inverse: 0
       circleRadius:
         limit: {x: 0, y: 90}
-        value: 12
+        value: 10
         range: {x: 0, y: 90}
         isRange: 0
         hasSpread: 0
@@ -4679,18 +2933,21 @@ MonoBehaviour:
       flickerSpeed: 12
       flickerStrength: 0.3
       flickerFixtureStagger: 0.6
-      goboStops: []
+      goboStops:
+      - goboIndex: 4
+      - goboIndex: 7
+      - goboIndex: 1
       selectedGoboStop: 0
       goboPickerExpanded: 0
       goboPhasing:
         limit: {x: 0, y: 1}
         value: 0
         range: {x: 0, y: 1}
-        isRange: 0
+        isRange: 1
         hasSpread: 0
         spread: 0
         spreadRange: {x: 0, y: 0}
-        timing: 0
+        timing: 1
         useOwnPhase: 0
         ownPhase:
           mode: 1
@@ -4702,7 +2959,7 @@ MonoBehaviour:
           spreadInBeats: 0
           beatsPerCycle: 2
           inverse: 0
-      goboRotationBeats: 8
+      goboRotationBeats: 2
       goboFixtureStaggerDegrees: 45
     - kind: 1
       parity: 0
@@ -4814,7 +3071,7 @@ MonoBehaviour:
       circleAspect: 1
       coneWidth:
         limit: {x: 0, y: 90}
-        value: 12
+        value: 20
         range: {x: 8, y: 30}
         isRange: 0
         hasSpread: 0
@@ -4834,7 +3091,7 @@ MonoBehaviour:
           inverse: 0
       coneLength:
         limit: {x: 0, y: 50}
-        value: 40
+        value: 45
         range: {x: 0, y: 14}
         isRange: 0
         hasSpread: 0
@@ -5075,7 +3332,7 @@ MonoBehaviour:
           inverse: 0
       colorStops:
       - isGradient: 0
-        color: {r: 1, g: 1, b: 1, a: 1}
+        color: {r: 0.3, g: 0.5, b: 1, a: 1}
         gradient:
           serializedVersion: 2
           key0: {r: 1, g: 1, b: 1, a: 1}
@@ -5338,6 +3595,1749 @@ MonoBehaviour:
         spreadRange: {x: 0, y: 0}
         timing: 0
         useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 80
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: ExampleTimeline
+  m_EditorClassIdentifier: 
+  m_Version: 0
+  m_Tracks:
+  - {fileID: 631473917990503263}
+  - {fileID: 2943385703708536949}
+  - {fileID: -6159563437665549721}
+  m_FixedDuration: 26
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 1
+  m_MarkerTrack: {fileID: 0}
+--- !u!114 &96674201043122162
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: AlpsTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 2
+    phaseExpanded: 1
+    phase:
+      mode: 1
+      ease: 3
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      spread: 0.5
+      spreadBeats: 0
+      spreadInBeats: 0
+      beatsPerCycle: 4
+      inverse: 0
+    effects:
+    - kind: 0
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -30, y: 30}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 0
+        color: {r: 1, g: 0.1, b: 0.2, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      - isGradient: 0
+        color: {r: 0.9, g: 0.2, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      - isGradient: 0
+        color: {r: 0.2, g: 0.3, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 1
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    addCatalogExpanded: 0
+    profileExpanded: 0
+  profile: {fileID: 0}
+  syncProfile: 0
+--- !u!114 &631473917990503263
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
+  m_Name: Universe_MovingWashLight
+  m_EditorClassIdentifier: 
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 0
+    m_ClipIn: 0
+    m_Asset: {fileID: 96674201043122162}
+    m_Duration: 8.5
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 631473917990503263}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Wash Sweep
+  - m_Version: 1
+    m_Start: 8
+    m_ClipIn: 0
+    m_Asset: {fileID: -6766170883598091437}
+    m_Duration: 8.5
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 631473917990503263}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Wash Chase
+  - m_Version: 1
+    m_Start: 16
+    m_ClipIn: 0
+    m_Asset: {fileID: -6104443272371119222}
+    m_Duration: 10
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 631473917990503263}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Wash Odd Even
+  m_Markers:
+    m_Objects: []
+  bpm: 120
+  beatOrigin: 0
+--- !u!114 &2943385703708536949
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5cbd0f33542484bb7010ec1ea07dfd7, type: 3}
+  m_Name: Universe_MovingBeamLight
+  m_EditorClassIdentifier: 
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 0
+    m_ClipIn: 0
+    m_Asset: {fileID: -6823805261865431713}
+    m_Duration: 13.5
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 2943385703708536949}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Beam Circle
+  - m_Version: 1
+    m_Start: 13
+    m_ClipIn: 0
+    m_Asset: {fileID: 6946574030581210405}
+    m_Duration: 13
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 2943385703708536949}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Beam Pulse
+  m_Markers:
+    m_Objects: []
+  bpm: 120
+  beatOrigin: 0
+--- !u!114 &6946574030581210405
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6f3cb252f84fb49df24ea878b66f1f, type: 3}
+  m_Name: AlpsTimelineClip
+  m_EditorClassIdentifier: 
+  data:
+    order: 0
+    phaseExpanded: 1
+    phase:
+      mode: 0
+      ease: 0
+      pingPongRatio: 0.5
+      fixtureGroupSize: 1
+      spread: 0
+      spreadBeats: 0
+      spreadInBeats: 0
+      beatsPerCycle: 0.5
+      inverse: 0
+    effects:
+    - kind: 3
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops: []
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 1
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      goboRotationBeats: 8
+      goboFixtureStaggerDegrees: 45
+    - kind: 2
+      parity: 0
+      expanded: 1
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      coneLength:
+        limit: {x: 0, y: 50}
+        value: 14
+        range: {x: 0, y: 50}
+        isRange: 0
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 1
+          ease: 3
+          pingPongRatio: 0.5
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          beatsPerCycle: 2
+          inverse: 0
+      colorStops:
+      - isGradient: 0
+        color: {r: 1, g: 0.85, b: 0.1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      - isGradient: 0
+        color: {r: 1, g: 0.45, b: 0.05, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spread: 0
+        spreadRange: {x: 0, y: 0}
+        timing: 1
+        useOwnPhase: 1
         ownPhase:
           mode: 1
           ease: 3

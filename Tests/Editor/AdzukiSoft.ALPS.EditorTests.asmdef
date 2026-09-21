@@ -1,0 +1,29 @@
+{
+  "name": "AdzukiSoft.ALPS.EditorTests",
+  "rootNamespace": "AdzukiSoft.ALPS.Tests",
+  "references": [
+    "AdzukiSoft.ALPS.Runtime",
+    "AdzukiSoft.ALPS.Editor",
+    "VRSL.Core",
+    "VRC.SDKBase",
+    "VRC.Udon",
+    "VRC.Udon.Editor",
+    "UdonSharp.Runtime",
+    "UdonSharp.Editor",
+    "Unity.Timeline",
+    "Unity.Timeline.Editor",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

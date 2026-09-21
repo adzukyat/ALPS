@@ -1,0 +1,1100 @@
+/*
+ * Design tokens and component styles for the Adzuki Live Performance System clip inspector.
+ *
+ * Every size here is border-box, as UI Toolkit always is: a value box's 70px includes
+ * its padding and border.
+ *
+ * The styles are dark-only. The light editor skin is not a target.
+ */
+
+.alps-root {
+    --alps-card-bg: #333333;
+    --alps-panel-bg: #3f3f3f;
+    --alps-header-bg: #585858;
+    --alps-sub-bg: #373737;
+    --alps-nested-bg: #303030;
+    --alps-well-bg: #1f1f1f;
+    --alps-control-bg: #242424;
+    --alps-field-bg: #232323;
+    --alps-tile-bg: #2a2a2a;
+
+    --alps-line: #202020;
+    --alps-line-strong: #141414;
+    --alps-line-soft: #262626;
+    --alps-line-tile: #171717;
+    --alps-track: #282828;
+    --alps-tick: #6e6e6e;
+
+    --alps-accent: #2a78d6;
+    --alps-accent-line: #1d5fae;
+    --alps-accent-soft: #6ea8dc;
+    --alps-accent-tile: #1f4d80;
+    --alps-art: #d9a441;
+
+    --alps-text: #e4e4e4;
+    --alps-text-strong: #f2f2f2;
+    --alps-text-value: #f4f4f4;
+    --alps-text-label: #eaeaea;
+    --alps-text-sub: #dcdcdc;
+    --alps-text-muted: #bdbdbd;
+    --alps-text-desc: #c6c6c6;
+    --alps-text-hint: #a8a8a8;
+    --alps-danger: #e8a5a5;
+
+    --alps-label-width: 96px;
+    --alps-row-gap: 9px;
+
+    font-size: 12.5px;
+    color: var(--alps-text);
+    /* Transparent so the native inspector background shows through and the view reads as
+       part of the IMGUI clip inspector above it. */
+    background-color: rgba(0, 0, 0, 0);
+    padding: 11px 12px 14px 12px;
+    /* The inspector is laid out for a 476px card. Below that the host scrolls rather than
+       letting segmented controls overrun their row. */
+    min-width: 476px;
+}
+
+/* ------------------------------------------------------------ vertical flow
+ *
+ * UI Toolkit 2022.3 has no `gap`, so every flow container states the spacing its
+ * children carry and compensates with a reduced padding-bottom (the last child's
+ * margin is not trimmed). Rules are keyed on the container so a nested panel
+ * inside a sub-panel takes the *sub*-panel's spacing, not its own.
+ */
+
+.alps-root > * {
+    margin-bottom: 2px;
+    flex-shrink: 0;
+}
+
+.alps-root .alps-stack > * {
+    margin-bottom: 2px;
+    flex-shrink: 0;
+}
+
+.alps-root .alps-flow9 > * {
+    margin-bottom: 9px;
+    flex-shrink: 0;
+}
+
+.alps-root .alps-sub > * {
+    margin-bottom: 7px;
+    flex-shrink: 0;
+}
+
+.alps-root .alps-nested > * {
+    margin-bottom: 3px;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------- rows */
+
+.alps-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Out-specifies `.alps-root .unity-base-field { align-items: center }`, which would
+   otherwise centre the easing / palette label against a two-row grid. */
+.alps-root .unity-base-field.alps-row--top,
+.alps-root .alps-row.alps-row--top {
+    align-items: flex-start;
+}
+
+.alps-root .alps-row--top .unity-base-field__label,
+.alps-root .alps-row--top .alps-row__label {
+    /* Nudges the label onto the first tile's baseline. */
+    padding-top: 3px;
+}
+
+.alps-row__label {
+    width: var(--alps-label-width);
+    flex-shrink: 0;
+    color: var(--alps-text-label);
+    -unity-font-style: bold;
+    margin-right: var(--alps-row-gap);
+}
+
+.alps-row--sub .alps-row__label {
+    color: var(--alps-text-sub);
+    -unity-font-style: normal;
+}
+
+.alps-row__hint {
+    font-size: 11px;
+    color: var(--alps-text-hint);
+    margin-left: var(--alps-row-gap);
+}
+
+.alps-divider {
+    height: 2px;
+    background-color: #2b2b2b;
+    margin: 16px 8px 0 8px;
+}
+
+/*
+ * Zero the editor's own field margins, but never margin-bottom: that belongs to the
+ * flow rules above and a tie on specificity would make the spacing order-dependent.
+ */
+.alps-root .unity-base-field {
+    margin-top: 0;
+    margin-left: 0;
+    margin-right: 0;
+    flex-direction: row;
+    align-items: center;
+    /* Without this a field cannot shrink below its content and overflows the row. */
+    min-width: 0;
+}
+
+.alps-root .unity-base-field__label {
+    width: var(--alps-label-width);
+    min-width: var(--alps-label-width);
+    flex-shrink: 0;
+    color: var(--alps-text-label);
+    -unity-font-style: bold;
+    margin: 0 var(--alps-row-gap) 0 0;
+    padding: 0;
+}
+
+.alps-root .unity-base-field__input {
+    /* flex-basis: 0 makes the input size from the space left after the fixed-width
+       label, rather than from its own content width. */
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* --------------------------------------------------- segmented control */
+
+.alps-root .alps-seg__input {
+    flex-grow: 0;
+    flex-basis: auto;
+    flex-direction: row;
+    background-color: var(--alps-control-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-strong);
+    border-radius: 4px;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.alps-seg__item {
+    padding: 4px 12px 4px 12px;
+    color: var(--alps-text-muted);
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 1px;
+    border-left-color: #212121;
+    -unity-text-align: middle-center;
+}
+
+.alps-seg__item--first {
+    border-left-width: 0;
+}
+
+.alps-seg__item--selected {
+    background-color: var(--alps-accent);
+    color: #ffffff;
+}
+
+.alps-seg--compact .alps-seg__item {
+    padding: 4px 11px 4px 11px;
+}
+
+/* -------------------------------------------------------- tab selector */
+
+.alps-root .alps-tabs__input {
+    flex-direction: row;
+    background-color: var(--alps-control-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-strong);
+    border-radius: 5px;
+    padding: 3px;
+}
+
+.alps-tabs .unity-base-field__label {
+    display: none;
+}
+
+.alps-tabs__item {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 8px 0;
+    border-radius: 3px;
+    color: var(--alps-text-muted);
+    margin-right: 3px;
+}
+
+.alps-tabs__item--last {
+    margin-right: 0;
+}
+
+.alps-tabs__item--selected {
+    background-color: var(--alps-accent);
+    color: #ffffff;
+    -unity-font-style: bold;
+}
+
+.alps-tabs__icon {
+    width: 17px;
+    height: 17px;
+    margin-right: 7px;
+}
+
+/* -------------------------------------------------------- toggle switch */
+
+.alps-root .alps-switch__input {
+    flex-grow: 0;
+    flex-basis: auto;
+    align-self: flex-start;
+}
+
+.alps-switch__track {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #4d4d4d;
+    border-width: 1px;
+    border-color: var(--alps-line-soft);
+}
+
+.alps-switch__track--on {
+    background-color: var(--alps-accent);
+    border-color: var(--alps-accent-line);
+}
+
+.alps-switch__knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #e6e6e6;
+}
+
+.alps-switch__knob--on {
+    left: 19px;
+    background-color: #ffffff;
+}
+
+/* ------------------------------------------------------- range "R" flag */
+
+.alps-root .alps-rangeflag {
+    flex-shrink: 0;
+    flex-grow: 0;
+    margin-left: var(--alps-row-gap);
+}
+
+.alps-root .alps-rangeflag.alps-spreadflag {
+    margin-left: 3px;
+}
+
+.alps-root .alps-rangeflag__input {
+    flex-grow: 0;
+    flex-basis: auto;
+}
+
+.alps-rangeflag__box {
+    width: 24px;
+    height: 21px;
+    border-width: 1px;
+    border-color: #6d6d6d;
+    border-radius: 3px;
+    color: #c2c2c2;
+    font-size: 10.5px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    padding: 0;
+}
+
+.alps-rangeflag__box--on {
+    border-color: var(--alps-accent);
+    background-color: var(--alps-accent);
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------------- fields */
+
+.alps-root .alps-numberbox__input {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: auto;
+    width: 70px;
+}
+
+.alps-numberbox {
+    width: 70px;
+    flex-shrink: 0;
+    background-color: var(--alps-field-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-strong);
+    border-radius: 3px;
+    padding: 0;
+    color: var(--alps-text-value);
+    -unity-text-align: middle-right;
+}
+
+/*
+ * AlpsNumberBox is itself a BaseField, so these have to out-specify
+ * `.alps-root .unity-base-field { margin-left/right: 0 }`. Unscoped they lost, and the
+ * value box sat flush against the track with the min thumb drawn inside it.
+ */
+.alps-root .alps-numberbox--left {
+    margin-right: var(--alps-row-gap);
+}
+
+.alps-root .alps-numberbox--right {
+    margin-left: var(--alps-row-gap);
+}
+
+.alps-textbox {
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+    background-color: var(--alps-field-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-strong);
+    border-radius: 3px;
+    color: var(--alps-text-value);
+}
+
+.alps-textbox .unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 3px 7px 3px 7px;
+    color: var(--alps-text-value);
+}
+
+/* The 70px box holds "100 %" with room to spare. */
+.alps-numberbox .unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 3px 7px 3px 7px;
+    margin: 0;
+    color: var(--alps-text-value);
+    -unity-text-align: middle-right;
+}
+
+.alps-numberbox .unity-text-element--inner-input-field-component {
+    padding: 0;
+    margin: 0;
+}
+
+/* -------------------------------------------------------------- sliders */
+
+/* The whole slider row opts out of clipping so the end thumbs can overhang the rail. */
+.alps-root .alps-slider {
+    overflow: visible;
+}
+
+.alps-root .alps-slider__input {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    /* The thumb is centred on its value, so it hangs 5px past both ends of the rail. */
+    overflow: visible;
+}
+
+.alps-slider__track {
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+    height: 14px;
+    justify-content: center;
+    overflow: visible;
+}
+
+.alps-slider__rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 5px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--alps-track);
+}
+
+.alps-slider__fill {
+    position: absolute;
+    top: 5px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--alps-accent-soft);
+}
+
+/* Snap marks hang just under the rail, and the thumb hides the one it sits on. */
+.alps-slider__tick {
+    position: absolute;
+    top: 10px;
+    width: 1px;
+    height: 4px;
+    background-color: var(--alps-tick);
+}
+
+.alps-slider__thumb {
+    position: absolute;
+    top: 0;
+    width: 11px;
+    height: 14px;
+    margin-left: -5px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+/* The fade slider's two tracks stay apart by more than their overhanging thumbs. */
+.alps-root .alps-fade__out {
+    margin-left: 18px;
+}
+
+/*
+ * A parameter row is [ slider ][ R ][ S ]. The slider must take the space left after
+ * the flags, so its base size is zero and it grows. With flex-basis auto its content
+ * width would already fill the row and push the flags outside.
+ */
+.alps-root .alps-animatable__field {
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.alps-animatable__row {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* --------------------------------------------------------------- stepper */
+
+.alps-root .alps-stepper__input {
+    flex-grow: 0;
+    flex-basis: auto;
+    flex-direction: row;
+    align-items: center;
+}
+
+.alps-stepper__box {
+    flex-direction: row;
+    align-items: center;
+    border-width: 1px;
+    border-color: var(--alps-line-strong);
+    border-radius: 4px;
+    background-color: var(--alps-control-bg);
+}
+
+.alps-stepper__button {
+    padding: 4px 10px 4px 10px;
+    color: var(--alps-text-sub);
+    -unity-text-align: middle-center;
+}
+
+/* The value is an AlpsNumberBox, a BaseField, so the frame needs .alps-root to beat the base field margins. */
+.alps-root .alps-stepper__value {
+    margin: 0;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-color: var(--alps-line-strong);
+    min-width: 76px;
+}
+
+.alps-root .alps-stepper__value .unity-base-field__input {
+    flex-grow: 1;
+}
+
+.alps-stepper__text {
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.alps-stepper__text .unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 0;
+    padding: 4px 12px 4px 12px;
+    margin: 0;
+    color: var(--alps-text-value);
+    -unity-text-align: middle-center;
+}
+
+.alps-stepper__text .unity-text-element--inner-input-field-component {
+    padding: 0;
+    margin: 0;
+}
+
+/* ---------------------------------------------------------- easing grid */
+
+.alps-root .alps-easegrid__input {
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.alps-easegrid__tile {
+    width: 36px;
+    height: 30px;
+    background-color: var(--alps-tile-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-tile);
+    border-radius: 4px;
+    margin: 0 3px 3px 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.alps-easegrid__tile--selected {
+    background-color: var(--alps-accent-tile);
+    border-width: 2px;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-easegrid__curve {
+    width: 24px;
+    height: 18px;
+}
+
+.alps-easegrid--compact .alps-easegrid__tile {
+    width: 32px;
+    height: 26px;
+}
+
+.alps-easegrid--compact .alps-easegrid__curve {
+    width: 20px;
+    height: 15px;
+}
+
+/* -------------------------------------------------------- graph preview */
+
+.alps-graph {
+    height: 46px;
+    background-color: var(--alps-well-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-tile);
+    border-radius: 2px;
+}
+
+.alps-graph--compact {
+    height: 32px;
+}
+
+/* ------------------------------------------------------------- palettes */
+
+.alps-palette-strip {
+    flex-direction: column;
+}
+
+/*
+ * The type dropdown (solid | gradient) plus the picker for the selected stop, lined up with
+ * the control column by an empty label-width spacer.
+ */
+.alps-palette__editor {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 7px;
+}
+
+.alps-root .alps-palette__editor .unity-base-field__label {
+    display: none;
+}
+
+.alps-root .alps-palette__type {
+    width: 116px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    margin-right: var(--alps-row-gap);
+}
+
+.alps-root .alps-palette__value {
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.alps-palette {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-basis: 0;
+    flex-grow: 1;
+    min-width: 0;
+    align-items: center;
+    /* Swatches carry a 4px bottom gutter so wrapped rows don't touch. Give back the last one. */
+    margin-bottom: -4px;
+}
+
+.alps-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.15);
+    margin: 0 4px 4px 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.alps-swatch--selected {
+    border-width: 2px;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-swatch--off {
+    background-color: #0c0c0e;
+    color: #8a8c94;
+    font-size: 8.5px;
+    -unity-text-align: middle-center;
+    padding: 0;
+}
+
+.alps-swatch--action {
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 0, 0, 0);
+    color: #9a9a9a;
+    -unity-text-align: middle-center;
+    padding: 0;
+}
+
+.alps-swatch__icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* The swatch being dragged. The strip reorders live underneath it. */
+.alps-swatch--dragging {
+    opacity: 0.6;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-swatch--gobo {
+    background-color: #0c0c0e;
+}
+
+.alps-swatch--disabled {
+    opacity: 0.4;
+}
+
+.alps-swatch__image {
+    width: 100%;
+    height: 100%;
+}
+
+/* + while the gobo picker is open. `:hover` is listed so the action hover can't hide it. */
+.alps-root .alps-swatch--active,
+.alps-root .alps-swatch--active:hover {
+    border-color: var(--alps-accent-soft);
+    background-color: var(--alps-accent-tile);
+    color: var(--alps-text-strong);
+}
+
+/* OFF plus the built-in gobos, one click per added stop. */
+.alps-palette__extras {
+    flex-direction: column;
+}
+
+.alps-root .alps-palette__extras > .alps-row {
+    margin-top: 7px;
+}
+
+.alps-root .alps-gobo-picker {
+    /* The box has its own padding, so the strip's -4px give-back would bite into the next row. */
+    margin-bottom: 0;
+    padding: 6px 2px 2px 6px;
+    background-color: var(--alps-nested-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-radius: 5px;
+}
+
+/* ---------------------------------------------------------- effect card */
+
+.alps-card {
+    margin-top: 18px;
+}
+
+.alps-card__header {
+    background-color: var(--alps-header-bg);
+    padding: 9px 11px 8px 11px;
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-bottom-width: 0;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.alps-card__header--collapsed {
+    padding-bottom: 9px;
+    border-bottom-width: 1px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.alps-card__headerline {
+    flex-direction: row;
+    align-items: center;
+}
+
+.alps-card__arrow {
+    color: #e6e6e6;
+    font-size: 11px;
+    /* The editor font needs 12px for the glyph, so the gap is trimmed to keep the
+       title at 42.5px. */
+    width: 12px;
+    margin-right: 5px;
+    padding: 0;
+    -unity-text-align: middle-left;
+}
+
+.alps-card__title {
+    -unity-font-style: bold;
+    font-size: 14px;
+    color: var(--alps-text-strong);
+}
+
+.alps-card__chips {
+    flex-direction: row;
+    margin-left: 11px;
+}
+
+.alps-card__chip {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    margin-right: 3px;
+}
+
+.alps-card__actions {
+    flex-direction: row;
+    align-items: center;
+    margin-left: auto;
+}
+
+.alps-card__desc {
+    font-size: 12px;
+    color: var(--alps-text-desc);
+    padding-left: 19px;
+    margin-top: 4px;
+    white-space: normal;
+}
+
+.alps-card__body {
+    background-color: var(--alps-panel-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-top-width: 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    /* 12px of padding minus the 9px every child already carries. */
+    padding: 11px 11px 3px 11px;
+}
+
+.alps-iconbutton {
+    width: 19px;
+    height: 19px;
+    margin-left: 6px;
+    opacity: 0.7;
+}
+
+/* ------------------------------------------------------- nested panels */
+
+.alps-sub {
+    background-color: var(--alps-sub-bg);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--alps-line);
+    margin: 10px 0 7px 8px;
+    padding: 7px 9px 0 9px;
+}
+
+/*
+ * A frame title set into the top border, like ┌ レンジ ┐. The legend is 16px tall and
+ * centred on the 1px border, and the frame pads its top so the first row clears it.
+ */
+.alps-root .alps-sub.alps-sub--legend {
+    padding-top: 14px;
+}
+
+.alps-root .alps-sub > .alps-sub__legend {
+    position: absolute;
+    top: -9px;
+    left: 7px;
+    height: 16px;
+    margin: 0;
+}
+
+.alps-sub__legend-outside {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 9px;
+    background-color: var(--alps-panel-bg);
+}
+
+.alps-sub__legend-inside {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 9px;
+    bottom: 0;
+    background-color: var(--alps-sub-bg);
+}
+
+.alps-root .alps-sub__title {
+    height: 16px;
+    padding: 0 4px;
+    margin: 0;
+    -unity-text-align: middle-left;
+    -unity-font-style: bold;
+    color: var(--alps-text-sub);
+}
+
+.alps-sub .unity-base-field__label,
+.alps-sub .alps-row__label {
+    color: var(--alps-text-sub);
+    -unity-font-style: normal;
+}
+
+.alps-nested {
+    background-color: var(--alps-nested-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-soft);
+    border-radius: 3px;
+    padding: 5px 6px 2px 6px;
+}
+
+/* ------------------------------------------------------ add effect list */
+
+.alps-add {
+    margin-top: 18px;
+}
+
+.alps-add__button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--alps-header-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-bottom-width: 0;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    padding: 9px 11px 9px 11px;
+}
+
+.alps-add__button--collapsed {
+    border-bottom-width: 1px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.alps-add__title {
+    -unity-font-style: bold;
+    font-size: 14px;
+    color: var(--alps-text-strong);
+}
+
+.alps-add__arrow {
+    font-size: 11px;
+    color: #e6e6e6;
+    padding: 0;
+}
+
+.alps-add__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    background-color: var(--alps-panel-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-top-width: 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    /* Three 137.33px tiles + two 8px gutters = 428px, the card's content width.
+       Each tile carries its own trailing gutter, so the right padding gives that
+       8px back (11 - 8 = 3) and the row still breaks after the third tile. */
+    padding: 10px 3px 4px 11px;
+}
+
+.alps-add__item {
+    width: 137.33px;
+    align-items: center;
+    padding: 7px 6px 7px 6px;
+    margin: 0 8px 8px 0;
+    background-color: var(--alps-card-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-soft);
+    border-radius: 5px;
+}
+
+.alps-add__item--last-in-row {
+    margin-right: 0;
+}
+
+.alps-add__thumb {
+    width: 100%;
+    height: 26px;
+    background-color: var(--alps-well-bg);
+    border-radius: 3px;
+    margin-bottom: 6px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.alps-add__label {
+    font-size: 11px;
+    color: #e2e2e2;
+    -unity-text-align: middle-center;
+}
+
+/* ------------------------------------------------------------- foldout */
+
+.alps-plainfold {
+    background-color: var(--alps-header-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-radius: 5px;
+    padding: 9px 11px 9px 11px;
+    margin-top: 18px;
+    flex-direction: row;
+    align-items: center;
+}
+
+
+.alps-root .alps-profile {
+    margin-top: 7px;
+    padding: 8px 11px 8px 11px;
+    background-color: var(--alps-nested-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-radius: 5px;
+}
+
+.alps-profile__buttons {
+    flex-direction: row;
+    margin-top: 6px;
+}
+
+.alps-root .alps-profile__button {
+    flex-grow: 1;
+    flex-basis: 0;
+    margin: 0 4px 0 0;
+}
+
+.alps-root .alps-profile__button--last {
+    margin-right: 0;
+}
+
+/* ------------------------------------------------------------------ hover
+ *
+ * Hover feedback. Every rule that repaints a *selected*
+ * control is scoped with .alps-root so it out-specifies the plain :hover above it.
+ * Otherwise hovering a selected segment would grey it out.
+ */
+
+.alps-card__header:hover,
+.alps-plainfold:hover,
+.alps-add__button:hover {
+    background-color: #666666;
+}
+
+.alps-iconbutton:hover {
+    opacity: 1;
+}
+
+.alps-seg__item:hover {
+    background-color: #333333;
+    color: var(--alps-text-strong);
+}
+
+.alps-root .alps-seg__item--selected:hover {
+    background-color: #3d8ae6;
+    color: #ffffff;
+}
+
+.alps-tabs__item:hover {
+    background-color: #2f2f2f;
+    color: var(--alps-text-strong);
+}
+
+.alps-root .alps-tabs__item--selected:hover {
+    background-color: #3d8ae6;
+}
+
+.alps-switch__track:hover {
+    background-color: #5c5c5c;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-root .alps-switch__track--on:hover {
+    background-color: #3d8ae6;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-rangeflag__box:hover {
+    border-color: var(--alps-accent-soft);
+    color: var(--alps-text-strong);
+}
+
+.alps-root .alps-rangeflag__box--on:hover {
+    background-color: #3d8ae6;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-numberbox:hover,
+.alps-textbox:hover {
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-stepper__button:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+.alps-easegrid__tile:hover {
+    background-color: #383838;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-root .alps-easegrid__tile--selected:hover {
+    background-color: #2a5f96;
+    border-color: #9dc7ea;
+}
+
+.alps-swatch:hover {
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-root .alps-swatch--selected:hover {
+    border-color: #9dc7ea;
+}
+
+.alps-swatch--action:hover {
+    border-color: var(--alps-accent-soft);
+    color: var(--alps-text-strong);
+}
+
+.alps-root .alps-swatch--disabled:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #9a9a9a;
+}
+
+.alps-add__item:hover {
+    background-color: #3d3d3d;
+    border-color: var(--alps-accent-soft);
+}
+
+.alps-slider__track:hover .alps-slider__fill {
+    background-color: #8fc0ea;
+}
+
+.alps-slider__track:hover .alps-slider__thumb {
+    background-color: #ffffff;
+}

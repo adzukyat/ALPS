@@ -1,6 +1,6 @@
 # Third Party Notices
 
-Maneuver For VRC started from the Timeline authoring layer of StageLightManeuver. That code has since been rewritten and folded into this package, and the notice below is kept for the parts it grew out of.
+Adzuki Live Performance System started from the Timeline authoring layer of StageLightManeuver. That code has since been rewritten and folded into this package, and the notice below is kept for the parts it grew out of.
 
 ## StageLightManeuver
 

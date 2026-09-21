@@ -1,0 +1,26 @@
+{
+  "name": "AdzukiSoft.ALPS.Editor",
+  "rootNamespace": "AdzukiSoft.ALPS.Editor",
+  "references": [
+    "Unity.Timeline.Editor",
+    "AdzukiSoft.ALPS.Runtime",
+    "VRSL.Core",
+    "VRC.SDKBase",
+    "VRC.Udon",
+    "VRC.Udon.Editor",
+    "UdonSharp.Runtime",
+    "UdonSharp.Editor",
+    "Unity.Timeline"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
