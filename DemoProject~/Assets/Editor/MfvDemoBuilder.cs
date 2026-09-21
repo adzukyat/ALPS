@@ -186,7 +186,7 @@ public static class MfvDemoBuilder
     {
         var set = Set(MfvPhaseMode.PingPong, MfvEaseType.InOutSine, 4f);
         set.order = MfvOrderMode.Symmetric;
-        set.phase.delay = 0.12f;
+        set.phase.spread = 0.5f;
 
         var move = set.Add(MfvEffectKind.Move);
         move.tilt.isRange = true;
@@ -206,7 +206,7 @@ public static class MfvDemoBuilder
     private static MfvClipEffectSet WashChase()
     {
         var set = Set(MfvPhaseMode.Forward, MfvEaseType.OutQuad, 2f);
-        set.phase.delay = 0.15f;
+        set.phase.spread = 1f;
 
         var brightness = set.Add(MfvEffectKind.Brightness).brightness;
         brightness.isRange = true;
@@ -238,10 +238,10 @@ public static class MfvDemoBuilder
 
     private static MfvClipEffectSet BeamCircle()
     {
-        // Forward and linear, so the ring turns at a steady speed. The delay walks the
-        // fixtures around it.
+        // Forward and linear, so the ring turns at a steady speed. A full spread walks the
+        // fixtures right around it, one per position.
         var set = Set(MfvPhaseMode.Forward, MfvEaseType.Linear, 4f);
-        set.phase.delay = 0.12f;
+        set.phase.spread = 1f;
 
         var move = set.Add(MfvEffectKind.Move);
         move.moveMode = MfvMoveMode.Circle;

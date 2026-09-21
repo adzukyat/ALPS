@@ -22,7 +22,7 @@ namespace ManeuverForVRC.Tests
             set.phase.ease = MfvEaseType.InOutCubic;
             set.phase.pingPongRatio = 0.65f;
             set.phase.fixtureGroupSize = 2;
-            set.phase.delay = 0.25f;
+            set.phase.spread = 1.25f;
             set.phase.beatsPerCycle = 2f;
             set.phase.inverse = false;
 
@@ -40,7 +40,9 @@ namespace ManeuverForVRC.Tests
             move.pan.ownPhase.mode = MfvPhaseMode.Forward;
             move.pan.ownPhase.ease = MfvEaseType.Linear;
             move.pan.ownPhase.fixtureGroupSize = 1;
-            move.pan.ownPhase.delay = 0.125f;
+            move.pan.ownPhase.spread = 0.5f;
+            move.pan.ownPhase.spreadInBeats = true;
+            move.pan.ownPhase.spreadBeats = 2f;
             move.pan.ownPhase.beatsPerCycle = 4f;
             move.pan.ownPhase.inverse = true;
             move.panTiltPhaseOffsetDegrees = 90f;

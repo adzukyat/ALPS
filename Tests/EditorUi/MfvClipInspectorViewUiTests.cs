@@ -357,6 +357,87 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
+        public void Delay_InPercentSnapsWhereTheTripLandsOnTheBeat()
+        {
+            var twoBeats = DelaySlider(2f);
+            Assert.AreEqual("%", twoBeats.Unit);
+            CollectionAssert.Contains(twoBeats.Snaps, 100f, "The full trip closes the wave on itself.");
+            CollectionAssert.Contains(twoBeats.Snaps, 50f, "Half the trip is one beat of a two beat cycle.");
+
+            // A cycle that is not a round number of beats still gets its beat marks, which is
+            // the point of moving them with the speed rather than fixing them at 25% steps.
+            var threeBeats = DelaySlider(3f);
+            Assert.IsTrue(
+                threeBeats.Snaps.Any(snap => Mathf.Abs(snap - 100f / 3f) < 0.01f),
+                "One beat of a three beat cycle is a third of the trip.");
+            Assert.LessOrEqual(threeBeats.Snaps.Length, MfvSnapPoints.MaxTicks, "The rail must not crowd.");
+        }
+
+        /// <summary>The ディレイ row of a clip whose cycle is <paramref name="beatsPerCycle"/> beats.</summary>
+        private static MfvValueSlider DelaySlider(float beatsPerCycle)
+        {
+            var set = new MfvClipEffectSet();
+            set.phase.beatsPerCycle = beatsPerCycle;
+            set.phase.spread = 1f;
+            var view = new MfvClipInspectorView(set);
+            return view.Query<MfvValueSlider>().ToList().First(slider => slider.label == "ディレイ");
+        }
+
+        [UnityTest]
+        public IEnumerator DelayBeatsFlag_SwitchesTheUnitWithoutMovingTheLook()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new MfvClipEffectSet();
+            set.phase.beatsPerCycle = 2f;
+            set.phase.spread = 0.5f;
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new MfvClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var percent = view.Query<MfvValueSlider>().ToList().First(slider => slider.label == "ディレイ");
+                var beats = view.Query<MfvStepper>().ToList().First(stepper => stepper.label == "ディレイ");
+                var flag = view.Query<MfvRangeFlag>().ToList().First(f => f.Q<Label>().text == "拍");
+                var speed = view.Query<MfvStepper>().ToList().First(stepper => stepper.label == "速度");
+                Assert.AreEqual(50f, percent.value, 0.001f);
+                Assert.AreEqual(DisplayStyle.Flex, percent.style.display.value);
+                Assert.AreEqual(DisplayStyle.None, beats.style.display.value);
+                Assert.AreSame(flag.parent.Children().Last(), flag, "拍 stays on the right edge of the row.");
+                Assert.AreEqual(-16f, beats.Minimum, 0.001f);
+                Assert.AreEqual(16f, beats.Maximum, 0.001f, "Beats stop at four bars either way.");
+
+                flag.value = true;
+                Assert.IsTrue(set.phase.spreadInBeats);
+                Assert.AreEqual(DisplayStyle.None, percent.style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, beats.style.display.value, "Beats are counted like the speed, not dragged.");
+                Assert.AreEqual(1f, beats.value, 0.001f, "Half the trip of a two beat cycle is one beat.");
+                Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f, "The switch alone must not move the fixtures.");
+
+                speed.value = 4f;
+                Assert.AreEqual(1f, beats.value, 0.001f, "A delay in beats stays that many beats.");
+                Assert.AreEqual(0.25f, set.phase.SpreadCycles, 0.0001f);
+
+                beats.value = 2f;
+                flag.value = false;
+                Assert.AreEqual(50f, percent.value, 0.001f, "Two beats of a four beat cycle is half the trip.");
+                Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f);
+
+                speed.value = 0f;
+                Assert.IsFalse(flag.enabledSelf, "Without a speed there are no beats to count.");
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void PingPongRatio_IsOnlyShownForPingPong()
         {
             var set = new MfvClipEffectSet();
@@ -516,7 +597,10 @@ namespace ManeuverForVRC.Tests
                 yield return null;
 
                 var tilt = view.Query<MfvAnimatableView>().First();
-                var flags = tilt.Query<MfvRangeFlag>().ToList();
+                // The own phase panel inside the row carries its own 拍 flag, which is not part of the row.
+                var flags = tilt.Query<MfvRangeFlag>().ToList()
+                    .Where(f => f.GetFirstAncestorOfType<MfvPhaseSettingsView>() == null)
+                    .ToList();
                 var singles = tilt.Query<MfvValueSlider>().ToList().Where(s => s.label == "Tilt").ToList();
                 var ranges = tilt.Query<MfvRangeSlider>().ToList().Where(s => s.label == "Tilt").ToList();
                 var frames = tilt.Children().Where(c => c.ClassListContains("mfv-sub")).ToList();
@@ -861,7 +945,7 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void SpreadAndDelay_AcceptNegativeValues()
+        public void ValueSpreadAndPhaseSpread_AcceptNegativeValues()
         {
             var cone = new MfvAnimatableView("幅", new MfvAnimatableValue(5f, new Vector2(0f, 40f)), new MfvPhaseSettings(), null);
             var spread = cone.Query<MfvValueSlider>().ToList().Where(s => s.label == "幅").ElementAt(1);
@@ -873,9 +957,9 @@ namespace ManeuverForVRC.Tests
             var view = new MfvClipInspectorView(set);
             var sliders = view.Query<MfvValueSlider>().ToList();
 
-            var delay = sliders.First(s => s.label == "ディレイ");
-            Assert.AreEqual(-1f, delay.Limit.x, 0.001f, "A negative delay runs the order backwards.");
-            Assert.AreEqual(1f, delay.Limit.y, 0.001f);
+            var phaseSpread = sliders.First(s => s.label == "ディレイ");
+            Assert.AreEqual(-200f, phaseSpread.Limit.x, 0.001f, "A negative spread runs the order backwards.");
+            Assert.AreEqual(200f, phaseSpread.Limit.y, 0.001f, "Two trips across the group is as far as a wave reads.");
         }
 
         [Test]
@@ -929,7 +1013,7 @@ namespace ManeuverForVRC.Tests
         {
             var source = new MfvClipEffectSet();
             source.phase.mode = MfvPhaseMode.Random;
-            source.phase.delay = -0.25f;
+            source.phase.spread = -0.25f;
             source.phase.beatsPerCycle = 8f;
 
             var target = new MfvClipEffectSet();
@@ -957,7 +1041,7 @@ namespace ManeuverForVRC.Tests
             Assert.Greater(changed, 0, "貼り付け reports the edit so the host records undo.");
             Assert.AreNotSame(source.phase, target.phase, "貼り付け copies the values, not the instance.");
             Assert.AreEqual(MfvPhaseMode.Random, target.phase.mode);
-            Assert.AreEqual(-0.25f, target.phase.delay, 0.0001f);
+            Assert.AreEqual(-0.25f, target.phase.spread, 0.0001f);
             Assert.AreEqual(8f, target.phase.beatsPerCycle, 0.0001f);
             Assert.AreEqual(1, target.effects.Count, "貼り付け leaves the effects alone.");
             Assert.IsFalse(HasVisibleText(refreshed, "イージング"), "The rebuilt view shows the pasted mode.");

@@ -36,8 +36,8 @@ Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTra
 
 Select an MFV clip to edit it in the Inspector:
 
-- **Order**: normal, reverse, symmetric or random fixture order. Symmetric counts outward from the middle and mirrors pan, so a pan spread opens into a fan. Each parameter row has R for a range and S for a spread. With S on the value becomes a fixed offset and R ranges the spread instead. Spread and delay can be negative to run the other way.
-- **Shared settings**: the phase every ranged parameter and palette follows (mode, easing, ping-pong ratio, fixture grouping, delay, speed in beats, invert).
+- **Order**: normal, reverse, symmetric or random fixture order. Symmetric counts outward from the middle and mirrors pan, so a pan spread opens into a fan. Each parameter row has R for a range and S for a spread. With S on the value becomes a fixed offset and R ranges the spread instead. Spread and the shared delay can be negative to run the other way.
+- **Shared settings**: the phase every ranged parameter and palette follows (mode, easing, ping-pong ratio, fixture grouping, delay, speed in beats, invert). The delay is read over the whole group in percent, so 100% walks the wave across every fixture in one cycle whatever the fixture count, and the marks on its rail sit where that trip lands on a whole number of beats. The 拍 flag next to it switches the delay to beats, which then stays that many beats when the speed changes.
 - **Effects**: move, cone, color, brightness, flicker and gobo. Move aims by angle, turns the beam in a circle around a center direction, or follows a user. Adding an effect that is already on the clip splits it into an even and an odd copy.
 - **Profile**: save the clip to a profile asset, load it into other clips, or let a clip follow a profile.
 

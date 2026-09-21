@@ -6,7 +6,7 @@ namespace ManeuverForVRC.Editor
 {
     /// <summary>
     /// Graph preview. Plots φ(t) for the first few fixtures of a
-    /// <see cref="MfvPhaseSettings"/>, so delay and fixture group size are visible as the
+    /// <see cref="MfvPhaseSettings"/>, so the spread and the fixture group size are visible as the
     /// fading offset traces.
     /// </summary>
     public class MfvPhaseGraph : VisualElement
@@ -80,14 +80,18 @@ namespace ManeuverForVRC.Editor
                 var color = TraceColor;
                 color.a = trace == 0 ? 1f : (trace == 1 ? 0.4f : 0.2f);
 
-                // One trace per fixture group, so delay shows up as a lag.
+                // The spread is measured over the whole group, so the traces stand for a
+                // fixture at the start of the order, a third along and two thirds along.
+                // That needs no fixture count, which this view does not have. k stays the
+                // trace index so random mode still tells the three apart.
                 var k = trace;
+                var offset = _settings.SpreadCycles * trace / TraceCount;
 
                 var points = new List<Vector2>(Samples + 1);
                 for (var i = 0; i <= Samples; i++)
                 {
                     var t = i / (float)Samples;
-                    var cycles = MfvShowEvaluator.FixtureCycles(t * CycleCount, 1f, _settings.delay, k, 0f);
+                    var cycles = MfvShowEvaluator.FixtureCycles(t * CycleCount, 1f, offset, 1, 0f);
                     var phase = MfvShowEvaluator.Phase(
                         (int)_settings.mode,
                         (int)_settings.ease,

@@ -153,10 +153,11 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void Delay_LagsEachOrderPosition()
+        public void Spread_LagsEachOrderPosition()
         {
             var set = Set();
-            set.phase.delay = 0.25f;
+            // Three fixtures over three quarters of a cycle, so a quarter each.
+            set.phase.spread = 0.75f;
             var brightness = set.Add(MfvEffectKind.Brightness).brightness;
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
@@ -316,14 +317,16 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void Delay_NegativeRunsTheOrderBackwards()
+        public void Spread_NegativeRunsTheOrderBackwards()
         {
             Assert.AreEqual(0.25f, MfvShowEvaluator.FixtureCycles(0f, 1f, -0.25f, 1, 0f), 0.0001f);
             Assert.AreEqual(-0.25f, MfvShowEvaluator.FixtureCycles(0f, 1f, 0.25f, 1, 0f), 0.0001f);
 
             var set = Set();
             set.order = MfvOrderMode.Symmetric;
-            set.phase.delay = -0.25f;
+            // Symmetric reaches from the middle to the edge, three positions over five
+            // fixtures, so a quarter cycle each again.
+            set.phase.spread = -0.75f;
             var brightness = set.Add(MfvEffectKind.Brightness).brightness;
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
@@ -331,6 +334,89 @@ namespace ManeuverForVRC.Tests
 
             Assert.AreEqual(50f, Evaluate(show, 0, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f, "The edges lead.");
             Assert.AreEqual(0f, Evaluate(show, 2, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f, "The centre trails.");
+        }
+
+        [Test]
+        public void Spread_KeepsTheLookWhateverTheFixtureCount()
+        {
+            var set = Set();
+            // One cycle over the whole group, the value a chase is authored with.
+            set.phase.spread = 1f;
+            var brightness = set.Add(MfvEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+
+            var four = Compile(4, set);
+            var eight = Compile(8, set);
+
+            Assert.AreEqual(50f, Evaluate(four, 2, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(
+                50f,
+                Evaluate(eight, 4, 0f)[MfvShowEvaluator.FrameBrightness],
+                0.01f,
+                "Half way along the group is half way through the cycle, whatever the count.");
+
+            Assert.AreEqual(75f, Evaluate(four, 1, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(eight, 2, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+
+            Assert.AreEqual(
+                0.25f,
+                MfvShowEvaluator.DelayFromSpread(1f, MfvShowEvaluator.OrderNormal, 4, 1),
+                0.0001f,
+                "A full spread over four positions steps a quarter cycle each.");
+            Assert.AreEqual(
+                1f / 3f,
+                MfvShowEvaluator.DelayFromSpread(1f, MfvShowEvaluator.OrderSymmetric, 5, 1),
+                0.0001f,
+                "Symmetric only reaches from the middle to the edge.");
+        }
+
+        [Test]
+        public void Spread_InBeatsHoldsWhenTheSpeedChanges()
+        {
+            var set = Set();
+            set.phase.beatsPerCycle = 2f;
+            set.phase.spreadInBeats = true;
+            set.phase.spreadBeats = 2f;
+            var brightness = set.Add(MfvEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+
+            // Two beats over a two beat cycle is the full trip, a quarter each over four.
+            Assert.AreEqual(75f, Evaluate(Compile(4, set), 1, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+
+            // Doubling the speed keeps the two beats, which is now half the trip.
+            set.phase.beatsPerCycle = 4f;
+            Assert.AreEqual(87.5f, Evaluate(Compile(4, set), 1, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+
+            // Without a speed there are no beats, so the delay falls back to its share of the cycle.
+            set.phase.beatsPerCycle = 0f;
+            set.phase.spread = 1f;
+            Assert.AreEqual(1f, set.phase.SpreadCycles, 0.0001f);
+        }
+
+        [Test]
+        public void Spread_DividesAnOwnPhaseByTheClipGrouping()
+        {
+            var set = Set();
+            // The order position comes from the clip, so an own phase is divided by the
+            // clip's grouping: eight fixtures in pairs are four positions.
+            set.phase.fixtureGroupSize = 2;
+            var brightness = set.Add(MfvEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            brightness.useOwnPhase = true;
+            brightness.ownPhase.mode = MfvPhaseMode.Forward;
+            brightness.ownPhase.ease = MfvEaseType.Linear;
+            brightness.ownPhase.beatsPerCycle = 1f;
+            brightness.ownPhase.fixtureGroupSize = 1;
+            brightness.ownPhase.spread = 1f;
+            var show = Compile(8, set);
+
+            Assert.AreEqual(0f, Evaluate(show, 1, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f, "The first pair starts the cycle.");
+            Assert.AreEqual(75f, Evaluate(show, 2, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(show, 4, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(show, 6, 0f)[MfvShowEvaluator.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -523,10 +609,11 @@ namespace ManeuverForVRC.Tests
         }
 
         [Test]
-        public void Circle_DelayWalksTheFixturesRoundTheRing()
+        public void Circle_SpreadWalksTheFixturesRoundTheRing()
         {
             var set = Set();
-            set.phase.delay = 0.25f;
+            // A whole cycle over the group puts the four fixtures a quarter turn apart.
+            set.phase.spread = 1f;
             var move = set.Add(MfvEffectKind.Move);
             move.moveMode = MfvMoveMode.Circle;
             move.circleCenterTilt.value = 30f;
@@ -795,7 +882,7 @@ namespace ManeuverForVRC.Tests
             var set = Set(MfvPhaseMode.PingPong);
             set.order = MfvOrderMode.Symmetric;
             set.phase.fixtureGroupSize = 2;
-            set.phase.delay = 0.1f;
+            set.phase.spread = 0.5f;
 
             var move = set.Add(MfvEffectKind.Move);
             move.tilt.isRange = true;
@@ -848,7 +935,7 @@ namespace ManeuverForVRC.Tests
             set.phase.mode = mode;
             set.phase.ease = MfvEaseType.Linear;
             set.phase.beatsPerCycle = 1f;
-            set.phase.delay = 0f;
+            set.phase.spread = 0f;
             set.phase.fixtureGroupSize = 1;
             return set;
         }

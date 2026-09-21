@@ -37,7 +37,7 @@ namespace ManeuverForVRC.Editor
 
             var plus = new Label("+");
             plus.AddToClassList(ussClassName + "__button");
-            plus.RegisterCallback<PointerDownEvent>(_ => value += Step);
+            plus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Min(Maximum, value + Step));
 
             box.Add(minus);
             box.Add(_box);
@@ -63,12 +63,19 @@ namespace ManeuverForVRC.Editor
         public float Minimum
         {
             get => _box.Limit.x;
-            set { _box.Limit = new Vector2(value, float.MaxValue); SetValueWithoutNotify(this.value); }
+            set { _box.Limit = new Vector2(value, _box.Limit.y); SetValueWithoutNotify(this.value); }
+        }
+
+        /// <summary>Upper bound for the buttons and typed values. Unbounded unless set.</summary>
+        public float Maximum
+        {
+            get => _box.Limit.y;
+            set { _box.Limit = new Vector2(_box.Limit.x, value); SetValueWithoutNotify(this.value); }
         }
 
         public override void SetValueWithoutNotify(float newValue)
         {
-            newValue = Mathf.Max(Minimum, newValue);
+            newValue = Mathf.Clamp(newValue, Minimum, Maximum);
             base.SetValueWithoutNotify(newValue);
             _box.SetValueWithoutNotify(newValue);
         }

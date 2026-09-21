@@ -57,6 +57,10 @@ namespace ManeuverForVRC
         public const int PhaseEase = 1;
         public const int PhaseRatio = 2;
         public const int PhaseGroupSize = 3;
+        /// <summary>
+        /// Delay per order position, in cycles. The model stores the spread over the whole
+        /// group and the compiler divides it once, so the evaluator only sees the step.
+        /// </summary>
         public const int PhaseDelay = 4;
         public const int PhaseBeatsPerCycle = 5;
         public const int PhaseInverse = 6;
@@ -222,7 +226,7 @@ namespace ManeuverForVRC
         /// <summary>
         /// Order position k of the fixture at list index <paramref name="fixtureIndex"/>.
         /// Grouping is applied before the symmetric fold. Symmetric counts outward from the
-        /// center, so a positive delay starts in the middle and a positive spread opens out.
+        /// center, so a positive spread starts in the middle and a positive value spread opens out.
         /// </summary>
         public static int OrderPosition(int order, int seed, int fixtureIndex, int fixtureCount, int groupSize)
         {
@@ -273,6 +277,32 @@ namespace ManeuverForVRC
             var groups = GroupCount(fixtureCount, groupSize);
             var group = Mathf.Clamp(Mathf.Max(0, fixtureIndex) / Mathf.Max(1, groupSize), 0, groups - 1);
             return 2 * group < groups - 1;
+        }
+
+        /// <summary>
+        /// How many order positions a spread is divided across. Normal, reverse and random
+        /// run over every fixture group, so a spread of 1 travels the whole group in one
+        /// cycle. Symmetric counts outward from the middle and only reaches the edge, so it
+        /// is divided by that half instead.
+        /// </summary>
+        public static int SpreadPositions(int order, int fixtureCount, int groupSize)
+        {
+            var groups = GroupCount(fixtureCount, groupSize);
+            if (order == OrderSymmetric)
+            {
+                return Mathf.Max(1, groups - groups / 2);
+            }
+
+            return groups;
+        }
+
+        /// <summary>
+        /// The per order position delay a spread comes to for one group. The compiler
+        /// applies this while it encodes the phase row, so the arrays already hold the step.
+        /// </summary>
+        public static float DelayFromSpread(float spread, int order, int fixtureCount, int groupSize)
+        {
+            return spread / Mathf.Max(1, SpreadPositions(order, fixtureCount, groupSize));
         }
 
         /// <summary>Cycles elapsed for a fixture at order position k, before wrapping.</summary>
@@ -521,7 +551,7 @@ namespace ManeuverForVRC
         ///
         /// Sweeping pan and tilt with two offset waves instead would fold into a figure eight
         /// as soon as the tilt passes the fixture's own axis, where pan no longer moves the beam.
-        /// The clip's shared phase drives the turn, so delay walks the fixtures around the ring.
+        /// The clip's shared phase drives the turn, so the spread walks the fixtures around the ring.
         /// Center tilt, center pan and radius are parameters, so they range, spread and take
         /// their own phase like any other value.
         /// </summary>

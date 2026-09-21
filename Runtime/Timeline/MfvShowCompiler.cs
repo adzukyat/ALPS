@@ -115,6 +115,11 @@ namespace ManeuverForVRC
 
             private int _layer;
 
+            // The clip being encoded, for the spread division every phase block in it shares.
+            private int _clipOrder;
+            private int _clipFixtureCount;
+            private int _clipGroupSize = 1;
+
             public Builder(PlayableDirector director, MfvCompiledShow show)
             {
                 _director = director;
@@ -241,6 +246,10 @@ namespace ManeuverForVRC
                 {
                     return;
                 }
+
+                _clipOrder = (int)set.order;
+                _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
+                _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
 
                 var row = new float[MfvShowEvaluator.ClipStride];
                 row[MfvShowEvaluator.ClipStart] = start;
@@ -387,13 +396,23 @@ namespace ManeuverForVRC
                 return _userNames.Count - 1;
             }
 
-            private static void WritePhase(float[] row, int offset, MfvPhaseSettings phase)
+            /// <summary>
+            /// Encodes one phase block. The spread is divided here, with the clip's order
+            /// and fixture grouping: the evaluator takes the order position k once per clip
+            /// from the clip's own phase, so an own phase has to be divided the same way or
+            /// its step would not match the k it is multiplied by.
+            /// </summary>
+            private void WritePhase(float[] row, int offset, MfvPhaseSettings phase)
             {
                 row[offset + MfvShowEvaluator.PhaseMode] = (int)phase.mode;
                 row[offset + MfvShowEvaluator.PhaseEase] = (int)phase.ease;
                 row[offset + MfvShowEvaluator.PhaseRatio] = phase.pingPongRatio;
                 row[offset + MfvShowEvaluator.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
-                row[offset + MfvShowEvaluator.PhaseDelay] = phase.delay;
+                row[offset + MfvShowEvaluator.PhaseDelay] = MfvShowEvaluator.DelayFromSpread(
+                    phase.SpreadCycles,
+                    _clipOrder,
+                    _clipFixtureCount,
+                    _clipGroupSize);
                 row[offset + MfvShowEvaluator.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
                 row[offset + MfvShowEvaluator.PhaseInverse] = phase.inverse ? 1f : 0f;
             }
