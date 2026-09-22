@@ -322,6 +322,8 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowEvaluator.ClipOrder] = (int)set.order;
                 row[AlpsShowEvaluator.ClipSeed] = seed;
                 row[AlpsShowEvaluator.ClipBpm] = bpm;
+                row[AlpsShowEvaluator.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
+                row[AlpsShowEvaluator.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
                 WritePhase(row, AlpsShowEvaluator.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixOutCurve, mixOutCurve, 1f, 0f);

@@ -79,7 +79,11 @@ namespace AdzukiSoft.ALPS
         public const int ClipOrder = 8;
         public const int ClipSeed = 9;
         public const int ClipBpm = 10;
-        public const int ClipPhase = 11;
+        /// <summary>Beats the clip's own fade takes to bring its weight in after its start.</summary>
+        public const int ClipFadeIn = 11;
+        /// <summary>Beats the clip's own fade takes to take its weight out before its end.</summary>
+        public const int ClipFadeOut = 12;
+        public const int ClipPhase = 13;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -387,6 +391,33 @@ namespace AdzukiSoft.ALPS
             }
 
             return Mathf.Clamp01(weight);
+        }
+
+        /// <summary>
+        /// The clip's own fade envelope at <paramref name="time"/>: rises linearly from 0 over
+        /// the fade in beats after the start and falls to 0 over the fade out beats before the
+        /// end. Fades longer than the clip meet in a triangle. It scales the clip's weight in
+        /// counted beats, where Timeline's own mix in and out is set in seconds.
+        /// </summary>
+        public static float ClipFade(float[] clips, int clip, float time)
+        {
+            var row = clip * ClipStride;
+            var bpm = clips[row + ClipBpm];
+            var scale = 1f;
+
+            var fadeIn = clips[row + ClipFadeIn];
+            if (fadeIn > 0f)
+            {
+                scale = Mathf.Min(scale, Beats(time, bpm, clips[row + ClipStart]) / fadeIn);
+            }
+
+            var fadeOut = clips[row + ClipFadeOut];
+            if (fadeOut > 0f)
+            {
+                scale = Mathf.Min(scale, Beats(clips[row + ClipEnd], bpm, time) / fadeOut);
+            }
+
+            return Mathf.Clamp01(scale);
         }
 
         private static float SampleCurve(float[] data, int offset, float t)
@@ -900,7 +931,9 @@ namespace AdzukiSoft.ALPS
         /// Clips must be sorted by layer. Inside a layer, overlapping clips blend by their
         /// weights. A layer then covers the layers below it by its total weight, per channel,
         /// so a later track only overrides the channels its effects actually drive.
-        /// Channels nobody drives keep the fixture default.
+        /// Channels nobody drives keep the fixture default, except brightness, which is dark
+        /// until a brightness effect lights it. A clip's own fade scales its weight, so fading
+        /// behaves like blending with an empty clip on every channel.
         /// </summary>
         public static void EvaluateFixture(
             float[] clips,
@@ -927,6 +960,8 @@ namespace AdzukiSoft.ALPS
                 frame[ch] = defaults[defaultRow + ch];
             }
 
+            frame[FrameBrightness] = 0f;
+
             var c = 0;
             while (c < clipCount)
             {
@@ -942,7 +977,7 @@ namespace AdzukiSoft.ALPS
                     var clip = c;
                     c++;
 
-                    var weight = ClipWeight(clips, clip, time);
+                    var weight = ClipWeight(clips, clip, time) * ClipFade(clips, clip, time);
                     if (weight <= 0f)
                     {
                         continue;

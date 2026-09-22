@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace AdzukiSoft.ALPS.Editor
@@ -15,6 +16,9 @@ namespace AdzukiSoft.ALPS.Editor
     public class AlpsClipInspectorView : VisualElement
     {
         public const string StyleSheetName = "AlpsInspector";
+
+        /// <summary>Longest fade either side of a clip, in beats.</summary>
+        public const float MaxFadeBeats = 8f;
 
         private readonly AlpsClipEffectSet _set;
         private readonly AlpsMixedValues _mixed;
@@ -101,6 +105,25 @@ namespace AdzukiSoft.ALPS.Editor
             });
             mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
             fields.Add(order);
+
+            // --- Fade ----------------------------------------------------
+            // The clip's own fade in beats. It scales the clip's weight, so it acts like
+            // blending with an empty clip, where Timeline's ease in and out is set in seconds.
+            var fade = new AlpsFadeSlider("フェード", MaxFadeBeats, "拍", "0.##")
+            {
+                Snaps = new[] { 1f, 2f, 4f },
+                DefaultValue = Vector2.zero,
+                tooltip = "クリップの開始から効き切るまでと、終了前に弱まり始めてから終わるまでの拍数です。何も効果のないクリップとブレンドしたときと同じように、ムーブや色を含む全ての効果にかかります。",
+            };
+            fade.SetValueWithoutNotify(new Vector2(set.fadeInBeats, set.fadeOutBeats));
+            fade.RegisterValueChangedCallback(evt =>
+            {
+                set.fadeInBeats = evt.newValue.x;
+                set.fadeOutBeats = evt.newValue.y;
+                RaiseChanged();
+            });
+            mixed?.Bind(fade, set, nameof(AlpsClipEffectSet.fadeInBeats), nameof(AlpsClipEffectSet.fadeOutBeats));
+            fields.Add(fade);
 
             // --- Shared settings -----------------------------------------
             _phaseCard = new AlpsEffectCard(

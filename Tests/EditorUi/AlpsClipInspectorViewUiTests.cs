@@ -577,7 +577,7 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
             var effect = view.Query<AlpsEffectView>().First();
             var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
-            var fadeFrame = view.Q<AlpsFadeSlider>().parent;
+            var fadeFrame = effect.Q<AlpsFadeSlider>().parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "Forward has no return leg.");
 
             set.phase.mode = AlpsPhaseMode.PingPong;

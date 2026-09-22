@@ -8,8 +8,9 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Draws an <see cref="AlpsClipStrip"/> on every ALPS clip in the Timeline window: a
-    /// color band along the bottom edge and a thin line wherever the clip's phase starts a
-    /// new cycle, the way StageLightManeuver showed its clips.
+    /// color band along the bottom edge, a thin line wherever the clip's phase starts a
+    /// new cycle, the way StageLightManeuver showed its clips, and the slopes of the clip's
+    /// own fade in and fade out with the faded part shaded like Timeline's blends.
     ///
     /// Strips are cached per clip and rebuilt when the clip's timing, the show tempo, its
     /// fixture count or its effects change. Any ALPS edit bumps <see cref="AlpsPreviewDriver.Revision"/>
@@ -21,6 +22,8 @@ namespace AdzukiSoft.ALPS.Editor
     {
         private static readonly Color CycleLineColor = new Color(0f, 1f, 0.71f, 0.2f);
         private static readonly Color BandBacking = new Color(0f, 0f, 0f, 0.5f);
+        private static readonly Color FadeShade = new Color(0f, 0f, 0f, 0.35f);
+        private static readonly Color FadeLine = new Color(1f, 1f, 1f, 0.6f);
         private const float LaneHeightRatio = 0.12f;
         private const float MinLaneHeight = 3f;
         private const float MinCycleLineSpacing = 4f;
@@ -86,11 +89,21 @@ namespace AdzukiSoft.ALPS.Editor
                 }
             }
 
-            if (entry.texture == null)
+            if (entry.texture != null)
             {
-                return;
+                DrawBand(clip, region, entry);
             }
 
+            if (strip.HasFade)
+            {
+                DrawFade(clip, region, strip, pixelsPerSecond);
+            }
+        }
+
+        private static void DrawBand(TimelineClip clip, ClipBackgroundRegion region, Entry entry)
+        {
+            var strip = entry.strip;
+            var rect = region.position;
             var laneHeight = Mathf.Max(MinLaneHeight, rect.height * LaneHeightRatio);
             var bandHeight = Mathf.Min(rect.height, laneHeight * strip.lanes);
             var band = new Rect(rect.x, rect.yMax - bandHeight, rect.width, bandHeight);
@@ -100,6 +113,34 @@ namespace AdzukiSoft.ALPS.Editor
             // Dark behind the band, so a dim or blacked out stretch reads as dark.
             EditorGUI.DrawRect(band, BandBacking);
             GUI.DrawTextureWithTexCoords(band, entry.texture, new Rect(u0, 0f, u1 - u0, 1f), true);
+        }
+
+        /// <summary>
+        /// One pixel column at a time over the fading stretches: shade above the fade level,
+        /// then join each column's level to the last so steep slopes stay unbroken.
+        /// </summary>
+        private static void DrawFade(TimelineClip clip, ClipBackgroundRegion region, AlpsClipStrip strip, float pixelsPerSecond)
+        {
+            var rect = region.position;
+            var fadeOutFrom = (float)clip.duration - strip.fadeOutSeconds;
+            float? lastY = null;
+            for (var x = 0f; x < rect.width; x += 1f)
+            {
+                var local = (float)region.startTime + (x + 0.5f) / pixelsPerSecond;
+                if (local > strip.fadeInSeconds && local < fadeOutFrom)
+                {
+                    lastY = null;
+                    continue;
+                }
+
+                var y = rect.y + (1f - strip.FadeAt(local)) * rect.height;
+                EditorGUI.DrawRect(new Rect(rect.x + x, rect.y, 1f, y - rect.y), FadeShade);
+
+                var from = lastY ?? y;
+                var top = Mathf.Min(from, y);
+                EditorGUI.DrawRect(new Rect(rect.x + x, top - 0.5f, 1f, Mathf.Abs(y - from) + 1f), FadeLine);
+                lastY = y;
+            }
         }
 
         private static Entry GetEntry(TimelineClip clip, AlpsTimelineClip asset)

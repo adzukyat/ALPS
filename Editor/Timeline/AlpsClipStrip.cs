@@ -5,7 +5,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// What the Timeline window draws on an ALPS clip: the color the clip plays over time,
-    /// dimmed by its brightness, and where the clip's shared phase starts a new cycle.
+    /// dimmed by its brightness and fade, where the clip's shared phase starts a new cycle,
+    /// and the slopes of its own fade in and fade out.
     ///
     /// The clip is compiled on its own and run through <see cref="AlpsShowEvaluator.EvaluateClip"/>,
     /// so the strip shows the same math as the preview. Fixtures differ by order position,
@@ -35,7 +36,22 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Length of one cycle in seconds, 0 when the phase does not cycle.</summary>
         public float secondsPerCycle;
 
+        /// <summary>Seconds the clip's own fade in and fade out take, 0 when it has none.</summary>
+        public float fadeInSeconds;
+        public float fadeOutSeconds;
+
+        private float[] _clipRow;
+        private float _start;
+
         public bool HasColor => pixels != null;
+
+        public bool HasFade => fadeInSeconds > 0f || fadeOutSeconds > 0f;
+
+        /// <summary>The clip's own fade at <paramref name="local"/> seconds from its start, 1 when it has none.</summary>
+        public float FadeAt(float local)
+        {
+            return _clipRow != null ? AlpsShowEvaluator.ClipFade(_clipRow, 0, _start + local) : 1f;
+        }
 
         public static AlpsClipStrip Build(
             AlpsClipEffectSet set,
@@ -64,6 +80,14 @@ namespace AdzukiSoft.ALPS.Editor
             // The compiled row carries the tempo that plays, a clip BPM override included.
             var rowBpm = show.clips[AlpsShowEvaluator.ClipBpm];
             FindCycles(strip, show, rowBpm, start, end);
+
+            strip._clipRow = show.clips;
+            strip._start = start;
+            if (rowBpm > 0f)
+            {
+                strip.fadeInSeconds = show.clips[AlpsShowEvaluator.ClipFadeIn] * 60f / rowBpm;
+                strip.fadeOutSeconds = show.clips[AlpsShowEvaluator.ClipFadeOut] * 60f / rowBpm;
+            }
 
             var representatives = Representatives(set, show, fixtureCount);
             strip.lanes = representatives.Count;
@@ -108,9 +132,10 @@ namespace AdzukiSoft.ALPS.Editor
                     }
 
                     anyColor = true;
+                    // Brightness is dark unless an effect lights it, as in the show.
                     var alpha = written[AlpsShowEvaluator.FrameBrightness] > 0.5f
-                        ? Mathf.Clamp01(frame[AlpsShowEvaluator.FrameBrightness] / 100f)
-                        : 1f;
+                        ? Mathf.Clamp01(frame[AlpsShowEvaluator.FrameBrightness] / 100f) * strip.FadeAt(time - start)
+                        : 0f;
                     pixels[lane * strip.width + i] = new Color(
                         Mathf.Clamp01(frame[AlpsShowEvaluator.FrameRed]),
                         Mathf.Clamp01(frame[AlpsShowEvaluator.FrameGreen]),

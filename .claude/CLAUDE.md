@@ -45,7 +45,8 @@ The arrays have fixed strides defined as constants in the evaluator: clip rows (
 Key evaluation rules that span files:
 - Order position `k` comes from `OrderPosition` (normal, reverse, symmetric counting outward from the middle, seeded random). Symmetric also mirrors the final pan of the first half (`IsMirrored`).
 - A parameter value is `value or range(phase) + spread or spreadRange(phase) * k`. Ranges follow the parameter's own phase if set, otherwise the clip's shared phase, and respect timing (within cycle or per cycle).
-- Composition: clips are sorted by layer (track order, override tracks after their parent). Clips inside a layer blend by weight, each layer covers lower ones per channel by its total weight, and gobo and track effect are discrete. Undriven channels keep the fixture default.
+- Composition: clips are sorted by layer (track order, override tracks after their parent). Clips inside a layer blend by weight, each layer covers lower ones per channel by its total weight, and gobo and track effect are discrete. Undriven channels keep the fixture default, except brightness, which is dark unless a brightness effect lights it, so a fixture no clip covers is dark too.
+- Each clip has its own fade in / fade out in beats (`ClipFade`, counted at the clip's tempo). It multiplies the clip's Timeline weight, so a fade behaves like blending with an empty clip on every channel. The Timeline window draws its slopes (`AlpsTimelineClipEditor`).
 - Move has three modes: angle, circle (a ring around a center direction computed on the sphere, so it never folds into a figure eight), and track user (resolved by the player through `VRCPlayerApi`).
 
 ### From Timeline to arrays

@@ -21,6 +21,12 @@ namespace AdzukiSoft.ALPS.Tests
             return set;
         }
 
+        /// <summary>Full brightness, since a fixture no brightness effect lights stays dark.</summary>
+        private static void Light(AlpsClipEffectSet set)
+        {
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+        }
+
         private static Color At(AlpsClipStrip strip, int lane, float time, float start, float end)
         {
             var i = Mathf.FloorToInt((time - start) / (end - start) * strip.width);
@@ -40,6 +46,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var set = NewSet();
             set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
+            Light(set);
 
             var strip = AlpsClipStrip.Build(set, 4, Bpm, 0f, 4f, 0);
 
@@ -58,6 +65,7 @@ namespace AdzukiSoft.ALPS.Tests
             var color = set.Add(AlpsEffectKind.Color);
             color.colorStops.Add(new AlpsColorStop(Color.red));
             color.colorStops.Add(new AlpsColorStop(Color.blue));
+            Light(set);
 
             var strip = AlpsClipStrip.Build(set, 4, Bpm, 0f, 4f, 0);
 
@@ -78,6 +86,39 @@ namespace AdzukiSoft.ALPS.Tests
             var strip = AlpsClipStrip.Build(set, 1, Bpm, 0f, 2f, 0);
 
             AssertColor(new Color(1f, 1f, 1f, 0.5f), At(strip, 0, 1f, 0f, 2f));
+        }
+
+        [Test]
+        public void Strip_WithoutBrightnessIsDark()
+        {
+            var set = NewSet();
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
+
+            var strip = AlpsClipStrip.Build(set, 1, Bpm, 0f, 2f, 0);
+
+            Assert.IsTrue(strip.HasColor);
+            Assert.AreEqual(0f, At(strip, 0, 1f, 0f, 2f).a, 0.01f, "Nothing lights the fixture.");
+        }
+
+        [Test]
+        public void Strip_FadeDimsTheBandAndGivesTheSlopes()
+        {
+            var set = NewSet();
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
+            Light(set);
+            set.bpm = 120f;
+            set.fadeInBeats = 2f;
+            set.fadeOutBeats = 4f;
+
+            var strip = AlpsClipStrip.Build(set, 1, Bpm, 1f, 5f, 0);
+
+            Assert.IsTrue(strip.HasFade);
+            Assert.AreEqual(1f, strip.fadeInSeconds, 0.0001f, "Two beats at the clip's own 120 BPM.");
+            Assert.AreEqual(2f, strip.fadeOutSeconds, 0.0001f);
+            Assert.AreEqual(0.5f, strip.FadeAt(0.5f), 0.0001f);
+            Assert.AreEqual(1f, strip.FadeAt(1.5f), 0.0001f);
+            Assert.AreEqual(0.25f, strip.FadeAt(3.5f), 0.0001f);
+            Assert.AreEqual(0.5f, At(strip, 0, 1.5f, 1f, 5f).a, 0.05f, "The band follows the fade.");
         }
 
         [Test]
@@ -113,6 +154,7 @@ namespace AdzukiSoft.ALPS.Tests
             var odd = set.Add(AlpsEffectKind.Color);
             even.colorStops.Add(new AlpsColorStop(Color.blue));
             odd.colorStops.Add(new AlpsColorStop(Color.red));
+            Light(set);
 
             var strip = AlpsClipStrip.Build(set, 4, Bpm, 0f, 2f, 0);
 

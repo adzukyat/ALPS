@@ -19,6 +19,13 @@ namespace AdzukiSoft.ALPS
 
         public AlpsOrderMode order = AlpsOrderMode.Normal;
 
+        /// <summary>
+        /// Beats the clip takes to rise from dark at its start and to go dark again before
+        /// its end. This is the clip's own envelope, separate from Timeline's blend between clips.
+        /// </summary>
+        public float fadeInBeats;
+        public float fadeOutBeats;
+
         public bool phaseExpanded = true;
         public AlpsPhaseSettings phase = new AlpsPhaseSettings();
 
@@ -34,6 +41,8 @@ namespace AdzukiSoft.ALPS
         {
             bpm = other.bpm;
             order = other.order;
+            fadeInBeats = other.fadeInBeats;
+            fadeOutBeats = other.fadeOutBeats;
             phaseExpanded = other.phaseExpanded;
             phase = new AlpsPhaseSettings(other.phase);
             effects = new List<AlpsEffect>();

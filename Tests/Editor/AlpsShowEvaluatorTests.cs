@@ -177,6 +177,97 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void ClipFade_RisesAndFallsOverBeats()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
+            set.fadeInBeats = 1f;
+            set.fadeOutBeats = 2f;
+            var show = Compile(1, set, end: 4f);
+
+            Assert.AreEqual(0f, Evaluate(show, 0, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Dark on the first beat.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade in.");
+            Assert.AreEqual(80f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Between the fades.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade out.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Dark at the end.");
+        }
+
+        [Test]
+        public void ClipFade_CountsInTheClipTempo()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            set.bpm = 120f;
+            set.fadeInBeats = 2f;
+            var show = Compile(1, set, end: 4f);
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "One of two beats at 120 BPM.");
+        }
+
+        [Test]
+        public void ClipFade_BlendsEveryChannelLikeAnEmptyClip()
+        {
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.value = 60f;
+            move.pan.value = 90f;
+            set.fadeInBeats = 1f;
+            set.fadeOutBeats = 1f;
+            var show = Compile(1, set, end: 4f);
+
+            var entering = Evaluate(show, 0, 0.5f);
+            Assert.AreEqual(30f, entering[AlpsShowEvaluator.FrameTilt], 0.01f, "Half way from the default tilt of 0.");
+            Assert.AreEqual(45f, entering[AlpsShowEvaluator.FramePan], 0.01f, "Half way from the default pan of 0.");
+            Assert.AreEqual(60f, Evaluate(show, 0, 2f)[AlpsShowEvaluator.FrameTilt], 0.01f);
+            Assert.AreEqual(15f, Evaluate(show, 0, 3.75f)[AlpsShowEvaluator.FrameTilt], 0.01f, "A quarter of the fade out left.");
+        }
+
+        [Test]
+        public void ClipFade_BlendsTowardTheLayerBelow()
+        {
+            var below = Set();
+            below.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var above = Set();
+            above.Add(AlpsEffectKind.Brightness).brightness.value = 20f;
+            above.fadeInBeats = 2f;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = below, start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1 });
+
+            Assert.AreEqual(60f, Evaluate(show, 0, 1f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way from the lower layer's 100 to 20.");
+        }
+
+        [Test]
+        public void Crossfade_IntoAClipWithoutBrightnessGoesDark()
+        {
+            var lit = Set();
+            lit.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var plain = Set();
+            plain.Add(AlpsEffectKind.Cone);
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = lit, start = 0f, end = 2f, mixOut = 1f },
+                new AlpsStandaloneClip { set = plain, start = 1f, end = 3f, mixIn = 1f });
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from 100 to dark.");
+        }
+
+        [Test]
+        public void NoClip_LeavesTheFixtureDark()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Cone);
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, start = 1f, end = 2f });
+
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Before the clip.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Inside a clip without a brightness effect.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 2.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "After the clip.");
+        }
+
+        [Test]
         public void Range_PerCycleAlternatesMinAndMax()
         {
             var set = Set();
@@ -874,16 +965,25 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Clips_EasingInFromNothingBlendsWithTheDefault()
+        public void Clips_EasingInFromNothingRisesFromDark()
         {
             var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 0f;
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
                 new AlpsStandaloneClip { set = set, start = 0f, end = 2f, mixIn = 1f });
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from the neutral 100 to 0.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from dark to 80.");
+
+            var plain = Set();
+            plain.Add(AlpsEffectKind.Cone);
+            var withoutBrightness = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = plain, start = 0f, end = 2f, mixIn = 1f });
+
+            Assert.AreEqual(0f, Evaluate(withoutBrightness, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Nothing lights it.");
         }
 
         [Test]
