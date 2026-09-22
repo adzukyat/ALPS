@@ -5,7 +5,8 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Add effect: a centred button like the inspector's Add Component, below a divider, and
+    /// Add effect: a centred button like the inspector's Add Component, below a divider
+    /// once the clip has effects, and
     /// the thumbnail grid it reveals. The button shows as checked while the grid is open.
     ///
     /// An effect already on the clip stays in the list, retitled with an odd suffix. Picking it
@@ -15,6 +16,7 @@ namespace AdzukiSoft.ALPS.Editor
     public class AlpsAddEffectCatalog : VisualElement
     {
         private readonly AlpsClipEffectSet _set;
+        private readonly VisualElement _divider;
         private readonly VisualElement _button;
         private readonly VisualElement _list;
 
@@ -24,9 +26,9 @@ namespace AdzukiSoft.ALPS.Editor
             OnAdd = onAdd;
             AddToClassList("alps-add");
 
-            var divider = new VisualElement();
-            divider.AddToClassList("alps-divider");
-            Add(divider);
+            _divider = new VisualElement();
+            _divider.AddToClassList("alps-divider");
+            Add(_divider);
 
             _button = new VisualElement();
             _button.AddToClassList("alps-add__button");
@@ -54,6 +56,9 @@ namespace AdzukiSoft.ALPS.Editor
 
         public void Rebuild()
         {
+            // With no effects the divider under the shared settings already separates the
+            // button, so a second one would sit right below it.
+            _divider.style.display = _set.effects.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             _button.EnableInClassList("alps-add__button--open", _set.addCatalogExpanded);
             _list.style.display = _set.addCatalogExpanded ? DisplayStyle.Flex : DisplayStyle.None;
             _list.Clear();
