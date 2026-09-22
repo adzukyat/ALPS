@@ -64,7 +64,9 @@ namespace AdzukiSoft.ALPS
         public const int PhaseDelay = 4;
         public const int PhaseBeatsPerCycle = 5;
         public const int PhaseInverse = 6;
-        public const int PhaseStride = 7;
+        /// <summary>Share of a ping-pong cycle held at the far end between the out and back legs.</summary>
+        public const int PhaseHold = 7;
+        public const int PhaseStride = 8;
 
         // --- Clip rows ---------------------------------------------------------------------
 
@@ -316,11 +318,13 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Phase φ in 0..1 from unwrapped cycles. Forward is a sawtooth, ping-pong a
-        /// triangle peaking at <paramref name="ratio"/>, random a smooth seeded wander.
+        /// Phase φ in 0..1 from unwrapped cycles. Forward is a sawtooth, random a smooth
+        /// seeded wander. Ping-pong rises over the first <paramref name="ratio"/> of the
+        /// cycle, stays at 1 for the next <paramref name="hold"/>, and falls back over the
+        /// rest, so a hold of 0 is a triangle peaking at the ratio.
         /// Invert and ease apply to forward and ping-pong only.
         /// </summary>
-        public static float Phase(int mode, int ease, float ratio, bool inverse, float cycles, int k, int seed)
+        public static float Phase(int mode, int ease, float ratio, float hold, bool inverse, float cycles, int k, int seed)
         {
             if (mode == PhaseRandom)
             {
@@ -330,8 +334,7 @@ namespace AdzukiSoft.ALPS
             var u = cycles - Mathf.Floor(cycles);
             if (mode == PhasePingPong)
             {
-                var peak = Mathf.Clamp(ratio, 0.001f, 0.999f);
-                u = u < peak ? u / peak : 1f - (u - peak) / (1f - peak);
+                u = PingPong(ratio, hold, u);
             }
 
             if (inverse)
@@ -342,8 +345,30 @@ namespace AdzukiSoft.ALPS
             return Ease(ease, u);
         }
 
-        /// <summary>True while a ping-pong phase is on its return leg.</summary>
-        public static bool IsReturnLeg(int mode, float ratio, float cycles)
+        /// <summary>The ping-pong wave for a position <paramref name="u"/> in 0..1 of the cycle.</summary>
+        public static float PingPong(float ratio, float hold, float u)
+        {
+            var rise = Mathf.Clamp01(ratio);
+            var top = rise + Mathf.Clamp(hold, 0f, 1f - rise);
+            if (u < rise)
+            {
+                return u / rise;
+            }
+
+            if (u < top)
+            {
+                return 1f;
+            }
+
+            var fall = 1f - top;
+            return fall > 0.0001f ? Mathf.Clamp01(1f - (u - top) / fall) : 1f;
+        }
+
+        /// <summary>
+        /// True while a ping-pong phase is on its return leg, the fall after the hold.
+        /// A ping-pong with no time left to fall never returns.
+        /// </summary>
+        public static bool IsReturnLeg(int mode, float ratio, float hold, float cycles)
         {
             if (mode != PhasePingPong)
             {
@@ -351,7 +376,14 @@ namespace AdzukiSoft.ALPS
             }
 
             var u = cycles - Mathf.Floor(cycles);
-            return u >= Mathf.Clamp(ratio, 0.001f, 0.999f);
+            return u >= OutboundLeg(ratio, hold);
+        }
+
+        /// <summary>The share of a ping-pong cycle before the return leg: the rise and the hold.</summary>
+        public static float OutboundLeg(float ratio, float hold)
+        {
+            var rise = Mathf.Clamp01(ratio);
+            return rise + Mathf.Clamp(hold, 0f, 1f - rise);
         }
 
         public static int CycleIndex(float cycles)
@@ -608,6 +640,7 @@ namespace AdzukiSoft.ALPS
                 ToInt(clips[phaseRow + PhaseMode]),
                 ToInt(clips[phaseRow + PhaseEase]),
                 clips[phaseRow + PhaseRatio],
+                clips[phaseRow + PhaseHold],
                 clips[phaseRow + PhaseInverse] > 0.5f,
                 cycles,
                 k,
@@ -694,13 +727,15 @@ namespace AdzukiSoft.ALPS
             }
 
             var ratio = own ? parameters[paramRow + ParamOwnPhase + PhaseRatio] : clips[clipRow + ClipPhase + PhaseRatio];
+            var hold = own ? parameters[paramRow + ParamOwnPhase + PhaseHold] : clips[clipRow + ClipPhase + PhaseHold];
             var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
-            if (IsReturnLeg(mode, ratio, cycles))
+            if (IsReturnLeg(mode, ratio, hold, cycles))
             {
                 return 0f;
             }
 
-            var u = (cycles - Mathf.Floor(cycles)) / Mathf.Clamp(ratio, 0.001f, 0.999f);
+            // The outbound leg includes the hold, so the lights stay on while the phase rests at the far end.
+            var u = (cycles - Mathf.Floor(cycles)) / Mathf.Max(0.001f, OutboundLeg(ratio, hold));
             var scale = 1f;
             if (fadeIn > 0f)
             {
@@ -740,6 +775,7 @@ namespace AdzukiSoft.ALPS
                     ToInt(parameters[own + PhaseMode]),
                     ToInt(parameters[own + PhaseEase]),
                     parameters[own + PhaseRatio],
+                    parameters[own + PhaseHold],
                     parameters[own + PhaseInverse] > 0.5f,
                     cycles,
                     k,
@@ -751,6 +787,7 @@ namespace AdzukiSoft.ALPS
                 ToInt(clips[shared + PhaseMode]),
                 ToInt(clips[shared + PhaseEase]),
                 clips[shared + PhaseRatio],
+                clips[shared + PhaseHold],
                 clips[shared + PhaseInverse] > 0.5f,
                 cycles,
                 k,

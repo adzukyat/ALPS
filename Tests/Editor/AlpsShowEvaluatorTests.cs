@@ -74,7 +74,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Phase_ForwardIsASawtoothAndInverseFlipsIt()
         {
             float Forward(float cycles, bool inverse) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.Linear, 0.5f, inverse, cycles, 0, 0);
+                AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.Linear, 0.5f, 0f, inverse, cycles, 0, 0);
 
             Assert.AreEqual(0.25f, Forward(0.25f, false), 0.001f);
             Assert.AreEqual(0.25f, Forward(3.25f, false), 0.001f, "The phase wraps every cycle.");
@@ -84,7 +84,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Phase_EaseShapesTheCycle()
         {
-            var eased = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.InQuad, 0.5f, false, 0.5f, 0, 0);
+            var eased = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.InQuad, 0.5f, 0f, false, 0.5f, 0, 0);
             Assert.AreEqual(0.25f, eased, 0.001f);
         }
 
@@ -94,8 +94,8 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 50; i++)
             {
                 var cycles = i * 0.137f;
-                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, false, cycles, 3, 9);
-                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, false, cycles, 3, 9);
+                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, false, cycles, 3, 9);
+                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, false, cycles, 3, 9);
                 Assert.That(a, Is.InRange(0f, 1f));
                 Assert.AreEqual(a, b);
             }
@@ -104,9 +104,49 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Phase_ReturnLegFollowsThePingPongRatio()
         {
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.2f));
-            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.3f));
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseForward, 0.25f, 0.3f), "Only ping-pong has a return leg.");
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0f, 0.2f));
+            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0f, 0.3f));
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseForward, 0.25f, 0f, 0.3f), "Only ping-pong has a return leg.");
+        }
+
+        [Test]
+        public void Phase_PingPongHoldsAtTheFarEndBetweenTheLegs()
+        {
+            // 25% out, 50% held, 25% back.
+            float PingPong(float cycles) => AlpsShowEvaluator.Phase(
+                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0.5f, false, cycles, 0, 0);
+
+            Assert.AreEqual(0.5f, PingPong(0.125f), 0.001f, "Half way out.");
+            Assert.AreEqual(1f, PingPong(0.3f), 0.001f, "Held at the far end.");
+            Assert.AreEqual(1f, PingPong(0.7f), 0.001f, "Still held just before coming back.");
+            Assert.AreEqual(0.5f, PingPong(0.875f), 0.001f, "Half way back.");
+            Assert.AreEqual(0f, PingPong(1f), 0.001f, "Back at the start as the next cycle begins.");
+        }
+
+        [Test]
+        public void Phase_PingPongWithoutHoldIsTheTriangle()
+        {
+            float PingPong(float cycles) => AlpsShowEvaluator.Phase(
+                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0f, false, cycles, 0, 0);
+
+            Assert.AreEqual(1f, PingPong(0.25f), 0.001f);
+            Assert.AreEqual(0.5f, PingPong(0.625f), 0.001f);
+        }
+
+        [Test]
+        public void Phase_PingPongWithNothingLeftToComeBackStaysOut()
+        {
+            // Out and hold fill the whole cycle, so there is no return leg at all.
+            Assert.AreEqual(1f, AlpsShowEvaluator.Phase(
+                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.5f, 0.5f, false, 0.9f, 0, 0), 0.001f);
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.5f, 0.5f, 0.99f));
+        }
+
+        [Test]
+        public void Phase_ReturnLegStartsAfterTheHold()
+        {
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.5f, 0.7f));
+            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.5f, 0.8f));
         }
 
         // ------------------------------------------------------------------ values
@@ -613,6 +653,24 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Between the two fades.");
             Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade out.");
             Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark on the return leg.");
+        }
+
+        [Test]
+        public void BlackoutOnReturn_StaysLitThroughTheHold()
+        {
+            // 25% out, 25% held, 50% back: the lit leg is 0 to 0.5 and the fade out takes its second half.
+            var set = Set(AlpsPhaseMode.PingPong);
+            set.phase.pingPongRatio = 0.25f;
+            set.phase.pingPongHold = 0.25f;
+            var effect = set.Add(AlpsEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            effect.blackoutFadeOut = 0.5f;
+            var show = Compile(1, set);
+
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.2f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit while going out.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Fading out during the hold.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.6f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark on the way back.");
         }
 
         [Test]

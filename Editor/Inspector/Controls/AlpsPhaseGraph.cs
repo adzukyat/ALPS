@@ -96,6 +96,7 @@ namespace AdzukiSoft.ALPS.Editor
                         (int)_settings.mode,
                         (int)_settings.ease,
                         _settings.pingPongRatio,
+                        _settings.pingPongHold,
                         _settings.inverse,
                         cycles,
                         k,

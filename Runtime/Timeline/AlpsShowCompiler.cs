@@ -467,6 +467,7 @@ namespace AdzukiSoft.ALPS
                 row[offset + AlpsShowEvaluator.PhaseMode] = (int)phase.mode;
                 row[offset + AlpsShowEvaluator.PhaseEase] = (int)phase.ease;
                 row[offset + AlpsShowEvaluator.PhaseRatio] = phase.pingPongRatio;
+                row[offset + AlpsShowEvaluator.PhaseHold] = phase.pingPongHold;
                 row[offset + AlpsShowEvaluator.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
                 row[offset + AlpsShowEvaluator.PhaseDelay] = AlpsShowEvaluator.DelayFromSpread(
                     phase.SpreadCycles,

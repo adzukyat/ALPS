@@ -17,8 +17,18 @@ namespace AdzukiSoft.ALPS
         /// <summary>Easing function. Ignored while <see cref="mode"/> is Random.</summary>
         public AlpsEaseType ease = AlpsEaseType.InOutSine;
 
-        /// <summary>Ping-pong ratio: where the triangle wave peaks. PingPong only.</summary>
+        /// <summary>Ping-pong ratio: the share of the cycle spent going out. PingPong only.</summary>
         [Range(0f, 1f)] public float pingPongRatio = 0.5f;
+
+        /// <summary>
+        /// The share of the cycle held at the far end before coming back. The rest of the
+        /// cycle after the ratio and the hold is the return leg. Zero keeps the plain
+        /// triangle, which is also what clips saved before this field read as. PingPong only.
+        /// </summary>
+        [Range(0f, 1f)] public float pingPongHold;
+
+        /// <summary>The share of the cycle spent coming back, what the ratio and the hold leave over.</summary>
+        public float PingPongReturn => Mathf.Max(0f, 1f - pingPongRatio - pingPongHold);
 
         /// <summary>Fixture group size: how many neighbouring fixtures share one phase.</summary>
         [Min(1)] public int fixtureGroupSize = 1;
@@ -64,6 +74,7 @@ namespace AdzukiSoft.ALPS
             mode = other.mode;
             ease = other.ease;
             pingPongRatio = other.pingPongRatio;
+            pingPongHold = other.pingPongHold;
             fixtureGroupSize = other.fixtureGroupSize;
             spread = other.spread;
             spreadBeats = other.spreadBeats;

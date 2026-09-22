@@ -29,7 +29,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly AlpsPhaseGraph _graph;
         private readonly AlpsEasingGrid _easing;
-        private readonly AlpsValueSlider _pingPongRatio;
+        private readonly AlpsFadeSlider _pingPongRatio;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
         private readonly AlpsRangeFlag _beatsFlag;
@@ -94,19 +94,30 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_easing, settings, nameof(AlpsPhaseSettings.ease));
             Add(_easing);
 
-            // 50% spends the same time going out and coming back.
-            _pingPongRatio = new AlpsValueSlider("往復比", new Vector2(0f, 100f), "%", "0") 
+            // The going out share on the left and the coming back share on the right, like a
+            // fade. Whatever the two leave over is held at the far end. 50% / 50% spends the
+            // same time each way with no hold, and the snaps sit at each quarter of the cycle.
+            // Growing one side past what is left takes the difference from the other, so a
+            // single drag still moves the peak as it used to.
+            _pingPongRatio = new AlpsFadeSlider("往復比", 100f, "%", "0", "行き", "戻り")
             {
-                Snaps = new[] { 50f },
-                DefaultValue = defaults.pingPongRatio * 100f,
+                Snaps = new[] { 25f, 50f, 75f },
+                DefaultValue = new Vector2(defaults.pingPongRatio, defaults.PingPongReturn) * 100f,
             };
-            _pingPongRatio.SetValueWithoutNotify(settings.pingPongRatio * 100f);
+            _pingPongRatio.SetValueWithoutNotify(new Vector2(settings.pingPongRatio, settings.PingPongReturn) * 100f);
             _pingPongRatio.RegisterValueChangedCallback(evt =>
             {
-                settings.pingPongRatio = Mathf.Clamp01(evt.newValue / 100f);
+                var shares = PingPongShares(evt.previousValue / 100f, evt.newValue / 100f);
+                settings.pingPongRatio = shares.x;
+                settings.pingPongHold = Mathf.Max(0f, 1f - shares.x - shares.y);
+                _pingPongRatio.SetValueWithoutNotify(shares * 100f);
                 Changed();
             });
-            mixed?.Bind(_pingPongRatio, settings, nameof(AlpsPhaseSettings.pingPongRatio));
+            mixed?.Bind(
+                _pingPongRatio,
+                settings,
+                nameof(AlpsPhaseSettings.pingPongRatio),
+                nameof(AlpsPhaseSettings.pingPongHold));
             Add(_pingPongRatio);
 
             var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0") { DefaultValue = defaults.fixtureGroupSize };
@@ -198,6 +209,23 @@ namespace AdzukiSoft.ALPS.Editor
             Add(_inverse);
 
             Refresh();
+        }
+
+        /// <summary>
+        /// The going out and coming back shares after an edit, kept to a whole cycle at most.
+        /// The side that moved keeps its new value and the other gives way.
+        /// </summary>
+        internal static Vector2 PingPongShares(Vector2 previous, Vector2 next)
+        {
+            var goOut = Mathf.Clamp01(next.x);
+            var back = Mathf.Clamp01(next.y);
+            if (goOut + back <= 1f)
+            {
+                return new Vector2(goOut, back);
+            }
+
+            var outMoved = !Mathf.Approximately(goOut, previous.x);
+            return outMoved ? new Vector2(goOut, 1f - goOut) : new Vector2(1f - back, back);
         }
 
         /// <summary>Re-applies the conditional visibility rules and repaints the graph.</summary>

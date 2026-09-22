@@ -488,7 +488,7 @@ namespace AdzukiSoft.ALPS.Tests
             set.phase.mode = AlpsPhaseMode.Forward;
             var view = new AlpsClipInspectorView(set);
 
-            var ratio = view.Query<AlpsValueSlider>().ToList().First(s => s.label == "往復比");
+            var ratio = view.Query<AlpsFadeSlider>().ToList().First(s => s.label == "往復比");
             Assert.AreEqual(DisplayStyle.None, ratio.style.display.value, "往復比 must be hidden outside ピンポン.");
 
             set.phase.mode = AlpsPhaseMode.PingPong;
@@ -577,7 +577,7 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
             var effect = view.Query<AlpsEffectView>().First();
             var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
-            var fadeFrame = effect.Q<AlpsFadeSlider>().parent;
+            var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == "フェード").parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "Forward has no return leg.");
 
             set.phase.mode = AlpsPhaseMode.PingPong;
@@ -1515,11 +1515,42 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // 往復比 0.25 puts the triangle's peak a quarter of the way into the cycle.
             float Phase(float cycles) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, false, cycles, 0, 0);
+                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0f, false, cycles, 0, 0);
 
             Assert.AreEqual(1f, Phase(0.25f), 0.01f, "The peak sits at 往復比.");
             Assert.AreEqual(0.5f, Phase(0.125f), 0.01f);
             Assert.AreEqual(0.5f, Phase(0.625f), 0.01f);
+        }
+
+        [Test]
+        public void PhaseSettings_PingPongRatioShowsGoingAndComingBack()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.mode = AlpsPhaseMode.PingPong;
+            set.phase.pingPongRatio = 0.3f;
+            set.phase.pingPongHold = 0.2f;
+            var view = new AlpsClipInspectorView(set);
+
+            var ratio = view.Query<AlpsFadeSlider>().ToList().First(s => s.label == "往復比");
+            Assert.AreEqual(30f, ratio.value.x, 0.001f, "行き is the ratio.");
+            Assert.AreEqual(50f, ratio.value.y, 0.001f, "戻り is what the ratio and the hold leave over.");
+        }
+
+        [Test]
+        public void PhaseSettings_PingPongSharesGiveWayToTheSideThatMoved()
+        {
+            // Dragging 行き from 50 to 70 takes the 20 from 戻り, the way 往復比 moved the peak before.
+            var outMoved = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.7f, 0.5f));
+            Assert.AreEqual(0.7f, outMoved.x, 0.0001f);
+            Assert.AreEqual(0.3f, outMoved.y, 0.0001f);
+
+            var backMoved = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.8f));
+            Assert.AreEqual(0.2f, backMoved.x, 0.0001f);
+            Assert.AreEqual(0.8f, backMoved.y, 0.0001f);
+
+            var room = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.3f, 0.5f));
+            Assert.AreEqual(0.3f, room.x, 0.0001f, "Shrinking one side leaves a hold and does not grow the other.");
+            Assert.AreEqual(0.5f, room.y, 0.0001f);
         }
 
         [Test]
