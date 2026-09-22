@@ -14,11 +14,25 @@ namespace AdzukiSoft.ALPS
     [TrackBindingType(typeof(AlpsFixtureGroup))]
     public class AlpsTimelineTrack : TrackAsset, ILayerable
     {
-        [Tooltip("Song tempo in beats per minute. Override tracks use their parent's tempo.")]
-        [Min(1f)] public float bpm = 120f;
+        public const float DefaultBpm = 120f;
 
-        [Tooltip("Timeline time in seconds where beat 0 falls.")]
-        public float beatOrigin;
+        /// <summary>
+        /// The show's tempo, one value for the whole timeline. Every ALPS track keeps a copy
+        /// so the value survives deleting any one track. It is edited as 全体BPM in the clip
+        /// inspector, so the track inspector does not show it. Read it through <see cref="ShowBpm"/>.
+        /// </summary>
+        [HideInInspector] [Min(1f)] public float bpm = DefaultBpm;
+
+        /// <summary>The tempo of the whole timeline: the first ALPS track's copy.</summary>
+        public static float ShowBpm(TimelineAsset timeline)
+        {
+            foreach (var track in AlpsShowCompiler.CollectTracks(timeline))
+            {
+                return track.bpm > 0f ? track.bpm : DefaultBpm;
+            }
+
+            return DefaultBpm;
+        }
 
         /// <summary>The top level ALPS track this one belongs to, itself for a top level track.</summary>
         public AlpsTimelineTrack RootTrack

@@ -344,7 +344,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator Bpm_FollowsTheTrackUntilItDiffers()
+        public IEnumerator Bpm_FollowsTheShowUntilItDiffers()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
@@ -353,18 +353,32 @@ namespace AdzukiSoft.ALPS.Tests
             window.ShowUtility();
             try
             {
-                var view = new AlpsClipInspectorView(set, trackBpm: 140f);
+                var view = new AlpsClipInspectorView(set, showBpm: 140f);
+                var reported = new List<float>();
+                view.ShowBpmChanged += reported.Add;
                 window.rootVisualElement.Add(view);
                 yield return null;
 
-                var bpm = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "BPMオーバーライド");
-                Assert.AreEqual(140f, bpm.value, "An unset clip shows the track's tempo.");
+                var steppers = view.Query<AlpsStepper>().ToList();
+                var global = steppers.First(stepper => stepper.label == "全体BPM");
+                var bpm = steppers.First(stepper => stepper.label == "BPMオーバーライド");
+                Assert.Less(steppers.IndexOf(global), steppers.IndexOf(bpm), "全体BPM sits above the override.");
+                Assert.AreEqual(140f, global.value);
+                Assert.AreEqual(140f, bpm.value, "An unset clip shows the show's tempo.");
+
+                global.value = 128f;
+                CollectionAssert.AreEqual(new[] { 128f }, reported, "The show's tempo goes to the host.");
+                Assert.AreEqual(0f, set.bpm, "The show's tempo is not stored on the clip.");
+                Assert.AreEqual(128f, bpm.value, "An unset clip keeps showing the show's tempo.");
 
                 bpm.value = 150f;
                 Assert.AreEqual(150f, set.bpm);
 
-                bpm.value = 140f;
-                Assert.AreEqual(0f, set.bpm, "The track's tempo goes back to following the track.");
+                global.value = 100f;
+                Assert.AreEqual(150f, bpm.value, "A clip with its own tempo keeps it.");
+
+                bpm.value = 100f;
+                Assert.AreEqual(0f, set.bpm, "The show's tempo goes back to following the show.");
             }
             finally
             {

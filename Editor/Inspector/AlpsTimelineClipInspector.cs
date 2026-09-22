@@ -216,10 +216,38 @@ namespace AdzukiSoft.ALPS.Editor
                 var before = new AlpsClipEffectSet(set);
                 var mixed = others.Length > 0 ? new AlpsMixedValues(set, others) : null;
 
-                var view = new AlpsClipInspectorView(set, mixed, TrackBpm(clips[0]));
+                // 全体BPM is stored on every ALPS track of the timeline, so those tracks are
+                // recorded for undo along with the clips.
+                var timeline = TimelineOf(clips[0]);
+                var tracks = AlpsShowCompiler.CollectTracks(timeline).ToArray();
+                var undoTargets = edited.Concat(tracks).ToArray();
+
+                // A track added later, or a timeline from before 全体BPM, can disagree. The
+                // compiler plays the first track's copy, so the rest are brought in line.
+                var showBpm = AlpsTimelineTrack.ShowBpm(timeline);
+                foreach (var track in tracks)
+                {
+                    if (track.bpm != showBpm)
+                    {
+                        track.bpm = showBpm;
+                        EditorUtility.SetDirty(track);
+                    }
+                }
+
+                var view = new AlpsClipInspectorView(set, mixed, showBpm, tracks.Length > 0);
                 view.RegisterCallback<PointerDownEvent>(
-                    _ => Undo.RegisterCompleteObjectUndo(edited, "Edit Clip Effects"),
+                    _ => Undo.RegisterCompleteObjectUndo(undoTargets, "Edit Clip Effects"),
                     TrickleDown.TrickleDown);
+                view.ShowBpmChanged += value =>
+                {
+                    foreach (var track in tracks)
+                    {
+                        track.bpm = value;
+                        EditorUtility.SetDirty(track);
+                    }
+
+                    NotifyPreview();
+                };
                 view.StructureEdited += edit =>
                 {
                     foreach (var other in others)
@@ -274,10 +302,9 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// The tempo of the track holding <paramref name="clip"/>. Override tracks use their
-        /// parent's, as the compiler does. The default tempo when the clip is on no track.
+        /// The timeline holding <paramref name="clip"/>, or null when the clip is on none.
         /// </summary>
-        private static float TrackBpm(AlpsTimelineClip clip)
+        private static TimelineAsset TimelineOf(AlpsTimelineClip clip)
         {
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(AssetDatabase.GetAssetPath(clip));
             if (timeline == null)
@@ -289,11 +316,11 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 if (track.GetClips().Any(timelineClip => timelineClip.asset == clip))
                 {
-                    return track.RootTrack.bpm;
+                    return timeline;
                 }
             }
 
-            return 120f;
+            return null;
         }
 
         /// <summary>The asset an edit of this clip writes to, which is the profile while synced.</summary>

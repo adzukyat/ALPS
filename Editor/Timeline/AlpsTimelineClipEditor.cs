@@ -11,7 +11,7 @@ namespace AdzukiSoft.ALPS.Editor
     /// color band along the bottom edge and a thin line wherever the clip's phase starts a
     /// new cycle, the way StageLightManeuver showed its clips.
     ///
-    /// Strips are cached per clip and rebuilt when the clip's timing, its track tempo, its
+    /// Strips are cached per clip and rebuilt when the clip's timing, the show tempo, its
     /// fixture count or its effects change. Any ALPS edit bumps <see cref="AlpsPreviewDriver.Revision"/>
     /// without saying which clip it touched, so after one the effects are compared as JSON
     /// and only clips that really changed are sampled again.
@@ -31,7 +31,6 @@ namespace AdzukiSoft.ALPS.Editor
             public float start;
             public float end;
             public float bpm;
-            public float beatOrigin;
             public int fixtureCount;
             public int seed;
         }
@@ -138,7 +137,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             entry.key = key;
-            entry.strip = AlpsClipStrip.Build(key.set, key.fixtureCount, key.bpm, key.beatOrigin, key.start, key.end, key.seed);
+            entry.strip = AlpsClipStrip.Build(key.set, key.fixtureCount, key.bpm, key.start, key.end, key.seed);
             SetTexture(entry);
             return entry;
         }
@@ -169,8 +168,7 @@ namespace AdzukiSoft.ALPS.Editor
                 set = asset.EffectiveData,
                 start = (float)clip.start,
                 end = (float)clip.end,
-                bpm = root != null ? root.bpm : 120f,
-                beatOrigin = root != null ? root.beatOrigin : 0f,
+                bpm = AlpsTimelineTrack.ShowBpm(track != null ? track.timelineAsset : null),
                 fixtureCount = Mathf.Max(1, fixtureCount),
                 seed = AlpsShowCompiler.SeedFor(clip, Mathf.Max(0, layer)),
             };
@@ -182,7 +180,6 @@ namespace AdzukiSoft.ALPS.Editor
                 && a.start == b.start
                 && a.end == b.end
                 && a.bpm == b.bpm
-                && a.beatOrigin == b.beatOrigin
                 && a.fixtureCount == b.fixtureCount
                 && a.seed == b.seed;
         }

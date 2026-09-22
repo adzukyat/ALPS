@@ -32,7 +32,7 @@ namespace AdzukiSoft.ALPS
                 return show;
             }
 
-            var builder = new Builder(director, show);
+            var builder = new Builder(director, show, AlpsTimelineTrack.ShowBpm(timeline));
             foreach (var track in timeline.GetRootTracks())
             {
                 builder.VisitTrack(track, false);
@@ -44,16 +44,17 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// Compiles clips without a timeline, for one group of <paramref name="fixtureCount"/>
-        /// fixtures. Clips must be listed in layer order. Mix curves are linear.
+        /// fixtures at the show tempo <paramref name="bpm"/>. Clips must be listed in layer
+        /// order. Mix curves are linear.
         /// </summary>
-        public static AlpsCompiledShow CompileStandalone(int fixtureCount, float bpm, float beatOrigin, params AlpsStandaloneClip[] clips)
+        public static AlpsCompiledShow CompileStandalone(int fixtureCount, float bpm, params AlpsStandaloneClip[] clips)
         {
             var show = new AlpsCompiledShow();
-            var builder = new Builder(null, show);
+            var builder = new Builder(null, show, bpm);
             builder.AddStandaloneGroup(fixtureCount);
             foreach (var clip in clips)
             {
-                builder.AddClipRow(clip.set, clip.start, clip.end, clip.mixIn, clip.mixOut, null, null, clip.layer, 0, clip.seed, bpm, beatOrigin);
+                builder.AddClipRow(clip.set, clip.start, clip.end, clip.mixIn, clip.mixOut, null, null, clip.layer, 0, clip.seed);
             }
 
             builder.Finish();
@@ -156,6 +157,7 @@ namespace AdzukiSoft.ALPS
         {
             private readonly PlayableDirector _director;
             private readonly AlpsCompiledShow _show;
+            private readonly float _showBpm;
 
             private readonly List<float> _clips = new List<float>();
             private readonly List<float> _effects = new List<float>();
@@ -176,10 +178,11 @@ namespace AdzukiSoft.ALPS
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
 
-            public Builder(PlayableDirector director, AlpsCompiledShow show)
+            public Builder(PlayableDirector director, AlpsCompiledShow show, float showBpm)
             {
                 _director = director;
                 _show = show;
+                _showBpm = showBpm;
             }
 
             public void VisitTrack(TrackAsset track, bool parentMuted)
@@ -210,7 +213,7 @@ namespace AdzukiSoft.ALPS
                 var layer = _layer++;
                 foreach (var clip in track.GetAlpsClips())
                 {
-                    AddClip(clip, (AlpsTimelineClip)clip.asset, root, layer, groupIndex);
+                    AddClip(clip, (AlpsTimelineClip)clip.asset, layer, groupIndex);
                 }
             }
 
@@ -257,7 +260,7 @@ namespace AdzukiSoft.ALPS
                 return _groups.Count - 1;
             }
 
-            private void AddClip(TimelineClip clip, AlpsTimelineClip asset, AlpsTimelineTrack root, int layer, int groupIndex)
+            private void AddClip(TimelineClip clip, AlpsTimelineClip asset, int layer, int groupIndex)
             {
                 AddClipRow(
                     asset.EffectiveData,
@@ -269,9 +272,7 @@ namespace AdzukiSoft.ALPS
                     clip.mixOutCurve,
                     layer,
                     groupIndex,
-                    SeedFor(clip, layer),
-                    root.bpm,
-                    root.beatOrigin);
+                    SeedFor(clip, layer));
             }
 
             public void AddStandaloneGroup(int fixtureCount)
@@ -294,20 +295,16 @@ namespace AdzukiSoft.ALPS
                 AnimationCurve mixOutCurve,
                 int layer,
                 int groupIndex,
-                int seed,
-                float bpm,
-                float beatOrigin)
+                int seed)
             {
                 if (set == null)
                 {
                     return;
                 }
 
-                if (set.bpm > 0f && !Mathf.Approximately(set.bpm, bpm))
-                {
-                    bpm = set.bpm;
-                    beatOrigin = start;
-                }
+                // A clip's own tempo replaces the show's. Beats always count from the clip's
+                // start, which the evaluator reads from the start column.
+                var bpm = set.bpm > 0f ? set.bpm : _showBpm;
 
                 _clipOrder = (int)set.order;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
@@ -325,7 +322,6 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowEvaluator.ClipOrder] = (int)set.order;
                 row[AlpsShowEvaluator.ClipSeed] = seed;
                 row[AlpsShowEvaluator.ClipBpm] = bpm;
-                row[AlpsShowEvaluator.ClipBeatOrigin] = beatOrigin;
                 WritePhase(row, AlpsShowEvaluator.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixOutCurve, mixOutCurve, 1f, 0f);

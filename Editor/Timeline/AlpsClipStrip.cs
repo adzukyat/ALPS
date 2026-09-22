@@ -41,7 +41,6 @@ namespace AdzukiSoft.ALPS.Editor
             AlpsClipEffectSet set,
             int fixtureCount,
             float bpm,
-            float beatOrigin,
             float start,
             float end,
             int seed)
@@ -56,7 +55,6 @@ namespace AdzukiSoft.ALPS.Editor
             var show = AlpsShowCompiler.CompileStandalone(
                 fixtureCount,
                 bpm,
-                beatOrigin,
                 new AlpsStandaloneClip { set = set, start = start, end = end, seed = seed });
             if (show.ClipCount == 0)
             {
@@ -65,8 +63,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             // The compiled row carries the tempo that plays, a clip BPM override included.
             var rowBpm = show.clips[AlpsShowEvaluator.ClipBpm];
-            var rowOrigin = show.clips[AlpsShowEvaluator.ClipBeatOrigin];
-            FindCycles(strip, show, rowBpm, rowOrigin, start, end);
+            FindCycles(strip, show, rowBpm, start, end);
 
             var representatives = Representatives(set, show, fixtureCount);
             strip.lanes = representatives.Count;
@@ -187,8 +184,11 @@ namespace AdzukiSoft.ALPS.Editor
             return false;
         }
 
-        /// <summary>Cycle starts of the clip's shared phase, for order position 0.</summary>
-        private static void FindCycles(AlpsClipStrip strip, AlpsCompiledShow show, float bpm, float beatOrigin, float start, float end)
+        /// <summary>
+        /// Cycle starts of the clip's shared phase, for order position 0. Beats count from
+        /// the clip's start, so the first cycle begins with the clip and gets no line.
+        /// </summary>
+        private static void FindCycles(AlpsClipStrip strip, AlpsCompiledShow show, float bpm, float start, float end)
         {
             var beatsPerCycle = show.clips[AlpsShowEvaluator.ClipPhase + AlpsShowEvaluator.PhaseBeatsPerCycle];
             if (bpm <= 0f || beatsPerCycle <= 0f)
@@ -200,16 +200,15 @@ namespace AdzukiSoft.ALPS.Editor
             strip.secondsPerCycle = secondsPerCycle;
 
             var times = new List<float>();
-            var cycle = Mathf.FloorToInt((start - beatOrigin) / secondsPerCycle) + 1;
-            for (var n = 0; n < MaxCycleLines; n++, cycle++)
+            for (var cycle = 1; cycle <= MaxCycleLines; cycle++)
             {
-                var time = beatOrigin + cycle * secondsPerCycle;
-                if (time >= end)
+                var offset = cycle * secondsPerCycle;
+                if (start + offset >= end)
                 {
                     break;
                 }
 
-                times.Add(time - start);
+                times.Add(offset);
             }
 
             strip.cycleTimes = times.ToArray();

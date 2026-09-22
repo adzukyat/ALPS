@@ -25,8 +25,15 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly List<AlpsEffectView> _effectViews = new List<AlpsEffectView>();
 
         /// <param name="mixed">Which values differ between the selected clips. Null for a single clip.</param>
-        /// <param name="trackBpm">The tempo the clip follows while it has none of its own.</param>
-        public AlpsClipInspectorView(AlpsClipEffectSet set, AlpsMixedValues mixed = null, float trackBpm = 120f)
+        /// <param name="showBpm">The show's tempo, which the clip follows while it has none of its own.</param>
+        /// <param name="showBpmEditable">
+        /// False when the clip is on no timeline, so there is no show tempo to write back.
+        /// </param>
+        public AlpsClipInspectorView(
+            AlpsClipEffectSet set,
+            AlpsMixedValues mixed = null,
+            float showBpm = AlpsTimelineTrack.DefaultBpm,
+            bool showBpmEditable = true)
         {
             _set = set;
             _mixed = mixed;
@@ -46,17 +53,39 @@ namespace AdzukiSoft.ALPS.Editor
             Add(fields);
 
             // --- Tempo ---------------------------------------------------
-            // Shows the track's tempo until the clip gets its own. Going back to the track's
-            // value stores zero, so the clip follows the track again when that changes.
+            // The show's tempo belongs to the timeline, not the clip, so it is never mixed and
+            // the host writes it back. The override shows the show's tempo until the clip
+            // gets its own. Going back to that value stores zero, so the clip follows the
+            // show again when that changes.
             var bpm = new AlpsStepper("BPMオーバーライド", "BPM", 1f)
             {
                 Minimum = 1f,
-                tooltip = "トラックと違う値にすると、このクリップだけそのBPMで動きます。拍はクリップの開始位置から数えます。トラックと同じ値に戻すとトラックに追従します。",
+                tooltip = "全体BPMと違う値にすると、このクリップだけそのBPMで動きます。全体BPMと同じ値に戻すと全体BPMに追従します。",
             };
-            bpm.SetValueWithoutNotify(set.bpm > 0f ? set.bpm : trackBpm);
+
+            var global = new AlpsStepper("全体BPM", "BPM", 1f)
+            {
+                Minimum = 1f,
+                tooltip = "Timeline全体のテンポです。全てのクリップはそれぞれの開始位置を1拍目として拍を数えます。",
+            };
+            global.SetValueWithoutNotify(showBpm);
+            global.SetEnabled(showBpmEditable);
+            global.RegisterValueChangedCallback(evt =>
+            {
+                showBpm = Math.Max(1f, evt.newValue);
+                if (set.bpm <= 0f && (_mixed == null || !_mixed.IsMixed(set, nameof(AlpsClipEffectSet.bpm))))
+                {
+                    bpm.SetValueWithoutNotify(showBpm);
+                }
+
+                ShowBpmChanged?.Invoke(showBpm);
+            });
+            fields.Add(global);
+
+            bpm.SetValueWithoutNotify(set.bpm > 0f ? set.bpm : showBpm);
             bpm.RegisterValueChangedCallback(evt =>
             {
-                set.bpm = Math.Abs(evt.newValue - trackBpm) < 0.0005f ? 0f : Math.Max(1f, evt.newValue);
+                set.bpm = Math.Abs(evt.newValue - showBpm) < 0.0005f ? 0f : Math.Max(1f, evt.newValue);
                 RaiseChanged();
             });
             mixed?.Bind(bpm, set, nameof(AlpsClipEffectSet.bpm));
@@ -159,6 +188,12 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>Raised after any edit so the host can record undo and mark the asset dirty.</summary>
         public event Action Changed;
+
+        /// <summary>
+        /// Raised when 全体BPM is edited. It is not part of the effect set, so the host
+        /// writes it to the timeline and records undo there.
+        /// </summary>
+        public event Action<float> ShowBpmChanged;
 
         /// <summary>
         /// Raised before <see cref="Changed"/> for an edit that adds, removes or replaces a

@@ -28,7 +28,7 @@ Add `ALPS Fixture Group` to a parent object and list its fixtures. The list orde
 
 ### 3. Timeline
 
-Add an `AlpsTimelineTrack` to a Timeline and bind it to a fixture group. Set the track's `Bpm` and `Beat Origin` so cycles line up with the song. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
+Add an `AlpsTimelineTrack` to a Timeline and bind it to a fixture group. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
 
 Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTrack` are left untouched.
 
@@ -36,6 +36,7 @@ Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTra
 
 Select an ALPS clip to edit it in the Inspector:
 
+- **Tempo**: 全体BPM is the tempo of the whole Timeline, and editing it from any clip changes it for every clip. BPMオーバーライド gives one clip its own tempo, for songs that change tempo part way. Every clip counts beats from its own start, so its first cycle begins where the clip begins. Place clips on the beat of the song to keep them in time.
 - **Order**: normal, reverse, symmetric or random fixture order. Symmetric counts outward from the middle and mirrors pan, so a pan spread opens into a fan. Each parameter row has R for a range and S for a spread. With S on the value becomes a fixed offset and R ranges the spread instead. Spread and the shared delay can be negative to run the other way.
 - **Shared settings**: the phase every ranged parameter and palette follows (mode, easing, ping-pong ratio, fixture grouping, delay, speed in beats, invert). The delay is read over the whole group in percent, so 100% walks the wave across every fixture in one cycle whatever the fixture count, and the marks on its rail sit where that trip lands on a whole number of beats. The 拍 flag next to it switches the delay to beats, which then stays that many beats when the speed changes.
 - **Effects**: move, cone, color, brightness, flicker and gobo. Move aims by angle, turns the beam in a circle around a center direction, or follows a user. Adding an effect that is already on the clip splits it into an even and an odd copy.

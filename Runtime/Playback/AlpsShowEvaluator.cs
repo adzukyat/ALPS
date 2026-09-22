@@ -79,8 +79,7 @@ namespace AdzukiSoft.ALPS
         public const int ClipOrder = 8;
         public const int ClipSeed = 9;
         public const int ClipBpm = 10;
-        public const int ClipBeatOrigin = 11;
-        public const int ClipPhase = 12;
+        public const int ClipPhase = 11;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -210,10 +209,10 @@ namespace AdzukiSoft.ALPS
             return x - Mathf.Floor(x);
         }
 
-        /// <summary>Beats elapsed since the track's beat origin.</summary>
-        public static float Beats(float time, float bpm, float beatOrigin)
+        /// <summary>Beats elapsed since the clip started. Every clip counts its own beats.</summary>
+        public static float Beats(float time, float bpm, float clipStart)
         {
-            return (time - beatOrigin) * Mathf.Max(0f, bpm) / 60f;
+            return (time - clipStart) * Mathf.Max(0f, bpm) / 60f;
         }
 
         /// <summary>How many fixture groups a group of <paramref name="fixtureCount"/> fixtures forms.</summary>
@@ -425,7 +424,7 @@ namespace AdzukiSoft.ALPS
             var order = ToInt(clips[row + ClipOrder]);
             var seed = ToInt(clips[row + ClipSeed]);
             var groupSize = ToInt(clips[phaseRow + PhaseGroupSize]);
-            var beats = Beats(time, clips[row + ClipBpm], clips[row + ClipBeatOrigin]);
+            var beats = Beats(time, clips[row + ClipBpm], clips[row + ClipStart]);
             var k = OrderPosition(order, seed, fixtureIndex, fixtureCount, groupSize);
             var isOdd = fixtureIndex % 2 == 0;
 

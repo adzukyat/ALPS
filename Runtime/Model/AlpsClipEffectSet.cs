@@ -12,8 +12,8 @@ namespace AdzukiSoft.ALPS
     public class AlpsClipEffectSet : ISerializationCallbackReceiver
     {
         /// <summary>
-        /// The clip's own tempo, for songs that change tempo part way. Zero, or the same
-        /// value as the track, follows the track. Otherwise beats count from the clip's start.
+        /// The clip's own tempo, for songs that change tempo part way. Zero follows the
+        /// show's tempo. Either way beats count from the clip's start.
         /// </summary>
         public float bpm;
 

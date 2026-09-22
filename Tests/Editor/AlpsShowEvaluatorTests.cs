@@ -138,26 +138,42 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Tempo_ClipOverrideCountsBeatsFromTheClipStart()
+        public void Tempo_BeatsCountFromTheClipStart()
         {
             var set = Set();
             var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
             AlpsCompiledShow CompileFromHalfSecond() => AlpsShowCompiler.CompileStandalone(
-                1, Bpm, 0f, new AlpsStandaloneClip { set = set, start = 0.5f, end = 2f });
+                1, Bpm, new AlpsStandaloneClip { set = set, start = 0.5f, end = 2f });
 
-            var track = CompileFromHalfSecond();
-            Assert.AreEqual(62.5f, Evaluate(track, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Unset, the track's 60 BPM from 0 s plays.");
-
-            set.bpm = Bpm;
-            var same = CompileFromHalfSecond();
-            Assert.AreEqual(62.5f, Evaluate(same, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The track's own tempo keeps following the track.");
+            var show = CompileFromHalfSecond();
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The clip starts on its own first beat.");
+            Assert.AreEqual(12.5f, Evaluate(show, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "An eighth of a beat at the show's 60 BPM after the clip starts.");
 
             set.bpm = 120f;
             var overridden = CompileFromHalfSecond();
-            Assert.AreEqual(25f, Evaluate(overridden, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "A quarter beat at 120 BPM after the clip starts.");
+            Assert.AreEqual(25f, Evaluate(overridden, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "A quarter beat at the clip's own 120 BPM.");
             Assert.AreEqual(75f, Evaluate(overridden, 0, 0.875f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+        }
+
+        [Test]
+        public void Tempo_EachClipOnALayerStartsItsOwnBeat()
+        {
+            var a = Set();
+            var first = a.Add(AlpsEffectKind.Brightness).brightness;
+            first.isRange = true;
+            first.range = new Vector2(0f, 100f);
+            var b = new AlpsClipEffectSet(a);
+
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = a, start = 0f, end = 1.3f },
+                new AlpsStandaloneClip { set = b, start = 1.3f, end = 3f });
+
+            Assert.AreEqual(20f, Evaluate(show, 0, 1.2f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The first clip is 1.2 beats in.");
+            Assert.AreEqual(10f, Evaluate(show, 0, 1.4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The next clip starts over at its own start.");
         }
 
         [Test]
@@ -830,7 +846,6 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
-                0f,
                 new AlpsStandaloneClip { set = lower, start = 0f, end = 2f, layer = 0 },
                 new AlpsStandaloneClip { set = upper, start = 1f, end = 2f, layer = 1 });
 
@@ -851,7 +866,6 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
-                0f,
                 new AlpsStandaloneClip { set = a, start = 0f, end = 2f, mixOut = 1f },
                 new AlpsStandaloneClip { set = b, start = 1f, end = 3f, mixIn = 1f });
 
@@ -867,7 +881,6 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
-                0f,
                 new AlpsStandaloneClip { set = set, start = 0f, end = 2f, mixIn = 1f });
 
             Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from the neutral 100 to 0.");
@@ -967,7 +980,7 @@ namespace AdzukiSoft.ALPS.Tests
 
         private static AlpsCompiledShow Compile(int fixtures, AlpsClipEffectSet set, float end = 2f)
         {
-            return AlpsShowCompiler.CompileStandalone(fixtures, Bpm, 0f, new AlpsStandaloneClip { set = set, start = 0f, end = end });
+            return AlpsShowCompiler.CompileStandalone(fixtures, Bpm, new AlpsStandaloneClip { set = set, start = 0f, end = end });
         }
 
         private static float[] Evaluate(AlpsCompiledShow show, int fixture, float time)
