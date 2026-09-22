@@ -48,7 +48,7 @@ namespace AdzukiSoft.ALPS.Editor
             // --- Tempo ---------------------------------------------------
             // Shows the track's tempo until the clip gets its own. Going back to the track's
             // value stores zero, so the clip follows the track again when that changes.
-            var bpm = new AlpsStepper("BPM", "BPM", 1f)
+            var bpm = new AlpsStepper("BPMオーバーライド", "BPM", 1f)
             {
                 Minimum = 1f,
                 tooltip = "トラックと違う値にすると、このクリップだけそのBPMで動きます。拍はクリップの開始位置から数えます。トラックと同じ値に戻すとトラックに追従します。",

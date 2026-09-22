@@ -357,7 +357,7 @@ namespace AdzukiSoft.ALPS.Tests
                 window.rootVisualElement.Add(view);
                 yield return null;
 
-                var bpm = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "BPM");
+                var bpm = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "BPMオーバーライド");
                 Assert.AreEqual(140f, bpm.value, "An unset clip shows the track's tempo.");
 
                 bpm.value = 150f;
