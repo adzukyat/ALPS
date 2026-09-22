@@ -910,6 +910,8 @@ namespace AdzukiSoft.ALPS.Tests
             var gobo = set.Add(AlpsEffectKind.Gobo);
             gobo.goboStops.Add(new AlpsGoboStop());
             gobo.goboStops.Add(new AlpsGoboStop(7));
+            gobo.goboRotationBeats = 8f;
+            gobo.goboFixtureStaggerDegrees = 45f;
             return set;
         }
 

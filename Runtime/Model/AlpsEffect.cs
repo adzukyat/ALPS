@@ -77,9 +77,9 @@ namespace AdzukiSoft.ALPS
         /// <summary>Whether the + picker under the palette is open (UI state, like <see cref="expanded"/>).</summary>
         public bool goboPickerExpanded;
         public AlpsAnimatableValue goboPhasing = new AlpsAnimatableValue(0f, new Vector2(0f, 1f));
-        /// <summary>Rotation speed in beats per full turn.</summary>
-        public float goboRotationBeats = 8f;
-        public float goboFixtureStaggerDegrees = 45f;
+        /// <summary>Rotation speed in beats per full turn. 0 does not rotate.</summary>
+        public float goboRotationBeats;
+        public float goboFixtureStaggerDegrees;
 
         public AlpsEffect() { }
 
