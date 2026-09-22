@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.Timeline;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Timeline;
 using UnityEngine.UIElements;
 
 namespace AdzukiSoft.ALPS.Editor
@@ -215,7 +216,7 @@ namespace AdzukiSoft.ALPS.Editor
                 var before = new AlpsClipEffectSet(set);
                 var mixed = others.Length > 0 ? new AlpsMixedValues(set, others) : null;
 
-                var view = new AlpsClipInspectorView(set, mixed);
+                var view = new AlpsClipInspectorView(set, mixed, TrackBpm(clips[0]));
                 view.RegisterCallback<PointerDownEvent>(
                     _ => Undo.RegisterCompleteObjectUndo(edited, "Edit Clip Effects"),
                     TrickleDown.TrickleDown);
@@ -270,6 +271,29 @@ namespace AdzukiSoft.ALPS.Editor
 
             Rebuild();
             return host;
+        }
+
+        /// <summary>
+        /// The tempo of the track holding <paramref name="clip"/>. Override tracks use their
+        /// parent's, as the compiler does. The default tempo when the clip is on no track.
+        /// </summary>
+        private static float TrackBpm(AlpsTimelineClip clip)
+        {
+            var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(AssetDatabase.GetAssetPath(clip));
+            if (timeline == null)
+            {
+                timeline = TimelineEditor.inspectedAsset;
+            }
+
+            foreach (var track in AlpsShowCompiler.CollectTracks(timeline))
+            {
+                if (track.GetClips().Any(timelineClip => timelineClip.asset == clip))
+                {
+                    return track.RootTrack.bpm;
+                }
+            }
+
+            return 120f;
         }
 
         /// <summary>The asset an edit of this clip writes to, which is the profile while synced.</summary>

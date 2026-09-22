@@ -92,6 +92,12 @@
     flex-shrink: 0;
 }
 
+/* The clip fields above the cards. Its last child already carries the 9px before the
+   first card, so the group adds none of its own. */
+.alps-root > .alps-flow9 {
+    margin-bottom: 0;
+}
+
 /* A flow nested straight into another (a move mode pane, the shared phase settings) is
    only a group. Its last child already carries the 9px, so it adds none of its own. */
 .alps-root .alps-flow9 > .alps-flow9 {
@@ -913,9 +919,18 @@
 
 /* ------------------------------------------------------ add effect list */
 
-/* The divider inside brings its own 16px above it. */
+/* The divider inside brings its own space above it. */
 .alps-add {
     margin-top: 2px;
+}
+
+/* Spaces like the divider under the shared settings, 18px on each side. Above, the last
+   card and the stack carry 2px each and the list 2px more. Below, the button brings 14px.
+   With no effects this divider hides and the button's 14px completes the 18px under the
+   other one, so the button keeps its margin and the divider makes up the difference. */
+.alps-root .alps-add > .alps-divider {
+    margin-top: 12px;
+    margin-bottom: 4px;
 }
 
 /* Sized and placed like the inspector's Add Component button. */

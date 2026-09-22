@@ -5,12 +5,18 @@ using UnityEngine;
 namespace AdzukiSoft.ALPS
 {
     /// <summary>
-    /// Everything the clip inspector edits: order, shared settings, and the effect stack.
+    /// Everything the clip inspector edits: tempo, order, shared settings, and the effect stack.
     /// The stack is always kept in <see cref="AlpsEffectCatalog.Order"/>, even before odd.
     /// </summary>
     [Serializable]
     public class AlpsClipEffectSet : ISerializationCallbackReceiver
     {
+        /// <summary>
+        /// The clip's own tempo, for songs that change tempo part way. Zero, or the same
+        /// value as the track, follows the track. Otherwise beats count from the clip's start.
+        /// </summary>
+        public float bpm;
+
         public AlpsOrderMode order = AlpsOrderMode.Normal;
 
         public bool phaseExpanded = true;
@@ -26,6 +32,7 @@ namespace AdzukiSoft.ALPS
         /// <summary>Deep copy, used to load a clip from a profile and to save it back.</summary>
         public AlpsClipEffectSet(AlpsClipEffectSet other)
         {
+            bpm = other.bpm;
             order = other.order;
             phaseExpanded = other.phaseExpanded;
             phase = new AlpsPhaseSettings(other.phase);

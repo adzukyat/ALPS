@@ -138,6 +138,29 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Tempo_ClipOverrideCountsBeatsFromTheClipStart()
+        {
+            var set = Set();
+            var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            AlpsCompiledShow CompileFromHalfSecond() => AlpsShowCompiler.CompileStandalone(
+                1, Bpm, 0f, new AlpsStandaloneClip { set = set, start = 0.5f, end = 2f });
+
+            var track = CompileFromHalfSecond();
+            Assert.AreEqual(62.5f, Evaluate(track, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Unset, the track's 60 BPM from 0 s plays.");
+
+            set.bpm = Bpm;
+            var same = CompileFromHalfSecond();
+            Assert.AreEqual(62.5f, Evaluate(same, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The track's own tempo keeps following the track.");
+
+            set.bpm = 120f;
+            var overridden = CompileFromHalfSecond();
+            Assert.AreEqual(25f, Evaluate(overridden, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "A quarter beat at 120 BPM after the clip starts.");
+            Assert.AreEqual(75f, Evaluate(overridden, 0, 0.875f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+        }
+
+        [Test]
         public void Range_PerCycleAlternatesMinAndMax()
         {
             var set = Set();

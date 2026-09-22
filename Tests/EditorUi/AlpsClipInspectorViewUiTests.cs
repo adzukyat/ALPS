@@ -343,6 +343,36 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Bpm_FollowsTheTrackUntilItDiffers()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set, trackBpm: 140f);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var bpm = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "BPM");
+                Assert.AreEqual(140f, bpm.value, "An unset clip shows the track's tempo.");
+
+                bpm.value = 150f;
+                Assert.AreEqual(150f, set.bpm);
+
+                bpm.value = 140f;
+                Assert.AreEqual(0f, set.bpm, "The track's tempo goes back to following the track.");
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
         [Test]
         public void SharedSettings_RendersEveryPlannedRow()
         {

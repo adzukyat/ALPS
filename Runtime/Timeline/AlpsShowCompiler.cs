@@ -247,6 +247,12 @@ namespace AdzukiSoft.ALPS
                     return;
                 }
 
+                if (set.bpm > 0f && !Mathf.Approximately(set.bpm, bpm))
+                {
+                    bpm = set.bpm;
+                    beatOrigin = start;
+                }
+
                 _clipOrder = (int)set.order;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);

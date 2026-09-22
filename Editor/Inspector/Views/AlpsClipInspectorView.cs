@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// The whole clip inspector: order, shared settings, the effect stack,
+    /// The whole clip inspector: tempo, order, shared settings, the effect stack,
     /// add effect and profile.
     ///
     /// The view owns no state of its own. It renders a <see cref="AlpsClipEffectSet"/> and
@@ -25,7 +25,8 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly List<AlpsEffectView> _effectViews = new List<AlpsEffectView>();
 
         /// <param name="mixed">Which values differ between the selected clips. Null for a single clip.</param>
-        public AlpsClipInspectorView(AlpsClipEffectSet set, AlpsMixedValues mixed = null)
+        /// <param name="trackBpm">The tempo the clip follows while it has none of its own.</param>
+        public AlpsClipInspectorView(AlpsClipEffectSet set, AlpsMixedValues mixed = null, float trackBpm = 120f)
         {
             _set = set;
             _mixed = mixed;
@@ -39,6 +40,28 @@ namespace AdzukiSoft.ALPS.Editor
 
             AlpsInspectorFont.Apply(this);
 
+            // Plain fields above the cards space like the rows inside a card.
+            var fields = new VisualElement();
+            fields.AddToClassList("alps-flow9");
+            Add(fields);
+
+            // --- Tempo ---------------------------------------------------
+            // Shows the track's tempo until the clip gets its own. Going back to the track's
+            // value stores zero, so the clip follows the track again when that changes.
+            var bpm = new AlpsStepper("BPM", "BPM", 1f)
+            {
+                Minimum = 1f,
+                tooltip = "トラックと違う値にすると、このクリップだけそのBPMで動きます。拍はクリップの開始位置から数えます。トラックと同じ値に戻すとトラックに追従します。",
+            };
+            bpm.SetValueWithoutNotify(set.bpm > 0f ? set.bpm : trackBpm);
+            bpm.RegisterValueChangedCallback(evt =>
+            {
+                set.bpm = Math.Abs(evt.newValue - trackBpm) < 0.0005f ? 0f : Math.Max(1f, evt.newValue);
+                RaiseChanged();
+            });
+            mixed?.Bind(bpm, set, nameof(AlpsClipEffectSet.bpm));
+            fields.Add(bpm);
+
             // --- Order ---------------------------------------------------
             var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "左右対称", "ランダム");
             order.SetValueWithoutNotify((int)set.order);
@@ -48,7 +71,7 @@ namespace AdzukiSoft.ALPS.Editor
                 RaiseChanged();
             });
             mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
-            Add(order);
+            fields.Add(order);
 
             // --- Shared settings -----------------------------------------
             _phaseCard = new AlpsEffectCard(
