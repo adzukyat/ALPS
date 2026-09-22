@@ -73,7 +73,7 @@ namespace AdzukiSoft.ALPS.Editor
                 if (showDelete)
                 {
                     _actions.Add(BuildAction(AlpsIcons.Trash, "削除", new Color(0.910f, 0.647f, 0.647f),
-                        () => DeleteRequested?.Invoke()));
+                        RequestDelete));
                 }
             }
 
@@ -143,6 +143,12 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 PasteRequested?.Invoke();
             }
+        }
+
+        /// <summary>Runs the delete action, the same entry point the header icon uses.</summary>
+        public void RequestDelete()
+        {
+            DeleteRequested?.Invoke();
         }
 
         /// <summary>Mini palette chips shown while the card is collapsed.</summary>

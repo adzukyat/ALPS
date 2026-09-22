@@ -54,6 +54,15 @@ namespace AdzukiSoft.ALPS.Editor
 
         private Action<AlpsEffectKind> OnAdd { get; }
 
+        /// <summary>Adds <paramref name="kind"/>, the same entry point a list item uses. Does nothing while the kind is used up.</summary>
+        public void RequestAdd(AlpsEffectKind kind)
+        {
+            if (_set.CanAdd(kind))
+            {
+                OnAdd?.Invoke(kind);
+            }
+        }
+
         public void Rebuild()
         {
             // With no effects the divider under the shared settings already separates the
@@ -85,7 +94,7 @@ namespace AdzukiSoft.ALPS.Editor
                 caption.AddToClassList("alps-add__label");
                 item.Add(caption);
 
-                item.RegisterCallback<PointerDownEvent>(_ => OnAdd?.Invoke(captured));
+                item.RegisterCallback<PointerDownEvent>(_ => RequestAdd(captured));
                 _list.Add(item);
             }
         }

@@ -103,6 +103,13 @@ namespace AdzukiSoft.ALPS.Editor
             value = fadeIn ? new Vector2(defaults.x, value.y) : new Vector2(value.x, defaults.y);
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override Vector2 value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(Vector2 newValue)
         {
             newValue = new Vector2(Mathf.Clamp(newValue.x, 0f, _max), Mathf.Clamp(newValue.y, 0f, _max));
@@ -111,6 +118,14 @@ namespace AdzukiSoft.ALPS.Editor
             _outTrack.SetWithoutNotify(0f, 1f - Mathf.InverseLerp(0f, _max, newValue.y));
             _inBox.SetValueWithoutNotify(newValue.x);
             _outBox.SetValueWithoutNotify(newValue.y);
+        }
+
+        protected override void UpdateMixedValueContent()
+        {
+            _inBox.showMixedValue = showMixedValue;
+            _outBox.showMixedValue = showMixedValue;
+            _inTrack.EnableInClassList(AlpsSliderTrack.MixedClass, showMixedValue);
+            _outTrack.EnableInClassList(AlpsSliderTrack.MixedClass, showMixedValue);
         }
     }
 }

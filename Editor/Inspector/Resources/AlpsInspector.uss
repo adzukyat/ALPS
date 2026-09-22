@@ -1031,6 +1031,43 @@
     margin-right: 0;
 }
 
+/* Shown above everything while several clips are edited together. */
+.alps-root .alps-multi-notice {
+    margin: 0 0 8px 0;
+}
+
+/*
+ * Mixed values: the selected clips disagree. The boxes show a dash, and the controls
+ * around them step back so the shown clip's position does not read as the value.
+ */
+.alps-root .alps-slider__track--mixed .alps-slider__fill {
+    opacity: 0.3;
+}
+
+.alps-root .alps-slider__track--mixed .alps-slider__thumb {
+    opacity: 0.45;
+}
+
+/* Halfway between off (3px) and on (19px). */
+.alps-root .alps-switch__knob--mixed {
+    left: 11px;
+    background-color: var(--alps-text-hint);
+}
+
+.alps-root .alps-rangeflag__box--mixed {
+    background-color: var(--alps-field-bg);
+    color: var(--alps-text-hint);
+}
+
+.alps-root .alps-palette__mixed {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ------------------------------------------------------------------ hover
  *
  * Hover feedback. Every rule that repaints a *selected*

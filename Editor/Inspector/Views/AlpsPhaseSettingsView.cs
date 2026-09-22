@@ -38,7 +38,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>The speed the delay's marks were last built for. NaN forces the first build.</summary>
         private float _snapBeats = float.NaN;
 
-        public AlpsPhaseSettingsView(AlpsPhaseSettings settings, Action onChanged, bool compact = false)
+        public AlpsPhaseSettingsView(AlpsPhaseSettings settings, Action onChanged, bool compact = false, AlpsMixedValues mixed = null)
         {
             _settings = settings;
             _onChanged = onChanged;
@@ -76,6 +76,7 @@ namespace AdzukiSoft.ALPS.Editor
                 Refresh();
                 Changed();
             });
+            mixed?.Bind(mode, settings, nameof(AlpsPhaseSettings.mode));
             Add(mode);
 
             _easing = new AlpsEasingGrid("イージング");
@@ -90,6 +91,7 @@ namespace AdzukiSoft.ALPS.Editor
                 settings.ease = (AlpsEaseType)evt.newValue;
                 Changed();
             });
+            mixed?.Bind(_easing, settings, nameof(AlpsPhaseSettings.ease));
             Add(_easing);
 
             // 50% spends the same time going out and coming back.
@@ -104,6 +106,7 @@ namespace AdzukiSoft.ALPS.Editor
                 settings.pingPongRatio = Mathf.Clamp01(evt.newValue / 100f);
                 Changed();
             });
+            mixed?.Bind(_pingPongRatio, settings, nameof(AlpsPhaseSettings.pingPongRatio));
             Add(_pingPongRatio);
 
             var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0") { DefaultValue = defaults.fixtureGroupSize };
@@ -114,6 +117,7 @@ namespace AdzukiSoft.ALPS.Editor
                 group.SetValueWithoutNotify(settings.fixtureGroupSize);
                 Changed();
             });
+            mixed?.Bind(group, settings, nameof(AlpsPhaseSettings.fixtureGroupSize));
             Add(group);
 
             // The delay is read over the whole group, so 100% walks the wave over every
@@ -162,6 +166,10 @@ namespace AdzukiSoft.ALPS.Editor
                 Changed();
             });
 
+            mixed?.Bind(_spread, settings, nameof(AlpsPhaseSettings.spread));
+            mixed?.Bind(_spreadBeats, settings, nameof(AlpsPhaseSettings.spreadBeats));
+            mixed?.Bind(_beatsFlag, settings, nameof(AlpsPhaseSettings.spreadInBeats));
+
             var spreadRow = new VisualElement();
             spreadRow.AddToClassList("alps-animatable__row");
             spreadRow.Add(_spread);
@@ -176,6 +184,7 @@ namespace AdzukiSoft.ALPS.Editor
                 settings.beatsPerCycle = Mathf.Max(0f, evt.newValue);
                 Changed();
             });
+            mixed?.Bind(speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
             Add(speed);
 
             _inverse = new AlpsToggleSwitch("反転");
@@ -185,6 +194,7 @@ namespace AdzukiSoft.ALPS.Editor
                 settings.inverse = evt.newValue;
                 Changed();
             });
+            mixed?.Bind(_inverse, settings, nameof(AlpsPhaseSettings.inverse));
             Add(_inverse);
 
             Refresh();

@@ -65,7 +65,8 @@ namespace AdzukiSoft.ALPS.Editor
             VisualElement paletteRow = null,
             Func<int> paletteCount = null,
             Func<Vector2, float[]> snaps = null,
-            AlpsAnimatableValue defaults = null)
+            AlpsAnimatableValue defaults = null,
+            AlpsMixedValues mixed = null)
         {
             _model = model;
             _clipPhase = clipPhase;
@@ -155,6 +156,13 @@ namespace AdzukiSoft.ALPS.Editor
                     Changed();
                 });
 
+                mixed?.Bind(_valueSlider, model, nameof(AlpsAnimatableValue.value));
+                mixed?.Bind(_rangeSlider, model, nameof(AlpsAnimatableValue.range));
+                mixed?.Bind(_spreadSlider, model, nameof(AlpsAnimatableValue.spread));
+                mixed?.Bind(_spreadRange, model, nameof(AlpsAnimatableValue.spreadRange));
+                mixed?.Bind(_rangeFlag, model, nameof(AlpsAnimatableValue.isRange));
+                mixed?.Bind(_spreadFlag, model, nameof(AlpsAnimatableValue.hasSpread));
+
                 _valueRow.Add(_valueSlider);
                 _valueRow.Add(_rangeSlider);
                 _valueRow.Add(_spreadSlider);
@@ -176,6 +184,7 @@ namespace AdzukiSoft.ALPS.Editor
                 model.timing = (AlpsTimingMode)evt.newValue;
                 Changed();
             });
+            mixed?.Bind(_timing, model, nameof(AlpsAnimatableValue.timing));
             _rangeFrame.Add(_timing);
 
             _ownPhase = new AlpsToggleSwitch("独自の動き");
@@ -186,13 +195,14 @@ namespace AdzukiSoft.ALPS.Editor
                 Refresh();
                 Changed();
             });
+            mixed?.Bind(_ownPhase, model, nameof(AlpsAnimatableValue.useOwnPhase));
             _rangeFrame.Add(_ownPhase);
 
             _ownPhaseView = new AlpsPhaseSettingsView(model.ownPhase, () =>
             {
                 Refresh();
                 Changed();
-            }, compact: true);
+            }, compact: true, mixed: mixed);
             _rangeFrame.Add(_ownPhaseView);
 
             Add(_rangeFrame);
@@ -205,6 +215,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _offsetSlider = new AlpsValueSlider("オフセット", model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
                 _offsetSlider.SetValueWithoutNotify(model.value);
                 _offsetSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
+                mixed?.Bind(_offsetSlider, model, nameof(AlpsAnimatableValue.value));
                 _spreadFrame.Add(_offsetSlider);
 
                 Add(_spreadFrame);

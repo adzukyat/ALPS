@@ -25,6 +25,14 @@ namespace AdzukiSoft.ALPS.Editor
             "M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2",
         };
 
+        /// <summary>Not equal, marking a palette that differs between the selected clips.</summary>
+        public static readonly string[] NotEqual =
+        {
+            "M5 10h14",
+            "M5 14h14",
+            "M5 19l14 -14",
+        };
+
         /// <summary>Angle tab.</summary>
         public static readonly string[] Angle =
         {

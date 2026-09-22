@@ -48,13 +48,30 @@ namespace AdzukiSoft.ALPS.Editor
             SetValueWithoutNotify(0);
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override int value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(int newValue)
         {
             base.SetValueWithoutNotify(Mathf.Clamp(newValue, 0, Mathf.Max(0, _items.Count - 1)));
+            RefreshSelection();
+        }
 
+        /// <summary>Mixed selects no tab. The pane below still follows the shown clip.</summary>
+        protected override void UpdateMixedValueContent()
+        {
+            RefreshSelection();
+        }
+
+        private void RefreshSelection()
+        {
             for (var i = 0; i < _items.Count; i++)
             {
-                var selected = i == value;
+                var selected = i == value && !showMixedValue;
                 _items[i].EnableInClassList(ussClassName + "__item--selected", selected);
                 var icon = _items[i].Q<AlpsVectorIcon>();
                 if (icon != null)

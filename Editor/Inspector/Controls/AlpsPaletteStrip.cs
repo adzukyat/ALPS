@@ -23,6 +23,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly Func<int> _getSelected;
         private readonly Action<int> _setSelected;
         private readonly List<VisualElement> _swatches = new List<VisualElement>();
+        private readonly VisualElement _mixedMark;
 
         private VisualElement _pressed;
         private int _pressedIndex = -1;
@@ -48,6 +49,16 @@ namespace AdzukiSoft.ALPS.Editor
             var labelElement = new Label(label);
             labelElement.AddToClassList("alps-row__label");
             header.Add(labelElement);
+
+            // A swatch sized tile, so the mark sits on the first row of swatches.
+            _mixedMark = new VisualElement { tooltip = "選択中のクリップでパレットが異なります。表示は最初のクリップのものです。" };
+            _mixedMark.AddToClassList("alps-palette__mixed");
+            _mixedMark.style.display = DisplayStyle.None;
+            var mixedIcon = new AlpsVectorIcon { IconColor = new Color(0.769f, 0.769f, 0.769f) };
+            mixedIcon.AddToClassList("alps-swatch__icon");
+            mixedIcon.SetPaths(AlpsIcons.NotEqual);
+            _mixedMark.Add(mixedIcon);
+            header.Add(_mixedMark);
 
             Strip = new VisualElement();
             Strip.AddToClassList("alps-palette");
@@ -75,6 +86,15 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>Raised whenever the palette contents or selection change.</summary>
         public event Action Changed;
+
+        /// <summary>
+        /// Marks the palette as differing between the selected clips. The strip keeps showing
+        /// the shown clip's stops, since editing one stop only carries that stop.
+        /// </summary>
+        public void SetMixed(bool mixed)
+        {
+            _mixedMark.style.display = mixed ? DisplayStyle.Flex : DisplayStyle.None;
+        }
 
         public int SelectedIndex => _stops.Count == 0 ? -1 : Mathf.Clamp(_getSelected(), 0, _stops.Count - 1);
 

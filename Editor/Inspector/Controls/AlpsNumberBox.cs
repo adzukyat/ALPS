@@ -58,11 +58,24 @@ namespace AdzukiSoft.ALPS.Editor
 
         public Vector2 Limit { get; set; } = new Vector2(float.MinValue, float.MaxValue);
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override float value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(float newValue)
         {
             newValue = Mathf.Clamp(newValue, Limit.x, Limit.y);
             base.SetValueWithoutNotify(newValue);
             _text.SetValueWithoutNotify(FormatValue(newValue));
+        }
+
+        /// <summary>A dash while mixed. Editing shows the shown clip's number to start from.</summary>
+        protected override void UpdateMixedValueContent()
+        {
+            _text.SetValueWithoutNotify(FormatValue(value));
         }
 
         private void EndEditing()
@@ -82,6 +95,11 @@ namespace AdzukiSoft.ALPS.Editor
 
         private string FormatValue(float number)
         {
+            if (showMixedValue && !_editing)
+            {
+                return mixedValueString;
+            }
+
             var text = number.ToString(Format, CultureInfo.InvariantCulture);
             if (_editing || string.IsNullOrEmpty(Unit))
             {

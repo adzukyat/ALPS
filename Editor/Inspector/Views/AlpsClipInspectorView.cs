@@ -17,15 +17,18 @@ namespace AdzukiSoft.ALPS.Editor
         public const string StyleSheetName = "AlpsInspector";
 
         private readonly AlpsClipEffectSet _set;
+        private readonly AlpsMixedValues _mixed;
         private readonly VisualElement _effectContainer;
         private AlpsPhaseSettingsView _phaseView;
         private readonly AlpsEffectCard _phaseCard;
         private readonly AlpsAddEffectCatalog _catalog;
         private readonly List<AlpsEffectView> _effectViews = new List<AlpsEffectView>();
 
-        public AlpsClipInspectorView(AlpsClipEffectSet set)
+        /// <param name="mixed">Which values differ between the selected clips. Null for a single clip.</param>
+        public AlpsClipInspectorView(AlpsClipEffectSet set, AlpsMixedValues mixed = null)
         {
             _set = set;
+            _mixed = mixed;
             AddToClassList("alps-root");
 
             var styleSheet = AlpsStyleSheets.Load(StyleSheetName);
@@ -44,6 +47,7 @@ namespace AdzukiSoft.ALPS.Editor
                 set.order = (AlpsOrderMode)evt.newValue;
                 RaiseChanged();
             });
+            mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
             Add(order);
 
             // --- Shared settings -----------------------------------------
@@ -85,9 +89,19 @@ namespace AdzukiSoft.ALPS.Editor
             // --- Add effect ----------------------------------------------
             _catalog = new AlpsAddEffectCatalog(set, kind =>
             {
+                // Another clip repeats the add only where it means the same card, so a
+                // clip that already has the kind is not split into even and odd.
+                var label = set.GetAddLabel(kind);
                 set.Add(kind);
                 RebuildEffects();
                 _catalog.Rebuild();
+                RaiseStructureEdited(other =>
+                {
+                    if (other.GetAddLabel(kind) == label)
+                    {
+                        other.Add(kind);
+                    }
+                });
                 RaiseChanged();
             });
             Add(_catalog);
@@ -123,9 +137,22 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Raised after any edit so the host can record undo and mark the asset dirty.</summary>
         public event Action Changed;
 
+        /// <summary>
+        /// Raised before <see cref="Changed"/> for an edit that adds, removes or replaces a
+        /// whole part, as an action that makes the same edit on any effect set. A host
+        /// editing several clips runs it on the others, since a field by field diff cannot
+        /// tell which half of an even / odd pair was removed.
+        /// </summary>
+        public event Action<Action<AlpsClipEffectSet>> StructureEdited;
+
         private void RaiseChanged()
         {
             Changed?.Invoke();
+        }
+
+        private void RaiseStructureEdited(Action<AlpsClipEffectSet> edit)
+        {
+            StructureEdited?.Invoke(edit);
         }
 
         private void BuildPhaseView()
@@ -135,7 +162,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 RefreshEffects();
                 RaiseChanged();
-            });
+            }, mixed: _mixed);
             _phaseCard.Body.Add(_phaseView);
         }
 
@@ -157,6 +184,7 @@ namespace AdzukiSoft.ALPS.Editor
             _set.phase = pasted;
             BuildPhaseView();
             RebuildEffects();
+            RaiseStructureEdited(other => other.phase = new AlpsPhaseSettings(pasted));
             RaiseChanged();
         }
 
@@ -169,6 +197,8 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 var index = i;
                 var effect = _set.effects[i];
+                var kind = effect.kind;
+                var parity = effect.parity;
 
                 var view = new AlpsEffectView(
                     effect,
@@ -184,6 +214,15 @@ namespace AdzukiSoft.ALPS.Editor
 
                         _set.effects[index] = pasted;
                         RebuildEffects();
+                        RaiseStructureEdited(other =>
+                        {
+                            var at = other.IndexOf(kind, parity);
+                            var repeated = at < 0 ? null : AlpsEffectClipboard.Paste(other.effects[at]);
+                            if (repeated != null)
+                            {
+                                other.effects[at] = repeated;
+                            }
+                        });
                         RaiseChanged();
                     },
                     onDelete: () =>
@@ -191,8 +230,10 @@ namespace AdzukiSoft.ALPS.Editor
                         _set.Remove(index);
                         RebuildEffects();
                         _catalog.Rebuild();
+                        RaiseStructureEdited(other => other.Remove(other.IndexOf(kind, parity)));
                         RaiseChanged();
-                    });
+                    },
+                    _mixed);
 
                 _effectContainer.Add(view);
                 _effectViews.Add(view);

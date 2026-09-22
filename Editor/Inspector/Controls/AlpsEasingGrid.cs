@@ -60,9 +60,22 @@ namespace AdzukiSoft.ALPS.Editor
             return icon;
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override int value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(int newValue)
         {
             base.SetValueWithoutNotify(newValue);
+            RefreshSelection();
+        }
+
+        /// <summary>Mixed selects no tile, since no single curve holds for every clip.</summary>
+        protected override void UpdateMixedValueContent()
+        {
             RefreshSelection();
         }
 
@@ -70,7 +83,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             for (var i = 0; i < _tiles.Count; i++)
             {
-                var selected = (int)_types[i] == value;
+                var selected = (int)_types[i] == value && !showMixedValue;
                 _tiles[i].EnableInClassList(ussClassName + "__tile--selected", selected);
                 var icon = _tiles[i].Q<AlpsVectorIcon>();
                 if (icon != null)

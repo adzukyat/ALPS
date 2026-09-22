@@ -30,11 +30,31 @@ namespace AdzukiSoft.ALPS.Editor
             SetValueWithoutNotify(false);
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override bool value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(bool newValue)
         {
             base.SetValueWithoutNotify(newValue);
-            _track.EnableInClassList(ussClassName + "__track--on", newValue);
-            _knob.EnableInClassList(ussClassName + "__knob--on", newValue);
+            RefreshState();
+        }
+
+        /// <summary>Mixed parks the knob in the middle, neither on nor off.</summary>
+        protected override void UpdateMixedValueContent()
+        {
+            RefreshState();
+        }
+
+        private void RefreshState()
+        {
+            var on = value && !showMixedValue;
+            _track.EnableInClassList(ussClassName + "__track--on", on);
+            _knob.EnableInClassList(ussClassName + "__knob--on", on);
+            _knob.EnableInClassList(ussClassName + "__knob--mixed", showMixedValue);
         }
     }
 
@@ -65,10 +85,28 @@ namespace AdzukiSoft.ALPS.Editor
             SetValueWithoutNotify(false);
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override bool value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(bool newValue)
         {
             base.SetValueWithoutNotify(newValue);
-            _box.EnableInClassList(ussClassName + "__box--on", newValue);
+            RefreshState();
+        }
+
+        protected override void UpdateMixedValueContent()
+        {
+            RefreshState();
+        }
+
+        private void RefreshState()
+        {
+            _box.EnableInClassList(ussClassName + "__box--on", value && !showMixedValue);
+            _box.EnableInClassList(ussClassName + "__box--mixed", showMixedValue);
         }
     }
 }

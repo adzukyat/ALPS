@@ -73,11 +73,23 @@ namespace AdzukiSoft.ALPS.Editor
             set { _box.Limit = new Vector2(_box.Limit.x, value); SetValueWithoutNotify(this.value); }
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override float value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(float newValue)
         {
             newValue = Mathf.Clamp(newValue, Minimum, Maximum);
             base.SetValueWithoutNotify(newValue);
             _box.SetValueWithoutNotify(newValue);
+        }
+
+        protected override void UpdateMixedValueContent()
+        {
+            _box.showMixedValue = showMixedValue;
         }
     }
 }

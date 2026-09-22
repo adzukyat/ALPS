@@ -16,6 +16,9 @@ namespace AdzukiSoft.ALPS.Editor
     {
         public new static readonly string ussClassName = "alps-slider";
 
+        /// <summary>Dims the fill and thumbs while the slider's field shows mixed values.</summary>
+        public static readonly string MixedClass = ussClassName + "__track--mixed";
+
         /// <summary>How close, in pixels, a dragged thumb has to come to a snap point to land on it.</summary>
         public const float SnapDistance = 5f;
 

@@ -48,9 +48,22 @@ namespace AdzukiSoft.ALPS.Editor
             SetValueWithoutNotify(0);
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override int value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(int newValue)
         {
             base.SetValueWithoutNotify(Mathf.Clamp(newValue, 0, Mathf.Max(0, _items.Count - 1)));
+            RefreshSelection();
+        }
+
+        /// <summary>Mixed selects nothing, since no single option holds for every clip.</summary>
+        protected override void UpdateMixedValueContent()
+        {
             RefreshSelection();
         }
 
@@ -58,7 +71,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             for (var i = 0; i < _items.Count; i++)
             {
-                _items[i].EnableInClassList(ussClassName + "__item--selected", i == value);
+                _items[i].EnableInClassList(ussClassName + "__item--selected", i == value && !showMixedValue);
             }
         }
     }

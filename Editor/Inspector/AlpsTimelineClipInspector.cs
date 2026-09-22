@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Timeline;
 using UnityEditor.UIElements;
@@ -23,8 +24,13 @@ namespace AdzukiSoft.ALPS.Editor
     /// an interaction starts, and rebuild afterwards. Deserializing an undo step replaces
     /// the managed <see cref="AlpsClipEffectSet"/> instance, so a stale view would keep
     /// editing an object the asset no longer references.
+    ///
+    /// With several clips selected the view shows the first one, and each edit is carried
+    /// over to the others by <see cref="AlpsClipEditSync"/>, so only what was changed
+    /// lands on them.
     /// </summary>
     [CustomEditor(typeof(AlpsTimelineClip))]
+    [CanEditMultipleObjects]
     public class AlpsTimelineClipInspector : UnityEditor.Editor
     {
         private VisualElement _injected;
@@ -41,13 +47,6 @@ namespace AdzukiSoft.ALPS.Editor
         public override void OnInspectorGUI()
         {
             MarkDrawn();
-
-            if (targets.Length > 1)
-            {
-                Detach();
-                EditorGUILayout.HelpBox("複数のクリップは同時に編集できません。", MessageType.Info);
-                return;
-            }
 
             if (!AttachTo(AlpsImguiHost.Current()))
             {
@@ -192,34 +191,71 @@ namespace AdzukiSoft.ALPS.Editor
 
         private VisualElement BuildHost()
         {
-            var clip = (AlpsTimelineClip)target;
+            var clips = targets.OfType<AlpsTimelineClip>().ToArray();
             var host = new VisualElement();
 
             void Rebuild()
             {
                 host.Clear();
 
-                if (clip == null)
+                if (clips.Length == 0 || clips.Any(clip => clip == null))
                 {
                     return;
                 }
 
-                clip.data ??= new AlpsClipEffectSet();
-                var synced = clip.syncProfile && clip.profile != null;
-                var edited = synced ? (Object)clip.profile : clip;
-                var set = clip.EffectiveData;
+                foreach (var clip in clips)
+                {
+                    clip.data ??= new AlpsClipEffectSet();
+                }
 
-                var view = new AlpsClipInspectorView(set);
+                // Clips following the same profile share one effect set, so it is edited once.
+                var set = clips[0].EffectiveData;
+                var others = clips.Select(clip => clip.EffectiveData).Distinct().Where(other => other != set).ToArray();
+                var edited = clips.Select(EditedObject).Distinct().ToArray();
+                var before = new AlpsClipEffectSet(set);
+                var mixed = others.Length > 0 ? new AlpsMixedValues(set, others) : null;
+
+                var view = new AlpsClipInspectorView(set, mixed);
                 view.RegisterCallback<PointerDownEvent>(
                     _ => Undo.RegisterCompleteObjectUndo(edited, "Edit Clip Effects"),
                     TrickleDown.TrickleDown);
+                view.StructureEdited += edit =>
+                {
+                    foreach (var other in others)
+                    {
+                        edit(other);
+                    }
+                };
                 view.Changed += () =>
                 {
-                    EditorUtility.SetDirty(edited);
+                    // A mixed control committed to the value the shown clip already had
+                    // leaves no difference for the diff, so its field is carried first.
+                    mixed?.CarryEdited();
+                    foreach (var other in others)
+                    {
+                        AlpsClipEditSync.Apply(before, set, other);
+                    }
+
+                    before = new AlpsClipEffectSet(set);
+                    mixed?.Recompute();
+                    foreach (var target in edited)
+                    {
+                        EditorUtility.SetDirty(target);
+                    }
+
                     NotifyPreview();
                 };
 
-                view.ProfileBody.Add(BuildProfile(clip, Rebuild));
+                if (clips.Length > 1)
+                {
+                    var notice = new HelpBox(
+                        $"{clips.Length}個のクリップを同時に編集しています。値が異なる項目は「{AlpsMixedValues.MixedText}」で表示され、変更した項目だけが全てのクリップに反映されます。",
+                        HelpBoxMessageType.Info);
+                    notice.AddToClassList("alps-multi-notice");
+                    view.Insert(0, notice);
+                }
+
+                view.ProfileBody.Add(BuildProfile(clips, Rebuild));
                 host.Add(view);
             }
 
@@ -236,60 +272,78 @@ namespace AdzukiSoft.ALPS.Editor
             return host;
         }
 
-        private static VisualElement BuildProfile(AlpsTimelineClip clip, System.Action rebuild)
+        /// <summary>The asset an edit of this clip writes to, which is the profile while synced.</summary>
+        private static Object EditedObject(AlpsTimelineClip clip)
+        {
+            return clip.syncProfile && clip.profile != null ? (Object)clip.profile : clip;
+        }
+
+        /// <summary>
+        /// Profile field, sync toggle and load apply to every selected clip. Save writes one
+        /// clip into one profile, so it only works on a single clip.
+        /// </summary>
+        private static VisualElement BuildProfile(AlpsTimelineClip[] clips, System.Action rebuild)
         {
             var root = new VisualElement();
+            var first = clips[0];
+            var single = clips.Length == 1;
+            var allHaveProfile = clips.All(clip => clip.profile != null);
+            var anySynced = clips.Any(clip => clip.syncProfile);
+
+            void Edit(string undoName, System.Action<AlpsTimelineClip> apply)
+            {
+                Undo.RecordObjects(clips, undoName);
+                foreach (var clip in clips)
+                {
+                    apply(clip);
+                    EditorUtility.SetDirty(clip);
+                }
+
+                NotifyPreview();
+                rebuild();
+            }
 
             var field = new ObjectField("プロファイル")
             {
                 objectType = typeof(AlpsClipProfile),
                 allowSceneObjects = false,
-                value = clip.profile,
+                value = first.profile,
+                showMixedValue = clips.Any(clip => clip.profile != first.profile),
             };
             field.RegisterValueChangedCallback(evt =>
-            {
-                Undo.RecordObject(clip, "Change Clip Profile");
-                clip.profile = evt.newValue as AlpsClipProfile;
-                EditorUtility.SetDirty(clip);
-                NotifyPreview();
-                rebuild();
-            });
+                Edit("Change Clip Profile", clip => clip.profile = evt.newValue as AlpsClipProfile));
             root.Add(field);
 
-            var sync = new Toggle("プロファイルに追従") { value = clip.syncProfile };
-            sync.tooltip = "オンの間はプロファイルの効果を再生し、編集もプロファイルに書き込みます。";
-            sync.SetEnabled(clip.profile != null);
-            sync.RegisterValueChangedCallback(evt =>
+            var sync = new Toggle("プロファイルに追従")
             {
-                Undo.RecordObject(clip, "Sync Clip Profile");
-                clip.syncProfile = evt.newValue;
-                EditorUtility.SetDirty(clip);
-                NotifyPreview();
-                rebuild();
-            });
+                value = first.syncProfile,
+                showMixedValue = clips.Any(clip => clip.syncProfile != first.syncProfile),
+            };
+            sync.tooltip = "オンの間はプロファイルの効果を再生し、編集もプロファイルに書き込みます。";
+            sync.SetEnabled(allHaveProfile);
+            sync.RegisterValueChangedCallback(evt =>
+                Edit("Sync Clip Profile", clip => clip.syncProfile = evt.newValue));
             root.Add(sync);
 
             var buttons = new VisualElement();
             buttons.AddToClassList("alps-profile__buttons");
 
-            var load = new Button(() =>
-            {
-                Undo.RecordObject(clip, "Load Clip Profile");
-                clip.data = new AlpsClipEffectSet(clip.profile.data) { profileExpanded = true };
-                EditorUtility.SetDirty(clip);
-                NotifyPreview();
-                rebuild();
-            })
+            var load = new Button(() => Edit(
+                "Load Clip Profile",
+                clip => clip.data = new AlpsClipEffectSet(clip.profile.data) { profileExpanded = true }))
             {
                 text = "読込",
-                tooltip = "プロファイルの内容をこのクリップに複製します。",
+                tooltip = single
+                    ? "プロファイルの内容をこのクリップに複製します。"
+                    : "それぞれのプロファイルの内容を各クリップに複製します。",
             };
             load.AddToClassList("alps-profile__button");
-            load.SetEnabled(clip.profile != null && !clip.syncProfile);
+            load.SetEnabled(allHaveProfile && !anySynced);
             buttons.Add(load);
 
             var save = new Button(() =>
             {
+                var clip = first;
                 var profile = clip.profile;
                 if (profile == null)
                 {
@@ -322,11 +376,13 @@ namespace AdzukiSoft.ALPS.Editor
             })
             {
                 text = "保存",
-                tooltip = "このクリップの内容をプロファイルに書き込みます。プロファイルが未設定なら新しく作ります。",
+                tooltip = single
+                    ? "このクリップの内容をプロファイルに書き込みます。プロファイルが未設定なら新しく作ります。"
+                    : "複数のクリップを選択している間は保存できません。",
             };
             save.AddToClassList("alps-profile__button");
             save.AddToClassList("alps-profile__button--last");
-            save.SetEnabled(!clip.syncProfile);
+            save.SetEnabled(single && !first.syncProfile);
             buttons.Add(save);
 
             root.Add(buttons);

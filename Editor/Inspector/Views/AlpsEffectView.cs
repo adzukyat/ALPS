@@ -19,15 +19,18 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsPhaseSettings _clipPhase;
         private readonly Action _onChanged;
         private readonly List<AlpsAnimatableView> _animatables = new List<AlpsAnimatableView>();
+        private readonly AlpsMixedValues _mixed;
 
         public AlpsEffectView(
             AlpsEffect effect,
             AlpsPhaseSettings clipPhase,
             Action onChanged,
             Action onPaste,
-            Action onDelete)
+            Action onDelete,
+            AlpsMixedValues mixed = null)
         {
             _effect = effect;
+            _mixed = mixed;
             _defaults = AlpsEffect.Create(effect.kind);
             _clipPhase = clipPhase;
             _onChanged = onChanged;
@@ -117,7 +120,7 @@ namespace AdzukiSoft.ALPS.Editor
             string format = "0.###",
             Func<Vector2, float[]> snaps = null)
         {
-            var view = new AlpsAnimatableView(label, model, _clipPhase, _onChanged, unit, format, snaps: snaps, defaults: defaults);
+            var view = new AlpsAnimatableView(label, model, _clipPhase, _onChanged, unit, format, snaps: snaps, defaults: defaults, mixed: _mixed);
             _animatables.Add(view);
             return view;
         }
@@ -131,6 +134,7 @@ namespace AdzukiSoft.ALPS.Editor
                 ("円", AlpsIcons.Rotate360),
                 ("ユーザー追跡", AlpsIcons.Compass));
             tabs.SetValueWithoutNotify((int)_effect.moveMode);
+            _mixed?.Bind(tabs, _effect, nameof(AlpsEffect.moveMode));
             body.Add(tabs);
 
             var anglePane = new VisualElement();
@@ -151,6 +155,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.panTiltPhaseOffsetDegrees = evt.newValue;
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(phaseOffset, _effect, nameof(AlpsEffect.panTiltPhaseOffsetDegrees));
             anglePane.Add(phaseOffset);
             body.Add(anglePane);
 
@@ -172,6 +177,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.circleAspect = evt.newValue;
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(aspect, _effect, nameof(AlpsEffect.circleAspect));
             circlePane.Add(aspect);
             body.Add(circlePane);
 
@@ -181,7 +187,8 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 _effect.trackUserName = text;
                 _onChanged?.Invoke();
-            });
+            }, out var userNameField);
+            _mixed?.Bind(userNameField, _effect, nameof(AlpsEffect.trackUserName));
             trackPane.Add(userName);
 
             var followSpeed = new AlpsValueSlider("追従速度", new Vector2(0f, 20f), string.Empty, "0.#")
@@ -194,6 +201,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.trackSpeed = evt.newValue;
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(followSpeed, _effect, nameof(AlpsEffect.trackSpeed));
             trackPane.Add(followSpeed);
             body.Add(trackPane);
 
@@ -235,6 +243,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.colorStops,
                 () => _effect.selectedColorStop,
                 index => _effect.selectedColorStop = index);
+            _mixed?.BindDisplay(palette, palette.SetMixed, _effect, nameof(AlpsEffect.colorStops));
 
             var view = new AlpsAnimatableView(
                 "パレット",
@@ -246,7 +255,8 @@ namespace AdzukiSoft.ALPS.Editor
                     _onChanged?.Invoke();
                 },
                 paletteRow: palette,
-                paletteCount: () => _effect.colorStops.Count);
+                paletteCount: () => _effect.colorStops.Count,
+                mixed: _mixed);
 
             palette.Changed += () =>
             {
@@ -283,6 +293,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.blackoutFadeOut = evt.newValue.y / 100f;
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(fade, _effect, nameof(AlpsEffect.blackoutFadeIn), nameof(AlpsEffect.blackoutFadeOut));
             fadeFrame.Add(fade);
 
             var blackout = new AlpsToggleSwitch("復路で消灯");
@@ -293,6 +304,7 @@ namespace AdzukiSoft.ALPS.Editor
                 ApplyBlackout();
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(blackout, _effect, nameof(AlpsEffect.blackoutOnReturn));
 
             // The return leg belongs to whichever phase drives brightness, so switching
             // own phase or its mode inside the row has to re-evaluate the switch too.
@@ -308,7 +320,8 @@ namespace AdzukiSoft.ALPS.Editor
                 "%",
                 "0",
                 snaps: limit => AlpsSnapPoints.Multiples(limit, 100f),
-                defaults: _defaults.brightness);
+                defaults: _defaults.brightness,
+                mixed: _mixed);
             _animatables.Add(view);
             body.Add(view);
             body.Add(blackout);
@@ -330,11 +343,14 @@ namespace AdzukiSoft.ALPS.Editor
         private void BuildFlicker(VisualElement body)
         {
             body.Add(BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed,
-                _defaults.flickerSpeed, string.Empty, "0.#", v => _effect.flickerSpeed = v));
+                _defaults.flickerSpeed, string.Empty, "0.#", v => _effect.flickerSpeed = v,
+                nameof(AlpsEffect.flickerSpeed)));
             body.Add(BuildSimpleSlider("強さ", new Vector2(0f, 100f), _effect.flickerStrength * 100f,
-                _defaults.flickerStrength * 100f, "%", "0", v => _effect.flickerStrength = Mathf.Clamp01(v / 100f)));
+                _defaults.flickerStrength * 100f, "%", "0", v => _effect.flickerStrength = Mathf.Clamp01(v / 100f),
+                nameof(AlpsEffect.flickerStrength)));
             body.Add(BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 2f), _effect.flickerFixtureStagger,
-                _defaults.flickerFixtureStagger, string.Empty, "0.##", v => _effect.flickerFixtureStagger = v));
+                _defaults.flickerFixtureStagger, string.Empty, "0.##", v => _effect.flickerFixtureStagger = v,
+                nameof(AlpsEffect.flickerFixtureStagger)));
         }
 
         // ------------------------------------------------------------- Gobo
@@ -348,6 +364,7 @@ namespace AdzukiSoft.ALPS.Editor
                 index => _effect.selectedGoboStop = index,
                 () => _effect.goboPickerExpanded,
                 open => _effect.goboPickerExpanded = open);
+            _mixed?.BindDisplay(palette, palette.SetMixed, _effect, nameof(AlpsEffect.goboStops));
 
             var view = new AlpsAnimatableView(
                 "パレット",
@@ -355,7 +372,8 @@ namespace AdzukiSoft.ALPS.Editor
                 _clipPhase,
                 _onChanged,
                 paletteRow: palette,
-                paletteCount: () => _effect.goboStops.Count);
+                paletteCount: () => _effect.goboStops.Count,
+                mixed: _mixed);
 
             palette.Changed += () =>
             {
@@ -373,10 +391,12 @@ namespace AdzukiSoft.ALPS.Editor
                 _effect.goboRotationBeats = evt.newValue;
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(rotation, _effect, nameof(AlpsEffect.goboRotationBeats));
             body.Add(rotation);
 
             var goboStagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
-                _defaults.goboFixtureStaggerDegrees, "°", "0", v => _effect.goboFixtureStaggerDegrees = v);
+                _defaults.goboFixtureStaggerDegrees, "°", "0", v => _effect.goboFixtureStaggerDegrees = v,
+                nameof(AlpsEffect.goboFixtureStaggerDegrees));
             goboStagger.Snaps = AlpsSnapPoints.Angles(goboStagger.Limit);
             body.Add(goboStagger);
         }
@@ -392,7 +412,8 @@ namespace AdzukiSoft.ALPS.Editor
             float defaultValue,
             string unit,
             string format,
-            Action<float> setter)
+            Action<float> setter,
+            string field)
         {
             var slider = new AlpsValueSlider(label, limit, unit, format) { DefaultValue = defaultValue };
             slider.SetValueWithoutNotify(initial);
@@ -401,10 +422,11 @@ namespace AdzukiSoft.ALPS.Editor
                 setter(evt.newValue);
                 _onChanged?.Invoke();
             });
+            _mixed?.Bind(slider, _effect, field);
             return slider;
         }
 
-        private static VisualElement BuildTextRow(string label, string initial, Action<string> setter)
+        private static VisualElement BuildTextRow(string label, string initial, Action<string> setter, out TextField field)
         {
             var row = new VisualElement();
             row.AddToClassList("alps-row");
@@ -413,10 +435,16 @@ namespace AdzukiSoft.ALPS.Editor
             labelElement.AddToClassList("alps-row__label");
             row.Add(labelElement);
 
-            var field = new TextField { value = initial ?? string.Empty };
-            field.AddToClassList("alps-textbox");
-            field.RegisterValueChangedCallback(evt => setter(evt.newValue));
-            row.Add(field);
+            var text = new TextField { value = initial ?? string.Empty };
+            text.AddToClassList("alps-textbox");
+            text.RegisterValueChangedCallback(evt =>
+            {
+                // The base setter leaves the dash up on 2022.3.22, see AlpsMixedField.
+                text.showMixedValue = false;
+                setter(evt.newValue);
+            });
+            field = text;
+            row.Add(text);
 
             return row;
         }

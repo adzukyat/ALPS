@@ -84,12 +84,25 @@ namespace AdzukiSoft.ALPS.Editor
             set { _box.Unit = value; SetValueWithoutNotify(this.value); }
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override float value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(float newValue)
         {
             newValue = Mathf.Clamp(newValue, _limit.x, _limit.y);
             base.SetValueWithoutNotify(newValue);
             _track.SetWithoutNotify(0f, Mathf.InverseLerp(_limit.x, _limit.y, newValue));
             _box.SetValueWithoutNotify(newValue);
+        }
+
+        protected override void UpdateMixedValueContent()
+        {
+            _box.showMixedValue = showMixedValue;
+            _track.EnableInClassList(AlpsSliderTrack.MixedClass, showMixedValue);
         }
     }
 
@@ -191,6 +204,13 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
+        /// <summary>Committing while mixed always reaches the other clips. See <see cref="AlpsMixedField"/>.</summary>
+        public override Vector2 value
+        {
+            get => base.value;
+            set => AlpsMixedField.Set(this, value, v => base.value = v);
+        }
+
         public override void SetValueWithoutNotify(Vector2 newValue)
         {
             newValue = new Vector2(
@@ -203,6 +223,13 @@ namespace AdzukiSoft.ALPS.Editor
                 Mathf.InverseLerp(_limit.x, _limit.y, newValue.y));
             _minBox.SetValueWithoutNotify(newValue.x);
             _maxBox.SetValueWithoutNotify(newValue.y);
+        }
+
+        protected override void UpdateMixedValueContent()
+        {
+            _minBox.showMixedValue = showMixedValue;
+            _maxBox.showMixedValue = showMixedValue;
+            _track.EnableInClassList(AlpsSliderTrack.MixedClass, showMixedValue);
         }
     }
 
