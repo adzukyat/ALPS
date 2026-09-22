@@ -15,6 +15,7 @@ namespace AdzukiSoft.ALPS.Editor
     {
         private static FontAsset _font;
         private static bool _fontBuilt;
+        private static readonly List<FontAsset> _built = new List<FontAsset>();
 
         /// <summary>Sets the font on the root. Without a usable font the theme's default stays.</summary>
         public static void Apply(VisualElement root)
@@ -34,12 +35,14 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private static FontAsset ImguiFont()
         {
-            if (_fontBuilt)
+            if (_fontBuilt && _built.All(IsIntact))
             {
                 return _font;
             }
 
             _fontBuilt = true;
+            _font = null;
+            _built.Clear();
 
             var regular = FromFont(EditorStyles.standardFont);
             if (regular == null)
@@ -82,11 +85,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             var asset = FontAsset.CreateFontAsset(font);
-            if (asset != null)
-            {
-                asset.hideFlags = HideFlags.DontSave;
-            }
-
+            Keep(asset);
             return asset;
         }
 
@@ -117,13 +116,47 @@ namespace AdzukiSoft.ALPS.Editor
                     var asset = FontAsset.CreateFontAsset(family, style, 90);
                     if (asset != null && asset.HasCharacter('あ', false, true))
                     {
-                        asset.hideFlags = HideFlags.DontSave;
+                        Keep(asset);
                         return asset;
                     }
                 }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// The asset alone is not enough: its material and atlas are separate objects. Built
+        /// in play mode (the domain reloads on entering it) without DontSave, they are
+        /// destroyed on leaving it, and every text using the font then fails to render.
+        /// </summary>
+        private static void Keep(FontAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            asset.hideFlags = HideFlags.DontSave;
+            if (asset.material != null)
+            {
+                asset.material.hideFlags = HideFlags.DontSave;
+            }
+
+            if (asset.atlasTextures != null)
+            {
+                foreach (var texture in asset.atlasTextures.Where(t => t != null))
+                {
+                    texture.hideFlags = HideFlags.DontSave;
+                }
+            }
+
+            _built.Add(asset);
+        }
+
+        private static bool IsIntact(FontAsset asset)
+        {
+            return asset != null && asset.material != null;
         }
 
         /// <summary>`-unity-font-style: bold` takes weight 700 from this table rather than synthesising it.</summary>
