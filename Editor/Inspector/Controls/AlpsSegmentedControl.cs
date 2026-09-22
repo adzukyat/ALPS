@@ -35,6 +35,11 @@ namespace AdzukiSoft.ALPS.Editor
                     item.AddToClassList(ussClassName + "__item--first");
                 }
 
+                if (i == options.Length - 1)
+                {
+                    item.AddToClassList(ussClassName + "__item--last");
+                }
+
                 item.RegisterCallback<PointerDownEvent>(_ => value = index);
                 _container.Add(item);
                 _items.Add(item);

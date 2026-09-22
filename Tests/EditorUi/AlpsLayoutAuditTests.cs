@@ -294,12 +294,12 @@ namespace AdzukiSoft.ALPS.Tests
             var sizes = new (string ClassName, float Width, float Height)[]
             {
                 ("unity-base-field__label", 96f, -1f),
-                ("alps-numberbox", 70f, 23f),
-                ("alps-rangeflag__box", 24f, 21f),
+                ("alps-numberbox", 70f, 18f),
+                ("alps-rangeflag__box", 24f, 18f),
                 ("alps-switch__track", 36f, 20f),
                 ("alps-switch__knob", 12f, 12f),
-                ("alps-slider__thumb", 11f, 14f),
-                ("alps-slider__rail", -1f, 4f),
+                ("alps-slider__thumb", 10f, 10f),
+                ("alps-slider__rail", -1f, 2f),
                 ("alps-slider__tick", 1f, 4f),
                 ("alps-swatch", 28f, 28f),
                 ("alps-add__item", 137.33f, -1f),
@@ -313,7 +313,7 @@ namespace AdzukiSoft.ALPS.Tests
                     ((Color32)view.resolvedStyle.backgroundColor).a,
                     "The root must stay transparent so the native inspector background shows through.");
 
-                Assert.AreEqual(12.5f, view.resolvedStyle.fontSize, 0.01f);
+                Assert.AreEqual(12f, view.resolvedStyle.fontSize, 0.01f);
 
                 // Layout snaps edges to device pixels, so a fractional token such as the
                 // add item's 137.33px may move by a whole point on a 1x display.
@@ -366,7 +366,7 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     Assert.AreEqual(452f, body.layout.width, 0.6f, "Card body width drifted.");
                     Assert.AreEqual(
-                        new Color32(0x3F, 0x3F, 0x3F, 0xFF),
+                        new Color32(0x40, 0x40, 0x40, 0xFF),
                         (Color32)body.resolvedStyle.backgroundColor,
                         "Card body background token drifted.");
                 }
@@ -374,7 +374,7 @@ namespace AdzukiSoft.ALPS.Tests
                 foreach (var header in Visible(view).Where(e => e.ClassListContains("alps-card__header")))
                 {
                     Assert.AreEqual(
-                        new Color32(0x58, 0x58, 0x58, 0xFF),
+                        new Color32(0x4A, 0x4A, 0x4A, 0xFF),
                         (Color32)header.resolvedStyle.backgroundColor,
                         "Card header background token drifted.");
                 }
@@ -429,6 +429,58 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(wrong, $"Value box gutters drifted at width {width}.");
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator CardBodiesEndWithTheSameSpace([ValueSource(nameof(Widths))] float width)
+        {
+            // A body ends 12px below its last control: 3px of padding plus the 9px its last
+            // row carries. A group around that row (a mode pane, the phase settings, a
+            // parameter with its range frame) must not add its own margin on top.
+            yield return Measure(width, view =>
+            {
+                var wrong = new List<string>();
+
+                foreach (var body in Visible(view).Where(e => e.ClassListContains("alps-card__body")))
+                {
+                    var space = body.resolvedStyle.paddingBottom;
+                    var chain = new List<string>();
+                    var current = body;
+
+                    while (true)
+                    {
+                        var last = current.Children()
+                            .Where(c => c.resolvedStyle.display != DisplayStyle.None)
+                            .Where(c => c.resolvedStyle.position != Position.Absolute)
+                            .LastOrDefault();
+                        if (last == null)
+                        {
+                            break;
+                        }
+
+                        var inner = current.layout.height - current.resolvedStyle.paddingBottom -
+                                    current.resolvedStyle.borderBottomWidth;
+                        space += inner - last.layout.yMax;
+                        chain.Add(Describe(last));
+                        current = last;
+
+                        // Stop at the first thing that draws: a control or a framed panel.
+                        var style = last.resolvedStyle;
+                        if (last is IBindable || style.backgroundColor.a > 0f || style.borderBottomWidth > 0f)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (Mathf.Abs(space - 12f) > 0.6f)
+                    {
+                        var title = body.parent.Q<Label>(className: "alps-card__title")?.text;
+                        wrong.Add($"{title} ends {space:0.#}px below {string.Join(" > ", chain)}");
+                    }
+                }
+
+                Assert.IsEmpty(wrong, $"A card body ends with extra space at width {width}.");
             });
         }
 

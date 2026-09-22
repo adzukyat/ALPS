@@ -1,6 +1,11 @@
 /*
  * Design tokens and component styles for the Adzuki Live Performance System clip inspector.
  *
+ * The look follows the IMGUI inspector around it. Colours and sizes are the ones UI
+ * Toolkit's default dark theme gives the built-in controls: 12px regular labels in #c4c4c4,
+ * #2a2a2a fields, #585858 buttons, #46607c for a checked button and #3a79bb for selection.
+ * Text uses the same fonts as IMGUI (see AlpsInspectorFont).
+ *
  * Every size here is border-box, as UI Toolkit always is: a value box's 70px includes
  * its padding and border.
  *
@@ -8,43 +13,52 @@
  */
 
 .alps-root {
-    --alps-card-bg: #333333;
-    --alps-panel-bg: #3f3f3f;
-    --alps-header-bg: #585858;
-    --alps-sub-bg: #373737;
-    --alps-nested-bg: #303030;
+    /* The card is lighter than the #383838 inspector so it reads as a panel by its fill,
+       not only by its border. Frames inside it step back down. */
+    --alps-panel-bg: #404040;
+    --alps-header-bg: #4a4a4a;
+    --alps-sub-bg: #3b3b3b;
+    --alps-nested-bg: #363636;
     --alps-well-bg: #1f1f1f;
-    --alps-control-bg: #242424;
-    --alps-field-bg: #232323;
+    --alps-control-bg: #585858;
+    --alps-field-bg: #2a2a2a;
     --alps-tile-bg: #2a2a2a;
 
-    --alps-line: #202020;
-    --alps-line-strong: #141414;
-    --alps-line-soft: #262626;
-    --alps-line-tile: #171717;
-    --alps-track: #282828;
+    --alps-line: #262626;
+    --alps-line-strong: #212121;
+    --alps-line-soft: #303030;
+    --alps-line-tile: #212121;
+    --alps-track: #5e5e5e;
     --alps-tick: #6e6e6e;
 
-    --alps-accent: #2a78d6;
-    --alps-accent-line: #1d5fae;
-    --alps-accent-soft: #6ea8dc;
-    --alps-accent-tile: #1f4d80;
+    --alps-button-bg: #585858;
+    --alps-button-bg-hover: #676767;
+    --alps-button-line: #303030;
+    --alps-button-line-bottom: #242424;
+    --alps-button-text: #eeeeee;
+    --alps-field-line-top: #0d0d0d;
+    --alps-hover-line: #656565;
+
+    --alps-accent: #46607c;
+    --alps-accent-line: #46607c;
+    --alps-accent-soft: #3a79bb;
+    --alps-accent-tile: #46607c;
     --alps-art: #d9a441;
 
-    --alps-text: #e4e4e4;
-    --alps-text-strong: #f2f2f2;
-    --alps-text-value: #f4f4f4;
-    --alps-text-label: #eaeaea;
-    --alps-text-sub: #dcdcdc;
-    --alps-text-muted: #bdbdbd;
-    --alps-text-desc: #c6c6c6;
-    --alps-text-hint: #a8a8a8;
+    --alps-text: #d2d2d2;
+    --alps-text-strong: #e4e4e4;
+    --alps-text-value: #d2d2d2;
+    --alps-text-label: #c4c4c4;
+    --alps-text-sub: #c4c4c4;
+    --alps-text-muted: #c4c4c4;
+    --alps-text-desc: #b4b4b4;
+    --alps-text-hint: #999999;
     --alps-danger: #e8a5a5;
 
     --alps-label-width: 96px;
     --alps-row-gap: 9px;
 
-    font-size: 12.5px;
+    font-size: 12px;
     color: var(--alps-text);
     /* Transparent so the native inspector background shows through and the view reads as
        part of the IMGUI clip inspector above it. */
@@ -76,6 +90,12 @@
 .alps-root .alps-flow9 > * {
     margin-bottom: 9px;
     flex-shrink: 0;
+}
+
+/* A flow nested straight into another (a move mode pane, the shared phase settings) is
+   only a group. Its last child already carries the 9px, so it adds none of its own. */
+.alps-root .alps-flow9 > .alps-flow9 {
+    margin-bottom: 0;
 }
 
 .alps-root .alps-sub > * {
@@ -112,13 +132,11 @@
     width: var(--alps-label-width);
     flex-shrink: 0;
     color: var(--alps-text-label);
-    -unity-font-style: bold;
     margin-right: var(--alps-row-gap);
 }
 
 .alps-row--sub .alps-row__label {
     color: var(--alps-text-sub);
-    -unity-font-style: normal;
 }
 
 .alps-row__hint {
@@ -128,8 +146,8 @@
 }
 
 .alps-divider {
-    height: 2px;
-    background-color: #2b2b2b;
+    height: 1px;
+    background-color: #232323;
     margin: 16px 8px 0 8px;
 }
 
@@ -152,7 +170,6 @@
     min-width: var(--alps-label-width);
     flex-shrink: 0;
     color: var(--alps-text-label);
-    -unity-font-style: bold;
     margin: 0 var(--alps-row-gap) 0 0;
     padding: 0;
 }
@@ -173,25 +190,35 @@
     flex-grow: 0;
     flex-basis: auto;
     flex-direction: row;
-    background-color: var(--alps-control-bg);
+    background-color: var(--alps-button-bg);
     border-width: 1px;
-    border-color: var(--alps-line-strong);
-    border-radius: 4px;
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
+    border-radius: 3px;
     overflow: hidden;
     align-self: flex-start;
 }
 
 .alps-seg__item {
-    padding: 4px 12px 4px 12px;
-    color: var(--alps-text-muted);
+    padding: 1px 10px 1px 10px;
+    color: var(--alps-button-text);
     background-color: rgba(0, 0, 0, 0);
     border-left-width: 1px;
-    border-left-color: #212121;
+    border-left-color: var(--alps-button-line);
     -unity-text-align: middle-center;
 }
 
+/* overflow: hidden clips to the box but not to its rounded corners, so the end items
+   round their own corners to keep a selected background inside the 3px frame. */
 .alps-seg__item--first {
     border-left-width: 0;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+.alps-seg__item--last {
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
 }
 
 .alps-seg__item--selected {
@@ -199,19 +226,16 @@
     color: #ffffff;
 }
 
-.alps-seg--compact .alps-seg__item {
-    padding: 4px 11px 4px 11px;
-}
-
 /* -------------------------------------------------------- tab selector */
 
 .alps-root .alps-tabs__input {
     flex-direction: row;
-    background-color: var(--alps-control-bg);
+    background-color: var(--alps-button-bg);
     border-width: 1px;
-    border-color: var(--alps-line-strong);
-    border-radius: 5px;
-    padding: 3px;
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
+    border-radius: 3px;
+    overflow: hidden;
 }
 
 .alps-tabs .unity-base-field__label {
@@ -225,20 +249,23 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    padding: 8px 0 8px 0;
-    border-radius: 3px;
-    color: var(--alps-text-muted);
-    margin-right: 3px;
+    padding: 3px 0 3px 0;
+    color: var(--alps-button-text);
+}
+
+.alps-tabs__item--first {
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
 }
 
 .alps-tabs__item--last {
-    margin-right: 0;
+    border-top-right-radius: 2px;
+    border-bottom-right-radius: 2px;
 }
 
 .alps-tabs__item--selected {
     background-color: var(--alps-accent);
     color: #ffffff;
-    -unity-font-style: bold;
 }
 
 .alps-tabs__icon {
@@ -259,14 +286,14 @@
     width: 36px;
     height: 20px;
     border-radius: 10px;
-    background-color: #4d4d4d;
+    background-color: var(--alps-field-bg);
     border-width: 1px;
-    border-color: var(--alps-line-soft);
+    border-color: var(--alps-line-strong);
 }
 
 .alps-switch__track--on {
     background-color: var(--alps-accent);
-    border-color: var(--alps-accent-line);
+    border-color: var(--alps-button-line);
 }
 
 .alps-switch__knob {
@@ -276,12 +303,12 @@
     width: 12px;
     height: 12px;
     border-radius: 6px;
-    background-color: #e6e6e6;
+    background-color: #999999;
 }
 
 .alps-switch__knob--on {
     left: 19px;
-    background-color: #ffffff;
+    background-color: var(--alps-button-text);
 }
 
 /* ------------------------------------------------------- range "R" flag */
@@ -303,19 +330,21 @@
 
 .alps-rangeflag__box {
     width: 24px;
-    height: 21px;
+    height: 18px;
+    background-color: var(--alps-button-bg);
     border-width: 1px;
-    border-color: #6d6d6d;
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
     border-radius: 3px;
-    color: #c2c2c2;
-    font-size: 10.5px;
+    color: var(--alps-button-text);
+    font-size: 10px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     padding: 0;
 }
 
 .alps-rangeflag__box--on {
-    border-color: var(--alps-accent);
+    border-color: var(--alps-button-line);
     background-color: var(--alps-accent);
     color: #ffffff;
 }
@@ -330,17 +359,18 @@
 }
 
 /*
- * The height is fixed rather than grown from the text. Inter's line at 12.5px is about
- * 15.1px and text measurement rounds it up to the device pixel grid, so the box came out
- * 23.5px on a 2x display but 24px on a 1x display.
+ * The height is fixed rather than grown from the text. Text measurement rounds the line
+ * height up to the device pixel grid, so a box sized by its text is taller on a 1x display
+ * than on a 2x one.
  */
 .alps-numberbox {
     width: 70px;
-    height: 23px;
+    height: 18px;
     flex-shrink: 0;
     background-color: var(--alps-field-bg);
     border-width: 1px;
     border-color: var(--alps-line-strong);
+    border-top-color: var(--alps-field-line-top);
     border-radius: 3px;
     padding: 0;
     color: var(--alps-text-value);
@@ -367,6 +397,7 @@
     background-color: var(--alps-field-bg);
     border-width: 1px;
     border-color: var(--alps-line-strong);
+    border-top-color: var(--alps-field-line-top);
     border-radius: 3px;
     color: var(--alps-text-value);
 }
@@ -374,7 +405,7 @@
 .alps-textbox .unity-base-text-field__input {
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
-    padding: 3px 7px 3px 7px;
+    padding: 1px 3px 1px 3px;
     color: var(--alps-text-value);
 }
 
@@ -382,7 +413,7 @@
 .alps-numberbox .unity-base-text-field__input {
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
-    padding: 0 7px 0 7px;
+    padding: 0 4px 0 4px;
     margin: 0;
     color: var(--alps-text-value);
     -unity-text-align: middle-right;
@@ -417,22 +448,23 @@
     overflow: visible;
 }
 
+/* A 2px groove and a round 10px dragger, as the built-in slider draws them. */
 .alps-slider__rail {
     position: absolute;
     left: 0;
     right: 0;
-    top: 5px;
-    height: 4px;
-    border-radius: 2px;
+    top: 6px;
+    height: 2px;
+    border-radius: 1px;
     background-color: var(--alps-track);
 }
 
 .alps-slider__fill {
     position: absolute;
-    top: 5px;
-    height: 4px;
-    border-radius: 2px;
-    background-color: var(--alps-accent-soft);
+    top: 6px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: #7a7a7a;
 }
 
 /* Snap marks hang just under the rail, and the thumb hides the one it sits on. */
@@ -446,12 +478,12 @@
 
 .alps-slider__thumb {
     position: absolute;
-    top: 0;
-    width: 11px;
-    height: 14px;
+    top: 2px;
+    width: 10px;
+    height: 10px;
     margin-left: -5px;
-    background-color: #f0f0f0;
-    border-radius: 3px;
+    background-color: #999999;
+    border-radius: 5px;
 }
 
 /* The fade slider's two tracks stay apart by more than their overhanging thumbs. */
@@ -488,14 +520,15 @@
     flex-direction: row;
     align-items: center;
     border-width: 1px;
-    border-color: var(--alps-line-strong);
-    border-radius: 4px;
-    background-color: var(--alps-control-bg);
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
+    border-radius: 3px;
+    background-color: var(--alps-button-bg);
 }
 
 .alps-stepper__button {
-    padding: 4px 10px 4px 10px;
-    color: var(--alps-text-sub);
+    padding: 1px 9px 1px 9px;
+    color: var(--alps-button-text);
     -unity-text-align: middle-center;
 }
 
@@ -504,7 +537,8 @@
     margin: 0;
     border-left-width: 1px;
     border-right-width: 1px;
-    border-color: var(--alps-line-strong);
+    border-color: var(--alps-button-line);
+    background-color: var(--alps-field-bg);
     min-width: 76px;
 }
 
@@ -522,7 +556,7 @@
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     border-radius: 0;
-    padding: 4px 12px 4px 12px;
+    padding: 1px 10px 1px 10px;
     margin: 0;
     color: var(--alps-text-value);
     -unity-text-align: middle-center;
@@ -727,7 +761,7 @@
 
 .alps-card__header {
     background-color: var(--alps-header-bg);
-    padding: 9px 11px 8px 11px;
+    padding: 6px 8px 5px 8px;
     border-width: 1px;
     border-color: var(--alps-line);
     border-bottom-width: 0;
@@ -736,7 +770,7 @@
 }
 
 .alps-card__header--collapsed {
-    padding-bottom: 9px;
+    padding-bottom: 6px;
     border-bottom-width: 1px;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
@@ -760,7 +794,6 @@
 
 .alps-card__title {
     -unity-font-style: bold;
-    font-size: 14px;
     color: var(--alps-text-strong);
 }
 
@@ -780,10 +813,11 @@
     flex-direction: row;
     align-items: center;
     margin-left: auto;
+    margin-right: 2px;
 }
 
 .alps-card__desc {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--alps-text-desc);
     padding-left: 19px;
     margin-top: 4px;
@@ -802,9 +836,9 @@
 }
 
 .alps-iconbutton {
-    width: 19px;
-    height: 19px;
-    margin-left: 6px;
+    width: 15px;
+    height: 15px;
+    margin-left: 8px;
     opacity: 0.7;
 }
 
@@ -815,7 +849,8 @@
     border-radius: 4px;
     border-width: 1px;
     border-color: var(--alps-line);
-    margin: 10px 0 7px 8px;
+    /* No bottom margin: frames end their parent, and a flow parent sets its own spacing. */
+    margin: 10px 0 0 8px;
     padding: 7px 9px 0 9px;
 }
 
@@ -878,50 +913,47 @@
 
 /* ------------------------------------------------------ add effect list */
 
+/* The divider inside brings its own 16px above it. */
 .alps-add {
-    margin-top: 18px;
+    margin-top: 2px;
 }
 
+/* Sized and placed like the inspector's Add Component button. */
 .alps-add__button {
+    align-self: center;
+    width: 230px;
+    height: 22px;
+    margin-top: 14px;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    background-color: var(--alps-header-bg);
+    justify-content: center;
+    background-color: var(--alps-button-bg);
     border-width: 1px;
-    border-color: var(--alps-line);
-    border-bottom-width: 0;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    padding: 9px 11px 9px 11px;
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
+    border-radius: 3px;
 }
 
-.alps-add__button--collapsed {
-    border-bottom-width: 1px;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+.alps-add__button--open {
+    background-color: var(--alps-accent);
 }
 
 .alps-add__title {
-    -unity-font-style: bold;
-    font-size: 14px;
-    color: var(--alps-text-strong);
+    color: var(--alps-button-text);
 }
 
-.alps-add__arrow {
-    font-size: 11px;
-    color: #e6e6e6;
-    padding: 0;
+.alps-add__button--open .alps-add__title {
+    color: #ffffff;
 }
 
 .alps-add__list {
     flex-direction: row;
     flex-wrap: wrap;
+    margin-top: 8px;
     background-color: var(--alps-panel-bg);
     border-width: 1px;
     border-color: var(--alps-line);
-    border-top-width: 0;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-radius: 5px;
     /* Three 137.33px tiles + two 8px gutters = 428px, the card's content width.
        Each tile carries its own trailing gutter, so the right padding gives that
        8px back (11 - 8 = 3) and the row still breaks after the third tile. */
@@ -933,10 +965,11 @@
     align-items: center;
     padding: 7px 6px 7px 6px;
     margin: 0 8px 8px 0;
-    background-color: var(--alps-card-bg);
+    background-color: var(--alps-button-bg);
     border-width: 1px;
-    border-color: var(--alps-line-soft);
-    border-radius: 5px;
+    border-color: var(--alps-button-line);
+    border-bottom-color: var(--alps-button-line-bottom);
+    border-radius: 3px;
 }
 
 .alps-add__item--last-in-row {
@@ -956,7 +989,7 @@
 
 .alps-add__label {
     font-size: 11px;
-    color: #e2e2e2;
+    color: var(--alps-button-text);
     -unity-text-align: middle-center;
 }
 
@@ -967,7 +1000,7 @@
     border-width: 1px;
     border-color: var(--alps-line);
     border-radius: 5px;
-    padding: 9px 11px 9px 11px;
+    padding: 5px 8px 5px 8px;
     margin-top: 18px;
     flex-direction: row;
     align-items: center;
@@ -1006,84 +1039,75 @@
  */
 
 .alps-card__header:hover,
-.alps-plainfold:hover,
+.alps-plainfold:hover {
+    background-color: #535353;
+}
+
 .alps-add__button:hover {
-    background-color: #666666;
+    background-color: var(--alps-button-bg-hover);
+}
+
+.alps-root .alps-add__button--open:hover {
+    background-color: var(--alps-accent);
 }
 
 .alps-iconbutton:hover {
     opacity: 1;
 }
 
-.alps-seg__item:hover {
-    background-color: #333333;
-    color: var(--alps-text-strong);
+.alps-seg__item:hover,
+.alps-tabs__item:hover,
+.alps-stepper__button:hover {
+    background-color: var(--alps-button-bg-hover);
 }
 
-.alps-root .alps-seg__item--selected:hover {
-    background-color: #3d8ae6;
+.alps-root .alps-seg__item--selected:hover,
+.alps-root .alps-tabs__item--selected:hover {
+    background-color: var(--alps-accent);
     color: #ffffff;
 }
 
-.alps-tabs__item:hover {
-    background-color: #2f2f2f;
-    color: var(--alps-text-strong);
-}
-
-.alps-root .alps-tabs__item--selected:hover {
-    background-color: #3d8ae6;
-}
-
 .alps-switch__track:hover {
-    background-color: #5c5c5c;
-    border-color: var(--alps-accent-soft);
+    border-color: var(--alps-hover-line);
 }
 
 .alps-root .alps-switch__track--on:hover {
-    background-color: #3d8ae6;
-    border-color: var(--alps-accent-soft);
+    border-color: var(--alps-hover-line);
 }
 
 .alps-rangeflag__box:hover {
-    border-color: var(--alps-accent-soft);
-    color: var(--alps-text-strong);
+    background-color: var(--alps-button-bg-hover);
 }
 
 .alps-root .alps-rangeflag__box--on:hover {
-    background-color: #3d8ae6;
-    border-color: var(--alps-accent-soft);
+    background-color: var(--alps-accent);
 }
 
 .alps-numberbox:hover,
 .alps-textbox:hover {
-    border-color: var(--alps-accent-soft);
-}
-
-.alps-stepper__button:hover {
-    background-color: #333333;
-    color: #ffffff;
+    border-color: var(--alps-hover-line);
 }
 
 .alps-easegrid__tile:hover {
-    background-color: #383838;
-    border-color: var(--alps-accent-soft);
+    background-color: #333333;
+    border-color: var(--alps-hover-line);
 }
 
 .alps-root .alps-easegrid__tile--selected:hover {
-    background-color: #2a5f96;
-    border-color: #9dc7ea;
+    background-color: #4d6986;
+    border-color: var(--alps-accent-soft);
 }
 
 .alps-swatch:hover {
-    border-color: var(--alps-accent-soft);
+    border-color: var(--alps-hover-line);
 }
 
 .alps-root .alps-swatch--selected:hover {
-    border-color: #9dc7ea;
+    border-color: var(--alps-accent-soft);
 }
 
 .alps-swatch--action:hover {
-    border-color: var(--alps-accent-soft);
+    border-color: var(--alps-hover-line);
     color: var(--alps-text-strong);
 }
 
@@ -1093,14 +1117,13 @@
 }
 
 .alps-add__item:hover {
-    background-color: #3d3d3d;
-    border-color: var(--alps-accent-soft);
+    background-color: var(--alps-button-bg-hover);
 }
 
 .alps-slider__track:hover .alps-slider__fill {
-    background-color: #8fc0ea;
+    background-color: #8a8a8a;
 }
 
 .alps-slider__track:hover .alps-slider__thumb {
-    background-color: #ffffff;
+    background-color: #b4b4b4;
 }

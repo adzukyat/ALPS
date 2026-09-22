@@ -34,6 +34,8 @@ namespace AdzukiSoft.ALPS.Editor
                 styleSheets.Add(styleSheet);
             }
 
+            AlpsInspectorFont.Apply(this);
+
             // --- Order ---------------------------------------------------
             var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "左右対称", "ランダム");
             order.SetValueWithoutNotify((int)set.order);

@@ -24,6 +24,11 @@ namespace AdzukiSoft.ALPS.Editor
                 var index = i;
                 var item = new VisualElement();
                 item.AddToClassList(ussClassName + "__item");
+                if (i == 0)
+                {
+                    item.AddToClassList(ussClassName + "__item--first");
+                }
+
                 if (i == tabs.Length - 1)
                 {
                     item.AddToClassList(ussClassName + "__item--last");

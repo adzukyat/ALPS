@@ -5,7 +5,8 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Add effect: the header bar and the thumbnail grid it reveals.
+    /// Add effect: a centred button like the inspector's Add Component, below a divider, and
+    /// the thumbnail grid it reveals. The button shows as checked while the grid is open.
     ///
     /// An effect already on the clip stays in the list, retitled with an odd suffix. Picking it
     /// is what splits the existing card into even / odd. A kind disappears from the list
@@ -16,7 +17,6 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsClipEffectSet _set;
         private readonly VisualElement _button;
         private readonly VisualElement _list;
-        private readonly Label _arrow;
 
         public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd)
         {
@@ -24,16 +24,16 @@ namespace AdzukiSoft.ALPS.Editor
             OnAdd = onAdd;
             AddToClassList("alps-add");
 
+            var divider = new VisualElement();
+            divider.AddToClassList("alps-divider");
+            Add(divider);
+
             _button = new VisualElement();
             _button.AddToClassList("alps-add__button");
 
-            var title = new Label("＋ 効果を追加");
+            var title = new Label("効果を追加");
             title.AddToClassList("alps-add__title");
             _button.Add(title);
-
-            _arrow = new Label("▲");
-            _arrow.AddToClassList("alps-add__arrow");
-            _button.Add(_arrow);
 
             _button.RegisterCallback<PointerDownEvent>(_ =>
             {
@@ -54,8 +54,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         public void Rebuild()
         {
-            _arrow.text = _set.addCatalogExpanded ? "▲" : "▼";
-            _button.EnableInClassList("alps-add__button--collapsed", !_set.addCatalogExpanded);
+            _button.EnableInClassList("alps-add__button--open", _set.addCatalogExpanded);
             _list.style.display = _set.addCatalogExpanded ? DisplayStyle.Flex : DisplayStyle.None;
             _list.Clear();
 

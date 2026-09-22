@@ -66,7 +66,7 @@ There is no manual bake. `Editor/Build/AlpsBuildHooks.cs` validates and generate
 
 ### Inspector
 
-The clip UI is UI Toolkit (`Editor/Inspector`, root view `AlpsClipInspectorView`, styles in `Resources/AlpsInspector.uss`). Timeline's clip inspector only calls `OnInspectorGUI`, so `AlpsTimelineClipInspector` draws nothing in IMGUI and inserts the UI Toolkit view after the running IMGUI container (found through `AlpsImguiHost`, which reads an internal UIElements stack). The insert only happens on Repaint because the hierarchy is locked during layout. Views mutate the model directly, so undo is registered explicitly on pointer down.
+The clip UI is UI Toolkit (`Editor/Inspector`, root view `AlpsClipInspectorView`, styles in `Resources/AlpsInspector.uss`). The look follows the IMGUI inspector, and `AlpsInspectorFont` gives the view the same fonts IMGUI uses (Inter plus the OS font IMGUI falls back to for Japanese), because UI Toolkit's own fallback picks a different Japanese font. Timeline's clip inspector only calls `OnInspectorGUI`, so `AlpsTimelineClipInspector` draws nothing in IMGUI and inserts the UI Toolkit view after the running IMGUI container (found through `AlpsImguiHost`, which reads an internal UIElements stack). The insert only happens on Repaint because the hierarchy is locked during layout. Views mutate the model directly, so undo is registered explicitly on pointer down.
 
 ## Constraints and conventions
 
