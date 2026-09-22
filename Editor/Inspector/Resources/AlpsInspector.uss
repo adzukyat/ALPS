@@ -329,8 +329,14 @@
     width: 70px;
 }
 
+/*
+ * The height is fixed rather than grown from the text. Inter's line at 12.5px is about
+ * 15.1px and text measurement rounds it up to the device pixel grid, so the box came out
+ * 23.5px on a 2x display but 24px on a 1x display.
+ */
 .alps-numberbox {
     width: 70px;
+    height: 23px;
     flex-shrink: 0;
     background-color: var(--alps-field-bg);
     border-width: 1px;
@@ -372,11 +378,11 @@
     color: var(--alps-text-value);
 }
 
-/* The 70px box holds "100 %" with room to spare. */
+/* The 70px box holds "100 %" with room to spare. The text is centred vertically by the alignment. */
 .alps-numberbox .unity-base-text-field__input {
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
-    padding: 3px 7px 3px 7px;
+    padding: 0 7px 0 7px;
     margin: 0;
     color: var(--alps-text-value);
     -unity-text-align: middle-right;

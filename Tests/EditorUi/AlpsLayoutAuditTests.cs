@@ -315,6 +315,10 @@ namespace AdzukiSoft.ALPS.Tests
 
                 Assert.AreEqual(12.5f, view.resolvedStyle.fontSize, 0.01f);
 
+                // Layout snaps edges to device pixels, so a fractional token such as the
+                // add item's 137.33px may move by a whole point on a 1x display.
+                var tolerance = Mathf.Max(0.6f, 1f / EditorGUIUtility.pixelsPerPoint);
+
                 foreach (var (className, width, height) in sizes)
                 {
                     var matches = Visible(view)
@@ -329,14 +333,14 @@ namespace AdzukiSoft.ALPS.Tests
                         if (width > 0f)
                         {
                             Assert.AreEqual(
-                                width, element.layout.width, 0.6f,
+                                width, element.layout.width, tolerance,
                                 $".{className} width drifted: {Describe(element)}");
                         }
 
                         if (height > 0f)
                         {
                             Assert.AreEqual(
-                                height, element.layout.height, 0.6f,
+                                height, element.layout.height, tolerance,
                                 $".{className} height drifted: {Describe(element)}");
                         }
                     }
