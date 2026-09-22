@@ -416,7 +416,8 @@ namespace AdzukiSoft.ALPS.Editor
         private static void NotifyPreview()
         {
             AlpsPreviewDriver.MarkDirty();
-            TimelineEditor.Refresh(RefreshReason.SceneNeedsUpdate);
+            // The window redraw updates the color strip AlpsTimelineClipEditor draws on each clip.
+            TimelineEditor.Refresh(RefreshReason.SceneNeedsUpdate | RefreshReason.WindowNeedsRedraw);
         }
     }
 }

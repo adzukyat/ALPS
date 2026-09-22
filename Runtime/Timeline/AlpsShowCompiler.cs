@@ -90,6 +90,62 @@ namespace AdzukiSoft.ALPS
             }
         }
 
+        /// <summary>
+        /// The layer <see cref="Compile"/> gives <paramref name="target"/>, or -1 when the track
+        /// plays nothing because it is muted or its root is not bound to a fixture group.
+        /// Follows the same walk and skip rules as the compiler, so seeds derived from it match.
+        /// </summary>
+        public static int LayerOf(PlayableDirector director, AlpsTimelineTrack target)
+        {
+            var timeline = director != null ? director.playableAsset as TimelineAsset : null;
+            if (timeline == null || target == null)
+            {
+                return -1;
+            }
+
+            var layer = 0;
+            foreach (var track in timeline.GetRootTracks())
+            {
+                var found = FindLayer(director, track, target, false, ref layer);
+                if (found != -2)
+                {
+                    return found;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>The layer of the target, -1 if it plays nothing, or -2 if it is not below <paramref name="track"/>.</summary>
+        private static int FindLayer(PlayableDirector director, TrackAsset track, AlpsTimelineTrack target, bool parentMuted, ref int layer)
+        {
+            var muted = parentMuted || track.muted;
+            if (track is AlpsTimelineTrack alpsTrack)
+            {
+                var plays = !muted && (director.GetGenericBinding(alpsTrack.RootTrack) as AlpsFixtureGroup) != null;
+                if (alpsTrack == target)
+                {
+                    return plays ? layer : -1;
+                }
+
+                if (plays)
+                {
+                    layer++;
+                }
+            }
+
+            foreach (var child in track.GetChildTracks())
+            {
+                var found = FindLayer(director, child, target, muted, ref layer);
+                if (found != -2)
+                {
+                    return found;
+                }
+            }
+
+            return -2;
+        }
+
         /// <summary>A stable seed for a clip, so random order and noise match between runs.</summary>
         public static int SeedFor(TimelineClip clip, int layer)
         {
