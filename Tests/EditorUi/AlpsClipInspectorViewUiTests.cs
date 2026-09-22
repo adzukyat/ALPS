@@ -828,6 +828,44 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Effects_StayInCatalogOrderWhateverOrderTheyAreAdded()
+        {
+            var set = new AlpsClipEffectSet();
+            set.Add(AlpsEffectKind.Gobo);
+            set.Add(AlpsEffectKind.Brightness);
+            set.Add(AlpsEffectKind.Cone);
+            set.Add(AlpsEffectKind.Move);
+            set.Add(AlpsEffectKind.Flicker);
+            set.Add(AlpsEffectKind.Color);
+            set.Add(AlpsEffectKind.Color);
+            set.Add(AlpsEffectKind.Move);
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "ムーブ（偶数）", "ムーブ（奇数）", "カラー（偶数）", "カラー（奇数）",
+                    "明るさ", "コーン", "フリッカー", "ゴボ",
+                },
+                set.effects.Select(e => AlpsEffectCatalog.GetTitle(e.kind, e.parity)).ToArray());
+        }
+
+        [Test]
+        public void SortEffects_NormalizesAStackSavedInAddOrder()
+        {
+            var set = new AlpsClipEffectSet();
+            set.effects.Add(new AlpsEffect { kind = AlpsEffectKind.Cone });
+            set.effects.Add(new AlpsEffect { kind = AlpsEffectKind.Color, parity = AlpsParity.Odd });
+            set.effects.Add(new AlpsEffect { kind = AlpsEffectKind.Color, parity = AlpsParity.Even });
+            set.effects.Add(new AlpsEffect { kind = AlpsEffectKind.Move });
+
+            set.OnAfterDeserialize();
+
+            CollectionAssert.AreEqual(
+                new[] { "ムーブ", "カラー（偶数）", "カラー（奇数）", "コーン" },
+                set.effects.Select(e => AlpsEffectCatalog.GetTitle(e.kind, e.parity)).ToArray());
+        }
+
+        [Test]
         public void RemovingOneHalfOfAPair_PromotesTheSurvivor()
         {
             var set = new AlpsClipEffectSet();
@@ -1062,11 +1100,13 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsFalse(card.Card.PasteAvailable, "貼り付け must be hidden with an empty clipboard.");
             }
 
-            AlpsEffectClipboard.Copy(set.effects[0]);
+            var cone = set.IndexOf(AlpsEffectKind.Cone, AlpsParity.All);
+            var brightness = set.IndexOf(AlpsEffectKind.Brightness, AlpsParity.All);
+            AlpsEffectClipboard.Copy(set.effects[cone]);
             var refreshed = new AlpsClipInspectorView(set).Query<AlpsEffectView>().ToList();
 
-            Assert.IsTrue(refreshed[0].Card.PasteAvailable, "コーン accepts コーン parameters.");
-            Assert.IsFalse(refreshed[1].Card.PasteAvailable, "明るさ must not accept them.");
+            Assert.IsTrue(refreshed[cone].Card.PasteAvailable, "コーン accepts コーン parameters.");
+            Assert.IsFalse(refreshed[brightness].Card.PasteAvailable, "明るさ must not accept them.");
         }
 
         [Test]

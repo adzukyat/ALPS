@@ -8,12 +8,18 @@ namespace AdzukiSoft.ALPS
         public const string EvenSuffix = "（偶数）";
         public const string OddSuffix = "（奇数）";
 
+        /// <summary>
+        /// The fixed order cards appear in on every clip, and the order of the add list.
+        /// It is independent of the <see cref="AlpsEffectKind"/> values, which are serialized
+        /// and mirrored by the evaluator. A new kind is appended to the enum but can be
+        /// placed anywhere here.
+        /// </summary>
         public static readonly AlpsEffectKind[] Order =
         {
             AlpsEffectKind.Move,
-            AlpsEffectKind.Cone,
             AlpsEffectKind.Color,
             AlpsEffectKind.Brightness,
+            AlpsEffectKind.Cone,
             AlpsEffectKind.Flicker,
             AlpsEffectKind.Gobo,
         };
@@ -39,6 +45,13 @@ namespace AdzukiSoft.ALPS
                 { AlpsEffectKind.Flicker, "光がランダムにちらつきます。" },
                 { AlpsEffectKind.Gobo, "光に模様を投影します。回転させることもできます。" },
             };
+
+        /// <summary>Position of <paramref name="kind"/> in <see cref="Order"/>. Unknown kinds sort last.</summary>
+        public static int GetSortIndex(AlpsEffectKind kind)
+        {
+            var index = System.Array.IndexOf(Order, kind);
+            return index >= 0 ? index : Order.Length;
+        }
 
         public static string GetName(AlpsEffectKind kind)
         {
