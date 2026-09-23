@@ -900,10 +900,24 @@ namespace AdzukiSoft.ALPS.Tests
 
             var snaps = new AlpsSliderSnaps();
             snaps.Normalize(new Vector2(0f, 50f));
-            Assert.AreEqual(120f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, true),
+            Assert.AreEqual(120f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, true, false),
                 "An end past the limit stays while its thumb is not moved off the right end.");
-            Assert.AreEqual(50f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, false));
-            Assert.AreEqual(25f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 0.5f, 120f, true));
+            Assert.AreEqual(50f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, false, false));
+            Assert.AreEqual(25f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 0.5f, 120f, true, false));
+
+            var signed = new AlpsValueSlider("signed", new Vector2(-90f, 90f)) { AllowBelowLimit = true };
+            signed.SetValueWithoutNotify(-135f);
+            Assert.AreEqual(-135f, signed.value, "The lower limit opens the same way.");
+            Assert.AreEqual(0f, Thumb(signed).style.left.value.value, 0.01f, "The thumb rests at the left end.");
+            signed.SetValueWithoutNotify(135f);
+            Assert.AreEqual(90f, signed.value, "Opening one side leaves the other as it was.");
+
+            var signedRange = new AlpsRangeSlider("signed range", new Vector2(-90f, 90f)) { AllowAboveLimit = true, AllowBelowLimit = true };
+            signedRange.SetValueWithoutNotify(new Vector2(-135f, 120f));
+            Assert.AreEqual(new Vector2(-135f, 120f), signedRange.value);
+            Assert.AreEqual(-135f, AlpsValueSlider.EndAt(snaps, new Vector2(-90f, 90f), 0f, -135f, false, true),
+                "An end past the lower limit stays while its thumb is not moved off the left end.");
+            Assert.AreEqual(-90f, AlpsValueSlider.EndAt(snaps, new Vector2(-90f, 90f), 0f, -135f, true, false));
         }
 
         [Test]

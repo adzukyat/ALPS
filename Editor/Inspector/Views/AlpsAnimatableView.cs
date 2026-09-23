@@ -22,7 +22,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// A value with nothing to move it over time, such as an arrangement's, leaves R out,
     /// and a range saved on it is read as off.
     ///
-    /// The sliders cover a value's usual span, and typing can go past its upper end.
+    /// The sliders cover a value's usual span, and typing can go past its upper end, or past
+    /// either end for a value that runs both ways of zero.
     /// </summary>
     public class AlpsAnimatableView : VisualElement
     {
@@ -95,6 +96,9 @@ namespace AdzukiSoft.ALPS.Editor
 
             var valueSnaps = snaps != null ? snaps(model.limit) : AlpsSnapPoints.None;
 
+            // A value that runs both ways of zero, such as an angle, can be typed past either end.
+            var signed = model.limit.x < 0f;
+
             if (_isPalette)
             {
                 _valueRow.Add(paletteRow);
@@ -107,6 +111,7 @@ namespace AdzukiSoft.ALPS.Editor
                     Snaps = valueSnaps,
                     DefaultValue = defaults?.value,
                     AllowAboveLimit = true,
+                    AllowBelowLimit = signed,
                 };
                 _valueSlider.AddToClassList(FieldClass);
                 _valueSlider.SetValueWithoutNotify(model.value);
@@ -121,6 +126,7 @@ namespace AdzukiSoft.ALPS.Editor
                     Snaps = valueSnaps,
                     DefaultValue = defaults?.range,
                     AllowAboveLimit = true,
+                    AllowBelowLimit = signed,
                 };
                 _rangeSlider.AddToClassList(FieldClass);
                 _rangeSlider.SetValueWithoutNotify(model.range);
@@ -359,6 +365,7 @@ namespace AdzukiSoft.ALPS.Editor
                 DefaultValue = defaultValue,
                 EndsCanCross = true,
                 AllowAboveLimit = true,
+                AllowBelowLimit = limit.x < 0f,
             };
             slider.AddToClassList("alps-animatable__spread");
             slider.SetEndTooltips(firstTip, lastTip);
