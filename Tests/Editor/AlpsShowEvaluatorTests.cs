@@ -1234,6 +1234,148 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
+        // ------------------------------------------------------------------ playback cost
+
+        [Test]
+        public void TimeIndex_FindsExactlyTheWeightedClipsInLayerOrder()
+        {
+            void Check(AlpsCompiledShow show, float from, float to, IEnumerable<float> extraTimes)
+            {
+                var times = new List<float>(extraTimes);
+                for (var time = from; time <= to; time += 0.037f)
+                {
+                    times.Add(time);
+                }
+
+                var active = new int[show.ClipCount];
+                var weights = new float[show.ClipCount];
+                foreach (var time in times)
+                {
+                    var expected = new List<int>();
+                    for (var clip = 0; clip < show.ClipCount; clip++)
+                    {
+                        if (AlpsShowEvaluator.ClipWeight(show.clips, clip, time) * AlpsShowEvaluator.ClipFade(show.clips, clip, time) > 0f)
+                        {
+                            expected.Add(clip);
+                        }
+                    }
+
+                    var count = AlpsShowEvaluator.ActiveClips(
+                        show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, active, weights);
+                    CollectionAssert.AreEqual(expected, active.Take(count), $"Clips at {time}s.");
+                    for (var i = 0; i < count; i++)
+                    {
+                        var clip = active[i];
+                        var weight = AlpsShowEvaluator.ClipWeight(show.clips, clip, time) * AlpsShowEvaluator.ClipFade(show.clips, clip, time);
+                        Assert.AreEqual(weight, weights[i], 1e-6f, $"Weight of clip {clip} at {time}s.");
+                    }
+                }
+            }
+
+            // Short and long clips on three layers, overlapping inside and across layers.
+            var clips = new List<AlpsStandaloneClip>();
+            var edges = new List<float>();
+            for (var layer = 0; layer < 3; layer++)
+            {
+                for (var i = 0; i < 12; i++)
+                {
+                    var set = Set();
+                    set.Add(AlpsEffectKind.Brightness).brightness.value = 50f;
+                    set.fadeInBeats = i % 3 == 0 ? 0.5f : 0f;
+                    var start = i * 1.7f + layer * 0.3f;
+                    var end = start + (i % 4 == 0 ? 9f : 0.6f + i * 0.1f);
+                    clips.Add(new AlpsStandaloneClip { set = set, start = start, end = end, mixIn = i % 2 == 0 ? 0.2f : 0f, layer = layer });
+                    edges.Add(start);
+                    edges.Add(end);
+                }
+            }
+
+            var show = AlpsShowCompiler.CompileStandalone(4, Bpm, clips.ToArray());
+            Assert.AreEqual(AlpsShowCompiler.MinBucketSeconds, show.bucketSeconds);
+            Check(show, -1f, 32f, edges);
+
+            // A long show stretches its buckets instead of making more of them.
+            var longSet = Set();
+            longSet.Add(AlpsEffectKind.Brightness).brightness.value = 50f;
+            var longShow = AlpsShowCompiler.CompileStandalone(
+                2,
+                Bpm,
+                new AlpsStandaloneClip { set = longSet, start = 0f, end = 5000f },
+                new AlpsStandaloneClip { set = longSet, start = 2500f, end = 2501f, layer = 1 });
+            Assert.AreEqual(AlpsShowCompiler.MaxBuckets, longShow.bucketStart.Length - 1);
+            Assert.Greater(longShow.bucketSeconds, AlpsShowCompiler.MinBucketSeconds);
+            Check(longShow, 2490f, 2510f, new[] { 0f, 2500f, 2501f, 5000f, 5001f });
+
+            var empty = AlpsShowCompiler.CompileStandalone(1, Bpm);
+            Assert.AreEqual(0, AlpsShowEvaluator.ActiveClips(
+                empty.clips, empty.bucketStart, empty.bucketClips, empty.bucketSeconds, 1f, new int[0], new float[0]));
+        }
+
+        [Test]
+        public void Positions_MatchTheOrderAndMirrorOfEveryMember()
+        {
+            const int fixtures = 7;
+            var clips = new List<AlpsStandaloneClip>();
+            foreach (AlpsOrderMode order in System.Enum.GetValues(typeof(AlpsOrderMode)))
+            {
+                foreach (var groupSize in new[] { 1, 2, 3 })
+                {
+                    foreach (var seed in new[] { 11, 4242 })
+                    {
+                        var set = Set();
+                        set.order = order;
+                        set.phase.fixtureGroupSize = groupSize;
+                        clips.Add(new AlpsStandaloneClip { set = set, end = 1f, seed = seed });
+                    }
+                }
+            }
+
+            var show = AlpsShowCompiler.CompileStandalone(fixtures, Bpm, clips.ToArray());
+            var rows = new HashSet<int>();
+            for (var clip = 0; clip < clips.Count; clip++)
+            {
+                var set = clips[clip].set;
+                var order = (int)set.order;
+                var groupSize = set.phase.fixtureGroupSize;
+                var seed = clips[clip].seed;
+                var start = AlpsShowEvaluator.ToInt(show.clips[clip * AlpsShowEvaluator.ClipStride + AlpsShowEvaluator.ClipPositionStart]);
+                rows.Add(start);
+                for (var i = 0; i < fixtures; i++)
+                {
+                    Assert.AreEqual(AlpsShowEvaluator.OrderPosition(order, seed, i, fixtures, groupSize), show.positions[start + i * 2],
+                        $"k of fixture {i}, {set.order}, groups of {groupSize}, seed {seed}.");
+                    Assert.AreEqual(AlpsShowEvaluator.IsMirrored(order, i, fixtures, groupSize) ? 1 : 0, show.positions[start + i * 2 + 1],
+                        $"Mirror of fixture {i}, {set.order}, groups of {groupSize}.");
+                }
+            }
+
+            // Only a random order depends on the seed, so the other orders share one row per grouping.
+            Assert.AreEqual(3 * 3 + 3 * 2, rows.Count);
+        }
+
+        [Test]
+        public void FrameChange_WritesOnlyWhatChanged()
+        {
+            var stride = AlpsShowEvaluator.FrameStride;
+            var frame = new float[stride];
+            AlpsShowPlayer.WriteNeutralFrame(frame, 0);
+            var applied = new float[stride * 2];
+
+            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, true), "The first write is always whole.");
+            CollectionAssert.AreEqual(frame, applied.Skip(stride), "The written frame is kept.");
+            Assert.AreEqual(0f, applied[0], "Only its own row is kept.");
+            Assert.AreEqual(AlpsShowPlayer.ChangeNone, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+
+            frame[AlpsShowEvaluator.FrameGoboRotation] = 30f;
+            Assert.AreEqual(AlpsShowPlayer.ChangeGoboRotation, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+            Assert.AreEqual(AlpsShowPlayer.ChangeNone, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+
+            frame[AlpsShowEvaluator.FrameGoboRotation] = 60f;
+            frame[AlpsShowEvaluator.FramePan] = 10f;
+            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, true), "A forced write is whole.");
+        }
+
         // ------------------------------------------------------------------ helpers
 
         /// <summary>Every effect kind with ranges, own phase, palettes and an odd and even split.</summary>
@@ -1320,8 +1462,13 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             var frame = new float[stride];
+            var active = new int[show.ClipCount];
+            var activeWeight = new float[show.ClipCount];
+            var activeCount = AlpsShowEvaluator.ActiveClips(
+                show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, active, activeWeight);
             AlpsShowEvaluator.EvaluateFixture(
-                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.ClipCount,
+                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
+                active, activeWeight, activeCount,
                 show.groupCount, show.groupIndex,
                 fixture, time, defaults, frame,
                 new float[stride], new float[stride], new float[stride], new float[stride], new float[1]);

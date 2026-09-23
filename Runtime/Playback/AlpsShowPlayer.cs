@@ -13,6 +13,11 @@ namespace AdzukiSoft.ALPS
     /// Plays a compiled show in VRChat. It follows <see cref="PlayableDirector.time"/>,
     /// evaluates every fixture with <see cref="AlpsShowEvaluator"/> and writes the result to
     /// the fixtures. The arrays are filled at build time by the scene processor.
+    ///
+    /// Writing to VRSL costs far more than evaluating, so a fixture is only written when its
+    /// frame changed since the last write, and only its gobo angle when nothing else did.
+    /// One fixture per frame is written in full regardless, in turn, which repairs anything
+    /// that rebuilt a fixture's property block behind the player's back.
     /// </summary>
 #if UDONSHARP
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -25,6 +30,10 @@ namespace AdzukiSoft.ALPS
     {
         public const int AdapterNone = 0;
         public const int AdapterVRSLDmxStatic = 1;
+
+        public const int ChangeNone = 0;
+        public const int ChangeGoboRotation = 1;
+        public const int ChangeAll = 2;
 
         /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
@@ -51,6 +60,10 @@ namespace AdzukiSoft.ALPS
         public float[] colors = new float[0];
         public float[] gobos = new float[0];
         public string[] userNames = new string[0];
+        public int[] positions = new int[0];
+        public int[] bucketStart = new int[0];
+        public int[] bucketClips = new int[0];
+        public float bucketSeconds = 1f;
 
         public int[] groupCount = new int[0];
         public int[] groupIndex = new int[0];
@@ -66,6 +79,11 @@ namespace AdzukiSoft.ALPS
         private float[] _sum;
         private float[] _weightSum;
         private float[] _scratch;
+        private int[] _active;
+        private float[] _activeWeight;
+        private float[] _applied;
+        private bool[] _hasApplied;
+        private int _refreshFixture;
         private float[] _aimPan;
         private float[] _aimTilt;
         private bool[] _aiming;
@@ -99,6 +117,12 @@ namespace AdzukiSoft.ALPS
             _sum = new float[AlpsShowEvaluator.FrameStride];
             _weightSum = new float[AlpsShowEvaluator.FrameStride];
             _scratch = new float[1];
+            var clipCount = clips.Length / AlpsShowEvaluator.ClipStride;
+            _active = new int[clipCount];
+            _activeWeight = new float[clipCount];
+            _applied = new float[count * AlpsShowEvaluator.FrameStride];
+            _hasApplied = new bool[count];
+            _refreshFixture = 0;
             _aimPan = new float[count];
             _aimTilt = new float[count];
             _aiming = new bool[count];
@@ -138,11 +162,16 @@ namespace AdzukiSoft.ALPS
             _lastTime = time;
             _anyAiming = false;
 
-            var clipCount = clips.Length / AlpsShowEvaluator.ClipStride;
-            for (var fixture = 0; fixture < fixtureAdapter.Length; fixture++)
+            var count = fixtureAdapter.Length;
+            var activeCount = AlpsShowEvaluator.ActiveClips(clips, bucketStart, bucketClips, bucketSeconds, time, _active, _activeWeight);
+            var refresh = _refreshFixture;
+            _refreshFixture = count > 0 ? (refresh + 1) % count : 0;
+
+            for (var fixture = 0; fixture < count; fixture++)
             {
                 AlpsShowEvaluator.EvaluateFixture(
-                    clips, effects, parameters, colors, gobos, clipCount,
+                    clips, effects, parameters, colors, gobos, positions,
+                    _active, _activeWeight, activeCount,
                     groupCount, groupIndex,
                     fixture, time, _defaults, _frame,
                     _clipFrame, _clipWritten, _sum, _weightSum, _scratch);
@@ -153,11 +182,55 @@ namespace AdzukiSoft.ALPS
                     _anyAiming = true;
                 }
 
-                if (fixtureAdapter[fixture] == AdapterVRSLDmxStatic && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null)
+                if (fixtureAdapter[fixture] != AdapterVRSLDmxStatic || fixture >= vrslFixtures.Length || vrslFixtures[fixture] == null)
+                {
+                    continue;
+                }
+
+                var change = FrameChange(_frame, 0, _applied, fixture * AlpsShowEvaluator.FrameStride, !_hasApplied[fixture] || fixture == refresh);
+                _hasApplied[fixture] = true;
+                if (change == ChangeAll)
                 {
                     ApplyVRSL(vrslFixtures[fixture], _frame, 0, _block);
                 }
+                else if (change == ChangeGoboRotation)
+                {
+                    ApplyVRSLGoboRotation(vrslFixtures[fixture], _frame[AlpsShowEvaluator.FrameGoboRotation], _block);
+                }
             }
+        }
+
+        /// <summary>
+        /// Compares a frame with the one last written to a fixture, keeps it as the new last
+        /// written one, and says what has to be written: nothing, only the gobo angle, or all
+        /// of it. <paramref name="force"/> asks for all of it whatever changed.
+        /// </summary>
+        public static int FrameChange(float[] frame, int offset, float[] applied, int appliedOffset, bool force)
+        {
+            var change = force ? ChangeAll : ChangeNone;
+            for (var ch = 0; ch < AlpsShowEvaluator.FrameStride; ch++)
+            {
+                var value = frame[offset + ch];
+                if (applied[appliedOffset + ch] == value)
+                {
+                    continue;
+                }
+
+                applied[appliedOffset + ch] = value;
+                if (ch == AlpsShowEvaluator.FrameGoboRotation)
+                {
+                    if (change == ChangeNone)
+                    {
+                        change = ChangeGoboRotation;
+                    }
+                }
+                else
+                {
+                    change = ChangeAll;
+                }
+            }
+
+            return change;
         }
 
         /// <summary>The last evaluated frame channel, for tests and debugging.</summary>
@@ -331,6 +404,17 @@ namespace AdzukiSoft.ALPS
         /// <summary>Writes a model frame to a VRSL fixture.</summary>
         public static void ApplyVRSL(VRStageLighting_DMX_Static fixture, float[] frame, int offset, MaterialPropertyBlock block)
         {
+            ApplyVRSLFields(fixture, frame, offset);
+            ApplyVRSLGoboRotation(fixture, frame[offset + AlpsShowEvaluator.FrameGoboRotation], block);
+        }
+
+        /// <summary>
+        /// Writes everything but the gobo angle to a VRSL fixture and lets VRSL rebuild its
+        /// property block, which drops the gobo angle, so <see cref="ApplyVRSLGoboRotation"/>
+        /// has to follow.
+        /// </summary>
+        public static void ApplyVRSLFields(VRStageLighting_DMX_Static fixture, float[] frame, int offset)
+        {
             var brightness = frame[offset + AlpsShowEvaluator.FrameBrightness] * frame[offset + AlpsShowEvaluator.FrameBrightnessScale];
 
             fixture.enableDMXChannels = false;
@@ -358,16 +442,21 @@ namespace AdzukiSoft.ALPS
             fixture.maxConeLength = frame[offset + AlpsShowEvaluator.FrameConeMeshLength] * Mathf.Max(1f, coneLength);
             fixture.selectGOBO = Mathf.Clamp(AlpsShowEvaluator.ToInt(frame[offset + AlpsShowEvaluator.FrameGobo]), 1, 8);
             fixture._UpdateInstancedProperties();
+        }
 
-            // VRSL replaces the whole property block above, so the gobo angle is added after it.
-            // Stock VRSL shaders ignore the property, the patched ones rotate the gobo.
+        /// <summary>
+        /// Adds the gobo angle to each renderer's property block. VRSL replaces the whole block
+        /// whenever it updates, so this runs after it. Stock VRSL shaders ignore the property,
+        /// the patched ones rotate the gobo.
+        /// </summary>
+        public static void ApplyVRSLGoboRotation(VRStageLighting_DMX_Static fixture, float rotation, MaterialPropertyBlock block)
+        {
             var renderers = fixture.objRenderers;
             if (renderers == null || block == null)
             {
                 return;
             }
 
-            var rotation = frame[offset + AlpsShowEvaluator.FrameGoboRotation];
             for (var i = 0; i < renderers.Length; i++)
             {
                 var renderer = renderers[i];

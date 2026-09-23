@@ -15,6 +15,21 @@ namespace AdzukiSoft.ALPS
         public float[] gobos = new float[0];
         public string[] userNames = new string[0];
 
+        /// <summary>Order position and mirror flag of every group member, two entries each, per clip.</summary>
+        public int[] positions = new int[0];
+
+        /// <summary>
+        /// Where each time bucket's clips start in <see cref="bucketClips"/>, one more entry
+        /// than there are buckets so the last one has an end.
+        /// </summary>
+        public int[] bucketStart = new int[0];
+
+        /// <summary>The clips overlapping each time bucket, in clip order.</summary>
+        public int[] bucketClips = new int[0];
+
+        /// <summary>Length of one time bucket in seconds.</summary>
+        public float bucketSeconds = 1f;
+
         public int[] groupCount = new int[0];
 
         /// <summary>Fixture position inside each group, one row of <see cref="fixtureCount"/> per group, -1 for non members.</summary>

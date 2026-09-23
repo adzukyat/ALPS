@@ -23,6 +23,8 @@ namespace AdzukiSoft.ALPS
             public float lastTime = float.NaN;
             public AlpsCompiledShow show;
             public float[] defaults = new float[0];
+            public int[] active = new int[0];
+            public float[] activeWeight = new float[0];
             public readonly Dictionary<AlpsFixture, float[]> captured = new Dictionary<AlpsFixture, float[]>();
             public readonly float[] frame = new float[AlpsShowEvaluator.FrameStride];
             public readonly float[] clipFrame = new float[AlpsShowEvaluator.FrameStride];
@@ -142,7 +144,8 @@ namespace AdzukiSoft.ALPS
             state.lastTime = time;
 
             var show = EnsureCompiled(director, state);
-            var clipCount = show.ClipCount;
+            var activeCount = AlpsShowEvaluator.ActiveClips(
+                show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, state.active, state.activeWeight);
             for (var fixture = 0; fixture < show.fixtures.Count; fixture++)
             {
                 var target = show.fixtures[fixture];
@@ -152,7 +155,8 @@ namespace AdzukiSoft.ALPS
                 }
 
                 AlpsShowEvaluator.EvaluateFixture(
-                    show.clips, show.effects, show.parameters, show.colors, show.gobos, clipCount,
+                    show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
+                    state.active, state.activeWeight, activeCount,
                     show.groupCount, show.groupIndex,
                     fixture, time, state.defaults, state.frame,
                     state.clipFrame, state.clipWritten, state.sum, state.weightSum, state.scratch);
@@ -196,6 +200,8 @@ namespace AdzukiSoft.ALPS
             state.show = AlpsShowCompiler.Compile(director);
             state.stale = false;
             state.revision = Revision;
+            state.active = new int[state.show.ClipCount];
+            state.activeWeight = new float[state.show.ClipCount];
 
             var stride = AlpsShowEvaluator.FrameStride;
             state.defaults = new float[state.show.fixtures.Count * stride];

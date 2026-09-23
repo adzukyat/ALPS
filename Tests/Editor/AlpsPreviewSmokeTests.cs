@@ -287,6 +287,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var context = OpenFreshScene();
             var preview = context.Sample(AccentTime);
+            var previewBase = context.Sample(BaseTime);
 
             // Swapping the timeline out and back gives the build conversion a fresh graph.
             context.Director.playableAsset = null;
@@ -326,19 +327,26 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsNull(Object.FindObjectOfType<AlpsFixture>(), "Authoring components are stripped.");
                 Assert.IsNull(Object.FindObjectOfType<AlpsContainer>());
 
-                player.EvaluateAt(AccentTime);
-                for (var i = 0; i < context.Fixtures.Length; i++)
+                void AssertMatches(FixtureState[] expected, float time)
                 {
-                    var runtime = FixtureState.Capture(context.Fixtures[i]);
-                    var diagnostics = $"preview: {preview[i]}\nruntime: {runtime}";
-                    Assert.AreEqual(preview[i].Pan, runtime.Pan, Tolerance, diagnostics);
-                    Assert.AreEqual(preview[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
-                    Assert.AreEqual(preview[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
-                    Assert.AreEqual(preview[i].Color, runtime.Color, diagnostics);
-                    Assert.AreEqual(preview[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
-                    Assert.AreEqual(preview[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
-                    Assert.AreEqual(preview[i].Gobo, runtime.Gobo, diagnostics);
+                    player.EvaluateAt(time);
+                    for (var i = 0; i < context.Fixtures.Length; i++)
+                    {
+                        var runtime = FixtureState.Capture(context.Fixtures[i]);
+                        var diagnostics = $"at {time}s\npreview: {expected[i]}\nruntime: {runtime}";
+                        Assert.AreEqual(expected[i].Pan, runtime.Pan, Tolerance, diagnostics);
+                        Assert.AreEqual(expected[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
+                        Assert.AreEqual(expected[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
+                        Assert.AreEqual(expected[i].Color, runtime.Color, diagnostics);
+                        Assert.AreEqual(expected[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
+                        Assert.AreEqual(expected[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
+                        Assert.AreEqual(expected[i].Gobo, runtime.Gobo, diagnostics);
+                    }
                 }
+
+                // The second time only writes what changed since the first, which still has to match.
+                AssertMatches(preview, AccentTime);
+                AssertMatches(previewBase, BaseTime);
 
                 var programAsset = UdonSharpProgramAsset.GetProgramAssetForClass(typeof(AlpsShowPlayer));
                 Assert.NotNull(programAsset, "No UdonSharp program asset was created for the player.");

@@ -23,6 +23,12 @@ namespace AdzukiSoft.ALPS
     /// </summary>
     public static class AlpsShowCompiler
     {
+        /// <summary>Shortest time bucket. Shorter buckets hold fewer clips each but list long clips more often.</summary>
+        public const float MinBucketSeconds = 0.5f;
+
+        /// <summary>Most time buckets a show gets. Longer shows get longer buckets.</summary>
+        public const int MaxBuckets = 4096;
+
         public static AlpsCompiledShow Compile(PlayableDirector director)
         {
             var show = new AlpsCompiledShow();
@@ -165,6 +171,9 @@ namespace AdzukiSoft.ALPS
             private readonly List<float> _colors = new List<float>();
             private readonly List<float> _gobos = new List<float>();
             private readonly List<string> _userNames = new List<string>();
+            private readonly List<int> _positions = new List<int>();
+            private readonly Dictionary<(int group, int order, int groupSize, int seed), int> _positionRows =
+                new Dictionary<(int group, int order, int groupSize, int seed), int>();
 
             private readonly List<AlpsTarget> _groups = new List<AlpsTarget>();
             private readonly List<int> _groupStart = new List<int>();
@@ -324,6 +333,7 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowEvaluator.ClipBpm] = bpm;
                 row[AlpsShowEvaluator.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
                 row[AlpsShowEvaluator.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
+                row[AlpsShowEvaluator.ClipPositionStart] = AddPositions(groupIndex, seed);
                 WritePhase(row, AlpsShowEvaluator.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixOutCurve, mixOutCurve, 1f, 0f);
@@ -333,6 +343,30 @@ namespace AdzukiSoft.ALPS
                 {
                     AddEffect(effect ?? new AlpsEffect());
                 }
+            }
+
+            /// <summary>
+            /// Writes the order position and mirror flag of every member of the clip's group,
+            /// and returns where they start. Only a random order depends on the seed, so the
+            /// other clips of a group with the same order and grouping share one row.
+            /// </summary>
+            private int AddPositions(int groupIndex, int seed)
+            {
+                var key = (groupIndex, _clipOrder, _clipGroupSize, _clipOrder == AlpsShowEvaluator.OrderRandom ? seed : 0);
+                if (_positionRows.TryGetValue(key, out var existing))
+                {
+                    return existing;
+                }
+
+                var start = _positions.Count;
+                for (var i = 0; i < _clipFixtureCount; i++)
+                {
+                    _positions.Add(AlpsShowEvaluator.OrderPosition(_clipOrder, seed, i, _clipFixtureCount, _clipGroupSize));
+                    _positions.Add(AlpsShowEvaluator.IsMirrored(_clipOrder, i, _clipFixtureCount, _clipGroupSize) ? 1 : 0);
+                }
+
+                _positionRows.Add(key, start);
+                return start;
             }
 
             private void AddEffect(AlpsEffect effect)
@@ -518,7 +552,9 @@ namespace AdzukiSoft.ALPS
                 _show.colors = _colors.ToArray();
                 _show.gobos = _gobos.ToArray();
                 _show.userNames = _userNames.ToArray();
+                _show.positions = _positions.ToArray();
                 _show.groupCount = _groupCount.ToArray();
+                BuildTimeIndex();
 
                 var fixtureCount = 0;
                 foreach (var fixture in _groupFixtures)
@@ -540,6 +576,61 @@ namespace AdzukiSoft.ALPS
                         _show.groupIndex[group * fixtureCount + _groupFixtures[_groupStart[group] + i]] = i;
                     }
                 }
+            }
+
+            /// <summary>
+            /// Splits the show into time buckets and lists the clips overlapping each one, so
+            /// playback only weighs the clips near the current time. A clip from start to end
+            /// is listed in every bucket from the one its start falls in to the one its end
+            /// falls in, found with <see cref="AlpsShowEvaluator.TimeBucket"/> as playback does.
+            /// </summary>
+            private void BuildTimeIndex()
+            {
+                var stride = AlpsShowEvaluator.ClipStride;
+                var clipCount = _clips.Count / stride;
+                var span = 0f;
+                for (var clip = 0; clip < clipCount; clip++)
+                {
+                    span = Mathf.Max(span, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                }
+
+                var seconds = Mathf.Max(MinBucketSeconds, span / MaxBuckets);
+                // Rounding can put span / seconds a hair above MaxBuckets. The show's very end
+                // then falls in the last bucket, which TimeBucket clamps to as well.
+                var buckets = Mathf.Clamp(Mathf.CeilToInt(span / seconds), 1, MaxBuckets);
+                var bucketStart = new int[buckets + 1];
+
+                // Count first, then fill, so every bucket's clips stay in clip order.
+                for (var clip = 0; clip < clipCount; clip++)
+                {
+                    var first = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipStart]);
+                    var last = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                    for (var bucket = first; bucket <= last; bucket++)
+                    {
+                        bucketStart[bucket + 1]++;
+                    }
+                }
+
+                for (var bucket = 0; bucket < buckets; bucket++)
+                {
+                    bucketStart[bucket + 1] += bucketStart[bucket];
+                }
+
+                var bucketClips = new int[bucketStart[buckets]];
+                var filled = new int[buckets];
+                for (var clip = 0; clip < clipCount; clip++)
+                {
+                    var first = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipStart]);
+                    var last = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                    for (var bucket = first; bucket <= last; bucket++)
+                    {
+                        bucketClips[bucketStart[bucket] + filled[bucket]++] = clip;
+                    }
+                }
+
+                _show.bucketStart = bucketStart;
+                _show.bucketClips = bucketClips;
+                _show.bucketSeconds = seconds;
             }
         }
     }

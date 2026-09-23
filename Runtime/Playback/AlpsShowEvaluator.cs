@@ -89,7 +89,12 @@ namespace AdzukiSoft.ALPS
         public const int ClipFadeIn = 11;
         /// <summary>Beats the clip's own fade takes to take its weight out before its end.</summary>
         public const int ClipFadeOut = 12;
-        public const int ClipPhase = 13;
+        /// <summary>
+        /// Row in the positions table where this clip's group members start. Each member takes
+        /// two entries, its order position k and 1 when its pan is mirrored.
+        /// </summary>
+        public const int ClipPositionStart = 13;
+        public const int ClipPhase = 14;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -253,6 +258,8 @@ namespace AdzukiSoft.ALPS
         /// Grouping is applied before the symmetric fold. Symmetric counts outward from the
         /// center, so a positive spread starts in the middle and a value spread puts its first
         /// value there and its last at the edges.
+        /// The compiler writes every clip's positions into the positions table once, so
+        /// playback never runs this, and a random order costs no more than any other.
         /// </summary>
         public static int OrderPosition(int order, int seed, int fixtureIndex, int fixtureCount, int groupSize)
         {
@@ -508,6 +515,69 @@ namespace AdzukiSoft.ALPS
             return Mathf.Lerp(data[offset + i], data[offset + i + 1], x - i);
         }
 
+        /// <summary>
+        /// The time bucket <paramref name="time"/> falls in. Times outside the show fall in
+        /// the first or last bucket, whose clips then all weigh 0.
+        /// </summary>
+        public static int TimeBucket(int[] bucketStart, float bucketSeconds, float time)
+        {
+            var buckets = bucketStart.Length - 1;
+            if (buckets <= 0 || bucketSeconds <= 0f)
+            {
+                return -1;
+            }
+
+            return Mathf.Clamp(Mathf.FloorToInt(time / bucketSeconds), 0, buckets - 1);
+        }
+
+        /// <summary>
+        /// Collects the clips with a weight at <paramref name="time"/> into
+        /// <paramref name="active"/> and their weights, fade included, into
+        /// <paramref name="activeWeight"/>, and returns how many there are. Only the clips of
+        /// the time bucket are looked at. Each bucket lists its clips in clip order, so the
+        /// result stays sorted by layer. Weights do not depend on the fixture, so this runs
+        /// once per frame for all of them.
+        /// </summary>
+        public static int ActiveClips(
+            float[] clips,
+            int[] bucketStart,
+            int[] bucketClips,
+            float bucketSeconds,
+            float time,
+            int[] active,
+            float[] activeWeight)
+        {
+            var bucket = TimeBucket(bucketStart, bucketSeconds, time);
+            if (bucket < 0)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            var end = bucketStart[bucket + 1];
+            for (var i = bucketStart[bucket]; i < end; i++)
+            {
+                var clip = bucketClips[i];
+                var weight = ClipWeight(clips, clip, time);
+                if (weight <= 0f)
+                {
+                    continue;
+                }
+
+                weight *= ClipFade(clips, clip, time);
+                if (weight <= 0f)
+                {
+                    continue;
+                }
+
+                active[count] = clip;
+                activeWeight[count] = weight;
+                count++;
+            }
+
+            return count;
+        }
+
         // ==================================================================================
         // Clip evaluation
         // ==================================================================================
@@ -516,6 +586,8 @@ namespace AdzukiSoft.ALPS
         /// Evaluates one clip for one fixture. Writes channel values into
         /// <paramref name="frame"/> and 1 into <paramref name="written"/> for every channel
         /// the clip drives. Channels the clip leaves alone are not touched.
+        /// <paramref name="fixtureIndex"/> is the fixture's position inside the clip's group,
+        /// and its order position comes from <paramref name="positions"/>.
         /// </summary>
         public static void EvaluateClip(
             float[] clips,
@@ -523,21 +595,20 @@ namespace AdzukiSoft.ALPS
             float[] parameters,
             float[] colors,
             float[] gobos,
+            int[] positions,
             int clip,
             int fixtureIndex,
-            int fixtureCount,
             float time,
             float[] frame,
             float[] written,
             float[] scratch)
         {
             var row = clip * ClipStride;
-            var phaseRow = row + ClipPhase;
-            var order = ToInt(clips[row + ClipOrder]);
             var seed = ToInt(clips[row + ClipSeed]);
-            var groupSize = ToInt(clips[phaseRow + PhaseGroupSize]);
             var beats = Beats(time, clips[row + ClipBpm], clips[row + ClipStart]);
-            var k = OrderPosition(order, seed, fixtureIndex, fixtureCount, groupSize);
+            var positionRow = ToInt(clips[row + ClipPositionStart]) + fixtureIndex * 2;
+            var k = positions[positionRow];
+            var mirrored = positions[positionRow + 1] != 0;
             var isOdd = fixtureIndex % 2 == 0;
 
             var effectStart = ToInt(clips[row + ClipEffectStart]);
@@ -559,7 +630,7 @@ namespace AdzukiSoft.ALPS
 
                 if (kind == KindMove)
                 {
-                    EvaluateMove(clips, effects, parameters, row, e, paramStart, fixtureIndex, fixtureCount, beats, seed, late, frame, written);
+                    EvaluateMove(clips, effects, parameters, row, e, paramStart, k, mirrored, beats, seed, late, frame, written);
                 }
                 else if (kind == KindCone)
                 {
@@ -611,8 +682,8 @@ namespace AdzukiSoft.ALPS
             int clipRow,
             int effect,
             int paramStart,
-            int fixtureIndex,
-            int fixtureCount,
+            int k,
+            bool mirrored,
             float beats,
             int seed,
             float extraCycles,
@@ -633,10 +704,6 @@ namespace AdzukiSoft.ALPS
             frame[FrameTrackEffect] = 0f;
             written[FrameTrackEffect] = 1f;
 
-            var order = ToInt(clips[clipRow + ClipOrder]);
-            var groupSize = ToInt(clips[clipRow + ClipPhase + PhaseGroupSize]);
-            var k = OrderPosition(order, seed, fixtureIndex, fixtureCount, groupSize);
-
             // Only one move reaches a fixture per clip, so this marks whether it wrote pan.
             written[FramePan] = 0f;
 
@@ -655,7 +722,7 @@ namespace AdzukiSoft.ALPS
                 WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, extraCycles + panOffsetCycles, FramePan, frame, written);
             }
 
-            if (written[FramePan] > 0.5f && IsMirrored(order, fixtureIndex, fixtureCount, groupSize))
+            if (mirrored && written[FramePan] > 0.5f)
             {
                 frame[FramePan] = -frame[FramePan];
             }
@@ -1005,7 +1072,8 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// The final frame of one fixture at <paramref name="time"/>.
+        /// The final frame of one fixture at <paramref name="time"/>, from the clips
+        /// <see cref="ActiveClips"/> collected for that time.
         ///
         /// Clips must be sorted by layer. Inside a layer, overlapping clips blend by their
         /// weights. A layer then covers the layers below it by its total weight, per channel,
@@ -1020,7 +1088,10 @@ namespace AdzukiSoft.ALPS
             float[] parameters,
             float[] colors,
             float[] gobos,
-            int clipCount,
+            int[] positions,
+            int[] active,
+            float[] activeWeight,
+            int activeCount,
             int[] groupCount,
             int[] groupIndex,
             int fixture,
@@ -1041,26 +1112,22 @@ namespace AdzukiSoft.ALPS
 
             frame[FrameBrightness] = 0f;
 
-            var c = 0;
-            while (c < clipCount)
+            var a = 0;
+            while (a < activeCount)
             {
-                var layer = ToInt(clips[c * ClipStride + ClipLayer]);
+                // Layers are whole numbers, so the float columns compare exactly.
+                var layer = clips[active[a] * ClipStride + ClipLayer];
                 for (var ch = 0; ch < FrameStride; ch++)
                 {
                     sum[ch] = 0f;
                     weightSum[ch] = 0f;
                 }
 
-                while (c < clipCount && ToInt(clips[c * ClipStride + ClipLayer]) == layer)
+                while (a < activeCount && clips[active[a] * ClipStride + ClipLayer] == layer)
                 {
-                    var clip = c;
-                    c++;
-
-                    var weight = ClipWeight(clips, clip, time) * ClipFade(clips, clip, time);
-                    if (weight <= 0f)
-                    {
-                        continue;
-                    }
+                    var clip = active[a];
+                    var weight = activeWeight[a];
+                    a++;
 
                     var group = ToInt(clips[clip * ClipStride + ClipGroup]);
                     var index = IndexInGroup(groupCount, groupIndex, group, fixture);
@@ -1074,7 +1141,7 @@ namespace AdzukiSoft.ALPS
                         clipWritten[ch] = 0f;
                     }
 
-                    EvaluateClip(clips, effects, parameters, colors, gobos, clip, index, groupCount[group], time, clipFrame, clipWritten, scratch);
+                    EvaluateClip(clips, effects, parameters, colors, gobos, positions, clip, index, time, clipFrame, clipWritten, scratch);
 
                     for (var ch = 0; ch < FrameStride; ch++)
                     {
@@ -1083,7 +1150,8 @@ namespace AdzukiSoft.ALPS
                             continue;
                         }
 
-                        if (IsDiscreteChannel(ch))
+                        // The discrete channels of IsDiscreteChannel, spelled out to spare a call per channel.
+                        if (ch == FrameGobo || ch == FrameTrackEffect)
                         {
                             if (weight > weightSum[ch])
                             {
@@ -1107,7 +1175,7 @@ namespace AdzukiSoft.ALPS
                         continue;
                     }
 
-                    if (IsDiscreteChannel(ch))
+                    if (ch == FrameGobo || ch == FrameTrackEffect)
                     {
                         if (coverage >= 0.5f)
                         {

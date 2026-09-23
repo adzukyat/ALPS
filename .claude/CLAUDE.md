@@ -42,8 +42,10 @@ Do not add `-quit`: with this Test Framework version it can exit before the resu
 
 The arrays have fixed strides defined as constants in the evaluator: clip rows (`ClipStride`, including the shared phase and 16 sampled mix curve points), effect rows (`EffectStride`, per kind scalars `EffectScalarA..`), parameter rows (`ParamStride`, one per `AlpsAnimatableValue`, including its own phase), palette rows, and a per fixture frame of 13 channels (`Frame*`). Changing the model means changing the compiler encoding, the evaluator reads, and usually these strides together.
 
+Playback cost matters more than anything else here, since every array read and float operation is an Udon extern. The compiler precomputes what does not change over time: a positions table (`ClipPositionStart`, the order position and mirror flag of every group member, shared by clips with the same group, order and grouping) and a time index (`bucketStart` / `bucketClips`, the clips overlapping each time bucket in clip order). Each frame `ActiveClips` weighs only the current bucket's clips once, and `EvaluateFixture` walks that list for every fixture.
+
 Key evaluation rules that span files:
-- Order position `k` comes from `OrderPosition` (normal, reverse, symmetric counting outward from the middle, seeded random). Symmetric also mirrors the final pan of the first half (`IsMirrored`).
+- Order position `k` comes from `OrderPosition`, run by the compiler into the positions table (normal, reverse, symmetric counting outward from the middle, seeded random). Symmetric also mirrors the final pan of the first half (`IsMirrored`).
 - A phase is a wave or random. A wave cycle is four shares, rise, high hold, fall and the low hold they leave over (`AlpsShowEvaluator.Wave`). The rise and the fall each have their own ease (`ease` and `fallEase`), both read forwards in time, and invert flips the eased wave. The return leg (`IsReturnLeg`, blackout on return) is the fall plus the low hold.
 - Each effect has a `phaseOffset` that runs every value on it late by that share of a cycle. It travels as `EffectPhaseOffset` and reaches the phase as the `extraCycles` term, so ranges, palettes, circles and blackout all shift together.
 - A parameter value is `value` or `range(phase)`. With spread on it is `spreadRange` instead, the values at the first and last order position, or `spreadRange` to `spreadRangeEnd` by phase when also ranged. The compiler turns each spread into its first value plus a step per position (`StepFromSpread`, divided by `SpreadPositions` like the phase delay), so the evaluator computes `first(phase) + step(phase) * k`. Ranges follow the parameter's own phase if set, otherwise the clip's shared phase, and respect timing (within cycle or per cycle).
@@ -65,7 +67,7 @@ There is no manual bake. `Editor/Build/AlpsBuildHooks.cs` validates and generate
 
 ### Fixtures
 
-`AlpsFixture` is the adapter seam (`AdapterKind`, capture default, apply frame, preview property gathering). Only `AlpsVRSLFixture` exists. The Udon side cannot call the MonoBehaviour adapters, so the VRSL mapping lives as statics on `AlpsShowPlayer` (`ApplyVRSL`, `CaptureVRSL`) and the fixture delegates to them. Gobo rotation is written into each renderer's MaterialPropertyBlock after VRSL rebuilds its own block.
+`AlpsFixture` is the adapter seam (`AdapterKind`, capture default, apply frame, preview property gathering). Only `AlpsVRSLFixture` exists. The Udon side cannot call the MonoBehaviour adapters, so the VRSL mapping lives as statics on `AlpsShowPlayer` (`ApplyVRSL`, `CaptureVRSL`) and the fixture delegates to them. Gobo rotation is written into each renderer's MaterialPropertyBlock after VRSL rebuilds its own block. The player keeps the last frame written to each fixture and skips the write when nothing changed, or writes only the gobo angle when only that changed (`FrameChange`). One fixture per frame is written in full in turn, to repair a block VRSL rebuilt on its own.
 
 ### Containers and arrangement
 

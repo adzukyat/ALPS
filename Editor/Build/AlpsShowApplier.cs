@@ -114,6 +114,10 @@ namespace AdzukiSoft.ALPS.Editor
             player.colors = show.colors;
             player.gobos = show.gobos;
             player.userNames = show.userNames;
+            player.positions = show.positions;
+            player.bucketStart = show.bucketStart;
+            player.bucketClips = show.bucketClips;
+            player.bucketSeconds = show.bucketSeconds;
             player.groupCount = show.groupCount;
             player.groupIndex = show.groupIndex;
 
