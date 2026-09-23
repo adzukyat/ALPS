@@ -81,6 +81,17 @@ namespace AdzukiSoft.ALPS
         public VRStageLighting_DMX_Static[] vrslFixtures = new VRStageLighting_DMX_Static[0];
         public Transform[] aimTransforms = new Transform[0];
 
+        /// <summary>
+        /// Experimental: evaluate the show on the GPU and hand VRSL a DMX grid instead of
+        /// writing every fixture from Udon. Tracking a user is not supported there yet.
+        /// </summary>
+        public bool gpu;
+        public Material gpuFramesMaterial;
+        public Material gpuGridMaterial;
+        public RenderTexture gpuFrames;
+        public RenderTexture gpuGrid;
+        public RenderTexture gpuSpin;
+
         private float[] _defaults;
         private float[] _frame;
         private float[] _clipFrame;
@@ -113,6 +124,8 @@ namespace AdzukiSoft.ALPS
         private bool _initialized;
         private float _lastTime = -1f;
         private bool _anyAiming;
+        private Texture2D _gpuData;
+        private int _idTime;
 
         private void Start()
         {
@@ -197,6 +210,11 @@ namespace AdzukiSoft.ALPS
             _idGobo = VRCShader.PropertyToID("_ProjectionSelection");
             _idGoboRotation = VRCShader.PropertyToID(GoboRotationProperty);
 
+            if (gpu)
+            {
+                InitializeGpu();
+            }
+
             _initialized = true;
         }
 
@@ -210,6 +228,13 @@ namespace AdzukiSoft.ALPS
             // A paused timeline gives the same frame again, unless a light is following a user.
             if (time == _lastTime && !_anyAiming)
             {
+                return;
+            }
+
+            if (gpu)
+            {
+                _lastTime = time;
+                RenderGpu(time);
                 return;
             }
 
@@ -253,6 +278,238 @@ namespace AdzukiSoft.ALPS
                     WriteChanges(fixture, changed);
                 }
             }
+        }
+
+        // ==================================================================================
+        // GPU playback
+        // ==================================================================================
+
+        /// <summary>Width of the show data texture the GPU evaluator reads.</summary>
+        public const int GpuDataWidth = 1024;
+
+        /// <summary>Floats before the first section of the show data, see AlpsEvaluator.hlsl.</summary>
+        public const int GpuHeaderSize = 32;
+
+        /// <summary>Floats per fixture in the fixture info section.</summary>
+        public const int GpuFixtureInfoStride = 4;
+
+        /// <summary>Most fixtures VRSL's 26 x 240 grid holds, one 13 channel row each within three universes.</summary>
+        public const int GpuMaxFixtures = 118;
+
+        /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels.</summary>
+        public const int GpuFrameTexels = 4;
+
+        /// <summary>Size of VRSL's horizontal DMX grid, which its shaders' texel maths expects.</summary>
+        public const int GpuGridWidth = 26;
+        public const int GpuGridHeight = 240;
+
+        /// <summary>
+        /// Puts the fixtures in DMX mode on their own rows, makes the show data texture and
+        /// hands VRSL the grid textures.
+        /// </summary>
+        private void InitializeGpu()
+        {
+            var count = fixtureAdapter.Length;
+            var info = new float[count * GpuFixtureInfoStride];
+            for (var i = 0; i < count; i++)
+            {
+                if (IsVRSL(i))
+                {
+                    CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
+                    ConfigureVRSLDmx(vrslFixtures[i], i, _defaults, i * AlpsShowEvaluator.FrameStride);
+                }
+                else
+                {
+                    WriteNeutralDmxInfo(info, i * GpuFixtureInfoStride);
+                }
+            }
+
+            var data = PackShowData(
+                clips, effects, parameters, colors, gobos, positions,
+                bucketStart, bucketClips, bucketSeconds, groupCount, groupIndex,
+                count, _defaults, info);
+            _gpuData = CreateShowTexture(data);
+            _idTime = VRCShader.PropertyToID("_AlpsTime");
+            BindGpu(_gpuData, gpuFramesMaterial, gpuGridMaterial, gpuFrames, gpuGrid, gpuSpin);
+        }
+
+        private void RenderGpu(float time)
+        {
+            gpuFramesMaterial.SetFloat(_idTime, time);
+            RenderGpuPasses(_gpuData, gpuFramesMaterial, gpuGridMaterial, gpuFrames, gpuGrid, gpuSpin);
+        }
+
+        /// <summary>Points the materials at the show data and VRSL's DMX textures at the grids.</summary>
+        public static void BindGpu(Texture2D data, Material framesMaterial, Material gridMaterial, RenderTexture frames, RenderTexture grid, RenderTexture spin)
+        {
+            framesMaterial.SetTexture("_AlpsData", data);
+            framesMaterial.SetFloat("_AlpsFrameRows", frames.height);
+            gridMaterial.SetTexture("_AlpsData", data);
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID("_Udon_DMXGridRenderTexture"), grid);
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID("_Udon_DMXGridRenderTextureMovement"), grid);
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID("_Udon_DMXGridStrobeOutput"), grid);
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID("_Udon_DMXGridSpinTimer"), spin);
+        }
+
+        /// <summary>Evaluates every fixture into the frames, then lays them out as the grids.</summary>
+        public static void RenderGpuPasses(Texture2D data, Material framesMaterial, Material gridMaterial, RenderTexture frames, RenderTexture grid, RenderTexture spin)
+        {
+            VRCGraphics.Blit(data, frames, framesMaterial, 0);
+            VRCGraphics.Blit(frames, grid, gridMaterial, 0);
+            VRCGraphics.Blit(frames, spin, gridMaterial, 1);
+        }
+
+        /// <summary>
+        /// Lays the compiled show out as the floats of the GPU evaluator's data texture: a
+        /// header of section offsets, then every array in turn, then the fixture defaults and
+        /// the per fixture DMX info. The length is a whole number of texture rows.
+        /// </summary>
+        public static float[] PackShowData(
+            float[] clips,
+            float[] effects,
+            float[] parameters,
+            float[] colors,
+            float[] gobos,
+            int[] positions,
+            int[] bucketStart,
+            int[] bucketClips,
+            float bucketSeconds,
+            int[] groupCount,
+            int[] groupIndex,
+            int fixtureCount,
+            float[] defaults,
+            float[] fixtureInfo)
+        {
+            var clipsAt = GpuHeaderSize;
+            var effectsAt = clipsAt + clips.Length;
+            var parametersAt = effectsAt + effects.Length;
+            var colorsAt = parametersAt + parameters.Length;
+            var gobosAt = colorsAt + colors.Length;
+            var positionsAt = gobosAt + gobos.Length;
+            var bucketStartAt = positionsAt + positions.Length;
+            var bucketClipsAt = bucketStartAt + bucketStart.Length;
+            var groupCountAt = bucketClipsAt + bucketClips.Length;
+            var groupIndexAt = groupCountAt + groupCount.Length;
+            var defaultsAt = groupIndexAt + groupIndex.Length;
+            var fixtureInfoAt = defaultsAt + defaults.Length;
+            var size = fixtureInfoAt + fixtureInfo.Length;
+            var rows = (size + GpuDataWidth - 1) / GpuDataWidth;
+            var data = new float[rows * GpuDataWidth];
+
+            data[0] = 1f;
+            data[1] = clipsAt;
+            data[2] = clips.Length / AlpsShowEvaluator.ClipStride;
+            data[3] = effectsAt;
+            data[4] = parametersAt;
+            data[5] = colorsAt;
+            data[6] = gobosAt;
+            data[7] = positionsAt;
+            data[8] = bucketStartAt;
+            data[9] = Mathf.Max(0, bucketStart.Length - 1);
+            data[10] = bucketClipsAt;
+            data[11] = bucketSeconds;
+            data[12] = groupCountAt;
+            data[13] = groupCount.Length;
+            data[14] = groupIndexAt;
+            data[15] = fixtureCount;
+            data[16] = defaultsAt;
+            data[17] = fixtureInfoAt;
+            data[18] = groupCount.Length > 0 ? groupIndex.Length / groupCount.Length : 0;
+
+            CopyFloats(clips, data, clipsAt);
+            CopyFloats(effects, data, effectsAt);
+            CopyFloats(parameters, data, parametersAt);
+            CopyFloats(colors, data, colorsAt);
+            CopyFloats(gobos, data, gobosAt);
+            CopyInts(positions, data, positionsAt);
+            CopyInts(bucketStart, data, bucketStartAt);
+            CopyInts(bucketClips, data, bucketClipsAt);
+            CopyInts(groupCount, data, groupCountAt);
+            CopyInts(groupIndex, data, groupIndexAt);
+            CopyFloats(defaults, data, defaultsAt);
+            CopyFloats(fixtureInfo, data, fixtureInfoAt);
+            return data;
+        }
+
+        private static void CopyFloats(float[] source, float[] target, int at)
+        {
+            for (var i = 0; i < source.Length; i++)
+            {
+                target[at + i] = source[i];
+            }
+        }
+
+        private static void CopyInts(int[] source, float[] target, int at)
+        {
+            for (var i = 0; i < source.Length; i++)
+            {
+                target[at + i] = source[i];
+            }
+        }
+
+        /// <summary>A linear single float texture holding <paramref name="data"/> row by row.</summary>
+        public static Texture2D CreateShowTexture(float[] data)
+        {
+            var rows = data.Length / GpuDataWidth;
+            var texture = new Texture2D(GpuDataWidth, Mathf.Max(1, rows), TextureFormat.RFloat, false, true);
+            var pixels = new Color[texture.width * texture.height];
+            for (var i = 0; i < data.Length; i++)
+            {
+                pixels[i] = new Color(data[i], 0f, 0f, 0f);
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply(false);
+            return texture;
+        }
+
+        /// <summary>
+        /// What the DMX grid needs to know about a fixture: its pan and tilt ranges, which way
+        /// its gobo turns, and the DMX step between gobos.
+        /// </summary>
+        public static void CaptureVRSLDmxInfo(VRStageLighting_DMX_Static fixture, float[] info, int offset)
+        {
+            info[offset] = fixture.maxMinPan / 2f;
+            info[offset + 1] = fixture.maxMinTilt / 2f;
+            info[offset + 2] = fixture.invertPan ? -1f : 1f;
+            info[offset + 3] = fixture.legacyGoboRange ? 42.5f : 30f;
+        }
+
+        public static void WriteNeutralDmxInfo(float[] info, int offset)
+        {
+            info[offset] = 90f;
+            info[offset + 1] = -90f;
+            info[offset + 2] = 1f;
+            info[offset + 3] = 30f;
+        }
+
+        /// <summary>
+        /// Switches a VRSL fixture to DMX mode on the grid row of <paramref name="index"/>.
+        /// Pan and tilt come from DMX on top of a base of 0 and 90, and colour and brightness
+        /// from the DMX colour over a white tint. The cone length has no DMX channel, so it
+        /// keeps the fixture's default.
+        /// </summary>
+        public static void ConfigureVRSLDmx(VRStageLighting_DMX_Static fixture, int index, float[] defaults, int offset)
+        {
+            var channel = 13 * index + 1;
+            var universe = (channel - 1) / 520 + 1;
+            fixture.enableDMXChannels = true;
+            fixture.useLegacySectorMode = false;
+            fixture.nineUniverseMode = false;
+            fixture.singleChannelMode = false;
+            fixture.enableFineChannels = false;
+            fixture.enableStrobe = false;
+            fixture.enableAutoSpin = true;
+            fixture.dmxUniverse = universe;
+            fixture.dmxChannel = channel - (universe - 1) * 520;
+            fixture.panOffsetBlueGreen = 0f;
+            fixture.tiltOffsetBlue = VrslDefaultTiltOffset;
+            fixture.globalIntensity = 1f;
+            fixture.lightColorTint = Color.white;
+            var share = VrslConeLengthShare(defaults[offset + AlpsShowEvaluator.FrameConeLength]);
+            fixture.coneLength = VrslConeLengthOf(share);
+            fixture.maxConeLength = VrslMeshLength(defaults[offset + AlpsShowEvaluator.FrameConeMeshLength], share);
+            fixture._UpdateInstancedProperties();
         }
 
         private bool IsVRSL(int fixture)

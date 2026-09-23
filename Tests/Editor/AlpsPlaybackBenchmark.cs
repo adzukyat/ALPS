@@ -53,6 +53,214 @@ namespace AdzukiSoft.ALPS.Tests
             yield return new ExitPlayMode();
         }
 
+        private const string GpuWasOnKey = "AdzukiSoft.ALPS.Benchmark.GpuWasOn";
+        private const float CaptureTime = 13.37f;
+
+        /// <summary>
+        /// Renders the same moment of a small show on the CPU path and on the GPU path into
+        /// TestResults~/capture-cpu.png and capture-gpu.png, to compare the two by eye.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Capture_Cpu()
+        {
+            return Capture(false, "capture-cpu.png");
+        }
+
+        [UnityTest]
+        public IEnumerator Capture_Gpu()
+        {
+            return Capture(true, "capture-gpu.png");
+        }
+
+        private static IEnumerator Capture(bool gpu, string file)
+        {
+            if (!Application.isPlaying)
+            {
+                SessionState.SetBool(GpuWasOnKey, AlpsGpuPlayback.Enabled);
+                AlpsGpuPlayback.Enabled = gpu;
+                BuildCaptureScene();
+                yield return new EnterPlayMode();
+            }
+
+            LogAssert.ignoreFailingMessages = true;
+            for (var i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            try
+            {
+                RenderCapture(file);
+            }
+            finally
+            {
+                AlpsGpuPlayback.Enabled = SessionState.GetBool(GpuWasOnKey, false);
+            }
+
+            yield return new ExitPlayMode();
+        }
+
+        private static void RenderCapture(string file)
+        {
+            var player = Object.FindObjectsOfType<UdonBehaviour>().FirstOrDefault(b => b.gameObject.name == AlpsShowSetup.PlayerName);
+            Assert.NotNull(player, "No player in play mode.");
+            var director = Object.FindObjectOfType<PlayableDirector>();
+            director.timeUpdateMode = DirectorUpdateMode.Manual;
+            director.time = CaptureTime;
+            player.RunProgram("_update");
+
+            var camera = Object.FindObjectOfType<Camera>();
+
+            var target = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32);
+            camera.targetTexture = target;
+            camera.Render();
+            var previous = RenderTexture.active;
+            RenderTexture.active = target;
+            var image = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
+            image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+            image.Apply();
+            RenderTexture.active = previous;
+            camera.targetTexture = null;
+            File.WriteAllBytes(Path.Combine(Application.dataPath, "..", "TestResults~", file), image.EncodeToPNG());
+
+            Object.Destroy(image);
+            Object.Destroy(target);
+        }
+
+        private static void BuildCaptureScene()
+        {
+            if (!AssetDatabase.IsValidFolder(Folder))
+            {
+                AssetDatabase.CreateFolder("Assets/AlpsTestFixtures", "Baked");
+            }
+
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            AssetDatabase.DeleteAsset(TimelinePath);
+            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
+            AssetDatabase.CreateAsset(timeline, TimelinePath);
+
+            var director = new GameObject("Director").AddComponent<PlayableDirector>();
+            director.playableAsset = timeline;
+            director.playOnAwake = false;
+            director.timeUpdateMode = DirectorUpdateMode.Manual;
+
+            var camera = new GameObject("Camera").AddComponent<Camera>();
+            camera.transform.position = new Vector3(0f, 4f, -12f);
+            camera.transform.rotation = Quaternion.Euler(12f, 0f, 0f);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.transform.localScale = new Vector3(4f, 1f, 4f);
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab);
+            var container = new GameObject("Container").AddComponent<AlpsContainer>();
+            for (var i = 0; i < 8; i++)
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                instance.transform.SetParent(container.transform, false);
+                instance.transform.localPosition = new Vector3(-7f + i * 2f, 6f, 0f);
+                instance.transform.localRotation = Quaternion.Euler(180f, 0f, 0f);
+                instance.AddComponent<AlpsVRSLFixture>().target = instance.GetComponentInChildren<VRStageLighting_DMX_Static>();
+            }
+
+            var track = timeline.CreateTrack<AlpsTimelineTrack>(null, "Track");
+            var clip = track.CreateClip<AlpsTimelineClip>();
+            clip.start = 0.0;
+            clip.duration = 60.0;
+            var set = MovingSet(0);
+            set.effects.First(e => e.kind == AlpsEffectKind.Gobo).goboStops[0] = new AlpsGoboStop(4);
+            ((AlpsTimelineClip)clip.asset).data = set;
+            director.SetGenericBinding(track, container);
+
+            EditorUtility.SetDirty(timeline);
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
+        [UnityTest]
+        public IEnumerator Benchmark_GpuPlayerFrameCost()
+        {
+            if (!Application.isPlaying)
+            {
+                SessionState.SetBool(GpuWasOnKey, AlpsGpuPlayback.Enabled);
+                AlpsGpuPlayback.Enabled = true;
+                BuildScene();
+                yield return new EnterPlayMode();
+            }
+
+            LogAssert.ignoreFailingMessages = true;
+            for (var i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            try
+            {
+                MeasureGpu();
+            }
+            finally
+            {
+                AlpsGpuPlayback.Enabled = SessionState.GetBool(GpuWasOnKey, false);
+            }
+
+            yield return new ExitPlayMode();
+        }
+
+        private static void MeasureGpu()
+        {
+            var player = Object.FindObjectsOfType<UdonBehaviour>().FirstOrDefault(b => b.gameObject.name == AlpsShowSetup.PlayerName);
+            Assert.NotNull(player, "No player in play mode.");
+            Assert.AreEqual(true, player.GetProgramVariable("gpu"), "The player plays on the GPU.");
+            var director = Object.FindObjectOfType<PlayableDirector>();
+            director.timeUpdateMode = DirectorUpdateMode.Manual;
+            var grid = (RenderTexture)player.GetProgramVariable("gpuGrid");
+            var readback = new Texture2D(1, 1, TextureFormat.RGBAFloat, false, true);
+
+            var start = 10f;
+            double Run(bool render, bool wait)
+            {
+                var watch = new Stopwatch();
+                for (var i = 0; i < 30 + Frames; i++)
+                {
+                    if (i == 30)
+                    {
+                        watch.Start();
+                    }
+
+                    if (render)
+                    {
+                        director.time = start + i * FrameSeconds;
+                        player.RunProgram("_update");
+                    }
+
+                    if (wait)
+                    {
+                        // Reading a texel back waits until the GPU has drawn the grid.
+                        var previous = RenderTexture.active;
+                        RenderTexture.active = grid;
+                        readback.ReadPixels(new Rect(0, 0, 1, 1), 0, 0);
+                        RenderTexture.active = previous;
+                    }
+                }
+
+                watch.Stop();
+                start += 20f;
+                return watch.Elapsed.TotalMilliseconds / Frames;
+            }
+
+            var cpu = Run(true, false);
+            var waited = Run(true, true);
+            var waitOnly = Run(false, true);
+            Object.Destroy(readback);
+
+            var report =
+                $"[ALPS Bench] GPU playback, {Containers * FixturesPerContainer} fixtures\n" +
+                $"[ALPS Bench] player frame on the CPU:          {cpu:0.000} ms\n" +
+                $"[ALPS Bench] until the GPU has drawn the grid: {waited - waitOnly:0.000} ms (readback alone {waitOnly:0.000} ms)";
+            Debug.Log(report);
+            File.WriteAllText(Path.Combine(Application.dataPath, "..", "TestResults~", "benchmark-gpu.txt"), report);
+        }
+
         /// <summary>
         /// Kept out of the test's iterator: entering play mode reloads the domain, and the
         /// iterator comes back without the closure its lambdas would capture into.

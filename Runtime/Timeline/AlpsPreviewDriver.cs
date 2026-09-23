@@ -32,12 +32,26 @@ namespace AdzukiSoft.ALPS
             public readonly float[] sum = new float[AlpsShowEvaluator.FrameStride];
             public readonly float[] weightSum = new float[AlpsShowEvaluator.FrameStride];
             public readonly float[] scratch = new float[1];
+
+            // Experimental GPU playback, set up with the compiled show.
+            public Texture2D gpuData;
+            public Material gpuFramesMaterial;
+            public Material gpuGridMaterial;
+            public RenderTexture gpuFrames;
+            public RenderTexture gpuGrid;
+            public RenderTexture gpuSpin;
         }
 
         private static readonly Dictionary<PlayableDirector, State> States = new Dictionary<PlayableDirector, State>();
 
         /// <summary>Bumped by every clip or profile edit, so compiled shows know to rebuild.</summary>
         public static int Revision { get; private set; }
+
+        /// <summary>
+        /// Experimental: preview on the GPU through VRSL's DMX mode, the way the player does
+        /// with <see cref="AlpsShowPlayer.gpu"/> on. Set by the editor's menu toggle.
+        /// </summary>
+        public static bool UseGpu;
 
         public static void MarkDirty()
         {
@@ -144,6 +158,13 @@ namespace AdzukiSoft.ALPS
             state.lastTime = time;
 
             var show = EnsureCompiled(director, state);
+            if (state.gpuData != null)
+            {
+                state.gpuFramesMaterial.SetFloat("_AlpsTime", time);
+                AlpsShowPlayer.RenderGpuPasses(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+                return;
+            }
+
             var activeCount = AlpsShowEvaluator.ActiveClips(
                 show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, state.active, state.activeWeight);
             for (var fixture = 0; fixture < show.fixtures.Count; fixture++)
@@ -225,7 +246,107 @@ namespace AdzukiSoft.ALPS
                 System.Array.Copy(captured, 0, state.defaults, i * stride, stride);
             }
 
+            ReleaseGpu(state);
+            if (UseGpu)
+            {
+                SetUpGpu(state);
+            }
+
             return state.show;
+        }
+
+        private static void SetUpGpu(State state)
+        {
+            var show = state.show;
+            var count = show.fixtures.Count;
+            if (count == 0)
+            {
+                return;
+            }
+
+            if (count > AlpsShowPlayer.GpuMaxFixtures)
+            {
+                Debug.LogWarning($"[ALPS] GPU preview holds {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, this show has {count}. Previewing on the CPU.");
+                return;
+            }
+
+            var framesShader = Shader.Find(GpuFramesShader);
+            var gridShader = Shader.Find(GpuGridShader);
+            if (framesShader == null || gridShader == null)
+            {
+                Debug.LogWarning("[ALPS] The GPU preview shaders are missing. Previewing on the CPU.");
+                return;
+            }
+
+            var info = new float[count * AlpsShowPlayer.GpuFixtureInfoStride];
+            for (var i = 0; i < count; i++)
+            {
+                var fixture = show.fixtures[i];
+                if (fixture != null && fixture.SupportsGpu)
+                {
+                    fixture.ConfigureGpu(i, state.defaults, i * AlpsShowEvaluator.FrameStride, info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                }
+                else
+                {
+                    AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                }
+            }
+
+            var data = AlpsShowPlayer.PackShowData(
+                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
+                show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
+                count, state.defaults, info);
+            state.gpuData = AlpsShowPlayer.CreateShowTexture(data);
+            state.gpuData.hideFlags = HideFlags.HideAndDontSave;
+            state.gpuFramesMaterial = new Material(framesShader) { hideFlags = HideFlags.HideAndDontSave };
+            state.gpuGridMaterial = new Material(gridShader) { hideFlags = HideFlags.HideAndDontSave };
+            state.gpuFrames = CreateGpuTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, count);
+            state.gpuGrid = CreateGpuTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
+            state.gpuSpin = CreateGpuTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
+            AlpsShowPlayer.BindGpu(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+        }
+
+        public const string GpuFramesShader = "Hidden/ALPS/Frames";
+        public const string GpuGridShader = "Hidden/ALPS/DMX Grid";
+
+        /// <summary>A float target read texel by texel, as the GPU evaluator and VRSL read it.</summary>
+        public static RenderTexture CreateGpuTarget(string name, int width, int height)
+        {
+            var target = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear)
+            {
+                name = name,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                useMipMap = false,
+                autoGenerateMips = false,
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            target.Create();
+            return target;
+        }
+
+        private static void ReleaseGpu(State state)
+        {
+            DestroyGpuObject(state.gpuData);
+            DestroyGpuObject(state.gpuFramesMaterial);
+            DestroyGpuObject(state.gpuGridMaterial);
+            DestroyGpuObject(state.gpuFrames);
+            DestroyGpuObject(state.gpuGrid);
+            DestroyGpuObject(state.gpuSpin);
+            state.gpuData = null;
+            state.gpuFramesMaterial = null;
+            state.gpuGridMaterial = null;
+            state.gpuFrames = null;
+            state.gpuGrid = null;
+            state.gpuSpin = null;
+        }
+
+        private static void DestroyGpuObject(Object target)
+        {
+            if (target != null)
+            {
+                Object.DestroyImmediate(target);
+            }
         }
     }
 }

@@ -76,6 +76,27 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
+            var gpu = AlpsGpuPlayback.Enabled;
+            Material framesMaterial = null;
+            Material gridMaterial = null;
+            RenderTexture frames = null;
+            RenderTexture grid = null;
+            RenderTexture spin = null;
+            if (gpu)
+            {
+                if (show.fixtures.Count > AlpsShowPlayer.GpuMaxFixtures)
+                {
+                    errors.Add($"GPU playback holds {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, the show of director '{director.name}' has {show.fixtures.Count}.");
+                    return;
+                }
+
+                if (!AlpsGpuPlayback.GetAssets(generateTimelines, out framesMaterial, out gridMaterial, out frames, out grid, out spin))
+                {
+                    errors.Add("The GPU playback materials and targets are missing.");
+                    return;
+                }
+            }
+
             var player = AlpsShowSetup.GetOrCreatePlayer(director);
             if (player == null)
             {
@@ -100,6 +121,12 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             CopyShowToPlayer(show, player, director);
+            player.gpu = gpu;
+            player.gpuFramesMaterial = framesMaterial;
+            player.gpuGridMaterial = gridMaterial;
+            player.gpuFrames = frames;
+            player.gpuGrid = grid;
+            player.gpuSpin = spin;
             player.gameObject.SetActive(true);
             UdonSharpEditorUtility.CopyProxyToUdon(player);
             AlpsBuildTimeline.SwapAndRebind(director, source, build);

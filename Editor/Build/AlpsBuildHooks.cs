@@ -53,6 +53,10 @@ namespace AdzukiSoft.ALPS.Editor
             if (hasShow)
             {
                 AlpsShowSetup.EnsureProgramAsset();
+                if (AlpsGpuPlayback.Enabled && !AlpsGpuPlayback.GetAssets(true, out _, out _, out _, out _, out _))
+                {
+                    errors.Add("The GPU playback materials and targets could not be created.");
+                }
             }
 
             foreach (var warning in warnings)
@@ -94,6 +98,12 @@ namespace AdzukiSoft.ALPS.Editor
                 if (scene.isLoaded && AlpsShowApplier.FindShowDirectors(scene).Count > 0)
                 {
                     AlpsShowSetup.EnsureProgramAsset();
+                    if (AlpsGpuPlayback.Enabled)
+                    {
+                        // Assets cannot be made once the play mode scene is being processed.
+                        AlpsGpuPlayback.GetAssets(true, out _, out _, out _, out _, out _);
+                    }
+
                     return;
                 }
             }

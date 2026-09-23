@@ -27,6 +27,12 @@ namespace AdzukiSoft.ALPS
             "coneLength",
             "maxConeLength",
             "selectGOBO",
+            "enableFineChannels",
+            "dmxChannel",
+            "dmxUniverse",
+            "nineUniverseMode",
+            "useLegacySectorMode",
+            "singleChannelMode",
         };
 
         private MaterialPropertyBlock _block;
@@ -34,6 +40,12 @@ namespace AdzukiSoft.ALPS
         private bool _authoredDmx;
         private bool _authoredStrobe;
         private bool _authoredAutoSpin;
+        private bool _authoredFineChannels;
+        private int _authoredChannel;
+        private int _authoredUniverse;
+        private bool _authoredNineUniverses;
+        private bool _authoredSectors;
+        private bool _authoredSingleChannel;
 
         public override int AdapterKind => AlpsShowPlayer.AdapterVRSLDmxStatic;
 
@@ -65,6 +77,12 @@ namespace AdzukiSoft.ALPS
             _authoredDmx = fixture.enableDMXChannels;
             _authoredStrobe = fixture.enableStrobe;
             _authoredAutoSpin = fixture.enableAutoSpin;
+            _authoredFineChannels = fixture.enableFineChannels;
+            _authoredChannel = fixture.dmxChannel;
+            _authoredUniverse = fixture.dmxUniverse;
+            _authoredNineUniverses = fixture.nineUniverseMode;
+            _authoredSectors = fixture.useLegacySectorMode;
+            _authoredSingleChannel = fixture.singleChannelMode;
         }
 
         public override void ApplyFrame(float[] frame, int offset)
@@ -98,6 +116,12 @@ namespace AdzukiSoft.ALPS
             fixture.enableDMXChannels = _authoredDmx;
             fixture.enableStrobe = _authoredStrobe;
             fixture.enableAutoSpin = _authoredAutoSpin;
+            fixture.enableFineChannels = _authoredFineChannels;
+            fixture.dmxChannel = _authoredChannel;
+            fixture.dmxUniverse = _authoredUniverse;
+            fixture.nineUniverseMode = _authoredNineUniverses;
+            fixture.useLegacySectorMode = _authoredSectors;
+            fixture.singleChannelMode = _authoredSingleChannel;
             fixture._UpdateInstancedProperties();
         }
 
@@ -125,6 +149,21 @@ namespace AdzukiSoft.ALPS
             }
 
             _hasAuthored = false;
+        }
+
+        public override bool SupportsGpu => ResolveTarget() != null;
+
+        public override void ConfigureGpu(int index, float[] defaults, int offset, float[] info, int infoOffset)
+        {
+            var fixture = ResolveTarget();
+            if (fixture == null)
+            {
+                base.ConfigureGpu(index, defaults, offset, info, infoOffset);
+                return;
+            }
+
+            AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, infoOffset);
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, index, defaults, offset);
         }
 
         private void Reset()

@@ -52,6 +52,20 @@ namespace AdzukiSoft.ALPS
         {
         }
 
+        /// <summary>Whether the experimental GPU playback can drive this fixture.</summary>
+        public virtual bool SupportsGpu => false;
+
+        /// <summary>
+        /// Readies the fixture for GPU playback as fixture <paramref name="index"/> of the
+        /// show and writes what the GPU needs to know about it into <paramref name="info"/>
+        /// at <paramref name="infoOffset"/>. <paramref name="defaults"/> holds its captured
+        /// default frame at <paramref name="offset"/>.
+        /// </summary>
+        public virtual void ConfigureGpu(int index, float[] defaults, int offset, float[] info, int infoOffset)
+        {
+            AlpsShowPlayer.WriteNeutralDmxInfo(info, infoOffset);
+        }
+
         public override void CollectFixtures(List<AlpsFixture> into)
         {
             into.Add(this);
