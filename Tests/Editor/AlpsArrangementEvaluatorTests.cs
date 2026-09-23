@@ -388,6 +388,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Enums_MatchTheEvaluatorConstants()
         {
+            Assert.That((int)AlpsArrangementShape.Off, Is.EqualTo(AlpsArrangementEvaluator.ShapeOff));
             Assert.That((int)AlpsArrangementShape.Line, Is.EqualTo(AlpsArrangementEvaluator.ShapeLine));
             Assert.That((int)AlpsArrangementShape.Circle, Is.EqualTo(AlpsArrangementEvaluator.ShapeCircle));
             Assert.That((int)AlpsArrangementShape.Polygon, Is.EqualTo(AlpsArrangementEvaluator.ShapePolygon));
@@ -400,7 +401,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.That((int)AlpsArrangementFacing.Inward, Is.EqualTo(AlpsArrangementEvaluator.FacingInward));
             Assert.That((int)AlpsArrangementFacing.Along, Is.EqualTo(AlpsArrangementEvaluator.FacingAlong));
             Assert.That((int)AlpsArrangementFacing.Target, Is.EqualTo(AlpsArrangementEvaluator.FacingTarget));
-            Assert.That(Enum.GetValues(typeof(AlpsArrangementShape)).Length, Is.EqualTo(5));
+            Assert.That(Enum.GetValues(typeof(AlpsArrangementShape)).Length, Is.EqualTo(6));
             Assert.That(Enum.GetValues(typeof(AlpsArrangementFacing)).Length, Is.EqualTo(5));
 
             var settings = new AlpsArrangementSettings();

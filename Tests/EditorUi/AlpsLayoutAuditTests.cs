@@ -28,7 +28,7 @@ namespace AdzukiSoft.ALPS.Tests
 
         /// <summary>
         /// The inspectors measured: the full clip, a plain clip whose cards end on a parameter
-        /// row, and the arrangement once per group of rows its shapes show. The rectangle's
+        /// row, and the container once per group of rows its shapes show. The rectangle's
         /// rows are the grid's without the column count.
         /// </summary>
         private static readonly string[] Views = { "Clip", "PlainClip", "Line", "Circle", "Polygon", "Grid" };
@@ -37,11 +37,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             switch (view)
             {
-                case "Line":
-                    return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Line))
-                    {
-                        SyncNoticeVisible = true,
-                    };
+                case "Line": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Line));
                 case "Circle": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Circle));
                 case "Polygon": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Polygon));
                 case "Grid": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Grid));

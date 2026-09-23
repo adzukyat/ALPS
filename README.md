@@ -22,27 +22,27 @@ Gobo rotation needs VRSL shaders that accept a script driven gobo angle. The pat
 
 Add `ALPS VRSL Fixture` (`Adzuki Live Performance System > ALPS VRSL Fixture`) to each VRSL DMX Static fixture, for example `VRSL-DMX-Mover-Spotlight-H-13CH`. Its `Target` is found in children when left empty.
 
-New fixtures can also come from the Hierarchy: right click (or the + button, or the GameObject menu) and pick `ALPS > Mover Spotlight`, `Mover Wash Light`, `Par Light`, `Blinder`, `Light Bar`, `Multi Light Bar` or `Laser`. Each is the VRSL horizontal mode prefab with `ALPS VRSL Fixture` already on it. It goes under the object you clicked, or next to it when that object is a fixture, so repeating the menu on the last fixture keeps filling the same group.
+New fixtures can also come from the Hierarchy: right click (or the + button, or the GameObject menu) and pick `ALPS > Mover Spotlight`, `Mover Wash Light`, `Par Light`, `Blinder`, `Light Bar`, `Multi Light Bar` or `Laser`. Each is the VRSL horizontal mode prefab with `ALPS VRSL Fixture` already on it. It goes under the object you clicked, or next to it when that object is a fixture, so repeating the menu on the last fixture keeps filling the same container.
 
-### 2. Fixture groups
+### 2. Containers
 
-Add `ALPS Fixture Group` to a parent object and list its fixtures. The list order is the fixture number used by the order, the odd and even split, and every per fixture offset. `Find Fixtures In Children` in the component menu fills the list.
+Put fixtures under an object with `ALPS Container` (`Adzuki Live Performance System > ALPS Container`), or create one from the Hierarchy with `ALPS > Container`. A container holds every fixture below it, inactive ones and ones nested deeper included, and their order in the Hierarchy is the fixture number used by the order, the odd and even split, and every per fixture offset. Reorder them in the Hierarchy to change it. Containers can be nested, so one for the whole rig can hold one per truss.
+
+A container that was an `ALPS Fixture Group` in an older version keeps its Timeline bindings. When its scene opens, the children are reordered to follow the group's old fixture list. Fixtures the list held from outside the container are reported in the console, since only fixtures below it are driven now.
 
 ### 3. Arrangement (optional)
 
-Add `ALPS Arrangement` (`Adzuki Live Performance System > ALPS Arrangement`) to a parent object to lay its direct children out for you, or create one from the Hierarchy with `ALPS > Arrangement`, which comes with a fixture group ready for fixtures to be added under it. Fixtures and any other objects work, and inactive children keep their place. The children are kept laid out while you edit: changing a value or dragging a handle in the Scene view moves them at once, adding, removing or reordering children in the Hierarchy lays them out again, and a child moved by hand goes back. Untick the component to pause it and adjust children by hand.
+A container can also lay its direct children out for you. Its 形状 starts at オフ, which leaves the children where they are. Pick a shape and the children are kept laid out while you edit: changing a value or dragging a handle in the Scene view moves them at once, adding, removing or reordering children in the Hierarchy lays them out again, and a child moved by hand goes back. The first shape starts its line on the first and last child and keeps a rotation they all share, so a hand placed row stays where it is. Set 形状 back to オフ to adjust children by hand. Fixtures and any other objects work, and inactive children keep their place.
 
-- **形状**: 直線 between a start and an end point, 円 with a radius (an arc when 角度 is under 360°), 多角形 with a number of sides, 矩形 with a width and depth, or グリッド with a column count. Everything is in the object's local space, with planar shapes on its XZ plane, so rotate the object to stand a shape up. The start and end points, the radius, the width and the depth have handles in the Scene view.
+- **形状**: オフ, 直線 between a start and an end point, 円 with a radius (an arc when 角度 is under 360°), 多角形 with a number of sides, 矩形 with a width and depth, or グリッド with a column count. Everything is in the object's local space, with planar shapes on its XZ plane, so rotate the object to stand a shape up. The start and end points, the radius, the width and the depth have handles in the Scene view.
 - **配置**: 端から端 puts the first and last child on the ends, 均等割り gives every child an equal share and sits it in the middle of it.
 - **向き**: keep the object's rotation, or turn each child's front (+Z) outward, inward, along the path or toward a point. X/Y/Z回転 turn each child further about its own axes after that.
 - **位置**: 高さ lifts children and 外側 pushes them out of the shape.
-- **S (spread)** works as on clips: a value runs from the first child to the last, in the 並び順 order. A Y回転 spread fans children out, 左右対称 mirrors the first half so the fan opens both ways, 外側 with 左右対称 makes a V, and 高さ on a circle makes a spiral. R is not offered yet, since nothing moves an arrangement over time.
-
-On the same object as a fixture group, the group's list follows the children's order and is hidden in the group's inspector, so the fixture numbers match where the fixtures stand. Adding an arrangement to a group that already has an order reorders the children to keep it. When they cannot be reordered, as inside a prefab instance, the group keeps its list until you choose to sync it from the arrangement's inspector.
+- **S (spread)** works as on clips: a value runs from the first child to the last, in the 並び順 order. A Y回転 spread fans children out, 左右対称 mirrors the first half so the fan opens both ways, 外側 with 左右対称 makes a V, and 高さ on a circle makes a spiral. R is not offered yet, since nothing moves a layout over time.
 
 ### 4. Timeline
 
-Add an `AlpsTimelineTrack` to a Timeline and bind it to a fixture group. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
+Add an `AlpsTimelineTrack` to a Timeline and bind it to a container, or to a single fixture to drive it alone. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
 
 Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTrack` are left untouched.
 
@@ -68,7 +68,7 @@ Scrub or play the Timeline. ALPS writes the evaluated show to the VRSL fixtures.
 
 Nothing needs to be baked by hand.
 
-- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Arrangements are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
+- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Containers are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
 - **Play mode and ClientSim**: the same conversion runs on the play mode scene, so what plays there is what VRChat plays.
 
 A build stops with an error when a director has ALPS tracks but no show player, or when a fixture has no target.

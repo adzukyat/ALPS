@@ -6,22 +6,22 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// ALPS in the Hierarchy's create menu (right click, the + button and the GameObject
-    /// menu): an arrangement that is ready to hold fixtures, and VR Stage Lighting fixtures
-    /// that already carry an ALPS VRSL Fixture.
+    /// menu): a container to hold fixtures, and VR Stage Lighting fixtures that already carry
+    /// an ALPS VRSL Fixture.
     ///
     /// New objects go under the object the menu was opened on, like Unity's own create
     /// items. Opened on a fixture, they go next to it instead, since a light never belongs
-    /// inside another light, so adding one after another fills the same arrangement.
+    /// inside another light, so adding one after another fills the same container.
     /// </summary>
     public static class AlpsCreateMenu
     {
-        public const string ArrangementName = "ALPS Arrangement";
+        public const string ContainerName = "ALPS Container";
 
         private const string Root = "GameObject/ALPS/";
 
         // Up to 49 the items also show in the Hierarchy's context menu. The gap between the
         // two groups draws a separator.
-        private const int ArrangementPriority = 10;
+        private const int ContainerPriority = 10;
         private const int FixturePriority = 30;
 
         private const string PrefabFolder = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/";
@@ -53,15 +53,11 @@ namespace AdzukiSoft.ALPS.Editor
             MoverSpotlight, MoverWashLight, ParLight, Blinder, LightBar, MultiLightBar, Laser,
         };
 
-        /// <summary>An object with an arrangement and a fixture group, ready for fixtures to be added under it.</summary>
-        public static GameObject CreateArrangement(GameObject context)
+        /// <summary>An object with a container, ready for fixtures to be added under it.</summary>
+        public static GameObject CreateContainer(GameObject context)
         {
-            var gameObject = new GameObject(ArrangementName);
-            var arrangement = gameObject.AddComponent<AlpsArrangement>();
-            gameObject.AddComponent<AlpsFixtureGroup>();
-
-            // It starts with no children, so the first layout keeps the default line.
-            AlpsArrangementLayout.Initialize(arrangement, recordUndo: false);
+            var gameObject = new GameObject(ContainerName);
+            gameObject.AddComponent<AlpsContainer>();
             Place(gameObject, context);
             return gameObject;
         }
@@ -87,7 +83,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Puts a new object where the menu was opened, the way Unity's create items do, and
-        /// registers it for undo. An arrangement above it lays it out when the creation is
+        /// registers it for undo. A container above it lays it out when the creation is
         /// published.
         /// </summary>
         private static void Place(GameObject gameObject, GameObject context)
@@ -120,8 +116,8 @@ namespace AdzukiSoft.ALPS.Editor
 
         // --- Menu items -----------------------------------------------------------------------
 
-        [MenuItem(Root + "Arrangement", false, ArrangementPriority)]
-        private static void CreateArrangementItem(MenuCommand command) => Select(CreateArrangement(command.context as GameObject));
+        [MenuItem(Root + "Container", false, ContainerPriority)]
+        private static void CreateContainerItem(MenuCommand command) => Select(CreateContainer(command.context as GameObject));
 
         [MenuItem(Root + "Mover Spotlight", false, FixturePriority)]
         private static void CreateMoverSpotlight(MenuCommand command) => Select(CreateFixture(MoverSpotlight, command.context as GameObject));

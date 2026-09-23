@@ -20,7 +20,8 @@ namespace AdzukiSoft.ALPS
         public static readonly Vector2 AngleLimit = new Vector2(-180f, 180f);
         public static readonly Vector2 SweepLimit = new Vector2(0f, 360f);
 
-        public AlpsArrangementShape shape = AlpsArrangementShape.Line;
+        /// <summary>Off by default, so a container keeps its children where they were put.</summary>
+        public AlpsArrangementShape shape = AlpsArrangementShape.Off;
 
         public AlpsArrangementSpacing spacing = AlpsArrangementSpacing.Ends;
 

@@ -188,19 +188,8 @@ namespace AdzukiSoft.ALPS.Editor
             var track = clip.GetParentTrack() as AlpsTimelineTrack;
             var root = track != null ? track.RootTrack : null;
             var director = TimelineEditor.inspectedDirector;
-            var group = director != null && root != null ? director.GetGenericBinding(root) as AlpsFixtureGroup : null;
-
-            var fixtureCount = 0;
-            if (group != null)
-            {
-                foreach (var fixture in group.fixtures)
-                {
-                    if (fixture != null)
-                    {
-                        fixtureCount++;
-                    }
-                }
-            }
+            var target = director != null && root != null ? director.GetGenericBinding(root) as AlpsTarget : null;
+            var fixtureCount = target != null ? target.Fixtures().Count : 0;
 
             var layer = track != null ? AlpsShowCompiler.LayerOf(director, track) : -1;
 

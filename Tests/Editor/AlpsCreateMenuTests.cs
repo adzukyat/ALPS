@@ -67,25 +67,24 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void CreateArrangement_HoldsFixturesInTheGroup()
+        public void CreateContainer_HoldsTheFixturesAddedUnderIt()
         {
-            var arrangementObject = AlpsCreateMenu.CreateArrangement(null);
-            var arrangement = arrangementObject.GetComponent<AlpsArrangement>();
-            var group = arrangementObject.GetComponent<AlpsFixtureGroup>();
-            Assert.NotNull(arrangement);
-            Assert.NotNull(group);
-            Assert.AreEqual(AlpsCreateMenu.ArrangementName, arrangementObject.name);
+            var containerObject = AlpsCreateMenu.CreateContainer(null);
+            var container = containerObject.GetComponent<AlpsContainer>();
+            Assert.NotNull(container);
+            Assert.AreEqual(AlpsCreateMenu.ContainerName, containerObject.name);
+            Assert.AreEqual(AlpsArrangementShape.Off, container.settings.shape);
 
-            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, arrangementObject);
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, containerObject);
             var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, first);
-
-            // The watcher does this once the creation is published.
-            AlpsArrangementLayout.Refresh(arrangement, recordUndo: false);
-
             CollectionAssert.AreEqual(
                 new AlpsFixture[] { first.GetComponent<AlpsFixture>(), second.GetComponent<AlpsFixture>() },
-                group.fixtures);
-            Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The arrangement lays them out.");
+                container.Fixtures());
+
+            // Picking a shape lays out children that were created on one spot.
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+            Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The container lays them out.");
         }
     }
 }

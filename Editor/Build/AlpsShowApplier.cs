@@ -131,26 +131,16 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// Fixture components only describe the show, and arrangements only place objects
-        /// while editing. VRChat runs none of them, and the transforms they left stay.
+        /// Containers and fixture components only describe the show and place objects while
+        /// editing. VRChat runs none of them, and the transforms they left stay.
         /// </summary>
         private static void StripAuthoringComponents(Scene scene)
         {
             foreach (var root in scene.GetRootGameObjects())
             {
-                foreach (var arrangement in root.GetComponentsInChildren<AlpsArrangement>(true))
+                foreach (var target in root.GetComponentsInChildren<AlpsTarget>(true))
                 {
-                    Object.DestroyImmediate(arrangement);
-                }
-
-                foreach (var group in root.GetComponentsInChildren<AlpsFixtureGroup>(true))
-                {
-                    Object.DestroyImmediate(group);
-                }
-
-                foreach (var fixture in root.GetComponentsInChildren<AlpsFixture>(true))
-                {
-                    Object.DestroyImmediate(fixture);
+                    Object.DestroyImmediate(target);
                 }
             }
         }

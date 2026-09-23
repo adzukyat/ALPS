@@ -7,13 +7,14 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// The arrangement inspector: shape, spacing and order on top, then the shape's size,
-    /// the facing and the offsets in cards.
+    /// The container inspector: the shape, spacing and order on top, then the shape's size,
+    /// the facing and the offsets in cards. While the shape is off only the shape shows,
+    /// since nothing is laid out.
     ///
     /// Like the clip view it owns no state. It edits an <see cref="AlpsArrangementSettings"/>
     /// in place and reports every edit through <see cref="Changed"/>, and the host records
     /// undo and lays the children out. Rows are the clip's parameter rows without R, since
-    /// nothing moves an arrangement over time yet, so S spreads a value over the children.
+    /// nothing moves a layout over time yet, so S spreads a value over the children.
     /// </summary>
     public class AlpsArrangementView : VisualElement
     {
@@ -23,7 +24,6 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsArrangementSettings _defaults = new AlpsArrangementSettings();
         private readonly List<AlpsAnimatableView> _animatables = new List<AlpsAnimatableView>();
 
-        private readonly VisualElement _syncNotice;
         private readonly AlpsSegmentedControl _shape;
         private readonly AlpsSegmentedControl _spacing;
         private readonly AlpsSegmentedControl _order;
@@ -41,6 +41,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly AlpsSegmentedControl _facing;
         private readonly AlpsVectorField _target;
+        private readonly VisualElement _cards;
 
         public AlpsArrangementView(AlpsArrangementSettings settings)
         {
@@ -56,26 +57,14 @@ namespace AdzukiSoft.ALPS.Editor
 
             AlpsInspectorFont.Apply(this);
 
-            // --- Fixture group notice --------------------------------------
-            _syncNotice = new VisualElement();
-            _syncNotice.AddToClassList("alps-multi-notice");
-            _syncNotice.Add(new HelpBox(
-                "子オブジェクトを並べ替えられなかったため、同じオブジェクトのFixture Groupは今の順番のままです。子の順番に同期すると、エフェクトの並び順も配置の順番に揃います。",
-                HelpBoxMessageType.Info));
-            var sync = new Button(RequestSync) { text = "子の順番で同期する" };
-            sync.AddToClassList("alps-profile__button");
-            _syncNotice.Add(sync);
-            Add(_syncNotice);
-            SyncNoticeVisible = false;
-
             // --- Shape, spacing and order ----------------------------------
             var fields = new VisualElement();
             fields.AddToClassList("alps-flow9");
             Add(fields);
 
-            _shape = new AlpsSegmentedControl("形状", "直線", "円", "多角形", "矩形", "グリッド")
+            _shape = new AlpsSegmentedControl("形状", "オフ", "直線", "円", "多角形", "矩形", "グリッド")
             {
-                tooltip = "子オブジェクトを並べる形です。円は角度を360°未満にすると円弧になります。",
+                tooltip = "子オブジェクトを並べる形です。オフでは子オブジェクトを動かしません。円は角度を360°未満にすると円弧になります。",
             };
             _shape.SetValueWithoutNotify((int)settings.shape);
             _shape.RegisterValueChangedCallback(evt =>
@@ -125,6 +114,7 @@ namespace AdzukiSoft.ALPS.Editor
             var cards = new VisualElement();
             cards.AddToClassList("alps-stack");
             Add(cards);
+            _cards = cards;
 
             // --- Shape card ------------------------------------------------
             var shapeCard = Card("形", "並べる線や円の大きさです。始点、終点、半径、幅と奥行きはシーン上のハンドルでも動かせます。", "shape");
@@ -193,22 +183,6 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Raised after any edit so the host can lay the children out.</summary>
         public event Action Changed;
 
-        /// <summary>Raised by the notice's button, when the user syncs the fixture group anyway.</summary>
-        public event Action SyncRequested;
-
-        /// <summary>Runs the notice's button: syncs the fixture group with the children's order.</summary>
-        public void RequestSync()
-        {
-            SyncRequested?.Invoke();
-        }
-
-        /// <summary>Shows the notice that the fixture group was left in its own order.</summary>
-        public bool SyncNoticeVisible
-        {
-            get => _syncNotice.style.display != DisplayStyle.None;
-            set => AlpsPhaseSettingsView.Show(_syncNotice, value);
-        }
-
         /// <summary>
         /// Shows the settings' values again after something other than this view changed
         /// them, such as a scene handle.
@@ -237,10 +211,14 @@ namespace AdzukiSoft.ALPS.Editor
         public void Refresh()
         {
             var shape = _settings.shape;
+            var arranges = shape != AlpsArrangementShape.Off;
             var round = shape == AlpsArrangementShape.Circle || shape == AlpsArrangementShape.Polygon;
             var boxed = shape == AlpsArrangementShape.Rectangle || shape == AlpsArrangementShape.Grid;
 
-            AlpsPhaseSettingsView.Show(_seed, _settings.order == AlpsOrderMode.Random);
+            AlpsPhaseSettingsView.Show(_spacing, arranges);
+            AlpsPhaseSettingsView.Show(_order, arranges);
+            AlpsPhaseSettingsView.Show(_seed, arranges && _settings.order == AlpsOrderMode.Random);
+            AlpsPhaseSettingsView.Show(_cards, arranges);
             AlpsPhaseSettingsView.Show(_start, shape == AlpsArrangementShape.Line);
             AlpsPhaseSettingsView.Show(_end, shape == AlpsArrangementShape.Line);
             AlpsPhaseSettingsView.Show(_sides, shape == AlpsArrangementShape.Polygon);

@@ -168,7 +168,7 @@ namespace AdzukiSoft.ALPS.Tests
             director.extrapolationMode = DirectorWrapMode.Hold;
 
             var groupObject = new GameObject("PreviewSmoke Fixtures");
-            var group = groupObject.AddComponent<AlpsFixtureGroup>();
+            var group = groupObject.AddComponent<AlpsContainer>();
             for (var i = 0; i < 2; i++)
             {
                 var fixtureObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -185,7 +185,6 @@ namespace AdzukiSoft.ALPS.Tests
                 vrslFixture.selectGOBO = 1;
                 var alpsFixture = fixtureObject.AddComponent<AlpsVRSLFixture>();
                 alpsFixture.target = vrslFixture;
-                group.fixtures.Add(alpsFixture);
             }
 
             foreach (var track in timeline.GetRootTracks())
@@ -218,16 +217,16 @@ namespace AdzukiSoft.ALPS.Tests
         {
             public readonly PlayableDirector Director;
             public readonly TimelineAsset Timeline;
-            public readonly AlpsFixtureGroup Group;
+            public readonly AlpsContainer Group;
             public readonly VRStageLighting_DMX_Static[] Fixtures;
 
             public Context()
             {
                 Director = Object.FindObjectOfType<PlayableDirector>();
                 Timeline = Director != null ? Director.playableAsset as TimelineAsset : null;
-                Group = Object.FindObjectOfType<AlpsFixtureGroup>();
+                Group = Object.FindObjectOfType<AlpsContainer>();
                 Fixtures = Group != null
-                    ? Group.fixtures.Select(f => ((AlpsVRSLFixture)f).target).ToArray()
+                    ? Group.Fixtures().Select(f => ((AlpsVRSLFixture)f).target).ToArray()
                     : Array.Empty<VRStageLighting_DMX_Static>();
             }
 

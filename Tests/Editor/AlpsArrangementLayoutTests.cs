@@ -6,13 +6,15 @@ using Unity.Collections;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// Laying an arrangement's children out in a scene: which transforms are written, undo,
-    /// the first layout over children that are already placed, the fixture group sync, and
-    /// the watcher that picks the arrangements a change touches.
+    /// A container in a scene: which transforms a layout writes, undo, the first layout over
+    /// children that are already placed, the fixtures it holds, the fixture list of an old
+    /// fixture group turned into the children's order, and the watcher that picks the
+    /// containers a change touches.
     /// </summary>
     public class AlpsArrangementLayoutTests
     {
@@ -58,13 +60,23 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Apply_DisabledLeavesTheChildrenAlone()
+        public void Apply_OffLeavesTheChildrenAlone()
         {
-            var arrangement = Rig(2);
-            arrangement.enabled = false;
+            var arrangement = Rig(2, initialized: false, shape: AlpsArrangementShape.Off);
 
             Assert.That(AlpsArrangementLayout.Apply(arrangement, recordUndo: false), Is.EqualTo(0));
+            AlpsArrangementLayout.Refresh(arrangement, recordUndo: false);
             AssertPosition(new Vector3(0f, 0f, 7f), Children(arrangement)[0]);
+            Assert.That(arrangement.Initialized, Is.False, "The first layout waits for a shape.");
+        }
+
+        [Test]
+        public void Container_StartsWithTheShapeOff()
+        {
+            var container = new GameObject("Container").AddComponent<AlpsContainer>();
+
+            Assert.That(container.settings.shape, Is.EqualTo(AlpsArrangementShape.Off));
+            Assert.That(container.Arranges, Is.False);
         }
 
         [Test]
@@ -139,60 +151,77 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Initialize_KeepsTheFixtureGroupOrder()
+        public void CommitEdit_StartsFromTheChildrenWhenAShapeIsFirstPicked()
         {
-            var arrangement = Rig(3, initialized: false);
-            var fixtures = Children(arrangement).Select(child => child.gameObject.AddComponent<AlpsVRSLFixture>()).ToArray();
-            var group = arrangement.gameObject.AddComponent<AlpsFixtureGroup>();
-            group.fixtures = new List<AlpsFixture> { fixtures[2], fixtures[0], fixtures[1] };
+            var container = Rig(2, initialized: false, shape: AlpsArrangementShape.Off);
+            var children = Children(container);
 
-            AlpsArrangementLayout.Refresh(arrangement, recordUndo: false);
+            AlpsArrangementLayout.CommitEdit(container);
+            Assert.That(container.Initialized, Is.False);
 
-            CollectionAssert.AreEqual(new AlpsFixture[] { fixtures[2], fixtures[0], fixtures[1] }, group.fixtures);
-            Assert.That(fixtures[2].transform.GetSiblingIndex(), Is.EqualTo(0));
-            Assert.That(fixtures[0].transform.GetSiblingIndex(), Is.EqualTo(1));
-            Assert.That(arrangement.SyncFixtureGroup, Is.True);
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+
+            Assert.That(container.Initialized, Is.True);
+            AssertPosition(new Vector3(0f, 0f, 7f), children[0]);
+            AssertPosition(new Vector3(1f, 0f, 7f), children[1]);
         }
 
-        // ------------------------------------------------------------------- sync
+        // --------------------------------------------------------------- fixtures
 
         [Test]
-        public void Sync_FollowsTheChildrenAndKeepsFixturesFromOutside()
+        public void Fixtures_FollowTheHierarchyOrderBelowTheContainer()
         {
-            var arrangement = Rig(2);
-            var children = Children(arrangement);
+            var container = Rig(2, shape: AlpsArrangementShape.Off);
+            var children = Children(container);
             var first = children[0].gameObject.AddComponent<AlpsVRSLFixture>();
             var nested = new GameObject("Head");
             nested.transform.SetParent(children[1], false);
+            nested.SetActive(false);
             var second = nested.AddComponent<AlpsVRSLFixture>();
-            var outside = new GameObject("Outside").AddComponent<AlpsVRSLFixture>();
-            var group = arrangement.gameObject.AddComponent<AlpsFixtureGroup>();
-            group.fixtures = new List<AlpsFixture> { outside, second, null };
+            new GameObject("Outside").AddComponent<AlpsVRSLFixture>();
 
-            Assert.That(AlpsArrangementLayout.SyncFixtureGroup(arrangement, recordUndo: false), Is.True);
-            CollectionAssert.AreEqual(new AlpsFixture[] { first, second, outside }, group.fixtures);
+            CollectionAssert.AreEqual(new AlpsFixture[] { first, second }, container.Fixtures());
 
             children[1].SetSiblingIndex(0);
-            AlpsArrangementLayout.SyncFixtureGroup(arrangement, recordUndo: false);
-            CollectionAssert.AreEqual(new AlpsFixture[] { second, first, outside }, group.fixtures);
-            Assert.That(AlpsArrangementLayout.SyncFixtureGroup(arrangement, recordUndo: false), Is.False);
+            CollectionAssert.AreEqual(new AlpsFixture[] { second, first }, container.Fixtures());
+            CollectionAssert.AreEqual(new AlpsFixture[] { second }, second.Fixtures(), "A fixture drives itself.");
         }
 
         [Test]
-        public void Sync_OffOrDisabledLeavesTheListAlone()
+        public void Migrate_OrdersTheChildrenLikeTheOldFixtureList()
         {
-            var arrangement = Rig(2);
-            var fixtures = Children(arrangement).Select(child => child.gameObject.AddComponent<AlpsVRSLFixture>()).ToArray();
-            var group = arrangement.gameObject.AddComponent<AlpsFixtureGroup>();
-            group.fixtures = new List<AlpsFixture> { fixtures[1] };
+            var container = Rig(3, shape: AlpsArrangementShape.Off);
+            var children = Children(container);
+            var fixtures = children.Select(child => child.gameObject.AddComponent<AlpsVRSLFixture>()).ToArray();
+            var holder = new GameObject("Holder").transform;
+            holder.SetParent(container.transform, false);
+            var inner = Enumerable.Range(0, 2).Select(i =>
+            {
+                var head = new GameObject($"Head {i}");
+                head.transform.SetParent(holder, false);
+                return head.AddComponent<AlpsVRSLFixture>();
+            }).ToArray();
+            var outside = new GameObject("Outside").AddComponent<AlpsVRSLFixture>();
+            container.LegacyFixtures.AddRange(new AlpsFixture[] { fixtures[2], inner[1], outside, null, fixtures[0], inner[0] });
 
-            arrangement.SyncFixtureGroup = false;
-            Assert.That(AlpsArrangementLayout.SyncFixtureGroup(arrangement, recordUndo: false), Is.False);
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Outside"));
+            Assert.That(AlpsArrangementLayout.MigrateFixtureOrder(container, recordUndo: false), Is.True);
 
-            arrangement.SyncFixtureGroup = true;
-            arrangement.enabled = false;
-            Assert.That(AlpsArrangementLayout.SyncFixtureGroup(arrangement, recordUndo: false), Is.False);
-            CollectionAssert.AreEqual(new AlpsFixture[] { fixtures[1] }, group.fixtures);
+            CollectionAssert.AreEqual(new[] { fixtures[2], inner[1], inner[0], fixtures[0], fixtures[1] }, container.Fixtures());
+            Assert.That(container.LegacyFixtures, Is.Empty);
+            Assert.That(AlpsArrangementLayout.MigrateFixtureOrder(container, recordUndo: false), Is.False);
+        }
+
+        [Test]
+        public void Migrate_RunsOverAnOpenedScene()
+        {
+            var container = Rig(2, shape: AlpsArrangementShape.Off);
+            var fixtures = Children(container).Select(child => child.gameObject.AddComponent<AlpsVRSLFixture>()).ToArray();
+            container.LegacyFixtures.AddRange(new AlpsFixture[] { fixtures[1], fixtures[0] });
+
+            Assert.That(AlpsArrangementWatcher.MigrateScene(container.gameObject.scene), Is.EqualTo(1));
+            CollectionAssert.AreEqual(new AlpsFixture[] { fixtures[1], fixtures[0] }, container.Fixtures());
         }
 
         // ---------------------------------------------------------------- watcher
@@ -219,10 +248,10 @@ namespace AdzukiSoft.ALPS.Tests
             arrangement.transform.SetParent(nested.transform, false);
             AssertCollects(arrangement, ObjectChangeKind.ChangeGameObjectStructureHierarchy, nested.GetInstanceID());
 
-            var set = new HashSet<AlpsArrangement>();
+            var set = new HashSet<AlpsContainer>();
             AlpsArrangementWatcher.CollectFor(ObjectChangeKind.ChangeGameObjectOrComponentProperties, grandchild.GetInstanceID(), 0, 0, set);
             AlpsArrangementWatcher.CollectFor(ObjectChangeKind.CreateGameObjectHierarchy, elsewhere.GetInstanceID(), 0, 0, set);
-            Assert.That(set, Is.Empty, "A move below a slot or outside the arrangement changes no layout.");
+            Assert.That(set, Is.Empty, "A move below a slot or outside the container changes no layout.");
         }
 
         [Test]
@@ -240,7 +269,7 @@ namespace AdzukiSoft.ALPS.Tests
                 var stream = builder.ToStream(Allocator.Temp);
                 try
                 {
-                    var set = new HashSet<AlpsArrangement>();
+                    var set = new HashSet<AlpsContainer>();
                     AlpsArrangementWatcher.Collect(ref stream, set);
                     Assert.That(set, Is.EquivalentTo(new[] { arrangement }));
                 }
@@ -345,6 +374,10 @@ namespace AdzukiSoft.ALPS.Tests
             var settings = new AlpsArrangementSettings();
 
             Assert.That(AlpsArrangementHandles.Outline(settings, points), Is.False);
+            Assert.That(points, Is.Empty, "Off has no path.");
+
+            settings.shape = AlpsArrangementShape.Line;
+            Assert.That(AlpsArrangementHandles.Outline(settings, points), Is.False);
             CollectionAssert.AreEqual(new[] { settings.lineStart, settings.lineEnd }, points);
 
             settings.shape = AlpsArrangementShape.Rectangle;
@@ -367,10 +400,10 @@ namespace AdzukiSoft.ALPS.Tests
         // ---------------------------------------------------------------- helpers
 
         /// <summary>
-        /// An arrangement on a line from (-2,0,0) to (2,0,0) with <paramref name="count"/>
-        /// children placed off it at (i, 0, 7).
+        /// A container laying out on a line from (-2,0,0) to (2,0,0) with
+        /// <paramref name="count"/> children placed off it at (i, 0, 7).
         /// </summary>
-        private static AlpsArrangement Rig(int count, bool initialized = true)
+        private static AlpsContainer Rig(int count, bool initialized = true, AlpsArrangementShape shape = AlpsArrangementShape.Line)
         {
             var rig = new GameObject("Rig");
             for (var i = 0; i < count; i++)
@@ -380,12 +413,13 @@ namespace AdzukiSoft.ALPS.Tests
                 child.localPosition = new Vector3(i, 0f, 7f);
             }
 
-            var arrangement = rig.AddComponent<AlpsArrangement>();
+            var arrangement = rig.AddComponent<AlpsContainer>();
+            arrangement.settings.shape = shape;
             arrangement.Initialized = initialized;
             return arrangement;
         }
 
-        private static Transform[] Children(AlpsArrangement arrangement)
+        private static Transform[] Children(AlpsContainer arrangement)
         {
             return Enumerable.Range(0, arrangement.transform.childCount).Select(arrangement.transform.GetChild).ToArray();
         }
@@ -406,9 +440,9 @@ namespace AdzukiSoft.ALPS.Tests
             return nearest;
         }
 
-        private static void AssertCollects(AlpsArrangement arrangement, ObjectChangeKind kind, int id, int idA = 0, int idB = 0)
+        private static void AssertCollects(AlpsContainer arrangement, ObjectChangeKind kind, int id, int idA = 0, int idB = 0)
         {
-            var set = new HashSet<AlpsArrangement>();
+            var set = new HashSet<AlpsContainer>();
             AlpsArrangementWatcher.CollectFor(kind, id, idA, idB, set);
             Assert.That(set, Does.Contain(arrangement), kind.ToString());
         }

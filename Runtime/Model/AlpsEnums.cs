@@ -54,11 +54,13 @@ namespace AdzukiSoft.ALPS
     }
 
     /// <summary>
-    /// Arrangement shape: the path a container places its children on. An arc is a circle
-    /// whose sweep is under a full turn. Order matches <see cref="AlpsArrangementEvaluator"/>.
+    /// Arrangement shape: the path a container places its children on, or off to leave them
+    /// alone. An arc is a circle whose sweep is under a full turn. Order matches
+    /// <see cref="AlpsArrangementEvaluator"/>.
     /// </summary>
     public enum AlpsArrangementShape
     {
+        Off,
         Line,
         Circle,
         Polygon,

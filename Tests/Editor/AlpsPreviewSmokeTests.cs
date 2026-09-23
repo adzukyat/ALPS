@@ -61,6 +61,28 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Level3_TrackBoundToOneFixtureDrivesItAlone()
+        {
+            var context = OpenFreshScene();
+            var single = context.Fixtures[1].GetComponent<AlpsFixture>();
+            foreach (var track in context.Timeline.GetRootTracks().OfType<AlpsTimelineTrack>())
+            {
+                context.Director.SetGenericBinding(track, single);
+            }
+
+            context.Director.RebuildGraph();
+
+            var show = AlpsShowCompiler.Compile(context.Director);
+            Assert.IsEmpty(show.warnings, string.Join("\n", show.warnings));
+            CollectionAssert.AreEqual(new[] { single }, show.fixtures);
+
+            // Alone, it is the first fixture of its track, so the spread adds nothing.
+            var states = context.Sample(BaseTime);
+            Assert.AreEqual(-Pan, states[1].Pan, Tolerance, states[1].ToString());
+            Assert.AreEqual(0f, states[0].Intensity, Tolerance, "A fixture outside the binding is not driven.");
+        }
+
+        [Test]
         public void Level3_ClipEditsReachThePreviewWithoutRebuildingTheGraph()
         {
             var context = OpenFreshScene();
@@ -273,8 +295,8 @@ namespace AdzukiSoft.ALPS.Tests
             var activationBinding = context.Director.GetGenericBinding(sourceActivation);
             var animationBinding = context.Director.GetGenericBinding(sourceAnimation);
 
-            // An arrangement is authoring only as well, and goes with the fixture components.
-            new GameObject("Arrangement").AddComponent<AlpsArrangement>();
+            // A container that binds no track is authoring only as well.
+            new GameObject("Container").AddComponent<AlpsContainer>();
 
             var errors = new List<string>();
             try
@@ -296,8 +318,7 @@ namespace AdzukiSoft.ALPS.Tests
 
                 Assert.IsTrue(player.gameObject.activeSelf);
                 Assert.IsNull(Object.FindObjectOfType<AlpsFixture>(), "Authoring components are stripped.");
-                Assert.IsNull(Object.FindObjectOfType<AlpsFixtureGroup>());
-                Assert.IsNull(Object.FindObjectOfType<AlpsArrangement>());
+                Assert.IsNull(Object.FindObjectOfType<AlpsContainer>());
 
                 player.EvaluateAt(AccentTime);
                 for (var i = 0; i < context.Fixtures.Length; i++)
@@ -337,16 +358,13 @@ namespace AdzukiSoft.ALPS.Tests
             var child = new GameObject("Fixture");
             child.transform.SetParent(rig.transform, false);
             child.transform.localPosition = new Vector3(1f, 2f, 3f);
-            var fixture = child.AddComponent<AlpsVRSLFixture>();
-            rig.AddComponent<AlpsFixtureGroup>().fixtures.Add(fixture);
-            rig.AddComponent<AlpsArrangement>();
+            child.AddComponent<AlpsVRSLFixture>();
+            rig.AddComponent<AlpsContainer>();
 
             var errors = new List<string>();
             Assert.IsTrue(AlpsShowApplier.Apply(scene, false, errors), string.Join("\n", errors));
 
-            Assert.IsNull(Object.FindObjectOfType<AlpsArrangement>());
-            Assert.IsNull(Object.FindObjectOfType<AlpsFixtureGroup>());
-            Assert.IsNull(Object.FindObjectOfType<AlpsFixture>());
+            Assert.IsNull(Object.FindObjectOfType<AlpsTarget>());
             Assert.AreEqual(new Vector3(1f, 2f, 3f), child.transform.localPosition, "The transforms stay as they were left.");
         }
 

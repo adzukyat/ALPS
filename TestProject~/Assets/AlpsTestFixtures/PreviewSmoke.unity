@@ -590,9 +590,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbebbd1bc8f84c4ea9726bbe048a4d13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fixtures:
-  - {fileID: 497128362}
-  - {fileID: 780876893}
 --- !u!4 &1528492124
 Transform:
   m_ObjectHideFlags: 0

@@ -9,8 +9,8 @@ using UnityEngine.Timeline;
 using VRSL;
 
 /// <summary>
-/// Rebuilds the demo: fixture groups on the scene's VRSL universes, an example timeline
-/// with one ALPS track per group, and the show player. Safe to run again at any time.
+/// Rebuilds the demo: containers on the scene's VRSL universes, an example timeline
+/// with one ALPS track per container, and the show player. Safe to run again at any time.
 /// </summary>
 public static class AlpsDemoBuilder
 {
@@ -87,9 +87,9 @@ public static class AlpsDemoBuilder
         }
     }
 
-    private static Dictionary<string, AlpsFixtureGroup> BuildGroups(UnityEngine.SceneManagement.Scene scene)
+    private static Dictionary<string, AlpsContainer> BuildGroups(UnityEngine.SceneManagement.Scene scene)
     {
-        var groups = new Dictionary<string, AlpsFixtureGroup>();
+        var groups = new Dictionary<string, AlpsContainer>();
         foreach (var transform in Object.FindObjectsOfType<Transform>(true))
         {
             if (!transform.name.StartsWith(GroupPrefix))
@@ -97,13 +97,12 @@ public static class AlpsDemoBuilder
                 continue;
             }
 
-            var group = transform.GetComponent<AlpsFixtureGroup>();
-            if (group == null)
+            var container = transform.GetComponent<AlpsContainer>();
+            if (container == null)
             {
-                group = transform.gameObject.AddComponent<AlpsFixtureGroup>();
+                container = transform.gameObject.AddComponent<AlpsContainer>();
             }
 
-            group.fixtures.Clear();
             foreach (var vrsl in transform.GetComponentsInChildren<VRStageLighting_DMX_Static>(true))
             {
                 var fixture = vrsl.GetComponent<AlpsVRSLFixture>();
@@ -113,11 +112,10 @@ public static class AlpsDemoBuilder
                 }
 
                 fixture.target = vrsl;
-                group.fixtures.Add(fixture);
             }
 
-            EditorUtility.SetDirty(group);
-            groups[transform.name] = group;
+            EditorUtility.SetDirty(container);
+            groups[transform.name] = container;
         }
 
         return groups;

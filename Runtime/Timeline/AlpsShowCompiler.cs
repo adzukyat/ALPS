@@ -43,7 +43,7 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Compiles clips without a timeline, for one group of <paramref name="fixtureCount"/>
+        /// Compiles clips without a timeline, for one target of <paramref name="fixtureCount"/>
         /// fixtures at the show tempo <paramref name="bpm"/>. Clips must be listed in layer
         /// order. Mix curves are linear.
         /// </summary>
@@ -93,7 +93,7 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// The layer <see cref="Compile"/> gives <paramref name="target"/>, or -1 when the track
-        /// plays nothing because it is muted or its root is not bound to a fixture group.
+        /// plays nothing because it is muted or its root is not bound to a container or fixture.
         /// Follows the same walk and skip rules as the compiler, so seeds derived from it match.
         /// </summary>
         public static int LayerOf(PlayableDirector director, AlpsTimelineTrack target)
@@ -123,7 +123,7 @@ namespace AdzukiSoft.ALPS
             var muted = parentMuted || track.muted;
             if (track is AlpsTimelineTrack alpsTrack)
             {
-                var plays = !muted && (director.GetGenericBinding(alpsTrack.RootTrack) as AlpsFixtureGroup) != null;
+                var plays = !muted && (director.GetGenericBinding(alpsTrack.RootTrack) as AlpsTarget) != null;
                 if (alpsTrack == target)
                 {
                     return plays ? layer : -1;
@@ -166,7 +166,7 @@ namespace AdzukiSoft.ALPS
             private readonly List<float> _gobos = new List<float>();
             private readonly List<string> _userNames = new List<string>();
 
-            private readonly List<AlpsFixtureGroup> _groups = new List<AlpsFixtureGroup>();
+            private readonly List<AlpsTarget> _groups = new List<AlpsTarget>();
             private readonly List<int> _groupStart = new List<int>();
             private readonly List<int> _groupCount = new List<int>();
             private readonly List<int> _groupFixtures = new List<int>();
@@ -202,10 +202,10 @@ namespace AdzukiSoft.ALPS
             private void AddTrack(AlpsTimelineTrack track)
             {
                 var root = track.RootTrack;
-                var group = _director.GetGenericBinding(root) as AlpsFixtureGroup;
+                var group = _director.GetGenericBinding(root) as AlpsTarget;
                 if (group == null)
                 {
-                    _show.warnings.Add($"Track '{track.name}' is not bound to an ALPS Fixture Group, so it plays nothing.");
+                    _show.warnings.Add($"Track '{track.name}' is not bound to an ALPS Container or a fixture, so it plays nothing.");
                     return;
                 }
 
@@ -217,7 +217,7 @@ namespace AdzukiSoft.ALPS
                 }
             }
 
-            private int AddGroup(AlpsFixtureGroup group)
+            private int AddGroup(AlpsTarget group)
             {
                 var existing = _groups.IndexOf(group);
                 if (existing >= 0)
@@ -228,7 +228,7 @@ namespace AdzukiSoft.ALPS
                 _groups.Add(group);
                 _groupStart.Add(_groupFixtures.Count);
                 var count = 0;
-                foreach (var fixture in group.fixtures)
+                foreach (var fixture in group.Fixtures())
                 {
                     if (fixture == null)
                     {
@@ -237,7 +237,7 @@ namespace AdzukiSoft.ALPS
 
                     if (!fixture.IsReady)
                     {
-                        _show.errors.Add($"Fixture '{fixture.name}' in group '{group.name}' has nothing to drive. Assign its target.");
+                        _show.errors.Add($"Fixture '{fixture.name}' in '{group.name}' has nothing to drive. Assign its target.");
                     }
 
                     var index = _show.fixtures.IndexOf(fixture);
@@ -253,7 +253,7 @@ namespace AdzukiSoft.ALPS
 
                 if (count == 0)
                 {
-                    _show.warnings.Add($"Fixture group '{group.name}' has no fixtures.");
+                    _show.warnings.Add($"'{group.name}' has no fixtures.");
                 }
 
                 _groupCount.Add(count);

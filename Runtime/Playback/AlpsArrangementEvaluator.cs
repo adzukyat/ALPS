@@ -27,11 +27,13 @@ namespace AdzukiSoft.ALPS
     {
         // --- Enum values, mirrored from the serialized model ------------------------------
 
-        public const int ShapeLine = 0;
-        public const int ShapeCircle = 1;
-        public const int ShapePolygon = 2;
-        public const int ShapeRectangle = 3;
-        public const int ShapeGrid = 4;
+        /// <summary>Leaves the children where they are. Nothing is laid out, so no slot is ever evaluated.</summary>
+        public const int ShapeOff = 0;
+        public const int ShapeLine = 1;
+        public const int ShapeCircle = 2;
+        public const int ShapePolygon = 3;
+        public const int ShapeRectangle = 4;
+        public const int ShapeGrid = 5;
 
         public const int SpacingEnds = 0;
         public const int SpacingCentered = 1;

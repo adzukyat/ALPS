@@ -7,8 +7,8 @@ using UnityEngine;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Lays an <see cref="AlpsArrangement"/>'s children out and keeps the fixture group on
-    /// the same object in their order.
+    /// Lays an <see cref="AlpsContainer"/>'s children out, and turns the fixture list of the
+    /// fixture group a container used to be into the order of its children.
     ///
     /// Only children whose pose actually differs are written. That keeps prefab instances
     /// free of empty overrides, and it is what lets the watcher run after every change
@@ -29,91 +29,85 @@ namespace AdzukiSoft.ALPS.Editor
         public static bool CanRun =>
             !EditorApplication.isPlayingOrWillChangePlaymode && !BuildPipeline.isBuildingPlayer;
 
-        /// <summary>A disabled arrangement leaves its children and the fixture group alone.</summary>
-        public static bool IsActive(AlpsArrangement arrangement)
-        {
-            return arrangement != null && arrangement.enabled;
-        }
-
-        /// <summary>True while the fixture group next to the arrangement follows the children.</summary>
-        public static bool SyncsFixtureGroup(AlpsArrangement arrangement)
-        {
-            return IsActive(arrangement) &&
-                   arrangement.SyncFixtureGroup &&
-                   arrangement.GetComponent<AlpsFixtureGroup>() != null;
-        }
-
         /// <summary>
-        /// Everything a layout of <paramref name="arrangement"/> can write: the component, its
-        /// children's transforms and the fixture group. An edit snapshots these first.
+        /// Everything a layout of <paramref name="container"/> can write: the component and its
+        /// children's transforms. An edit snapshots these first.
         /// </summary>
-        public static Object[] UndoTargets(AlpsArrangement arrangement)
+        public static Object[] UndoTargets(AlpsContainer container)
         {
-            var targets = new List<Object> { arrangement };
-            var root = arrangement.transform;
+            var targets = new List<Object> { container };
+            var root = container.transform;
             for (var i = 0; i < root.childCount; i++)
             {
                 targets.Add(root.GetChild(i));
-            }
-
-            var group = arrangement.GetComponent<AlpsFixtureGroup>();
-            if (group != null)
-            {
-                targets.Add(group);
             }
 
             return targets.ToArray();
         }
 
         /// <summary>
-        /// Brings an arrangement up to date: the first layout on its first run, then the
-        /// children's poses and the fixture group's order.
+        /// Brings a container up to date: an old fixture list turned into the children's
+        /// order, then, with a shape on, the first layout on its first run and the children's
+        /// poses.
         /// </summary>
-        public static void Refresh(AlpsArrangement arrangement, bool recordUndo)
+        public static void Refresh(AlpsContainer container, bool recordUndo)
         {
-            if (!IsActive(arrangement))
+            if (container == null)
             {
                 return;
             }
 
-            if (!arrangement.Initialized)
+            MigrateFixtureOrder(container, recordUndo);
+            if (!container.Arranges)
             {
-                Initialize(arrangement, recordUndo);
+                return;
             }
 
-            Apply(arrangement, recordUndo);
-            SyncFixtureGroup(arrangement, recordUndo);
+            if (!container.Initialized)
+            {
+                Initialize(container, recordUndo);
+            }
+
+            Apply(container, recordUndo);
         }
 
         /// <summary>
         /// Writes an edit made straight into the settings: marks the component changed and
-        /// lays the children out. The caller has already snapshotted
-        /// <see cref="UndoTargets"/>, so nothing more is recorded.
+        /// lays the children out, starting from the children as they are the first time a
+        /// shape is picked. The caller has already snapshotted <see cref="UndoTargets"/>, so
+        /// nothing more is recorded.
         /// </summary>
-        public static void CommitEdit(AlpsArrangement arrangement)
+        public static void CommitEdit(AlpsContainer container)
         {
-            MarkChanged(arrangement);
-            Apply(arrangement, recordUndo: false);
-            SyncFixtureGroup(arrangement, recordUndo: false);
+            MarkChanged(container);
+            if (!container.Arranges)
+            {
+                return;
+            }
+
+            if (!container.Initialized)
+            {
+                Initialize(container, recordUndo: false);
+            }
+
+            Apply(container, recordUndo: false);
         }
 
-        /// <summary>Puts every child where the settings place it. Returns how many moved.</summary>
-        public static int Apply(AlpsArrangement arrangement, bool recordUndo)
+        /// <summary>
+        /// Puts every child where the settings place it. Returns how many moved. A container
+        /// whose shape is off moves nothing.
+        /// </summary>
+        public static int Apply(AlpsContainer container, bool recordUndo)
         {
-            if (!IsActive(arrangement))
+            if (container == null || !container.Arranges)
             {
                 return 0;
             }
 
-            if (arrangement.settings == null)
-            {
-                arrangement.settings = new AlpsArrangementSettings();
-            }
-
-            var settings = arrangement.settings;
+            var settings = container.settings;
             settings.EnsureLimits();
 
-            var root = arrangement.transform;
+            var root = container.transform;
             var count = root.childCount;
             var layout = new float[AlpsArrangementEvaluator.LayoutStride];
             var values = new float[AlpsArrangementEvaluator.ValueCount];
@@ -147,82 +141,97 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// The first layout of an arrangement added to children that are already placed. The
-        /// fixture group keeps its order, because the children are reordered to match it,
-        /// and the line starts on the first and last child, so a hand placed row stays where
-        /// it is. A shared rotation of every child is kept too.
+        /// The first layout of children that are already placed: the line starts on the first
+        /// and last child, so a hand placed row stays where it is, and a rotation every child
+        /// shares is kept too.
         /// </summary>
-        public static void Initialize(AlpsArrangement arrangement, bool recordUndo)
+        public static void Initialize(AlpsContainer container, bool recordUndo)
         {
             if (recordUndo)
             {
-                Undo.RecordObject(arrangement, UndoName);
+                Undo.RecordObject(container, UndoName);
             }
 
-            if (arrangement.settings == null)
+            if (container.settings == null)
             {
-                arrangement.settings = new AlpsArrangementSettings();
+                container.settings = new AlpsArrangementSettings();
             }
 
-            arrangement.settings.EnsureLimits();
-            AdoptFixtureGroupOrder(arrangement, recordUndo);
-            SeedFromChildren(arrangement);
-            arrangement.Initialized = true;
-            MarkChanged(arrangement);
+            container.settings.EnsureLimits();
+            SeedFromChildren(container);
+            container.Initialized = true;
+            MarkChanged(container);
         }
 
         /// <summary>
-        /// The fixture list a synced group holds: every fixture under the arrangement in
-        /// hierarchy order, which is the slot order, then any fixture the list already had
-        /// from outside the arrangement, so nothing it held is dropped.
+        /// Turns the fixture list a container kept from when it was a fixture group into the
+        /// order of its children, so the show keeps its fixture order, and clears the list.
+        /// Returns whether there was a list.
+        ///
+        /// At every level below the container, the children holding listed fixtures move to
+        /// the front in the order the list first names them, and the rest follow in the order
+        /// they had. Children of a prefab instance cannot be moved, and listed fixtures outside
+        /// the container are no longer driven, so both are reported in the console.
         /// </summary>
-        public static List<AlpsFixture> ExpectedFixtures(AlpsArrangement arrangement, AlpsFixtureGroup group)
+        public static bool MigrateFixtureOrder(AlpsContainer container, bool recordUndo)
         {
-            var expected = arrangement.GetComponentsInChildren<AlpsFixture>(true).ToList();
-            if (group != null && group.fixtures != null)
+            var legacy = container.LegacyFixtures;
+            if (legacy == null || legacy.Count == 0)
             {
-                foreach (var fixture in group.fixtures)
+                return false;
+            }
+
+            if (recordUndo)
+            {
+                Undo.RecordObject(container, UndoName);
+            }
+
+            var root = container.transform;
+            var rank = new Dictionary<Transform, int>();
+            var outside = new List<string>();
+            for (var i = 0; i < legacy.Count; i++)
+            {
+                var fixture = legacy[i];
+                if (fixture == null)
                 {
-                    if (fixture != null &&
-                        !fixture.transform.IsChildOf(arrangement.transform) &&
-                        !expected.Contains(fixture))
+                    continue;
+                }
+
+                if (!fixture.transform.IsChildOf(root))
+                {
+                    outside.Add(fixture.name);
+                    continue;
+                }
+
+                for (var current = fixture.transform; current != root; current = current.parent)
+                {
+                    if (!rank.ContainsKey(current))
                     {
-                        expected.Add(fixture);
+                        rank.Add(current, i);
                     }
                 }
             }
 
-            return expected;
-        }
+            var locked = new List<string>();
+            OrderChildren(root, rank, recordUndo, locked);
 
-        /// <summary>True when the group already lists its fixtures in the children's order.</summary>
-        public static bool FixtureGroupMatches(AlpsArrangement arrangement, AlpsFixtureGroup group)
-        {
-            return group.fixtures != null && group.fixtures.SequenceEqual(ExpectedFixtures(arrangement, group));
-        }
+            legacy.Clear();
+            MarkChanged(container);
 
-        /// <summary>Writes the children's order into the fixture group. Returns whether it changed.</summary>
-        public static bool SyncFixtureGroup(AlpsArrangement arrangement, bool recordUndo)
-        {
-            if (!SyncsFixtureGroup(arrangement))
+            if (locked.Count > 0)
             {
-                return false;
+                Debug.LogWarning(
+                    $"[ALPS] '{container.name}' now takes its fixture order from the hierarchy, but the children of {string.Join(", ", locked)} belong to a prefab and could not be reordered. Check the order of the fixtures below them.",
+                    container);
             }
 
-            var group = arrangement.GetComponent<AlpsFixtureGroup>();
-            if (FixtureGroupMatches(arrangement, group))
+            if (outside.Count > 0)
             {
-                return false;
+                Debug.LogWarning(
+                    $"[ALPS] '{container.name}' drives the fixtures below it. {string.Join(", ", outside)} were listed in its fixture group but are not below it. Move them under it to keep driving them.",
+                    container);
             }
 
-            var expected = ExpectedFixtures(arrangement, group);
-            if (recordUndo)
-            {
-                Undo.RecordObject(group, UndoName);
-            }
-
-            group.fixtures = expected;
-            MarkChanged(group);
             return true;
         }
 
@@ -244,80 +253,56 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// Orders the children the way the fixture group lists their fixtures, so syncing the
-        /// group afterwards keeps its order. Children with no listed fixture follow in the
-        /// order they had. Children of a prefab instance cannot be reordered, so the group
-        /// keeps its list unsynced until the user syncs it.
+        /// Orders <paramref name="parent"/>'s children by their rank, the first list position
+        /// of a fixture inside them, then does the same one level down. Unranked children keep
+        /// their order after the ranked ones.
         /// </summary>
-        private static void AdoptFixtureGroupOrder(AlpsArrangement arrangement, bool recordUndo)
+        private static void OrderChildren(Transform parent, Dictionary<Transform, int> rank, bool recordUndo, List<string> locked)
         {
-            var group = arrangement.GetComponent<AlpsFixtureGroup>();
-            if (group == null || group.fixtures == null)
+            var children = new List<Transform>();
+            for (var i = 0; i < parent.childCount; i++)
+            {
+                children.Add(parent.GetChild(i));
+            }
+
+            var ranked = children.Where(rank.ContainsKey).OrderBy(child => rank[child]).ToList();
+            if (ranked.Count == 0)
             {
                 return;
             }
 
-            var root = arrangement.transform;
-            var ordered = new List<Transform>();
-            foreach (var fixture in group.fixtures)
+            var ordered = ranked.Concat(children.Where(child => !rank.ContainsKey(child))).ToList();
+            if (!ordered.SequenceEqual(children))
             {
-                var slot = fixture != null ? SlotOf(root, fixture.transform) : null;
-                if (slot != null && !ordered.Contains(slot))
+                if (PrefabUtility.IsPartOfPrefabInstance(parent.gameObject) &&
+                    ordered.Any(PrefabUtility.IsPartOfPrefabInstance))
                 {
-                    ordered.Add(slot);
-                }
-            }
-
-            if (ordered.Count == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < root.childCount; i++)
-            {
-                var child = root.GetChild(i);
-                if (!ordered.Contains(child))
-                {
-                    ordered.Add(child);
-                }
-            }
-
-            var inOrder = true;
-            for (var i = 0; i < ordered.Count; i++)
-            {
-                if (ordered[i].GetSiblingIndex() != i)
-                {
-                    inOrder = false;
-                    break;
-                }
-            }
-
-            if (inOrder)
-            {
-                return;
-            }
-
-            if (PrefabUtility.IsPartOfPrefabInstance(arrangement.gameObject))
-            {
-                arrangement.SyncFixtureGroup = false;
-                return;
-            }
-
-            for (var i = 0; i < ordered.Count; i++)
-            {
-                if (ordered[i].GetSiblingIndex() == i)
-                {
-                    continue;
-                }
-
-                if (recordUndo)
-                {
-                    Undo.SetSiblingIndex(ordered[i], i, UndoName);
+                    locked.Add(parent.name);
                 }
                 else
                 {
-                    ordered[i].SetSiblingIndex(i);
+                    for (var i = 0; i < ordered.Count; i++)
+                    {
+                        if (ordered[i].GetSiblingIndex() == i)
+                        {
+                            continue;
+                        }
+
+                        if (recordUndo)
+                        {
+                            Undo.SetSiblingIndex(ordered[i], i, UndoName);
+                        }
+                        else
+                        {
+                            ordered[i].SetSiblingIndex(i);
+                        }
+                    }
                 }
+            }
+
+            foreach (var child in ranked)
+            {
+                OrderChildren(child, rank, recordUndo, locked);
             }
         }
 
@@ -326,10 +311,10 @@ namespace AdzukiSoft.ALPS.Editor
         /// every child shares. A lone child, or children all on one spot, get the default
         /// line moved onto them.
         /// </summary>
-        private static void SeedFromChildren(AlpsArrangement arrangement)
+        private static void SeedFromChildren(AlpsContainer container)
         {
-            var settings = arrangement.settings;
-            var root = arrangement.transform;
+            var settings = container.settings;
+            var root = container.transform;
             var count = root.childCount;
             if (count == 0)
             {
@@ -396,14 +381,20 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        [MenuItem("CONTEXT/AlpsArrangement/Rearrange Children")]
+        [MenuItem("CONTEXT/AlpsContainer/Rearrange Children")]
         private static void Rearrange(MenuCommand command)
         {
-            if (command.context is AlpsArrangement arrangement)
+            if (command.context is AlpsContainer container)
             {
-                Undo.RegisterCompleteObjectUndo(UndoTargets(arrangement), UndoName);
-                Refresh(arrangement, recordUndo: false);
+                Undo.RegisterCompleteObjectUndo(UndoTargets(container), UndoName);
+                Refresh(container, recordUndo: false);
             }
+        }
+
+        [MenuItem("CONTEXT/AlpsContainer/Rearrange Children", true)]
+        private static bool CanRearrange(MenuCommand command)
+        {
+            return command.context is AlpsContainer container && container.Arranges;
         }
     }
 }

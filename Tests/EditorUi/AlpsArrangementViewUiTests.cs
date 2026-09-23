@@ -14,9 +14,9 @@ using Object = UnityEngine.Object;
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// Covers the arrangement inspector: that it builds styled, that its rows leave R out,
-    /// that each shape shows its own rows, that an edit moves the children, and how it and
-    /// the fixture group's inspector share the fixture order.
+    /// Covers the container inspector: that it builds styled, that its rows leave R out,
+    /// that each shape shows its own rows and off shows none, and that an edit moves the
+    /// children.
     /// </summary>
     public class AlpsArrangementViewUiTests
     {
@@ -41,7 +41,7 @@ namespace AdzukiSoft.ALPS.Tests
             try
             {
                 inspector = UnityEditor.Editor.CreateEditor(arrangement);
-                Assert.IsInstanceOf<AlpsArrangementEditor>(inspector);
+                Assert.IsInstanceOf<AlpsContainerEditor>(inspector);
 
                 var host = inspector.CreateInspectorGUI();
                 var view = host.Q<AlpsArrangementView>();
@@ -62,7 +62,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Rows_LeaveRangeOutAndReadASavedRangeAsOff()
         {
-            var settings = new AlpsArrangementSettings();
+            var settings = new AlpsArrangementSettings { shape = AlpsArrangementShape.Line };
             settings.height.isRange = true;
             settings.height.range = new Vector2(-3f, 3f);
 
@@ -78,7 +78,8 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsFalse(ranges.Any(IsShown), "No range or spread slider shows.");
         }
 
-        [TestCase(AlpsArrangementShape.Line, new[] { "始点", "終点" }, new[] { "半径", "辺の数", "幅", "列数" })]
+        [TestCase(AlpsArrangementShape.Off, new string[0], new[] { "始点", "半径", "辺の数", "幅", "列数", "配置", "並び順", "高さ", "Y回転" })]
+        [TestCase(AlpsArrangementShape.Line, new[] { "始点", "終点", "配置", "並び順", "高さ" }, new[] { "半径", "辺の数", "幅", "列数" })]
         [TestCase(AlpsArrangementShape.Circle, new[] { "半径", "回転", "角度" }, new[] { "始点", "辺の数", "幅" })]
         [TestCase(AlpsArrangementShape.Polygon, new[] { "辺の数", "半径", "回転" }, new[] { "角度", "始点", "幅" })]
         [TestCase(AlpsArrangementShape.Rectangle, new[] { "幅", "奥行き" }, new[] { "列数", "半径", "始点" })]
@@ -101,7 +102,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Facing_ShowsTheTargetOnlyWhileFacingIt()
         {
-            var settings = new AlpsArrangementSettings();
+            var settings = new AlpsArrangementSettings { shape = AlpsArrangementShape.Line };
             var view = new AlpsArrangementView(settings);
             Assert.IsFalse(HasVisibleLabel(view, "注視点", typeof(AlpsVectorField)));
             Assert.IsFalse(HasVisibleLabel(view, "シード"));
@@ -159,72 +160,7 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
-        [Test]
-        public void SyncNotice_ShowsWhileTheGroupKeepsItsOrderAndSyncsOnRequest()
-        {
-            var arrangement = Rig(2, initialized: true);
-            var fixtures = Enumerable.Range(0, 2)
-                .Select(i => arrangement.transform.GetChild(i).gameObject.AddComponent<AlpsVRSLFixture>())
-                .ToArray();
-            var group = arrangement.gameObject.AddComponent<AlpsFixtureGroup>();
-            group.fixtures = new List<AlpsFixture> { fixtures[1], fixtures[0] };
-            arrangement.SyncFixtureGroup = false;
-
-            UnityEditor.Editor inspector = null;
-            try
-            {
-                inspector = UnityEditor.Editor.CreateEditor(arrangement);
-                var view = inspector.CreateInspectorGUI().Q<AlpsArrangementView>();
-                Assert.IsTrue(view.SyncNoticeVisible);
-                CollectionAssert.AreEqual(new AlpsFixture[] { fixtures[1], fixtures[0] }, group.fixtures);
-
-                view.RequestSync();
-
-                Assert.IsTrue(arrangement.SyncFixtureGroup);
-                Assert.IsFalse(view.SyncNoticeVisible);
-                CollectionAssert.AreEqual(new AlpsFixture[] { fixtures[0], fixtures[1] }, group.fixtures);
-            }
-            finally
-            {
-                if (inspector != null)
-                {
-                    Object.DestroyImmediate(inspector);
-                }
-            }
-        }
-
-        [Test]
-        public void FixtureGroupEditor_HidesTheListWhileAnArrangementSyncsIt()
-        {
-            var arrangement = Rig(1, initialized: true);
-            var group = arrangement.gameObject.AddComponent<AlpsFixtureGroup>();
-
-            UnityEditor.Editor inspector = null;
-            try
-            {
-                inspector = UnityEditor.Editor.CreateEditor(group);
-                Assert.IsInstanceOf<AlpsFixtureGroupEditor>(inspector);
-                var synced = inspector.CreateInspectorGUI();
-                Assert.NotNull(synced.Q<HelpBox>("alps-fixture-group-synced"));
-                Assert.IsNull(synced.Q<PropertyField>(), "The list is not shown while it follows the children.");
-                Object.DestroyImmediate(inspector);
-
-                arrangement.enabled = false;
-                inspector = UnityEditor.Editor.CreateEditor(group);
-                var own = inspector.CreateInspectorGUI();
-                Assert.IsNull(own.Q<HelpBox>("alps-fixture-group-synced"));
-                Assert.NotNull(own.Q<PropertyField>(), "Without a syncing arrangement the group shows its fields.");
-            }
-            finally
-            {
-                if (inspector != null)
-                {
-                    Object.DestroyImmediate(inspector);
-                }
-            }
-        }
-
-        private static AlpsArrangement Rig(int count, bool initialized)
+        private static AlpsContainer Rig(int count, bool initialized)
         {
             var rig = new GameObject("Rig");
             for (var i = 0; i < count; i++)
@@ -234,7 +170,8 @@ namespace AdzukiSoft.ALPS.Tests
                 child.localPosition = new Vector3(i, 0f, 7f);
             }
 
-            var arrangement = rig.AddComponent<AlpsArrangement>();
+            var arrangement = rig.AddComponent<AlpsContainer>();
+            arrangement.settings.shape = AlpsArrangementShape.Line;
             arrangement.Initialized = initialized;
             return arrangement;
         }

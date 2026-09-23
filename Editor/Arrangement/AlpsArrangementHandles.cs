@@ -6,9 +6,9 @@ using UnityEngine.Rendering;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// What an arrangement shows and lets you drag in the Scene view: the path its children
-    /// sit on, each slot's number and facing, the line ends and the target as move handles,
-    /// and dots that pull the radius, the width and the depth.
+    /// What a container with a shape on shows and lets you drag in the Scene view: the path
+    /// its children sit on, each slot's number and facing, the line ends and the target as
+    /// move handles, and dots that pull the radius, the width and the depth.
     ///
     /// The path is drawn where the children are, lifted by the height and pushed out by the
     /// outward offset, so it runs through them rather than along the container's plane.
@@ -148,24 +148,24 @@ namespace AdzukiSoft.ALPS.Editor
             return false;
         }
 
-        /// <summary>Draws the arrangement and runs its handles. Returns whether a handle changed a value.</summary>
-        public static bool OnSceneGUI(AlpsArrangement arrangement)
+        /// <summary>Draws the layout and runs its handles. Returns whether a handle changed a value.</summary>
+        public static bool OnSceneGUI(AlpsContainer container)
         {
-            var settings = arrangement.settings;
-            if (settings == null)
+            var settings = container.settings;
+            if (settings == null || settings.shape == AlpsArrangementShape.Off)
             {
                 return false;
             }
 
             settings.EnsureLimits();
-            var root = arrangement.transform;
+            var root = container.transform;
             var zTest = Handles.zTest;
             Handles.zTest = CompareFunction.Always;
             try
             {
                 DrawOutline(root, settings);
                 DrawSlots(root);
-                return DoHandles(arrangement, root, settings);
+                return DoHandles(container, root, settings);
             }
             finally
             {
@@ -223,15 +223,15 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        private static bool DoHandles(AlpsArrangement arrangement, Transform root, AlpsArrangementSettings settings)
+        private static bool DoHandles(AlpsContainer container, Transform root, AlpsArrangementSettings settings)
         {
             var handleRotation = Tools.pivotRotation == PivotRotation.Local ? root.rotation : Quaternion.identity;
             var changed = false;
 
             if (settings.shape == AlpsArrangementShape.Line)
             {
-                changed |= MovePoint(arrangement, root, handleRotation, settings.lineStart, value => settings.lineStart = value);
-                changed |= MovePoint(arrangement, root, handleRotation, settings.lineEnd, value => settings.lineEnd = value);
+                changed |= MovePoint(container, root, handleRotation, settings.lineStart, value => settings.lineStart = value);
+                changed |= MovePoint(container, root, handleRotation, settings.lineEnd, value => settings.lineEnd = value);
             }
 
             if (settings.facing == AlpsArrangementFacing.Target)
@@ -242,7 +242,7 @@ namespace AdzukiSoft.ALPS.Editor
                     Handles.SphereHandleCap(0, world, Quaternion.identity, HandleUtility.GetHandleSize(world) * 0.12f, EventType.Repaint);
                 }
 
-                changed |= MovePoint(arrangement, root, handleRotation, settings.target, value => settings.target = value);
+                changed |= MovePoint(container, root, handleRotation, settings.target, value => settings.target = value);
             }
 
             // The dots sit on the drawn path, so they carry its lift and outward offset.
@@ -262,7 +262,7 @@ namespace AdzukiSoft.ALPS.Editor
 
                 var direction = AlpsArrangementEvaluator.Direction(angle);
                 var offset = RadiusOffset(settings);
-                changed |= SlideDot(arrangement, root, direction * (settings.radius.value + offset) + lift, direction,
+                changed |= SlideDot(container, root, direction * (settings.radius.value + offset) + lift, direction,
                     local => settings.radius.value = RadiusAt(local, angle, offset, settings.radius.limit));
             }
 
@@ -276,14 +276,14 @@ namespace AdzukiSoft.ALPS.Editor
                 if (!settings.width.hasSpread)
                 {
                     var edge = Vector3.right * (settings.width.value * 0.5f + sideOffset) + lift + forward;
-                    changed |= SlideDot(arrangement, root, edge, Vector3.right,
+                    changed |= SlideDot(container, root, edge, Vector3.right,
                         local => settings.width.value = ExtentAt(local.x, sideOffset, settings.width.limit));
                 }
 
                 if (!settings.depth.hasSpread)
                 {
                     var edge = Vector3.forward * (settings.depth.value * 0.5f + outward) + lift;
-                    changed |= SlideDot(arrangement, root, edge, Vector3.forward,
+                    changed |= SlideDot(container, root, edge, Vector3.forward,
                         local => settings.depth.value = ExtentAt(local.z, outward, settings.depth.limit));
                 }
             }
@@ -292,7 +292,7 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         private static bool MovePoint(
-            AlpsArrangement arrangement,
+            AlpsContainer container,
             Transform root,
             Quaternion handleRotation,
             Vector3 local,
@@ -305,12 +305,12 @@ namespace AdzukiSoft.ALPS.Editor
                 return false;
             }
 
-            Commit(arrangement, () => write(root.InverseTransformPoint(moved)));
+            Commit(container, () => write(root.InverseTransformPoint(moved)));
             return true;
         }
 
         private static bool SlideDot(
-            AlpsArrangement arrangement,
+            AlpsContainer container,
             Transform root,
             Vector3 local,
             Vector3 localDirection,
@@ -330,15 +330,15 @@ namespace AdzukiSoft.ALPS.Editor
                 return false;
             }
 
-            Commit(arrangement, () => write(root.InverseTransformPoint(moved)));
+            Commit(container, () => write(root.InverseTransformPoint(moved)));
             return true;
         }
 
-        private static void Commit(AlpsArrangement arrangement, System.Action edit)
+        private static void Commit(AlpsContainer container, System.Action edit)
         {
-            Undo.RecordObjects(AlpsArrangementLayout.UndoTargets(arrangement), "Move Arrangement Handle");
+            Undo.RecordObjects(AlpsArrangementLayout.UndoTargets(container), "Move Container Handle");
             edit();
-            AlpsArrangementLayout.CommitEdit(arrangement);
+            AlpsArrangementLayout.CommitEdit(container);
         }
 
         /// <summary>A value as the outline reads it: the value, or the first slot's while S is on.</summary>

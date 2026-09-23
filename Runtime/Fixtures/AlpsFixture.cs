@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Timeline;
 
@@ -7,9 +8,11 @@ namespace AdzukiSoft.ALPS
     /// One light the show can drive. Subclasses adapt the logical frame of
     /// <see cref="AlpsShowEvaluator"/> to a concrete fixture system, so the timeline side
     /// never needs to know which lighting package is underneath.
+    ///
+    /// A track can be bound to one fixture directly, which then drives it alone.
     /// </summary>
     [DisallowMultipleComponent]
-    public abstract class AlpsFixture : MonoBehaviour
+    public abstract class AlpsFixture : AlpsTarget
     {
         /// <summary>Which output path the Udon player uses for this fixture.</summary>
         public abstract int AdapterKind { get; }
@@ -47,6 +50,11 @@ namespace AdzukiSoft.ALPS
         /// <summary>Called after the Timeline window reverted the preview, to bring visuals back in line.</summary>
         public virtual void RefreshAfterPreview()
         {
+        }
+
+        public override void CollectFixtures(List<AlpsFixture> into)
+        {
+            into.Add(this);
         }
     }
 }
