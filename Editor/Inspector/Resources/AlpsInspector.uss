@@ -329,6 +329,11 @@
     margin-left: 3px;
 }
 
+/* A row with nothing to range leaves R out, so S takes the gap R keeps from the slider. */
+.alps-root .alps-animatable__row--no-range > .alps-rangeflag.alps-spreadflag {
+    margin-left: var(--alps-row-gap);
+}
+
 .alps-root .alps-rangeflag__input {
     flex-grow: 0;
     flex-basis: auto;
@@ -393,6 +398,17 @@
 }
 
 .alps-root .alps-numberbox--right {
+    margin-left: var(--alps-row-gap);
+}
+
+/* A point: each value box follows its axis letter, and the axes keep the row gap between them. */
+.alps-root .alps-vector__axis {
+    color: var(--alps-text-hint);
+    margin-right: 3px;
+    flex-shrink: 0;
+}
+
+.alps-root .alps-vector__axis--gap {
     margin-left: var(--alps-row-gap);
 }
 
@@ -513,13 +529,24 @@
     align-items: center;
 }
 
+/*
+ * The fields in a row drop the editor's 1px bottom margin. The row is then as tall as its
+ * slider, so rows sit the flow's 9px apart and a card that ends on one ends 12px below
+ * it like every other card.
+ */
+.alps-root .alps-animatable__row > .unity-base-field,
+.alps-root .alps-animatable__spreads > .unity-base-field {
+    margin-bottom: 0;
+}
+
 /* With R and S both on, two spread sliders stack in the row and the flags stay beside the upper one. */
 .alps-animatable__row.alps-animatable__row--stacked {
     align-items: flex-start;
 }
 
+/* 6px keeps the gap between the stacked sliders now that the upper one has no bottom margin. */
 .alps-root .alps-animatable__spreads > .alps-animatable__spread-end {
-    margin-top: 5px;
+    margin-top: 6px;
 }
 
 /* The lower spread slider keeps the label column so its track lines up, but shows no label. */

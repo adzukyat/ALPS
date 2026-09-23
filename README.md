@@ -26,13 +26,25 @@ Add `ALPS VRSL Fixture` (`Adzuki Live Performance System > ALPS VRSL Fixture`) t
 
 Add `ALPS Fixture Group` to a parent object and list its fixtures. The list order is the fixture number used by the order, the odd and even split, and every per fixture offset. `Find Fixtures In Children` in the component menu fills the list.
 
-### 3. Timeline
+### 3. Arrangement (optional)
+
+Add `ALPS Arrangement` (`Adzuki Live Performance System > ALPS Arrangement`) to a parent object to lay its direct children out for you. Fixtures and any other objects work, and inactive children keep their place. The children are kept laid out while you edit: changing a value or dragging a handle in the Scene view moves them at once, adding, removing or reordering children in the Hierarchy lays them out again, and a child moved by hand goes back. Untick the component to pause it and adjust children by hand.
+
+- **形状**: 直線 between a start and an end point, 円 with a radius (an arc when 角度 is under 360°), 多角形 with a number of sides, 矩形 with a width and depth, or グリッド with a column count. Everything is in the object's local space, with planar shapes on its XZ plane, so rotate the object to stand a shape up. The start and end points, the radius, the width and the depth have handles in the Scene view.
+- **配置**: 端から端 puts the first and last child on the ends, 均等割り gives every child an equal share and sits it in the middle of it.
+- **向き**: keep the object's rotation, or turn each child's front (+Z) outward, inward, along the path or toward a point. X/Y/Z回転 turn each child further about its own axes after that.
+- **位置**: 高さ lifts children and 外側 pushes them out of the shape.
+- **S (spread)** works as on clips: a value runs from the first child to the last, in the 並び順 order. A Y回転 spread fans children out, 左右対称 mirrors the first half so the fan opens both ways, 外側 with 左右対称 makes a V, and 高さ on a circle makes a spiral. R is not offered yet, since nothing moves an arrangement over time.
+
+On the same object as a fixture group, the group's list follows the children's order and is hidden in the group's inspector, so the fixture numbers match where the fixtures stand. Adding an arrangement to a group that already has an order reorders the children to keep it. When they cannot be reordered, as inside a prefab instance, the group keeps its list until you choose to sync it from the arrangement's inspector.
+
+### 4. Timeline
 
 Add an `AlpsTimelineTrack` to a Timeline and bind it to a fixture group. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
 
 Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTrack` are left untouched.
 
-### 4. Clips
+### 5. Clips
 
 Select an ALPS clip to edit it in the Inspector:
 
@@ -42,7 +54,7 @@ Select an ALPS clip to edit it in the Inspector:
 - **Effects**: move, cone, color, brightness, flicker and gobo. Move aims by angle, turns the beam in a circle around a center direction, or follows a user. Adding an effect that is already on the clip splits it into an even and an odd copy. Each effect has a phase offset that runs it that share of a cycle late, so setting the odd copy to 50% makes the two sides take turns.
 - **Profile**: save the clip to a profile asset, load it into other clips, or let a clip follow a profile.
 
-### 5. Show player
+### 6. Show player
 
 Select the `PlayableDirector` and run `ALPS > Set Up Show Player`. This adds an inactive `ALPS Show Player` under the director. It stays empty in the authoring scene.
 
@@ -54,7 +66,7 @@ Scrub or play the Timeline. ALPS writes the evaluated show to the VRSL fixtures.
 
 Nothing needs to be baked by hand.
 
-- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. The authoring scene and Timeline are never modified.
+- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Arrangements are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
 - **Play mode and ClientSim**: the same conversion runs on the play mode scene, so what plays there is what VRChat plays.
 
 A build stops with an error when a director has ALPS tracks but no show player, or when a fixture has no target.
@@ -79,7 +91,7 @@ This runs the metadata check, the EditMode tests (`AdzukiSoft.ALPS.EditorTests`)
 
 Test levels:
 
-- Level 1: evaluator math on compiled arrays (order, phase, ranges, palettes, layers, blending).
+- Level 1: evaluator math on compiled arrays (order, phase, ranges, palettes, layers, blending), and where arrangements place each child.
 - Level 3: the real `PreviewSmoke` Timeline previewed in edit mode.
 - Level 4: the build conversion applied to that scene, with the Udon player matching the preview and other tracks kept.
 

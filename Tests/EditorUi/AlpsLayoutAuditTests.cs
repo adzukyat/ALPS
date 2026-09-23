@@ -26,12 +26,31 @@ namespace AdzukiSoft.ALPS.Tests
         /// </summary>
         private static readonly float[] Widths = { 476f, 720f, 1000f };
 
-        private static AlpsClipEffectSet BuildFixtureSet()
+        /// <summary>
+        /// The inspectors measured: the full clip, a plain clip whose cards end on a parameter
+        /// row, and the arrangement once per group of rows its shapes show. The rectangle's
+        /// rows are the grid's without the column count.
+        /// </summary>
+        private static readonly string[] Views = { "Clip", "PlainClip", "Line", "Circle", "Polygon", "Grid" };
+
+        private static VisualElement BuildView(string view)
         {
-            return AlpsInspectorFixture.Build();
+            switch (view)
+            {
+                case "Line":
+                    return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Line))
+                    {
+                        SyncNoticeVisible = true,
+                    };
+                case "Circle": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Circle));
+                case "Polygon": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Polygon));
+                case "Grid": return new AlpsArrangementView(AlpsInspectorFixture.BuildArrangement(AlpsArrangementShape.Grid));
+                case "PlainClip": return new AlpsClipInspectorView(AlpsInspectorFixture.BuildPlain());
+                default: return new AlpsClipInspectorView(AlpsInspectorFixture.Build());
+            }
         }
 
-        private static IEnumerator Measure(float width, System.Action<VisualElement> assert)
+        private static IEnumerator Measure(float width, System.Action<VisualElement> assert, string viewName = "Clip")
         {
             var window = ScriptableObject.CreateInstance<LayoutProbeWindow>();
             window.hideFlags = HideFlags.HideAndDontSave;
@@ -43,7 +62,7 @@ namespace AdzukiSoft.ALPS.Tests
             window.ShowUtility();
             window.position = new Rect(0f, 0f, width, 3200f);
 
-            var view = new AlpsClipInspectorView(BuildFixtureSet());
+            var view = BuildView(viewName);
             window.rootVisualElement.Add(view);
 
             for (var i = 0; i < 16; i++)
@@ -90,7 +109,9 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator NothingCollapses([ValueSource(nameof(Widths))] float width)
+        public IEnumerator NothingCollapses(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             yield return Measure(width, view =>
             {
@@ -103,11 +124,13 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsEmpty(
                     collapsed.Select(Describe),
                     $"Visible text collapsed to zero size at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator NothingOverflowsItsParent([ValueSource(nameof(Widths))] float width)
+        public IEnumerator NothingOverflowsItsParent(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             yield return Measure(width, view =>
             {
@@ -154,11 +177,13 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(overflowing, $"Elements overflow their parent at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator NoContainerCollapses([ValueSource(nameof(Widths))] float width)
+        public IEnumerator NoContainerCollapses(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             yield return Measure(width, view =>
             {
@@ -174,11 +199,13 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsEmpty(
                     collapsed.Select(Describe),
                     $"A container collapsed while still holding sized children at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator SiblingsDoNotOverlap([ValueSource(nameof(Widths))] float width)
+        public IEnumerator SiblingsDoNotOverlap(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             yield return Measure(width, view =>
             {
@@ -206,11 +233,13 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(overlapping, $"Sibling rows overlap at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator NoTextIsClipped([ValueSource(nameof(Widths))] float width)
+        public IEnumerator NoTextIsClipped(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             yield return Measure(width, view =>
             {
@@ -244,7 +273,7 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(clipped, $"Text is clipped at width {width}.");
-            });
+            }, viewName);
         }
 
         /// <summary>
@@ -393,7 +422,9 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator ValueBoxesKeepTheirGutters([ValueSource(nameof(Widths))] float width)
+        public IEnumerator ValueBoxesKeepTheirGutters(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             // AlpsNumberBox is a BaseField, so an unscoped margin rule loses to the
             // `.alps-root .unity-base-field` reset and the box ends up flush against the
@@ -429,11 +460,13 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(wrong, $"Value box gutters drifted at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator CardBodiesEndWithTheSameSpace([ValueSource(nameof(Widths))] float width)
+        public IEnumerator CardBodiesEndWithTheSameSpace(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             // A body ends 12px below its last control: 3px of padding plus the 9px its last
             // row carries. A group around that row (a mode pane, the phase settings, a
@@ -450,10 +483,14 @@ namespace AdzukiSoft.ALPS.Tests
 
                     while (true)
                     {
+                        // The lowest child, which in a column is the last one. In a row it is
+                        // the tallest, not the rightmost: a flag centred beside a slider ends
+                        // above the slider's bottom.
                         var last = current.Children()
                             .Where(c => c.resolvedStyle.display != DisplayStyle.None)
                             .Where(c => c.resolvedStyle.position != Position.Absolute)
-                            .LastOrDefault();
+                            .Aggregate((VisualElement)null, (lowest, c) =>
+                                lowest == null || c.layout.yMax >= lowest.layout.yMax - 0.01f ? c : lowest);
                         if (last == null)
                         {
                             break;
@@ -481,11 +518,13 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(wrong, $"A card body ends with extra space at width {width}.");
-            });
+            }, viewName);
         }
 
         [UnityTest]
-        public IEnumerator SliderThumbsStayClearOfTheirValueBoxes([ValueSource(nameof(Widths))] float width)
+        public IEnumerator SliderThumbsStayClearOfTheirValueBoxes(
+            [ValueSource(nameof(Widths))] float width,
+            [ValueSource(nameof(Views))] string viewName)
         {
             // A thumb is centred on its value, so at the ends it hangs 5px past the rail.
             // The row leaves it that room. It must never land on the value box.
@@ -510,7 +549,7 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 Assert.IsEmpty(collisions, $"A slider thumb is drawn over a value box at width {width}.");
-            });
+            }, viewName);
         }
 
         private static VisualElement NextSibling(VisualElement element)

@@ -18,6 +18,9 @@ namespace AdzukiSoft.ALPS.Editor
     ///   Range frame ............... timing / own phase are shown
     ///   Timing / own phase ........ a range with two distinct ends, or a palette with two or more stops
     ///   Own phase ON .............. the shared settings panel opens right below
+    ///
+    /// A value with nothing to move it over time, such as an arrangement's, leaves R out,
+    /// and a range saved on it is read as off.
     /// </summary>
     public class AlpsAnimatableView : VisualElement
     {
@@ -36,10 +39,14 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Makes room at the top of a frame for its title.</summary>
         private const string LegendFrameClass = "alps-sub--legend";
 
+        /// <summary>Marks a row without R, so S keeps the gap R would have left.</summary>
+        private const string NoRangeRowClass = "alps-animatable__row--no-range";
+
         private readonly AlpsAnimatableValue _model;
         private readonly AlpsPhaseSettings _clipPhase;
         private readonly Action _onChanged;
         private readonly bool _isPalette;
+        private readonly bool _allowRange;
         private readonly Func<int> _paletteCount;
 
         private readonly AlpsValueSlider _valueSlider;
@@ -68,12 +75,16 @@ namespace AdzukiSoft.ALPS.Editor
             Func<int> paletteCount = null,
             Func<Vector2, float[]> snaps = null,
             AlpsAnimatableValue defaults = null,
-            AlpsMixedValues mixed = null)
+            AlpsMixedValues mixed = null,
+            bool allowRange = true,
+            string spreadFirstTip = "最初の器具",
+            string spreadLastTip = "最後の器具")
         {
             _model = model;
             _clipPhase = clipPhase;
             _onChanged = onChanged;
             _isPalette = paletteRow != null;
+            _allowRange = allowRange;
             _paletteCount = paletteCount;
 
             // --- value row -------------------------------------------------
@@ -115,7 +126,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _spreadSliders.AddToClassList(FieldClass);
                 _spreadSliders.AddToClassList("alps-animatable__spreads");
 
-                _spreadSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault);
+                _spreadSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault, spreadFirstTip, spreadLastTip);
                 _spreadSlider.SetValueWithoutNotify(model.spreadRange);
                 _spreadSlider.RegisterValueChangedCallback(evt =>
                 {
@@ -127,7 +138,7 @@ namespace AdzukiSoft.ALPS.Editor
 
                 // Only its place under the upper slider tells it apart, so its label keeps the
                 // column without being drawn.
-                _spreadEndSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault);
+                _spreadEndSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault, spreadFirstTip, spreadLastTip);
                 _spreadEndSlider.AddToClassList("alps-animatable__spread-end");
                 _spreadEndSlider.SetValueWithoutNotify(model.spreadRangeEnd);
                 _spreadEndSlider.RegisterValueChangedCallback(evt =>
@@ -138,15 +149,18 @@ namespace AdzukiSoft.ALPS.Editor
                 });
                 _spreadSliders.Add(_spreadEndSlider);
 
-                _rangeFlag = new AlpsRangeFlag();
-                _rangeFlag.SetValueWithoutNotify(model.isRange);
-                _rangeFlag.RegisterValueChangedCallback(evt =>
+                if (allowRange)
                 {
-                    model.isRange = evt.newValue;
-                    SeedSpreadRangeEnd();
-                    Refresh();
-                    Changed();
-                });
+                    _rangeFlag = new AlpsRangeFlag();
+                    _rangeFlag.SetValueWithoutNotify(model.isRange);
+                    _rangeFlag.RegisterValueChangedCallback(evt =>
+                    {
+                        model.isRange = evt.newValue;
+                        SeedSpreadRangeEnd();
+                        Refresh();
+                        Changed();
+                    });
+                }
 
                 _spreadFlag = new AlpsRangeFlag("S", "広がり");
                 _spreadFlag.AddToClassList("alps-spreadflag");
@@ -163,13 +177,25 @@ namespace AdzukiSoft.ALPS.Editor
                 mixed?.Bind(_rangeSlider, model, nameof(AlpsAnimatableValue.range));
                 mixed?.Bind(_spreadSlider, model, nameof(AlpsAnimatableValue.spreadRange));
                 mixed?.Bind(_spreadEndSlider, model, nameof(AlpsAnimatableValue.spreadRangeEnd));
-                mixed?.Bind(_rangeFlag, model, nameof(AlpsAnimatableValue.isRange));
+                if (_rangeFlag != null)
+                {
+                    mixed?.Bind(_rangeFlag, model, nameof(AlpsAnimatableValue.isRange));
+                }
+
                 mixed?.Bind(_spreadFlag, model, nameof(AlpsAnimatableValue.hasSpread));
 
                 _valueRow.Add(_valueSlider);
                 _valueRow.Add(_rangeSlider);
                 _valueRow.Add(_spreadSliders);
-                _valueRow.Add(_rangeFlag);
+                if (_rangeFlag != null)
+                {
+                    _valueRow.Add(_rangeFlag);
+                }
+                else
+                {
+                    _valueRow.AddToClassList(NoRangeRowClass);
+                }
+
                 _valueRow.Add(_spreadFlag);
             }
 
@@ -218,14 +244,38 @@ namespace AdzukiSoft.ALPS.Editor
         private bool HasMultipleStops =>
             _isPalette
                 ? (_paletteCount?.Invoke() ?? 0) >= 2
-                : _model.HasMultipleStops;
+                : _allowRange && _model.HasMultipleStops;
+
+        /// <summary>R as the row reads it: a range saved on a row without R is off.</summary>
+        private bool IsRanged => _allowRange && _model.isRange;
+
+        /// <summary>
+        /// Shows the model's values again after something other than this view changed them,
+        /// such as a scene handle.
+        /// </summary>
+        public void Reload()
+        {
+            if (!_isPalette)
+            {
+                _valueSlider.SetValueWithoutNotify(_model.value);
+                _rangeSlider.SetValueWithoutNotify(_model.range);
+                _spreadSlider.SetValueWithoutNotify(_model.spreadRange);
+                _spreadEndSlider.SetValueWithoutNotify(_model.spreadRangeEnd);
+                _rangeFlag?.SetValueWithoutNotify(_model.isRange);
+                _spreadFlag.SetValueWithoutNotify(_model.hasSpread);
+            }
+
+            _timing.SetValueWithoutNotify((int)_model.timing);
+            _ownPhase.SetValueWithoutNotify(_model.useOwnPhase);
+            Refresh();
+        }
 
         public void Refresh()
         {
             if (!_isPalette)
             {
                 var spread = _model.hasSpread;
-                var ranged = _model.isRange;
+                var ranged = IsRanged;
                 AlpsPhaseSettingsView.Show(_valueSlider, !spread && !ranged);
                 AlpsPhaseSettingsView.Show(_rangeSlider, !spread && ranged);
                 AlpsPhaseSettingsView.Show(_spreadSliders, spread);
@@ -281,7 +331,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// A range slider over the fixtures. x is the first fixture and y the last, and either
         /// may be the larger, so its thumbs pass each other.
         /// </summary>
-        private static AlpsRangeSlider SpreadSlider(string label, Vector2 limit, string unit, string format, float[] snaps, Vector2? defaultValue)
+        private static AlpsRangeSlider SpreadSlider(
+            string label,
+            Vector2 limit,
+            string unit,
+            string format,
+            float[] snaps,
+            Vector2? defaultValue,
+            string firstTip,
+            string lastTip)
         {
             var slider = new AlpsRangeSlider(label, limit, unit, format)
             {
@@ -290,7 +348,7 @@ namespace AdzukiSoft.ALPS.Editor
                 EndsCanCross = true,
             };
             slider.AddToClassList("alps-animatable__spread");
-            slider.SetEndTooltips("最初の器具", "最後の器具");
+            slider.SetEndTooltips(firstTip, lastTip);
             return slider;
         }
 
@@ -307,8 +365,8 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
-            var start = _model.isRange ? _model.range.x : _model.value;
-            var end = _model.isRange ? _model.range.y : _model.value;
+            var start = IsRanged ? _model.range.x : _model.value;
+            var end = IsRanged ? _model.range.y : _model.value;
             _model.spreadRange = new Vector2(start, start);
             _model.spreadRangeEnd = new Vector2(end, end);
             _spreadSlider.SetValueWithoutNotify(_model.spreadRange);

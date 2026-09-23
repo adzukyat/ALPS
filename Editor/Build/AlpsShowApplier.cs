@@ -50,18 +50,13 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>
         /// Applies every show in <paramref name="scene"/>. With
         /// <paramref name="generateTimelines"/> off, build timelines must already exist,
-        /// which is the case during a real build after the preflight.
+        /// which is the case during a real build after the preflight. The authoring
+        /// components are stripped from every scene, with a show or without one.
         /// </summary>
         public static bool Apply(Scene scene, bool generateTimelines, List<string> errors)
         {
-            var directors = FindShowDirectors(scene);
-            if (directors.Count == 0)
-            {
-                return true;
-            }
-
             var startErrors = errors.Count;
-            foreach (var director in directors)
+            foreach (var director in FindShowDirectors(scene))
             {
                 ApplyDirector(director, generateTimelines, errors);
             }
@@ -135,11 +130,19 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        /// <summary>Fixture components only describe the show, and VRChat does not run them.</summary>
+        /// <summary>
+        /// Fixture components only describe the show, and arrangements only place objects
+        /// while editing. VRChat runs none of them, and the transforms they left stay.
+        /// </summary>
         private static void StripAuthoringComponents(Scene scene)
         {
             foreach (var root in scene.GetRootGameObjects())
             {
+                foreach (var arrangement in root.GetComponentsInChildren<AlpsArrangement>(true))
+                {
+                    Object.DestroyImmediate(arrangement);
+                }
+
                 foreach (var group in root.GetComponentsInChildren<AlpsFixtureGroup>(true))
                 {
                     Object.DestroyImmediate(group);

@@ -53,6 +53,39 @@ namespace AdzukiSoft.ALPS
         TrackUser,
     }
 
+    /// <summary>
+    /// Arrangement shape: the path a container places its children on. An arc is a circle
+    /// whose sweep is under a full turn. Order matches <see cref="AlpsArrangementEvaluator"/>.
+    /// </summary>
+    public enum AlpsArrangementShape
+    {
+        Line,
+        Circle,
+        Polygon,
+        Rectangle,
+        Grid,
+    }
+
+    /// <summary>
+    /// Arrangement spacing: ends puts the first and last slot on the ends of an open path,
+    /// centered gives every slot an equal cell and sits it in the middle of it.
+    /// </summary>
+    public enum AlpsArrangementSpacing
+    {
+        Ends,
+        Centered,
+    }
+
+    /// <summary>Arrangement facing: which way each slot's +Z points before its own rotation.</summary>
+    public enum AlpsArrangementFacing
+    {
+        Keep,
+        Outward,
+        Inward,
+        Along,
+        Target,
+    }
+
     /// <summary>Easing functions offered as thumbnails. Order drives the tile grid and matches <see cref="AlpsShowEvaluator.Ease"/>.</summary>
     public enum AlpsEaseType
     {

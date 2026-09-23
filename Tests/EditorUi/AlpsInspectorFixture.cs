@@ -105,6 +105,60 @@ namespace AdzukiSoft.ALPS.Tests
             return set;
         }
 
+        /// <summary>
+        /// A clip whose cards end on a parameter row: nothing on them follows a phase, so
+        /// the phase offset row below the parameters stays hidden. The cone ends on a spread.
+        /// </summary>
+        public static AlpsClipEffectSet BuildPlain()
+        {
+            var set = new AlpsClipEffectSet();
+            var cone = set.Add(AlpsEffectKind.Cone);
+            cone.coneLength.hasSpread = true;
+            cone.coneLength.spreadRange = new Vector2(2f, 6f);
+            set.Add(AlpsEffectKind.Brightness);
+            return set;
+        }
+
+        /// <summary>
+        /// An arrangement of <paramref name="shape"/> with its widest rows showing: a random
+        /// order with its seed, a target to face, and spreads on values of every kind.
+        /// </summary>
+        public static AlpsArrangementSettings BuildArrangement(AlpsArrangementShape shape)
+        {
+            var settings = new AlpsArrangementSettings
+            {
+                shape = shape,
+                spacing = AlpsArrangementSpacing.Centered,
+                order = AlpsOrderMode.Random,
+                seed = 12,
+                facing = AlpsArrangementFacing.Target,
+                sides = 8,
+                columns = 6,
+                lineStart = new Vector3(-12.5f, 3.25f, -0.125f),
+                lineEnd = new Vector3(12.5f, 3.25f, 10.875f),
+                target = new Vector3(0f, -4.5f, 12.75f),
+            };
+
+            settings.radius.hasSpread = true;
+            settings.radius.spreadRange = new Vector2(3f, 12.5f);
+            settings.sweep.value = 135f;
+            settings.angle.value = -45f;
+            settings.width.hasSpread = true;
+            settings.width.spreadRange = new Vector2(24f, 8f);
+            settings.depth.value = 12.25f;
+            settings.height.hasSpread = true;
+            settings.height.spreadRange = new Vector2(-2.5f, 4f);
+            settings.rotationY.hasSpread = true;
+            settings.rotationY.spreadRange = new Vector2(-135f, 90f);
+            settings.rotationX.value = -35.5f;
+
+            // The last row of a card with its spread open, so the card's end is measured
+            // below a spread slider as well as below a value slider.
+            settings.rotationZ.hasSpread = true;
+            settings.rotationZ.spreadRange = new Vector2(15f, -15f);
+            return settings;
+        }
+
         private static AlpsColorStop BuildGradientStop()
         {
             var gradient = new Gradient();
