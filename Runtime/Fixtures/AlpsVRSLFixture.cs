@@ -25,6 +25,7 @@ namespace AdzukiSoft.ALPS
             "lightColorTint.a",
             "coneWidth",
             "coneLength",
+            "maxConeLength",
             "selectGOBO",
         };
 

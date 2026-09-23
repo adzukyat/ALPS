@@ -114,7 +114,11 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_easing, settings, nameof(AlpsPhaseSettings.ease));
             Add(_easing);
 
-            var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0") { DefaultValue = defaults.fixtureGroupSize };
+            var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0")
+            {
+                DefaultValue = defaults.fixtureGroupSize,
+                AllowAboveLimit = true,
+            };
             group.SetValueWithoutNotify(settings.fixtureGroupSize);
             group.RegisterValueChangedCallback(evt =>
             {

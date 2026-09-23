@@ -879,6 +879,34 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Sliders_TakeTypedValuesPastTheUpperLimitOnlyWhenAllowed()
+        {
+            VisualElement Thumb(VisualElement slider) => slider.Q(className: "alps-slider__thumb");
+
+            var closed = new AlpsValueSlider("closed", new Vector2(0f, 50f));
+            closed.SetValueWithoutNotify(120f);
+            Assert.AreEqual(50f, closed.value, "Without the option the limit holds.");
+
+            var open = new AlpsValueSlider("open", new Vector2(0f, 50f)) { AllowAboveLimit = true };
+            open.SetValueWithoutNotify(120f);
+            Assert.AreEqual(120f, open.value);
+            Assert.AreEqual(100f, Thumb(open).style.left.value.value, 0.01f, "The thumb rests at the right end.");
+            open.SetValueWithoutNotify(-5f);
+            Assert.AreEqual(0f, open.value, "The lower limit still holds.");
+
+            var range = new AlpsRangeSlider("range", new Vector2(0f, 50f)) { AllowAboveLimit = true };
+            range.SetValueWithoutNotify(new Vector2(10f, 120f));
+            Assert.AreEqual(new Vector2(10f, 120f), range.value);
+
+            var snaps = new AlpsSliderSnaps();
+            snaps.Normalize(new Vector2(0f, 50f));
+            Assert.AreEqual(120f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, true),
+                "An end past the limit stays while its thumb is not moved off the right end.");
+            Assert.AreEqual(50f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 1f, 120f, false));
+            Assert.AreEqual(25f, AlpsValueSlider.EndAt(snaps, new Vector2(0f, 50f), 0.5f, 120f, true));
+        }
+
+        [Test]
         public void SliderTrack_SnapsOnlyWithinTheThreshold()
         {
             var snaps = new[] { 0.25f, 0.5f };

@@ -26,9 +26,12 @@ namespace AdzukiSoft.ALPS
         public const int AdapterNone = 0;
         public const int AdapterVRSLDmxStatic = 1;
 
-        /// <summary>Model cone width at which VRSL reaches its widest cone.</summary>
+        /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
-        /// <summary>Model cone length at which VRSL reaches its longest cone.</summary>
+        /// <summary>
+        /// Model cone length at which VRSL's cone fills its whole mesh. Longer cones stretch the
+        /// mesh in proportion, so 100 is twice the fixture's own mesh length.
+        /// </summary>
         public const float ModelConeLengthLimit = 50f;
         public const float VrslMaxConeWidth = 5.5f;
         public const float VrslMinConeLength = 0.5f;
@@ -294,6 +297,7 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowEvaluator.FrameBlue] = 1f;
             frame[offset + AlpsShowEvaluator.FrameGobo] = AlpsShowEvaluator.GoboOff;
             frame[offset + AlpsShowEvaluator.FrameBrightnessScale] = 1f;
+            frame[offset + AlpsShowEvaluator.FrameConeMeshLength] = 1f;
         }
 
         /// <summary>Reads a VRSL fixture's fields into model units.</summary>
@@ -312,9 +316,10 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowEvaluator.FrameGreen] = color.g / excess;
             frame[offset + AlpsShowEvaluator.FrameBlue] = color.b / excess;
             frame[offset + AlpsShowEvaluator.FrameConeWidth] =
-                Mathf.Clamp01(fixture.coneWidth / VrslMaxConeWidth) * ModelConeWidthLimit;
+                Mathf.Max(0f, fixture.coneWidth / VrslMaxConeWidth) * ModelConeWidthLimit;
             frame[offset + AlpsShowEvaluator.FrameConeLength] =
                 Mathf.InverseLerp(VrslMinConeLength, VrslMaxConeLength, fixture.coneLength) * ModelConeLengthLimit;
+            frame[offset + AlpsShowEvaluator.FrameConeMeshLength] = fixture.maxConeLength;
             frame[offset + AlpsShowEvaluator.FrameGobo] = fixture.selectGOBO;
         }
 
@@ -338,11 +343,13 @@ namespace AdzukiSoft.ALPS
                 frame[offset + AlpsShowEvaluator.FrameGreen] * tintScale,
                 frame[offset + AlpsShowEvaluator.FrameBlue] * tintScale,
                 1f);
-            fixture.coneWidth = Mathf.Clamp01(frame[offset + AlpsShowEvaluator.FrameConeWidth] / ModelConeWidthLimit) * VrslMaxConeWidth;
-            fixture.coneLength = Mathf.Lerp(
-                VrslMinConeLength,
-                VrslMaxConeLength,
-                Mathf.Clamp01(frame[offset + AlpsShowEvaluator.FrameConeLength] / ModelConeLengthLimit));
+            // A width typed past the limit keeps opening at the same rate.
+            fixture.coneWidth = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeWidth] / ModelConeWidthLimit) * VrslMaxConeWidth;
+            // Up to the limit the cone fades in along the fixture's own mesh. Past it the mesh
+            // itself is stretched, which VRSL scales linearly from the fixture.
+            var coneLength = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeLength]) / ModelConeLengthLimit;
+            fixture.coneLength = Mathf.Lerp(VrslMinConeLength, VrslMaxConeLength, Mathf.Clamp01(coneLength));
+            fixture.maxConeLength = frame[offset + AlpsShowEvaluator.FrameConeMeshLength] * Mathf.Max(1f, coneLength);
             fixture.selectGOBO = Mathf.Clamp(AlpsShowEvaluator.ToInt(frame[offset + AlpsShowEvaluator.FrameGobo]), 1, 8);
             fixture._UpdateInstancedProperties();
 

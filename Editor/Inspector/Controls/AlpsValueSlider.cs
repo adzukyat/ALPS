@@ -14,6 +14,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsNumberBox _box;
         private readonly AlpsSliderSnaps _snaps = new AlpsSliderSnaps();
         private Vector2 _limit = new Vector2(0f, 1f);
+        private bool _allowAboveLimit;
 
         public AlpsValueSlider(string label, Vector2 limit, string unit = "", string format = "0.###")
             : base(label, new VisualElement())
@@ -25,7 +26,7 @@ namespace AdzukiSoft.ALPS.Editor
             container.AddToClassList(ussClassName + "__input");
 
             _track = new AlpsSliderTrack(false) { Origin = OriginOf(limit) };
-            _track.Changed += (_, high) => value = _snaps.ToValue(_limit, high);
+            _track.Changed += (_, high) => value = EndAt(_snaps, _limit, high, value, _allowAboveLimit);
             _track.ResetRequested += _ => ResetToDefault();
             container.Add(_track);
 
@@ -43,7 +44,7 @@ namespace AdzukiSoft.ALPS.Editor
             set
             {
                 _limit = value;
-                _box.Limit = value;
+                _box.Limit = TypedLimit(value, _allowAboveLimit);
                 _track.Origin = OriginOf(value);
                 _track.SetSnaps(_snaps.Normalize(value));
                 SetValueWithoutNotify(this.value);
@@ -58,6 +59,21 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 _snaps.Values = value;
                 _track.SetSnaps(_snaps.Normalize(_limit));
+            }
+        }
+
+        /// <summary>
+        /// Lets a typed value go past the upper limit, for values whose track only covers the
+        /// usual span. The thumb then rests at the right end.
+        /// </summary>
+        public bool AllowAboveLimit
+        {
+            get => _allowAboveLimit;
+            set
+            {
+                _allowAboveLimit = value;
+                _box.Limit = TypedLimit(_limit, value);
+                SetValueWithoutNotify(this.value);
             }
         }
 
@@ -78,6 +94,21 @@ namespace AdzukiSoft.ALPS.Editor
             return limit.x < 0f && limit.y > 0f ? Mathf.InverseLerp(limit.x, limit.y, 0f) : 0f;
         }
 
+        /// <summary>The limits a value box accepts, open above when <paramref name="allowAbove"/> is set.</summary>
+        internal static Vector2 TypedLimit(Vector2 limit, bool allowAbove)
+        {
+            return allowAbove ? new Vector2(limit.x, float.MaxValue) : limit;
+        }
+
+        /// <summary>
+        /// The value a thumb at <paramref name="t"/> stands for. A typed value past the upper
+        /// limit sits at the right end, and stays as typed while its thumb is still there.
+        /// </summary>
+        internal static float EndAt(AlpsSliderSnaps snaps, Vector2 limit, float t, float current, bool allowAbove)
+        {
+            return allowAbove && t >= 1f && current > limit.y ? current : snaps.ToValue(limit, t);
+        }
+
         public string Unit
         {
             get => _box.Unit;
@@ -93,7 +124,8 @@ namespace AdzukiSoft.ALPS.Editor
 
         public override void SetValueWithoutNotify(float newValue)
         {
-            newValue = Mathf.Clamp(newValue, _limit.x, _limit.y);
+            var typed = TypedLimit(_limit, _allowAboveLimit);
+            newValue = Mathf.Clamp(newValue, typed.x, typed.y);
             base.SetValueWithoutNotify(newValue);
             _track.SetWithoutNotify(0f, Mathf.InverseLerp(_limit.x, _limit.y, newValue));
             _box.SetValueWithoutNotify(newValue);
@@ -116,6 +148,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsNumberBox _maxBox;
         private readonly AlpsSliderSnaps _snaps = new AlpsSliderSnaps();
         private Vector2 _limit = new Vector2(0f, 1f);
+        private bool _allowAboveLimit;
 
         public AlpsRangeSlider(string label, Vector2 limit, string unit = "", string format = "0.###")
             : base(label, new VisualElement())
@@ -133,8 +166,8 @@ namespace AdzukiSoft.ALPS.Editor
 
             _track = new AlpsSliderTrack(true);
             _track.Changed += (low, high) => value = new Vector2(
-                _snaps.ToValue(_limit, low),
-                _snaps.ToValue(_limit, high));
+                AlpsValueSlider.EndAt(_snaps, _limit, low, value.x, _allowAboveLimit),
+                AlpsValueSlider.EndAt(_snaps, _limit, high, value.y, _allowAboveLimit));
             _track.ResetRequested += ResetToDefault;
             container.Add(_track);
 
@@ -152,8 +185,8 @@ namespace AdzukiSoft.ALPS.Editor
             set
             {
                 _limit = value;
-                _minBox.Limit = value;
-                _maxBox.Limit = value;
+                _minBox.Limit = AlpsValueSlider.TypedLimit(value, _allowAboveLimit);
+                _maxBox.Limit = AlpsValueSlider.TypedLimit(value, _allowAboveLimit);
                 _track.SetSnaps(_snaps.Normalize(value));
                 SetValueWithoutNotify(this.value);
             }
@@ -167,6 +200,19 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 _snaps.Values = value;
                 _track.SetSnaps(_snaps.Normalize(_limit));
+            }
+        }
+
+        /// <summary>Lets typed ends go past the upper limit. See <see cref="AlpsValueSlider.AllowAboveLimit"/>.</summary>
+        public bool AllowAboveLimit
+        {
+            get => _allowAboveLimit;
+            set
+            {
+                _allowAboveLimit = value;
+                _minBox.Limit = AlpsValueSlider.TypedLimit(_limit, value);
+                _maxBox.Limit = AlpsValueSlider.TypedLimit(_limit, value);
+                SetValueWithoutNotify(this.value);
             }
         }
 
@@ -230,9 +276,10 @@ namespace AdzukiSoft.ALPS.Editor
 
         public override void SetValueWithoutNotify(Vector2 newValue)
         {
+            var typed = AlpsValueSlider.TypedLimit(_limit, _allowAboveLimit);
             newValue = new Vector2(
-                Mathf.Clamp(newValue.x, _limit.x, _limit.y),
-                Mathf.Clamp(newValue.y, _limit.x, _limit.y));
+                Mathf.Clamp(newValue.x, typed.x, typed.y),
+                Mathf.Clamp(newValue.y, typed.x, typed.y));
 
             base.SetValueWithoutNotify(newValue);
             _track.SetWithoutNotify(

@@ -179,6 +179,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 Snaps = new[] { 1f },
                 DefaultValue = _defaults.circleAspect,
+                AllowAboveLimit = true,
             };
             aspect.SetValueWithoutNotify(_effect.circleAspect);
             aspect.RegisterValueChangedCallback(evt =>
@@ -203,6 +204,7 @@ namespace AdzukiSoft.ALPS.Editor
             var followSpeed = new AlpsValueSlider("追従速度", new Vector2(0f, 20f), string.Empty, "0.#")
             {
                 DefaultValue = _defaults.trackSpeed,
+                AllowAboveLimit = true,
             };
             followSpeed.SetValueWithoutNotify(_effect.trackSpeed);
             followSpeed.RegisterValueChangedCallback(evt =>
@@ -239,8 +241,13 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void BuildCone(VisualElement body)
         {
+            // Effects saved before the cone could outgrow the fixture's mesh still carry the old limit.
+            _effect.coneLength.limit = _defaults.coneLength.limit;
+
             body.Add(Animatable("幅", _effect.coneWidth, _defaults.coneWidth, "°", "0.#", AlpsSnapPoints.Angles));
-            body.Add(Animatable("長さ", _effect.coneLength, _defaults.coneLength, "m", "0.#"));
+            // The tick marks where the cone fills the fixture's own mesh. Past it the mesh stretches.
+            body.Add(Animatable("長さ", _effect.coneLength, _defaults.coneLength, "m", "0.#",
+                _ => new[] { AlpsShowPlayer.ModelConeLengthLimit }));
         }
 
         // ------------------------------------------------------------ Color
@@ -352,15 +359,19 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void BuildFlicker(VisualElement body)
         {
-            body.Add(BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed,
+            var speed = BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed,
                 _defaults.flickerSpeed, string.Empty, "0.#", v => _effect.flickerSpeed = v,
-                nameof(AlpsEffect.flickerSpeed)));
+                nameof(AlpsEffect.flickerSpeed));
+            speed.AllowAboveLimit = true;
+            body.Add(speed);
             body.Add(BuildSimpleSlider("強さ", new Vector2(0f, 100f), _effect.flickerStrength * 100f,
                 _defaults.flickerStrength * 100f, "%", "0", v => _effect.flickerStrength = Mathf.Clamp01(v / 100f),
                 nameof(AlpsEffect.flickerStrength)));
-            body.Add(BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 2f), _effect.flickerFixtureStagger,
+            var stagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 2f), _effect.flickerFixtureStagger,
                 _defaults.flickerFixtureStagger, string.Empty, "0.##", v => _effect.flickerFixtureStagger = v,
-                nameof(AlpsEffect.flickerFixtureStagger)));
+                nameof(AlpsEffect.flickerFixtureStagger));
+            stagger.AllowAboveLimit = true;
+            body.Add(stagger);
         }
 
         // ------------------------------------------------------------- Gobo
@@ -408,6 +419,7 @@ namespace AdzukiSoft.ALPS.Editor
                 _defaults.goboFixtureStaggerDegrees, "°", "0", v => _effect.goboFixtureStaggerDegrees = v,
                 nameof(AlpsEffect.goboFixtureStaggerDegrees));
             goboStagger.Snaps = AlpsSnapPoints.Angles(goboStagger.Limit);
+            goboStagger.AllowAboveLimit = true;
             body.Add(goboStagger);
         }
 

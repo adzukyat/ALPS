@@ -173,6 +173,28 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(1f, fixture.lightColorTint.b, Tolerance, "White at or below 100% is a tint of 1.");
         }
 
+        [Test]
+        public void Level3_ConeLengthPastTheLimitStretchesTheFixturesOwnMesh()
+        {
+            var fixture = OpenFreshScene().Fixtures[0];
+            var frame = new float[AlpsShowEvaluator.FrameStride];
+            var block = new MaterialPropertyBlock();
+
+            fixture.maxConeLength = 1.5f;
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+            Assert.AreEqual(1.5f, frame[AlpsShowEvaluator.FrameConeMeshLength], Tolerance);
+
+            frame[AlpsShowEvaluator.FrameConeLength] = AlpsShowPlayer.ModelConeLengthLimit / 2f;
+            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
+            Assert.AreEqual(1.5f, fixture.maxConeLength, Tolerance, "Up to the limit the mesh keeps its own length.");
+            Assert.Less(fixture.coneLength, AlpsShowPlayer.VrslMaxConeLength);
+
+            frame[AlpsShowEvaluator.FrameConeLength] = AlpsShowPlayer.ModelConeLengthLimit * 3f;
+            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
+            Assert.AreEqual(AlpsShowPlayer.VrslMaxConeLength, fixture.coneLength, Tolerance, "Past the limit the cone fills the mesh.");
+            Assert.AreEqual(4.5f, fixture.maxConeLength, Tolerance, "Three times the limit is three times the mesh.");
+        }
+
         private static void AssertRestored(Context context, FixtureState[] authored)
         {
             for (var i = 0; i < context.Fixtures.Length; i++)

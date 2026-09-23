@@ -46,7 +46,11 @@ namespace AdzukiSoft.ALPS
 
         // --- Cone ---
         public AlpsAnimatableValue coneWidth = new AlpsAnimatableValue(15f, new Vector2(0f, 90f));
-        public AlpsAnimatableValue coneLength = new AlpsAnimatableValue(14f, new Vector2(0f, 50f));
+        /// <summary>
+        /// 50 fills the fixture's own cone mesh (<see cref="AlpsShowPlayer.ModelConeLengthLimit"/>),
+        /// and longer cones stretch the mesh.
+        /// </summary>
+        public AlpsAnimatableValue coneLength = new AlpsAnimatableValue(14f, new Vector2(0f, 200f));
 
         // --- Color ---
         /// <summary>

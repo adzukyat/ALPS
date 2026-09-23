@@ -163,7 +163,12 @@ namespace AdzukiSoft.ALPS
         public const int FrameBrightnessScale = 10;
         /// <summary>Row of the tracking move effect plus one, 0 when not tracking.</summary>
         public const int FrameTrackEffect = 11;
-        public const int FrameStride = 12;
+        /// <summary>
+        /// The fixture's own cone mesh length. No effect writes it, so it keeps the captured default
+        /// and lets the adapter stretch the mesh relative to it when the cone runs past its full length.
+        /// </summary>
+        public const int FrameConeMeshLength = 12;
+        public const int FrameStride = 13;
 
         // ==================================================================================
         // Scalar helpers

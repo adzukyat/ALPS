@@ -21,6 +21,8 @@ namespace AdzukiSoft.ALPS.Editor
     ///
     /// A value with nothing to move it over time, such as an arrangement's, leaves R out,
     /// and a range saved on it is read as off.
+    ///
+    /// The sliders cover a value's usual span, and typing can go past its upper end.
     /// </summary>
     public class AlpsAnimatableView : VisualElement
     {
@@ -100,7 +102,12 @@ namespace AdzukiSoft.ALPS.Editor
             }
             else
             {
-                _valueSlider = new AlpsValueSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
+                _valueSlider = new AlpsValueSlider(label, model.limit, unit, format)
+                {
+                    Snaps = valueSnaps,
+                    DefaultValue = defaults?.value,
+                    AllowAboveLimit = true,
+                };
                 _valueSlider.AddToClassList(FieldClass);
                 _valueSlider.SetValueWithoutNotify(model.value);
                 _valueSlider.RegisterValueChangedCallback(evt =>
@@ -109,7 +116,12 @@ namespace AdzukiSoft.ALPS.Editor
                     Changed();
                 });
 
-                _rangeSlider = new AlpsRangeSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.range };
+                _rangeSlider = new AlpsRangeSlider(label, model.limit, unit, format)
+                {
+                    Snaps = valueSnaps,
+                    DefaultValue = defaults?.range,
+                    AllowAboveLimit = true,
+                };
                 _rangeSlider.AddToClassList(FieldClass);
                 _rangeSlider.SetValueWithoutNotify(model.range);
                 _rangeSlider.RegisterValueChangedCallback(evt =>
@@ -346,6 +358,7 @@ namespace AdzukiSoft.ALPS.Editor
                 Snaps = snaps,
                 DefaultValue = defaultValue,
                 EndsCanCross = true,
+                AllowAboveLimit = true,
             };
             slider.AddToClassList("alps-animatable__spread");
             slider.SetEndTooltips(firstTip, lastTip);

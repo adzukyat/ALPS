@@ -40,7 +40,7 @@ Do not add `-quit`: with this Test Framework version it can exit before the resu
 
 `Runtime/Playback/AlpsShowEvaluator.cs` is the core. It is an UdonSharpBehaviour whose static methods take flat `float[]` / `int[]` arrays. UdonSharp inlines imported static methods into the calling program, so the editor preview and the Udon player (`AlpsShowPlayer`) run exactly the same math. Anything the show does at runtime must be expressible here.
 
-The arrays have fixed strides defined as constants in the evaluator: clip rows (`ClipStride`, including the shared phase and 16 sampled mix curve points), effect rows (`EffectStride`, per kind scalars `EffectScalarA..`), parameter rows (`ParamStride`, one per `AlpsAnimatableValue`, including its own phase), palette rows, and a per fixture frame of 12 channels (`Frame*`). Changing the model means changing the compiler encoding, the evaluator reads, and usually these strides together.
+The arrays have fixed strides defined as constants in the evaluator: clip rows (`ClipStride`, including the shared phase and 16 sampled mix curve points), effect rows (`EffectStride`, per kind scalars `EffectScalarA..`), parameter rows (`ParamStride`, one per `AlpsAnimatableValue`, including its own phase), palette rows, and a per fixture frame of 13 channels (`Frame*`). Changing the model means changing the compiler encoding, the evaluator reads, and usually these strides together.
 
 Key evaluation rules that span files:
 - Order position `k` comes from `OrderPosition` (normal, reverse, symmetric counting outward from the middle, seeded random). Symmetric also mirrors the final pan of the first half (`IsMirrored`).
