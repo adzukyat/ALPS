@@ -295,11 +295,47 @@ namespace AdzukiSoft.ALPS.Tests
         public void Handles_TurnADraggedPointIntoAValue()
         {
             var radiusLimit = AlpsArrangementSettings.RadiusLimit;
-            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, 4f), 0f, radiusLimit), Is.EqualTo(4f).Within(1e-4f));
-            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(3f, 1f, 0.5f), 90f, radiusLimit), Is.EqualTo(3f).Within(1e-4f));
-            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, 50f), 0f, radiusLimit), Is.EqualTo(radiusLimit.y));
-            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, -2f), 0f, radiusLimit), Is.EqualTo(0f));
-            Assert.That(AlpsArrangementHandles.ExtentAt(-2.5f, AlpsArrangementSettings.SizeLimit), Is.EqualTo(5f).Within(1e-4f));
+            var sizeLimit = AlpsArrangementSettings.SizeLimit;
+            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, 4f), 0f, 0f, radiusLimit), Is.EqualTo(4f).Within(1e-4f));
+            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(3f, 1f, 0.5f), 90f, 0f, radiusLimit), Is.EqualTo(3f).Within(1e-4f));
+            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 2f, 4f), 0f, 1f, radiusLimit), Is.EqualTo(3f).Within(1e-4f),
+                "The dot sits on the path, the offset further out than the radius.");
+            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, 50f), 0f, 0f, radiusLimit), Is.EqualTo(radiusLimit.y));
+            Assert.That(AlpsArrangementHandles.RadiusAt(new Vector3(0f, 0f, -2f), 0f, 0f, radiusLimit), Is.EqualTo(0f));
+            Assert.That(AlpsArrangementHandles.ExtentAt(2.5f, 0f, sizeLimit), Is.EqualTo(5f).Within(1e-4f));
+            Assert.That(AlpsArrangementHandles.ExtentAt(3f, 0.5f, sizeLimit), Is.EqualTo(5f).Within(1e-4f));
+            Assert.That(AlpsArrangementHandles.ExtentAt(-1f, 0f, sizeLimit), Is.EqualTo(0f));
+        }
+
+        [TestCase(AlpsArrangementShape.Line, AlpsArrangementSpacing.Ends)]
+        [TestCase(AlpsArrangementShape.Circle, AlpsArrangementSpacing.Ends)]
+        [TestCase(AlpsArrangementShape.Polygon, AlpsArrangementSpacing.Centered)]
+        [TestCase(AlpsArrangementShape.Rectangle, AlpsArrangementSpacing.Centered)]
+        public void Handles_OutlineRunsThroughTheChildren(AlpsArrangementShape shape, AlpsArrangementSpacing spacing)
+        {
+            // Lifted and pushed out, the path goes where the children are, not along the
+            // container's plane under them. Corners are left out: a corner child steps out
+            // between its two edges, inside the corner of the moved edges.
+            var settings = new AlpsArrangementSettings { shape = shape, spacing = spacing, sides = 6 };
+            settings.width.value = 4f;
+            settings.depth.value = 2f;
+            settings.height.value = 1.5f;
+            settings.outward.value = 0.5f;
+
+            var points = new List<Vector3>();
+            var closed = AlpsArrangementHandles.Outline(settings, points);
+
+            var layout = new float[AlpsArrangementEvaluator.LayoutStride];
+            var values = new float[AlpsArrangementEvaluator.ValueCount];
+            var frame = new Vector3[AlpsArrangementEvaluator.SlotFrameLength];
+            settings.WriteLayout(layout);
+            for (var i = 0; i < 6; i++)
+            {
+                settings.ResolveValues(i, 6, values);
+                AlpsArrangementEvaluator.EvaluateSlot(layout, values, i, 6, frame);
+                var slot = frame[AlpsArrangementEvaluator.SlotPosition];
+                Assert.That(DistanceToPath(slot, points, closed), Is.LessThan(0.01f), $"{shape} slot {i} at {slot:F3}");
+            }
         }
 
         [Test]
@@ -352,6 +388,22 @@ namespace AdzukiSoft.ALPS.Tests
         private static Transform[] Children(AlpsArrangement arrangement)
         {
             return Enumerable.Range(0, arrangement.transform.childCount).Select(arrangement.transform.GetChild).ToArray();
+        }
+
+        private static float DistanceToPath(Vector3 point, List<Vector3> path, bool closed)
+        {
+            var nearest = float.MaxValue;
+            var segments = closed ? path.Count : path.Count - 1;
+            for (var i = 0; i < segments; i++)
+            {
+                var a = path[i];
+                var b = path[(i + 1) % path.Count];
+                var along = b - a;
+                var t = along.sqrMagnitude > 0f ? Mathf.Clamp01(Vector3.Dot(point - a, along) / along.sqrMagnitude) : 0f;
+                nearest = Mathf.Min(nearest, Vector3.Distance(point, a + along * t));
+            }
+
+            return nearest;
         }
 
         private static void AssertCollects(AlpsArrangement arrangement, ObjectChangeKind kind, int id, int idA = 0, int idB = 0)

@@ -1,16 +1,23 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// What an arrangement shows and lets you drag in the Scene view: the path it places
-    /// children on, each slot's number and facing, the line ends and the target as move
-    /// handles, and dots that pull the radius, the width and the depth.
+    /// What an arrangement shows and lets you drag in the Scene view: the path its children
+    /// sit on, each slot's number and facing, the line ends and the target as move handles,
+    /// and dots that pull the radius, the width and the depth.
     ///
-    /// A value with S on has no single size to pull, so its dot is left out. The math that
-    /// turns a dragged point into a value is kept apart so tests can reach it.
+    /// The path is drawn where the children are, lifted by the height and pushed out by the
+    /// outward offset, so it runs through them rather than along the container's plane.
+    /// That plane is often a floor, which a line drawn on it would fight for depth, showing
+    /// as dashes that change as the view moves. Everything is drawn over the scene.
+    ///
+    /// A value with S on has no single size to pull, so its dot is left out, and the path
+    /// follows the first slot's value. The math that turns a dragged point into a value is
+    /// kept apart so tests can reach it.
     /// </summary>
     public static class AlpsArrangementHandles
     {
@@ -21,35 +28,70 @@ namespace AdzukiSoft.ALPS.Editor
 
         private const int CircleSegments = 64;
 
-        /// <summary>The radius a dot dragged to <paramref name="local"/> sets, measured along the dot's direction.</summary>
-        public static float RadiusAt(Vector3 local, float angle, Vector2 limit)
-        {
-            return Mathf.Clamp(Vector3.Dot(local, AlpsArrangementEvaluator.Direction(angle)), limit.x, limit.y);
-        }
+        private const float PathThickness = 2f;
 
-        /// <summary>The width or depth a dot dragged to <paramref name="coordinate"/> on its axis sets.</summary>
-        public static float ExtentAt(float coordinate, Vector2 limit)
+        /// <summary>
+        /// The radius a dot dragged to <paramref name="local"/> sets, measured along the dot's
+        /// direction on the path, which sits <paramref name="offset"/> further out than the
+        /// radius itself.
+        /// </summary>
+        public static float RadiusAt(Vector3 local, float angle, float offset, Vector2 limit)
         {
-            return Mathf.Clamp(Mathf.Abs(coordinate) * 2f, limit.x, limit.y);
+            var along = Vector3.Dot(local, AlpsArrangementEvaluator.Direction(angle));
+            return Mathf.Clamp(along - offset, limit.x, limit.y);
         }
 
         /// <summary>
-        /// The outline of the shape in local space, before offsets. Returns whether it closes
-        /// back on its start.
+        /// The width or depth a dot dragged to <paramref name="coordinate"/> on its axis sets,
+        /// where the path's edge sits <paramref name="offset"/> beyond half of it.
+        /// </summary>
+        public static float ExtentAt(float coordinate, float offset, Vector2 limit)
+        {
+            return Mathf.Clamp((coordinate - offset) * 2f, limit.x, limit.y);
+        }
+
+        /// <summary>
+        /// How much further out than the radius the path reaches along the radius dot: the
+        /// outward offset on a circle, and on a polygon the corner of the shape whose edges
+        /// the offset moved out.
+        /// </summary>
+        public static float RadiusOffset(AlpsArrangementSettings settings)
+        {
+            var outward = Plain(settings.outward);
+            if (settings.shape != AlpsArrangementShape.Polygon)
+            {
+                return outward;
+            }
+
+            var corners = AlpsArrangementEvaluator.PolylineCorners(AlpsArrangementEvaluator.ShapePolygon, settings.sides);
+            return outward / Mathf.Cos(Mathf.PI / corners);
+        }
+
+        /// <summary>
+        /// The path the children sit on, in local space: the shape lifted by the height and
+        /// pushed out by the outward offset, as the first slot has them. Returns whether it
+        /// closes back on its start.
         /// </summary>
         public static bool Outline(AlpsArrangementSettings settings, List<Vector3> points)
         {
             points.Clear();
+            var lift = Vector3.up * Plain(settings.height);
+            var outward = Plain(settings.outward);
             switch (settings.shape)
             {
                 case AlpsArrangementShape.Line:
-                    points.Add(settings.lineStart);
-                    points.Add(settings.lineEnd);
+                {
+                    var along = settings.lineEnd - settings.lineStart;
+                    var tangent = along.sqrMagnitude > 1e-12f ? along.normalized : Vector3.right;
+                    var shift = lift + AlpsArrangementEvaluator.Perpendicular(tangent) * outward;
+                    points.Add(settings.lineStart + shift);
+                    points.Add(settings.lineEnd + shift);
                     return false;
+                }
                 case AlpsArrangementShape.Circle:
                 {
                     var sweep = Mathf.Clamp(Plain(settings.sweep), 0f, 360f);
-                    var radius = Plain(settings.radius);
+                    var radius = Plain(settings.radius) + outward;
                     var angle = Plain(settings.angle);
                     var closed = sweep >= AlpsArrangementEvaluator.FullSweep;
                     var steps = Mathf.Max(2, Mathf.CeilToInt(CircleSegments * sweep / 360f));
@@ -60,7 +102,7 @@ namespace AdzukiSoft.ALPS.Editor
                             break;
                         }
 
-                        points.Add(radius * AlpsArrangementEvaluator.Direction(angle + sweep * (i / (float)steps - 0.5f)));
+                        points.Add(radius * AlpsArrangementEvaluator.Direction(angle + sweep * (i / (float)steps - 0.5f)) + lift);
                     }
 
                     return closed;
@@ -72,13 +114,31 @@ namespace AdzukiSoft.ALPS.Editor
                     var layout = new float[AlpsArrangementEvaluator.LayoutStride];
                     var values = PlainValues(settings);
                     settings.WriteLayout(layout);
-                    var shape = settings.shape == AlpsArrangementShape.Grid
-                        ? AlpsArrangementEvaluator.ShapeRectangle
-                        : (int)settings.shape;
+
+                    // Moving every edge out by the offset grows a polygon's radius to its new
+                    // corners and a rectangle by the offset on each side. A grid's slots all
+                    // face the front, so the offset moves its whole box forward.
+                    var shift = lift;
+                    var shape = (int)settings.shape;
+                    if (settings.shape == AlpsArrangementShape.Polygon)
+                    {
+                        values[AlpsArrangementEvaluator.ValueRadius] += RadiusOffset(settings);
+                    }
+                    else if (settings.shape == AlpsArrangementShape.Rectangle)
+                    {
+                        values[AlpsArrangementEvaluator.ValueWidth] += outward * 2f;
+                        values[AlpsArrangementEvaluator.ValueDepth] += outward * 2f;
+                    }
+                    else
+                    {
+                        shape = AlpsArrangementEvaluator.ShapeRectangle;
+                        shift += Vector3.forward * outward;
+                    }
+
                     var corners = AlpsArrangementEvaluator.PolylineCorners(shape, layout[AlpsArrangementEvaluator.LayoutSides]);
                     for (var j = 0; j < corners; j++)
                     {
-                        points.Add(AlpsArrangementEvaluator.PolylineCorner(shape, layout, values, j));
+                        points.Add(AlpsArrangementEvaluator.PolylineCorner(shape, layout, values, j) + shift);
                     }
 
                     return true;
@@ -99,9 +159,18 @@ namespace AdzukiSoft.ALPS.Editor
 
             settings.EnsureLimits();
             var root = arrangement.transform;
-            DrawOutline(root, settings);
-            DrawSlots(root);
-            return DoHandles(arrangement, root, settings);
+            var zTest = Handles.zTest;
+            Handles.zTest = CompareFunction.Always;
+            try
+            {
+                DrawOutline(root, settings);
+                DrawSlots(root);
+                return DoHandles(arrangement, root, settings);
+            }
+            finally
+            {
+                Handles.zTest = zTest;
+            }
         }
 
         private static void DrawOutline(Transform root, AlpsArrangementSettings settings)
@@ -123,9 +192,14 @@ namespace AdzukiSoft.ALPS.Editor
                 points[i] = root.TransformPoint(points[i]);
             }
 
+            // A thick line hands Handles.zTest to its material. The anti-aliased polyline is drawn
+            // natively and was seen fighting a floor for depth anyway.
             using (new Handles.DrawingScope(PathColor))
             {
-                Handles.DrawAAPolyLine(2f, points.ToArray());
+                for (var i = 1; i < points.Count; i++)
+                {
+                    Handles.DrawLine(points[i - 1], points[i], PathThickness);
+                }
             }
         }
 
@@ -171,6 +245,10 @@ namespace AdzukiSoft.ALPS.Editor
                 changed |= MovePoint(arrangement, root, handleRotation, settings.target, value => settings.target = value);
             }
 
+            // The dots sit on the drawn path, so they carry its lift and outward offset.
+            var lift = Vector3.up * Plain(settings.height);
+            var outward = Plain(settings.outward);
+
             if ((settings.shape == AlpsArrangementShape.Circle || settings.shape == AlpsArrangementShape.Polygon) &&
                 !settings.radius.hasSpread)
             {
@@ -183,22 +261,30 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 var direction = AlpsArrangementEvaluator.Direction(angle);
-                changed |= SlideDot(arrangement, root, direction * settings.radius.value, direction,
-                    local => settings.radius.value = RadiusAt(local, angle, settings.radius.limit));
+                var offset = RadiusOffset(settings);
+                changed |= SlideDot(arrangement, root, direction * (settings.radius.value + offset) + lift, direction,
+                    local => settings.radius.value = RadiusAt(local, angle, offset, settings.radius.limit));
             }
 
             if (settings.shape == AlpsArrangementShape.Rectangle || settings.shape == AlpsArrangementShape.Grid)
             {
+                // A rectangle's edges moved out by the offset on every side. A grid's box only
+                // moved forward, so its side edges stay where the width puts them.
+                var sideOffset = settings.shape == AlpsArrangementShape.Rectangle ? outward : 0f;
+                var forward = settings.shape == AlpsArrangementShape.Grid ? Vector3.forward * outward : Vector3.zero;
+
                 if (!settings.width.hasSpread)
                 {
-                    changed |= SlideDot(arrangement, root, Vector3.right * settings.width.value * 0.5f, Vector3.right,
-                        local => settings.width.value = ExtentAt(local.x, settings.width.limit));
+                    var edge = Vector3.right * (settings.width.value * 0.5f + sideOffset) + lift + forward;
+                    changed |= SlideDot(arrangement, root, edge, Vector3.right,
+                        local => settings.width.value = ExtentAt(local.x, sideOffset, settings.width.limit));
                 }
 
                 if (!settings.depth.hasSpread)
                 {
-                    changed |= SlideDot(arrangement, root, Vector3.forward * settings.depth.value * 0.5f, Vector3.forward,
-                        local => settings.depth.value = ExtentAt(local.z, settings.depth.limit));
+                    var edge = Vector3.forward * (settings.depth.value * 0.5f + outward) + lift;
+                    changed |= SlideDot(arrangement, root, edge, Vector3.forward,
+                        local => settings.depth.value = ExtentAt(local.z, outward, settings.depth.limit));
                 }
             }
 
