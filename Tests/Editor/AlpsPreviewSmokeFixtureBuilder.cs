@@ -36,7 +36,7 @@ namespace AdzukiSoft.ALPS.Tests
         public const int Gobo = 4;
         public static readonly Color Tint = new Color(0.25f, 0.5f, 1f, 1f);
 
-        public const float ExpectedVrslConeWidth = 2.75f;
+        public const float ExpectedVrslConeWidth = 2.5f;
         public const float ExpectedVrslConeLength = 5.25f;
 
         public const double ActivationStart = 0.25;

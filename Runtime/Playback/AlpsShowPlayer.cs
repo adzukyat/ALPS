@@ -33,6 +33,11 @@ namespace AdzukiSoft.ALPS
         /// mesh in proportion, so 100 is twice the fixture's own mesh length.
         /// </summary>
         public const float ModelConeLengthLimit = 50f;
+        /// <summary>
+        /// VRSL cone width at a model width of 0. VRSL's inspector stops at 0, but its shader
+        /// reaches -0.5 when driven by DMX, and the static path narrows the same way below 0.
+        /// </summary>
+        public const float VrslMinConeWidth = -0.5f;
         public const float VrslMaxConeWidth = 5.5f;
         public const float VrslMinConeLength = 0.5f;
         public const float VrslMaxConeLength = 10f;
@@ -316,7 +321,7 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowEvaluator.FrameGreen] = color.g / excess;
             frame[offset + AlpsShowEvaluator.FrameBlue] = color.b / excess;
             frame[offset + AlpsShowEvaluator.FrameConeWidth] =
-                Mathf.Max(0f, fixture.coneWidth / VrslMaxConeWidth) * ModelConeWidthLimit;
+                Mathf.Max(0f, (fixture.coneWidth - VrslMinConeWidth) / (VrslMaxConeWidth - VrslMinConeWidth)) * ModelConeWidthLimit;
             frame[offset + AlpsShowEvaluator.FrameConeLength] =
                 Mathf.InverseLerp(VrslMinConeLength, VrslMaxConeLength, fixture.coneLength) * ModelConeLengthLimit;
             frame[offset + AlpsShowEvaluator.FrameConeMeshLength] = fixture.maxConeLength;
@@ -344,7 +349,8 @@ namespace AdzukiSoft.ALPS
                 frame[offset + AlpsShowEvaluator.FrameBlue] * tintScale,
                 1f);
             // A width typed past the limit keeps opening at the same rate.
-            fixture.coneWidth = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeWidth] / ModelConeWidthLimit) * VrslMaxConeWidth;
+            var coneWidth = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeWidth]) / ModelConeWidthLimit;
+            fixture.coneWidth = VrslMinConeWidth + coneWidth * (VrslMaxConeWidth - VrslMinConeWidth);
             // Up to the limit the cone fades in along the fixture's own mesh. Past it the mesh
             // itself is stretched, which VRSL scales linearly from the fixture.
             var coneLength = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeLength]) / ModelConeLengthLimit;
