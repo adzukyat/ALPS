@@ -167,8 +167,9 @@ MonoBehaviour:
         range: {x: -90, y: 90}
         isRange: 0
         hasSpread: 1
-        spread: 10
-        spreadRange: {x: 0, y: 0}
+        spreadRange: {x: 30, y: 40}
+        spreadRangeEnd: {x: 30, y: 40}
+        version: 1
         timing: 0
         useOwnPhase: 0
         ownPhase:

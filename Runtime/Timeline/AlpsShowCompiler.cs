@@ -173,7 +173,7 @@ namespace AdzukiSoft.ALPS
 
             private int _layer;
 
-            // The clip being encoded, for the spread division every phase block in it shares.
+            // The clip being encoded, for the spread division its phase blocks and value spreads share.
             private int _clipOrder;
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
@@ -407,18 +407,38 @@ namespace AdzukiSoft.ALPS
                 }
 
                 var row = new float[AlpsShowEvaluator.ParamStride];
-                row[AlpsShowEvaluator.ParamValue] = value.value;
-                row[AlpsShowEvaluator.ParamRangeMin] = value.range.x;
-                row[AlpsShowEvaluator.ParamRangeMax] = value.range.y;
+                if (value.hasSpread)
+                {
+                    // The spread's first value takes the value's place and its last becomes a
+                    // step per order position, divided with the clip's order and grouping.
+                    var start = value.spreadRange;
+                    var end = value.spreadRangeEnd;
+                    var step = SpreadStep(start);
+                    row[AlpsShowEvaluator.ParamValue] = start.x;
+                    row[AlpsShowEvaluator.ParamRangeMin] = start.x;
+                    row[AlpsShowEvaluator.ParamRangeMax] = end.x;
+                    row[AlpsShowEvaluator.ParamSpread] = step;
+                    row[AlpsShowEvaluator.ParamSpreadMin] = step;
+                    row[AlpsShowEvaluator.ParamSpreadMax] = SpreadStep(end);
+                }
+                else
+                {
+                    row[AlpsShowEvaluator.ParamValue] = value.value;
+                    row[AlpsShowEvaluator.ParamRangeMin] = value.range.x;
+                    row[AlpsShowEvaluator.ParamRangeMax] = value.range.y;
+                }
+
                 row[AlpsShowEvaluator.ParamIsRange] = value.isRange ? 1f : 0f;
-                row[AlpsShowEvaluator.ParamSpread] = value.spread;
-                row[AlpsShowEvaluator.ParamSpreadMin] = value.spreadRange.x;
-                row[AlpsShowEvaluator.ParamSpreadMax] = value.spreadRange.y;
                 row[AlpsShowEvaluator.ParamHasSpread] = value.hasSpread ? 1f : 0f;
                 row[AlpsShowEvaluator.ParamTiming] = (int)value.timing;
                 row[AlpsShowEvaluator.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;
                 WritePhase(row, AlpsShowEvaluator.ParamOwnPhase, value.ownPhase ?? new AlpsPhaseSettings());
                 _parameters.AddRange(row);
+            }
+
+            private float SpreadStep(Vector2 spread)
+            {
+                return AlpsShowEvaluator.StepFromSpread(spread.x, spread.y, _clipOrder, _clipFixtureCount, _clipGroupSize);
             }
 
             private void AddColor(AlpsColorStop stop)

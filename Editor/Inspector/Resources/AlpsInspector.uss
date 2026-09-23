@@ -513,6 +513,20 @@
     align-items: center;
 }
 
+/* With R and S both on, two spread sliders stack in the row and the flags stay beside the upper one. */
+.alps-animatable__row.alps-animatable__row--stacked {
+    align-items: flex-start;
+}
+
+.alps-root .alps-animatable__spreads > .alps-animatable__spread-end {
+    margin-top: 5px;
+}
+
+/* The lower spread slider keeps the label column so its track lines up, but shows no label. */
+.alps-root .alps-animatable__spread-end .unity-base-field__label {
+    visibility: hidden;
+}
+
 /* --------------------------------------------------------------- stepper */
 
 .alps-root .alps-stepper__input {

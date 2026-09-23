@@ -119,11 +119,18 @@ namespace AdzukiSoft.ALPS
 
         // --- Parameter rows ----------------------------------------------------------------
 
+        /// <summary>The value, or the first order position's value while spread is on.</summary>
         public const int ParamValue = 0;
+        /// <summary>The range's ends, or the first order position's ends while spread is on.</summary>
         public const int ParamRangeMin = 1;
         public const int ParamRangeMax = 2;
         public const int ParamIsRange = 3;
+        /// <summary>
+        /// Step per order position. The model stores the values at the first and last position
+        /// and the compiler divides them once, so the evaluator only sees the step.
+        /// </summary>
         public const int ParamSpread = 4;
+        /// <summary>The step at each end of the range.</summary>
         public const int ParamSpreadMin = 5;
         public const int ParamSpreadMax = 6;
         public const int ParamHasSpread = 7;
@@ -237,7 +244,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Order position k of the fixture at list index <paramref name="fixtureIndex"/>.
         /// Grouping is applied before the symmetric fold. Symmetric counts outward from the
-        /// center, so a positive spread starts in the middle and a positive value spread opens out.
+        /// center, so a positive spread starts in the middle and a value spread puts its first
+        /// value there and its last at the edges.
         /// </summary>
         public static int OrderPosition(int order, int seed, int fixtureIndex, int fixtureCount, int groupSize)
         {
@@ -314,6 +322,18 @@ namespace AdzukiSoft.ALPS
         public static float DelayFromSpread(float spread, int order, int fixtureCount, int groupSize)
         {
             return spread / Mathf.Max(1, SpreadPositions(order, fixtureCount, groupSize));
+        }
+
+        /// <summary>
+        /// The per order position step of a value spread that runs from <paramref name="first"/>
+        /// at the first position to <paramref name="last"/> at the last. A lone position has no
+        /// step and keeps the first value. The compiler applies this like
+        /// <see cref="DelayFromSpread"/>.
+        /// </summary>
+        public static float StepFromSpread(float first, float last, int order, int fixtureCount, int groupSize)
+        {
+            var positions = SpreadPositions(order, fixtureCount, groupSize);
+            return positions > 1 ? (last - first) / (positions - 1) : 0f;
         }
 
         /// <summary>Cycles elapsed for a fixture at order position k, before wrapping.</summary>
@@ -802,31 +822,39 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// The value of a numeric parameter for one fixture, spread included. Only one range
-        /// moves at a time: the value's, or the spread's while spread is on, where the value
-        /// becomes a fixed offset.
+        /// The value of a numeric parameter for one fixture, spread included. A spread arrives
+        /// as the first order position's value plus a step per position, and a range moves the
+        /// two together, so it runs from one spread to the other.
         /// </summary>
         public static float ResolveScalar(float[] clips, float[] parameters, int clipRow, int param, int k, float beats, int seed, float extraCycles)
         {
             var paramRow = param * ParamStride;
-            var hasSpread = parameters[paramRow + ParamHasSpread] > 0.5f;
 
-            float moving;
+            float value;
+            float step;
             if (parameters[paramRow + ParamIsRange] > 0.5f)
             {
-                var min = hasSpread ? parameters[paramRow + ParamSpreadMin] : parameters[paramRow + ParamRangeMin];
-                var max = hasSpread ? parameters[paramRow + ParamSpreadMax] : parameters[paramRow + ParamRangeMax];
                 var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
-                moving = ToInt(parameters[paramRow + ParamTiming]) == TimingPerCycle
-                    ? ((CycleIndex(cycles) & 1) == 0 ? min : max)
-                    : Mathf.LerpUnclamped(min, max, ParamPhase(clips, parameters, clipRow, param, cycles, k, seed));
+                if (ToInt(parameters[paramRow + ParamTiming]) == TimingPerCycle)
+                {
+                    var atMin = (CycleIndex(cycles) & 1) == 0;
+                    value = atMin ? parameters[paramRow + ParamRangeMin] : parameters[paramRow + ParamRangeMax];
+                    step = atMin ? parameters[paramRow + ParamSpreadMin] : parameters[paramRow + ParamSpreadMax];
+                }
+                else
+                {
+                    var phase = ParamPhase(clips, parameters, clipRow, param, cycles, k, seed);
+                    value = Mathf.LerpUnclamped(parameters[paramRow + ParamRangeMin], parameters[paramRow + ParamRangeMax], phase);
+                    step = Mathf.LerpUnclamped(parameters[paramRow + ParamSpreadMin], parameters[paramRow + ParamSpreadMax], phase);
+                }
             }
             else
             {
-                moving = hasSpread ? parameters[paramRow + ParamSpread] : parameters[paramRow + ParamValue];
+                value = parameters[paramRow + ParamValue];
+                step = parameters[paramRow + ParamSpread];
             }
 
-            return hasSpread ? parameters[paramRow + ParamValue] + moving * k : moving;
+            return parameters[paramRow + ParamHasSpread] > 0.5f ? value + step * k : value;
         }
 
         /// <summary>

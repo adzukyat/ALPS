@@ -137,7 +137,9 @@ namespace AdzukiSoft.ALPS.Tests
             var move = set.Add(AlpsEffectKind.Move);
             move.pan.value = Pan;
             move.pan.hasSpread = true;
-            move.pan.spread = PanSpread;
+            // The group holds two fixtures, so the last one sits a single step on.
+            move.pan.spreadRange = new Vector2(Pan, Pan + PanSpread);
+            move.pan.spreadRangeEnd = move.pan.spreadRange;
             move.tilt.value = Tilt;
 
             var cone = set.Add(AlpsEffectKind.Cone);

@@ -7,13 +7,14 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Animatable: one parameter row plus its framed options.
     ///
-    /// The row is [ slider ][ R ][ S ]. R ranges the row and S turns it into a spread,
-    /// so the slider shows the value, the value range, the spread or the spread range.
-    /// While spread is on the value moves into the spread frame as an offset.
+    /// The row is [ slider ][ R ][ S ]. R ranges the row over the cycle and S spreads it over
+    /// the fixtures, so the slider shows the value, the value range, or the values of the
+    /// first and last fixture. With both on a second spread slider stacks under the first,
+    /// and the range moves from the upper spread to the lower one.
     ///
     /// Visibility rules:
     ///   R / S ..................... everything except palettes
-    ///   Spread frame .............. S is on
+    ///   Lower spread slider ....... R and S are both on
     ///   Range frame ............... timing / own phase are shown
     ///   Timing / own phase ........ a range with two distinct ends, or a palette with two or more stops
     ///   Own phase ON .............. the shared settings panel opens right below
@@ -23,9 +24,12 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Marks the growing half of a [ control ][ R ][ S ] row.</summary>
         private const string FieldClass = "alps-animatable__field";
 
+        /// <summary>Lines R and S up with the upper slider while two spread sliders stack in the row.</summary>
+        private const string StackedRowClass = "alps-animatable__row--stacked";
+
         /// <summary>
-        /// The least a seeded spread range opens, as a fraction of the value's span. The spread
-        /// track covers twice the span, so this keeps the two thumbs an eighth of the track apart.
+        /// How far a closed spread opens, as a fraction of the value's span, when R needs two
+        /// different spreads to move between.
         /// </summary>
         private const float SpreadRangeOpening = 0.25f;
 
@@ -40,8 +44,9 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly AlpsValueSlider _valueSlider;
         private readonly AlpsRangeSlider _rangeSlider;
-        private readonly AlpsValueSlider _spreadSlider;
-        private readonly AlpsRangeSlider _spreadRange;
+        private readonly VisualElement _spreadSliders;
+        private readonly AlpsRangeSlider _spreadSlider;
+        private readonly AlpsRangeSlider _spreadEndSlider;
         private readonly AlpsRangeFlag _rangeFlag;
         private readonly AlpsRangeFlag _spreadFlag;
         private readonly VisualElement _valueRow;
@@ -51,9 +56,6 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsSegmentedControl _timing;
         private readonly AlpsToggleSwitch _ownPhase;
         private readonly AlpsPhaseSettingsView _ownPhaseView;
-
-        private readonly VisualElement _spreadFrame;
-        private readonly AlpsValueSlider _offsetSlider;
 
         public AlpsAnimatableView(
             string label,
@@ -78,17 +80,7 @@ namespace AdzukiSoft.ALPS.Editor
             _valueRow = new VisualElement();
             _valueRow.AddToClassList("alps-animatable__row");
 
-            // Negative spread fans the other way.
-            var span = Mathf.Max(1f, model.limit.y - model.limit.x);
-            var spreadLimit = new Vector2(-span, span);
-
-            // The spread sliders are signed, so zero always snaps even when the value has no points.
             var valueSnaps = snaps != null ? snaps(model.limit) : AlpsSnapPoints.None;
-            var spreadSnaps = AlpsSnapPoints.Zero(spreadLimit);
-            if (snaps != null)
-            {
-                spreadSnaps = MergeSnaps(spreadSnaps, snaps(spreadLimit));
-            }
 
             if (_isPalette)
             {
@@ -100,7 +92,11 @@ namespace AdzukiSoft.ALPS.Editor
                 _valueSlider = new AlpsValueSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
                 _valueSlider.AddToClassList(FieldClass);
                 _valueSlider.SetValueWithoutNotify(model.value);
-                _valueSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
+                _valueSlider.RegisterValueChangedCallback(evt =>
+                {
+                    model.value = evt.newValue;
+                    Changed();
+                });
 
                 _rangeSlider = new AlpsRangeSlider(label, model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.range };
                 _rangeSlider.AddToClassList(FieldClass);
@@ -112,35 +108,42 @@ namespace AdzukiSoft.ALPS.Editor
                     Changed();
                 });
 
-                _spreadSlider = new AlpsValueSlider(label, spreadLimit, unit, format) { Snaps = spreadSnaps, DefaultValue = 0f };
-                _spreadSlider.AddToClassList(FieldClass);
-                _spreadSlider.SetValueWithoutNotify(model.spread);
-                _spreadSlider.RegisterValueChangedCallback(evt =>
-                {
-                    model.spread = evt.newValue;
-                    Changed();
-                });
+                // Either end of a spread restores the value's default, which lines every fixture up.
+                var spreadDefault = defaults != null ? new Vector2(defaults.value, defaults.value) : (Vector2?)null;
 
-                _spreadRange = new AlpsRangeSlider(label, spreadLimit, unit, format)
-                {
-                    Snaps = spreadSnaps,
-                    DefaultValue = new Vector2(0f, span * SpreadRangeOpening),
-                };
-                _spreadRange.AddToClassList(FieldClass);
-                _spreadRange.SetValueWithoutNotify(model.spreadRange);
-                _spreadRange.RegisterValueChangedCallback(evt =>
+                _spreadSliders = new VisualElement();
+                _spreadSliders.AddToClassList(FieldClass);
+                _spreadSliders.AddToClassList("alps-animatable__spreads");
+
+                _spreadSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault);
+                _spreadSlider.SetValueWithoutNotify(model.spreadRange);
+                _spreadSlider.RegisterValueChangedCallback(evt =>
                 {
                     model.spreadRange = evt.newValue;
                     Refresh();
                     Changed();
                 });
+                _spreadSliders.Add(_spreadSlider);
+
+                // Only its place under the upper slider tells it apart, so its label keeps the
+                // column without being drawn.
+                _spreadEndSlider = SpreadSlider(label, model.limit, unit, format, valueSnaps, spreadDefault);
+                _spreadEndSlider.AddToClassList("alps-animatable__spread-end");
+                _spreadEndSlider.SetValueWithoutNotify(model.spreadRangeEnd);
+                _spreadEndSlider.RegisterValueChangedCallback(evt =>
+                {
+                    model.spreadRangeEnd = evt.newValue;
+                    Refresh();
+                    Changed();
+                });
+                _spreadSliders.Add(_spreadEndSlider);
 
                 _rangeFlag = new AlpsRangeFlag();
                 _rangeFlag.SetValueWithoutNotify(model.isRange);
                 _rangeFlag.RegisterValueChangedCallback(evt =>
                 {
                     model.isRange = evt.newValue;
-                    SeedSpreadRange(span);
+                    SeedSpreadRangeEnd();
                     Refresh();
                     Changed();
                 });
@@ -151,22 +154,21 @@ namespace AdzukiSoft.ALPS.Editor
                 _spreadFlag.RegisterValueChangedCallback(evt =>
                 {
                     model.hasSpread = evt.newValue;
-                    SeedSpreadRange(span);
+                    SeedSpread();
                     Refresh();
                     Changed();
                 });
 
                 mixed?.Bind(_valueSlider, model, nameof(AlpsAnimatableValue.value));
                 mixed?.Bind(_rangeSlider, model, nameof(AlpsAnimatableValue.range));
-                mixed?.Bind(_spreadSlider, model, nameof(AlpsAnimatableValue.spread));
-                mixed?.Bind(_spreadRange, model, nameof(AlpsAnimatableValue.spreadRange));
+                mixed?.Bind(_spreadSlider, model, nameof(AlpsAnimatableValue.spreadRange));
+                mixed?.Bind(_spreadEndSlider, model, nameof(AlpsAnimatableValue.spreadRangeEnd));
                 mixed?.Bind(_rangeFlag, model, nameof(AlpsAnimatableValue.isRange));
                 mixed?.Bind(_spreadFlag, model, nameof(AlpsAnimatableValue.hasSpread));
 
                 _valueRow.Add(_valueSlider);
                 _valueRow.Add(_rangeSlider);
-                _valueRow.Add(_spreadSlider);
-                _valueRow.Add(_spreadRange);
+                _valueRow.Add(_spreadSliders);
                 _valueRow.Add(_rangeFlag);
                 _valueRow.Add(_spreadFlag);
             }
@@ -207,20 +209,6 @@ namespace AdzukiSoft.ALPS.Editor
 
             Add(_rangeFrame);
 
-            // --- spread frame ----------------------------------------------
-            if (!_isPalette)
-            {
-                _spreadFrame = Frame("広がり", out _);
-
-                _offsetSlider = new AlpsValueSlider("オフセット", model.limit, unit, format) { Snaps = valueSnaps, DefaultValue = defaults?.value };
-                _offsetSlider.SetValueWithoutNotify(model.value);
-                _offsetSlider.RegisterValueChangedCallback(evt => SetValue(evt.newValue));
-                mixed?.Bind(_offsetSlider, model, nameof(AlpsAnimatableValue.value));
-                _spreadFrame.Add(_offsetSlider);
-
-                Add(_spreadFrame);
-            }
-
             Refresh();
         }
 
@@ -237,11 +225,12 @@ namespace AdzukiSoft.ALPS.Editor
             if (!_isPalette)
             {
                 var spread = _model.hasSpread;
-                AlpsPhaseSettingsView.Show(_valueSlider, !spread && !_model.isRange);
-                AlpsPhaseSettingsView.Show(_rangeSlider, !spread && _model.isRange);
-                AlpsPhaseSettingsView.Show(_spreadSlider, spread && !_model.isRange);
-                AlpsPhaseSettingsView.Show(_spreadRange, spread && _model.isRange);
-                AlpsPhaseSettingsView.Show(_spreadFrame, spread);
+                var ranged = _model.isRange;
+                AlpsPhaseSettingsView.Show(_valueSlider, !spread && !ranged);
+                AlpsPhaseSettingsView.Show(_rangeSlider, !spread && ranged);
+                AlpsPhaseSettingsView.Show(_spreadSliders, spread);
+                AlpsPhaseSettingsView.Show(_spreadEndSlider, spread && ranged);
+                _valueRow.EnableInClassList(StackedRowClass, spread && ranged);
             }
 
             var multiple = HasMultipleStops;
@@ -288,41 +277,69 @@ namespace AdzukiSoft.ALPS.Editor
             return frame;
         }
 
-        private static float[] MergeSnaps(float[] a, float[] b)
+        /// <summary>
+        /// A range slider over the fixtures. x is the first fixture and y the last, and either
+        /// may be the larger, so its thumbs pass each other.
+        /// </summary>
+        private static AlpsRangeSlider SpreadSlider(string label, Vector2 limit, string unit, string format, float[] snaps, Vector2? defaultValue)
         {
-            var merged = new float[a.Length + b.Length];
-            a.CopyTo(merged, 0);
-            b.CopyTo(merged, a.Length);
-            return merged;
-        }
-
-        /// <summary>The row slider and the offset slider edit the same value.</summary>
-        private void SetValue(float value)
-        {
-            _model.value = value;
-            _valueSlider.SetValueWithoutNotify(value);
-            _offsetSlider.SetValueWithoutNotify(value);
-            Changed();
+            var slider = new AlpsRangeSlider(label, limit, unit, format)
+            {
+                Snaps = snaps,
+                DefaultValue = defaultValue,
+                EndsCanCross = true,
+            };
+            slider.AddToClassList("alps-animatable__spread");
+            slider.SetEndTooltips("最初の器具", "最後の器具");
+            return slider;
         }
 
         /// <summary>
-        /// A collapsed spread range has nothing to animate, so its options would stay hidden.
-        /// Start it closed and open to the current spread. A spread too small to pull the
-        /// thumbs apart opens to <see cref="SpreadRangeOpening"/> of the span in its direction.
+        /// Turning S on keeps the look. A spread with nothing in it closes on the value, or on
+        /// the two ends of the range while R is on, so every fixture starts where it was.
         /// </summary>
-        private void SeedSpreadRange(float span)
+        private void SeedSpread()
         {
-            if (!_model.hasSpread || !_model.isRange || !Mathf.Approximately(_model.spreadRange.x, _model.spreadRange.y))
+            if (!_model.hasSpread ||
+                AlpsAnimatableValue.IsOpen(_model.spreadRange) ||
+                AlpsAnimatableValue.IsOpen(_model.spreadRangeEnd))
             {
                 return;
             }
 
-            var opening = span * SpreadRangeOpening;
-            var end = Mathf.Abs(_model.spread) >= opening
-                ? _model.spread
-                : (_model.spread < 0f ? -opening : opening);
-            _model.spreadRange = new Vector2(0f, end);
-            _spreadRange.SetValueWithoutNotify(_model.spreadRange);
+            var start = _model.isRange ? _model.range.x : _model.value;
+            var end = _model.isRange ? _model.range.y : _model.value;
+            _model.spreadRange = new Vector2(start, start);
+            _model.spreadRangeEnd = new Vector2(end, end);
+            _spreadSlider.SetValueWithoutNotify(_model.spreadRange);
+            _spreadEndSlider.SetValueWithoutNotify(_model.spreadRangeEnd);
+        }
+
+        /// <summary>
+        /// Two equal spreads have nothing to move between, so R's options would stay hidden.
+        /// The lower slider then starts as the other state of the upper one: an open spread
+        /// closes on its first value, and a closed one opens by <see cref="SpreadRangeOpening"/>
+        /// of the span, upward unless that would leave the limits.
+        /// </summary>
+        private void SeedSpreadRangeEnd()
+        {
+            if (!_model.hasSpread ||
+                !_model.isRange ||
+                !AlpsAnimatableValue.Approximately(_model.spreadRange, _model.spreadRangeEnd))
+            {
+                return;
+            }
+
+            var first = _model.spreadRange.x;
+            var last = first;
+            if (!AlpsAnimatableValue.IsOpen(_model.spreadRange))
+            {
+                var opening = (_model.limit.y - _model.limit.x) * SpreadRangeOpening;
+                last = first + opening <= _model.limit.y ? first + opening : first - opening;
+            }
+
+            _model.spreadRangeEnd = new Vector2(first, last);
+            _spreadEndSlider.SetValueWithoutNotify(_model.spreadRangeEnd);
         }
 
         private void Changed()

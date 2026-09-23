@@ -345,28 +345,53 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Spread_AddsAPerFixtureOffset()
+        public void Spread_RunsFromTheFirstFixtureToTheLast()
         {
             var set = Set();
             var cone = set.Add(AlpsEffectKind.Cone);
-            cone.coneWidth.value = 10f;
+            cone.coneWidth.value = 50f;
             cone.coneWidth.hasSpread = true;
-            cone.coneWidth.spread = 5f;
+            cone.coneWidth.spreadRange = new Vector2(10f, 25f);
             var show = Compile(4, set);
 
             var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
-            CollectionAssert.AreEqual(new[] { 10f, 15f, 20f, 25f }, widths);
+            CollectionAssert.AreEqual(new[] { 10f, 15f, 20f, 25f }, widths, "The spread replaces the value and spaces the fixtures between evenly.");
         }
 
         [Test]
-        public void SpreadRange_FollowsThePhaseLikeAValueRange()
+        public void Spread_KeepsItsEndsWhateverTheFixtureCount()
         {
             var set = Set();
             var cone = set.Add(AlpsEffectKind.Cone);
-            cone.coneLength.value = 0f;
+            cone.coneWidth.hasSpread = true;
+            cone.coneWidth.spreadRange = new Vector2(10f, 40f);
+
+            foreach (var count in new[] { 2, 3, 7 })
+            {
+                var show = Compile(count, set);
+                Assert.AreEqual(10f, Evaluate(show, 0, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, $"First of {count}.");
+                Assert.AreEqual(40f, Evaluate(show, count - 1, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, $"Last of {count}.");
+            }
+
+            var single = Compile(1, set);
+            Assert.AreEqual(10f, Evaluate(single, 0, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, "A lone fixture takes the first value.");
+
+            // Grouped fixtures share a position, so the last group takes the last value.
+            set.phase.fixtureGroupSize = 2;
+            var grouped = Compile(6, set);
+            var widths = Enumerable.Range(0, 6).Select(i => Evaluate(grouped, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
+            CollectionAssert.AreEqual(new[] { 10f, 10f, 25f, 25f, 40f, 40f }, widths);
+        }
+
+        [Test]
+        public void SpreadRange_MovesFromOneSpreadToTheOther()
+        {
+            var set = Set();
+            var cone = set.Add(AlpsEffectKind.Cone);
             cone.coneLength.hasSpread = true;
             cone.coneLength.isRange = true;
-            cone.coneLength.spreadRange = new Vector2(0f, 10f);
+            cone.coneLength.spreadRange = new Vector2(0f, 0f);
+            cone.coneLength.spreadRangeEnd = new Vector2(0f, 30f);
             var show = Compile(4, set);
 
             float[] Lengths(float time) => Enumerable.Range(0, 4).Select(i => Evaluate(show, i, time)[AlpsShowEvaluator.FrameConeLength]).ToArray();
@@ -375,42 +400,61 @@ namespace AdzukiSoft.ALPS.Tests
             var half = Lengths(0.5f);
             for (var i = 0; i < 4; i++)
             {
-                Assert.AreEqual(5f * i, half[i], 0.01f, "Half way through, each position adds half the spread range.");
+                Assert.AreEqual(5f * i, half[i], 0.01f, "Half way through, every fixture is half way between its two values.");
             }
 
             cone.coneLength.timing = AlpsTimingMode.PerCycle;
             show = Compile(4, set);
-            Assert.AreEqual(0f, Lengths(0.5f)[3], 0.01f, "Per cycle holds the first end for the whole first cycle.");
-            Assert.AreEqual(30f, Lengths(1.5f)[3], 0.01f, "And the other end for the next one.");
+            Assert.AreEqual(0f, Lengths(0.5f)[3], 0.01f, "Per cycle holds the first spread for the whole first cycle.");
+            Assert.AreEqual(30f, Lengths(1.5f)[3], 0.01f, "And the other one for the next.");
         }
 
         [Test]
-        public void Spread_KeepsTheValueAsAFixedOffsetAndSetsTheValueRangeAside()
+        public void SpreadRange_MovesBothEndsOfTheSpread()
+        {
+            var set = Set();
+            var cone = set.Add(AlpsEffectKind.Cone);
+            cone.coneLength.hasSpread = true;
+            cone.coneLength.isRange = true;
+            cone.coneLength.spreadRange = new Vector2(0f, 10f);
+            cone.coneLength.spreadRangeEnd = new Vector2(20f, 50f);
+            var show = Compile(3, set);
+
+            float[] Lengths(float time) => Enumerable.Range(0, 3).Select(i => Evaluate(show, i, time)[AlpsShowEvaluator.FrameConeLength]).ToArray();
+
+            var quarter = Lengths(0.25f);
+            Assert.AreEqual(5f, quarter[0], 0.01f, "The first fixture is a quarter of the way from 0 to 20.");
+            Assert.AreEqual(12.5f, quarter[1], 0.01f, "The middle one sits half way between its neighbours.");
+            Assert.AreEqual(20f, quarter[2], 0.01f, "The last one is a quarter of the way from 10 to 50.");
+        }
+
+        [Test]
+        public void Spread_SetsTheValueAndItsRangeAside()
         {
             var set = Set();
             var cone = set.Add(AlpsEffectKind.Cone);
             cone.coneLength.value = 3f;
             cone.coneLength.range = new Vector2(0f, 8f);
-            cone.coneLength.spread = 2f;
-            cone.coneLength.spreadRange = new Vector2(0f, 10f);
+            cone.coneLength.spreadRange = new Vector2(3f, 5f);
+            cone.coneLength.spreadRangeEnd = new Vector2(3f, 13f);
             cone.coneLength.hasSpread = true;
             var show = Compile(2, set);
 
-            Assert.AreEqual(3f + 2f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "Without R the spread is fixed on top of the offset.");
+            Assert.AreEqual(5f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "Without R the first spread holds.");
 
-            // R now ranges the spread, the offset stays put and the value range is ignored.
+            // R now moves between the two spreads and the value range is ignored.
             cone.coneLength.isRange = true;
             show = Compile(2, set);
             Assert.AreEqual(3f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
-            Assert.AreEqual(3f + 5f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
+            Assert.AreEqual(9f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
 
-            // The spread range takes the row's own phase like any range.
+            // The spreads take the row's own phase like any range.
             cone.coneLength.useOwnPhase = true;
             cone.coneLength.ownPhase.SetShares(1f, 0f, 0f);
             cone.coneLength.ownPhase.ease = AlpsEaseType.Linear;
             cone.coneLength.ownPhase.beatsPerCycle = 2f;
             show = Compile(2, set);
-            Assert.AreEqual(3f + 2.5f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "A quarter of the own cycle opens a quarter of the spread range.");
+            Assert.AreEqual(7f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "A quarter of the own cycle is a quarter of the way.");
 
             // Turning spread off brings the value range back and drops the spread.
             cone.coneLength.hasSpread = false;
@@ -420,14 +464,13 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void SpreadRange_ReverseOrderFansFromTheOtherEnd()
+        public void Spread_ReverseOrderStartsFromTheOtherEnd()
         {
             var set = Set();
             set.order = AlpsOrderMode.Reverse;
             var cone = set.Add(AlpsEffectKind.Cone);
-            cone.coneWidth.value = 0f;
             cone.coneWidth.hasSpread = true;
-            cone.coneWidth.spread = 10f;
+            cone.coneWidth.spreadRange = new Vector2(0f, 30f);
             var show = Compile(4, set);
 
             var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
@@ -435,13 +478,12 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Spread_CanBeNegative()
+        public void Spread_CanRunDownward()
         {
             var set = Set();
             var cone = set.Add(AlpsEffectKind.Cone);
-            cone.coneWidth.value = 30f;
             cone.coneWidth.hasSpread = true;
-            cone.coneWidth.spread = -5f;
+            cone.coneWidth.spreadRange = new Vector2(30f, 15f);
             var show = Compile(4, set);
 
             var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
@@ -454,21 +496,24 @@ namespace AdzukiSoft.ALPS.Tests
             var set = Set();
             set.order = AlpsOrderMode.Symmetric;
             var move = set.Add(AlpsEffectKind.Move);
-            move.tilt.value = 10f;
             move.tilt.hasSpread = true;
-            move.tilt.spread = 5f;
+            move.tilt.spreadRange = new Vector2(10f, 20f);
             move.pan.hasSpread = true;
-            move.pan.spread = 20f;
+            move.pan.spreadRange = new Vector2(0f, 40f);
             var show = Compile(5, set);
 
             float[] Channel(int channel) => Enumerable.Range(0, 5).Select(i => Evaluate(show, i, 0.1f)[channel]).ToArray();
 
             CollectionAssert.AreEqual(new[] { -40f, -20f, 0f, 20f, 40f }, Channel(AlpsShowEvaluator.FramePan), "Pan mirrors into a fan.");
-            CollectionAssert.AreEqual(new[] { 20f, 15f, 10f, 15f, 20f }, Channel(AlpsShowEvaluator.FrameTilt), "Tilt has no left and right.");
+            CollectionAssert.AreEqual(new[] { 20f, 15f, 10f, 15f, 20f }, Channel(AlpsShowEvaluator.FrameTilt), "Tilt has no left and right, the first value sits in the middle.");
 
-            move.pan.spread = -20f;
+            move.pan.spreadRange = new Vector2(0f, -40f);
             show = Compile(5, set);
-            CollectionAssert.AreEqual(new[] { 40f, 20f, 0f, -20f, -40f }, Channel(AlpsShowEvaluator.FramePan), "Negative spread crosses the fan.");
+            CollectionAssert.AreEqual(new[] { 40f, 20f, 0f, -20f, -40f }, Channel(AlpsShowEvaluator.FramePan), "A downward spread crosses the fan.");
+
+            // With an even count the middle pair takes the first value and the edges the last.
+            show = Compile(4, set);
+            CollectionAssert.AreEqual(new[] { 20f, 10f, 10f, 20f }, Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameTilt]).ToArray());
         }
 
         [Test]
@@ -904,7 +949,7 @@ namespace AdzukiSoft.ALPS.Tests
             move.moveMode = AlpsMoveMode.Circle;
             move.circleCenterTilt.value = 30f;
             move.circleCenterPan.hasSpread = true;
-            move.circleCenterPan.spread = 25f;
+            move.circleCenterPan.spreadRange = new Vector2(0f, 25f);
             move.circleRadius.value = 8f;
             var show = Compile(4, set);
 

@@ -98,6 +98,12 @@ namespace AdzukiSoft.ALPS.Editor
             set { _origin = Mathf.Clamp01(value); Refresh(); }
         }
 
+        /// <summary>
+        /// Lets a dragged thumb pass the other one and keep its end, so a range can run
+        /// backwards. Otherwise it takes over the other end and the range stays in order.
+        /// </summary>
+        public bool EndsCanCross { get; set; }
+
         /// <summary>Raised while dragging with the new normalized (low, high) pair.</summary>
         public event Action<float, float> Changed;
 
@@ -330,12 +336,12 @@ namespace AdzukiSoft.ALPS.Editor
 
                 // A thumb dragged past the other one takes over its end, so a closed range
                 // opens in whichever direction the drag goes.
-                if (_draggingThumb == ThumbLow && t > _high)
+                if (!EndsCanCross && _draggingThumb == ThumbLow && t > _high)
                 {
                     _low = _high;
                     _draggingThumb = ThumbHigh;
                 }
-                else if (_draggingThumb == ThumbHigh && t < _low)
+                else if (!EndsCanCross && _draggingThumb == ThumbHigh && t < _low)
                 {
                     _high = _low;
                     _draggingThumb = ThumbLow;

@@ -544,7 +544,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Frames_AreTitledRangeAndSpread()
+        public void RangeFrame_IsTheOnlyFrameAndSpreadNeedsNone()
         {
             var set = new AlpsClipEffectSet();
             set.phase.SetShares(1f, 0f, 0f);
@@ -552,22 +552,28 @@ namespace AdzukiSoft.ALPS.Tests
             move.tilt.hasSpread = true;
             move.tilt.isRange = true;
             move.tilt.spreadRange = new Vector2(-10f, 10f);
+            move.tilt.spreadRangeEnd = new Vector2(10f, -10f);
 
             var view = new AlpsClipInspectorView(set);
             var tilt = view.Query<AlpsAnimatableView>().First();
             var frames = tilt.Children().Where(c => c.ClassListContains("alps-sub")).ToList();
-            var titles = frames.Select(f => f.Q<Label>(className: "alps-sub__title")).ToList();
 
-            CollectionAssert.AreEqual(new[] { "レンジ", "広がり" }, titles.Select(t => t.text).ToArray());
-            Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.Flex));
+            Assert.AreEqual(1, frames.Count, "A spread is set in the row itself.");
+            Assert.AreEqual("レンジ", frames[0].Q<Label>(className: "alps-sub__title").text);
+            Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value, "Two different spreads are a range to move through.");
             Assert.IsTrue(frames[0].Children().OfType<AlpsSegmentedControl>().Any(c => c.label == "タイミング"), "Timing lives in the range frame.");
-            Assert.IsTrue(frames[1].Query<AlpsValueSlider>().ToList().Any(s => s.label == "オフセット"), "The offset lives in the spread frame.");
+            Assert.IsFalse(tilt.Query<AlpsValueSlider>().ToList().Any(s => s.label == "オフセット"), "There is no offset to set apart from the spread.");
 
-            // Without a range the frame has nothing to hold, and without spread neither does the other.
+            // Two equal spreads have nothing to move between.
+            move.tilt.spreadRangeEnd = move.tilt.spreadRange;
+            tilt.Refresh();
+            Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
+
+            // Without a range the frame has nothing to hold.
             move.tilt.isRange = false;
             move.tilt.hasSpread = false;
             tilt.Refresh();
-            Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.None));
+            Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
 
             // Another wave alone gives a fixed value nothing to put in the range frame.
             set.phase.SetShares(0.5f, 0f, 0.5f);
@@ -690,14 +696,13 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator SpreadFlag_TurnsTheRowIntoASpreadAndRChoosesWhichRanges()
+        public IEnumerator SpreadFlag_TurnsTheRowIntoTheFirstAndLastFixtureAndRStacksASecondSpread()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
             set.phase.SetShares(1f, 0f, 0f);
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.value = 10f;
-            move.tilt.spread = 12f;
 
             var window = ScriptableObject.CreateInstance<PanelHostWindow>();
             window.hideFlags = HideFlags.HideAndDontSave;
@@ -713,46 +718,113 @@ namespace AdzukiSoft.ALPS.Tests
                 var flags = tilt.Query<AlpsRangeFlag>().ToList()
                     .Where(f => f.GetFirstAncestorOfType<AlpsPhaseSettingsView>() == null)
                     .ToList();
-                var singles = tilt.Query<AlpsValueSlider>().ToList().Where(s => s.label == "Tilt").ToList();
+                var single = tilt.Query<AlpsValueSlider>().ToList().Single(s => s.label == "Tilt");
                 var ranges = tilt.Query<AlpsRangeSlider>().ToList().Where(s => s.label == "Tilt").ToList();
-                var frames = tilt.Children().Where(c => c.ClassListContains("alps-sub")).ToList();
-                var offset = frames[1].Q<AlpsValueSlider>();
-                var timing = frames[0].Q<AlpsSegmentedControl>();
+                var row = single.parent;
+                var frame = tilt.Children().Single(c => c.ClassListContains("alps-sub"));
+                var timing = frame.Q<AlpsSegmentedControl>();
 
                 Assert.AreEqual(2, flags.Count, "One row, two letters.");
                 Assert.AreEqual("R", flags[0].Q<Label>().text);
                 Assert.AreEqual("S", flags[1].Q<Label>().text);
-                Assert.AreEqual(2, singles.Count, "The value and the spread keep the property's name.");
-                Assert.AreEqual(DisplayStyle.None, frames[1].style.display.value);
+                Assert.AreEqual(3, ranges.Count, "The value range and both spreads keep the property's name.");
+                var spread = ranges[1];
+                var spreadEnd = ranges[2];
 
                 flags[1].value = true;
                 Assert.IsTrue(move.tilt.hasSpread);
-                Assert.AreEqual(DisplayStyle.None, singles[0].style.display.value);
-                Assert.AreEqual(DisplayStyle.Flex, singles[1].style.display.value, "The row now edits the spread.");
-                Assert.AreEqual(12f, singles[1].value, 0.001f);
-                Assert.AreEqual(DisplayStyle.Flex, frames[1].style.display.value);
-                Assert.AreEqual(10f, offset.value, 0.001f, "The value moves into the frame as the offset.");
-
-                offset.value = 20f;
-                Assert.AreEqual(20f, move.tilt.value, 0.001f);
-                Assert.AreEqual(20f, singles[0].value, 0.001f, "Both sliders show the same value.");
+                Assert.AreEqual(DisplayStyle.None, single.style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, spread.parent.style.display.value, "The row now sets the first and last fixture.");
+                Assert.AreEqual(DisplayStyle.None, spreadEnd.style.display.value, "Without R there is one spread.");
+                Assert.AreEqual(new Vector2(10f, 10f), move.tilt.spreadRange, "The spread starts closed on the value, so nothing moves yet.");
+                Assert.AreEqual(new Vector2(10f, 10f), spread.value);
 
                 flags[0].value = true;
                 Assert.IsTrue(move.tilt.isRange);
-                Assert.AreEqual(new Vector2(0f, 45f), move.tilt.spreadRange, "A spread too small to part the thumbs opens to a quarter of the span.");
-                Assert.AreEqual(DisplayStyle.Flex, ranges[1].style.display.value, "R with S ranges the spread.");
+                Assert.AreEqual(DisplayStyle.Flex, spreadEnd.style.display.value, "R with S stacks the spread the range moves to.");
+                Assert.IsTrue(row.ClassListContains("alps-animatable__row--stacked"));
                 Assert.AreEqual(DisplayStyle.None, ranges[0].style.display.value);
-                Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
+                Assert.AreEqual(new Vector2(10f, 10f), move.tilt.spreadRange, "The upper spread stays as it was.");
+                Assert.AreEqual(new Vector2(10f, 55f), move.tilt.spreadRangeEnd, "A closed spread opens by a quarter of the span.");
+                Assert.AreEqual(new Vector2(10f, 55f), spreadEnd.value);
+                Assert.AreEqual(DisplayStyle.Flex, frame.style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, timing.style.display.value);
 
-                // Dragging the spread range shut hides its options again.
-                ranges[1].value = new Vector2(5f, 5f);
-                Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
+                spread.value = new Vector2(10f, -20f);
+                Assert.AreEqual(new Vector2(10f, -20f), move.tilt.spreadRange, "The last fixture may take the smaller value.");
+                Assert.AreEqual(10f, move.tilt.value, 0.001f, "The value is kept for when S goes off.");
+
+                // Matching the two spreads leaves nothing to move between.
+                spreadEnd.value = new Vector2(10f, -20f);
+                Assert.AreEqual(DisplayStyle.None, frame.style.display.value);
 
                 flags[1].value = false;
                 Assert.AreEqual(DisplayStyle.Flex, ranges[0].style.display.value, "Without S, R ranges the value again.");
-                Assert.AreEqual(DisplayStyle.None, frames[1].style.display.value);
-                Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value);
+                Assert.AreEqual(DisplayStyle.None, spread.parent.style.display.value);
+                Assert.IsFalse(row.ClassListContains("alps-animatable__row--stacked"));
+                Assert.AreEqual(DisplayStyle.Flex, frame.style.display.value);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SpreadFlag_KeepsTheLookWhenItTurnsOn()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            set.phase.SetShares(1f, 0f, 0f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.value = 10f;
+            move.tilt.isRange = true;
+            move.tilt.range = new Vector2(-30f, 60f);
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var tilt = view.Query<AlpsAnimatableView>().First();
+                var flags = tilt.Query<AlpsRangeFlag>().ToList()
+                    .Where(f => f.GetFirstAncestorOfType<AlpsPhaseSettingsView>() == null)
+                    .ToList();
+
+                flags[1].value = true;
+                Assert.AreEqual(new Vector2(-30f, -30f), move.tilt.spreadRange, "The range's start becomes a closed spread.");
+                Assert.AreEqual(new Vector2(60f, 60f), move.tilt.spreadRangeEnd, "And its end the other one.");
+
+                // A spread with something in it is kept through the flags.
+                move.tilt.spreadRange = new Vector2(0f, 40f);
+                flags[1].value = false;
+                flags[1].value = true;
+                Assert.AreEqual(new Vector2(0f, 40f), move.tilt.spreadRange);
+
+                // Two equal closed spreads open by a quarter of the span when R comes on.
+                flags[0].value = false;
+                move.tilt.spreadRange = new Vector2(80f, 80f);
+                move.tilt.spreadRangeEnd = new Vector2(80f, 80f);
+                flags[0].value = true;
+                Assert.AreEqual(new Vector2(80f, 35f), move.tilt.spreadRangeEnd, "Past the limit it opens downward instead.");
+
+                // Two equal open spreads close the lower one on its first value.
+                flags[0].value = false;
+                move.tilt.spreadRange = new Vector2(0f, 40f);
+                move.tilt.spreadRangeEnd = new Vector2(0f, 40f);
+                flags[0].value = true;
+                Assert.AreEqual(new Vector2(0f, 0f), move.tilt.spreadRangeEnd);
+
+                // Spreads that already differ are left alone.
+                flags[0].value = false;
+                move.tilt.spreadRangeEnd = new Vector2(20f, 20f);
+                flags[0].value = true;
+                Assert.AreEqual(new Vector2(20f, 20f), move.tilt.spreadRangeEnd);
             }
             finally
             {
@@ -858,6 +930,11 @@ namespace AdzukiSoft.ALPS.Tests
             range.SetValueWithoutNotify(new Vector2(0f, 1f));
             range.ResetToDefault(AlpsSliderTrack.ThumbLow);
             Assert.AreEqual(new Vector2(2f, 8f), range.value, "An end that would pass the other brings back the whole range.");
+
+            range.EndsCanCross = true;
+            range.SetValueWithoutNotify(new Vector2(9f, 1f));
+            range.ResetToDefault(AlpsSliderTrack.ThumbLow);
+            Assert.AreEqual(new Vector2(2f, 1f), range.value, "Ends that may cross come back one at a time either way round.");
         }
 
         [UnityTest]
@@ -1095,12 +1172,16 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ValueSpreadAndPhaseSpread_AcceptNegativeValues()
+        public void ValueSpreadRunsEitherWay_AndPhaseSpreadAcceptsNegativeValues()
         {
             var cone = new AlpsAnimatableView("幅", new AlpsAnimatableValue(5f, new Vector2(0f, 40f)), new AlpsPhaseSettings(), null);
-            var spread = cone.Query<AlpsValueSlider>().ToList().Where(s => s.label == "幅").ElementAt(1);
-            Assert.AreEqual(-40f, spread.Limit.x, 0.001f, "A negative spread fans the other way.");
-            Assert.AreEqual(40f, spread.Limit.y, 0.001f, "Both directions reach as far as the value's span.");
+            var spreads = cone.Query<AlpsRangeSlider>(className: "alps-animatable__spread").ToList();
+            Assert.AreEqual(2, spreads.Count, "One spread for the row and one for the far end of its range.");
+            foreach (var spread in spreads)
+            {
+                Assert.AreEqual(new Vector2(0f, 40f), spread.Limit, "A spread sets values, so it keeps the value's limits.");
+                Assert.IsTrue(spread.EndsCanCross, "The first fixture may take the larger value.");
+            }
 
             var set = new AlpsClipEffectSet();
             set.Add(AlpsEffectKind.Move);

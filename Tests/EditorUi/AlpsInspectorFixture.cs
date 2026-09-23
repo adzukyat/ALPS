@@ -27,14 +27,15 @@ namespace AdzukiSoft.ALPS.Tests
             set.phase.beatsPerCycle = 2f;
             set.phase.inverse = false;
 
-            // Move: both axes ranged, Tilt as a spread range and Pan on its own Forward phase,
-            // so the range frame and the spread frame are both measured.
+            // Move: both axes ranged, Tilt moving between two spreads and Pan on its own Forward
+            // phase, so the stacked spread sliders and the range frame are both measured.
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.isRange = true;
             move.tilt.range = new Vector2(-40f, 35f);
             move.tilt.value = 10f;
             move.tilt.hasSpread = true;
             move.tilt.spreadRange = new Vector2(-10f, 20f);
+            move.tilt.spreadRangeEnd = new Vector2(35f, -40f);
             move.pan.isRange = true;
             move.pan.range = new Vector2(-90f, 90f);
             move.pan.useOwnPhase = true;
@@ -54,7 +55,7 @@ namespace AdzukiSoft.ALPS.Tests
             circle.circleCenterTilt.value = 35f;
             circle.circleCenterPan.value = -120f;
             circle.circleCenterPan.hasSpread = true;
-            circle.circleCenterPan.spread = -15f;
+            circle.circleCenterPan.spreadRange = new Vector2(-120f, -165f);
             circle.circleRadius.isRange = true;
             circle.circleRadius.range = new Vector2(5f, 22.5f);
             circle.circleAspect = 1.5f;

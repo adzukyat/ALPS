@@ -9,8 +9,15 @@ namespace AdzukiSoft.ALPS
     /// (range / spread / timing / own phase).
     /// </summary>
     [Serializable]
-    public class AlpsAnimatableValue
+    public class AlpsAnimatableValue : ISerializationCallbackReceiver
     {
+        /// <summary>
+        /// The layout <see cref="version"/> marks. Values saved before it stored the spread as a
+        /// step per order position, which needs the fixture count to become the values at the
+        /// first and last position, so <see cref="OnAfterDeserialize"/> closes it on the value.
+        /// </summary>
+        private const int CurrentVersion = 1;
+
         /// <summary>Hard limits of the slider. Not animated.</summary>
         public Vector2 limit = new Vector2(0f, 1f);
 
@@ -23,16 +30,27 @@ namespace AdzukiSoft.ALPS
         public bool isRange;
 
         /// <summary>
-        /// Spread toggle: the small "S" next to "R". While on, <see cref="value"/> is a fixed
-        /// offset and the range toggle ranges the spread instead of the value.
+        /// Spread toggle: the small "S" next to "R". While on, the row sets the values of the
+        /// first and last fixture in the order, and "R" moves between two such spreads.
         /// </summary>
         public bool hasSpread;
 
-        /// <summary>Spread: offset added once per order position.</summary>
-        public float spread;
-
-        /// <summary>Used instead of <see cref="spread"/> while both toggles are on.</summary>
+        /// <summary>
+        /// Spread: the value at the first order position (x) and at the last (y). The positions
+        /// between are spaced evenly whatever the fixture count, and x above y runs downward.
+        /// Used instead of <see cref="value"/> while <see cref="hasSpread"/>. With
+        /// <see cref="isRange"/> on as well, the spread the range starts from.
+        /// </summary>
         public Vector2 spreadRange;
+
+        /// <summary>The spread the range moves to while both toggles are on.</summary>
+        public Vector2 spreadRangeEnd;
+
+        /// <summary>
+        /// Missing from anything saved before <see cref="CurrentVersion"/>, so it reads as 0
+        /// there. Every save writes the current one.
+        /// </summary>
+        [SerializeField, HideInInspector] private int version;
 
         public AlpsTimingMode timing = AlpsTimingMode.WithinCycle;
 
@@ -48,7 +66,8 @@ namespace AdzukiSoft.ALPS
             this.limit = limit;
             this.value = value;
             range = limit;
-            spreadRange = new Vector2(0f, 0f);
+            spreadRange = new Vector2(value, value);
+            spreadRangeEnd = spreadRange;
         }
 
         public AlpsAnimatableValue(AlpsAnimatableValue other)
@@ -58,20 +77,47 @@ namespace AdzukiSoft.ALPS
             range = other.range;
             isRange = other.isRange;
             hasSpread = other.hasSpread;
-            spread = other.spread;
             spreadRange = other.spreadRange;
+            spreadRangeEnd = other.spreadRangeEnd;
             timing = other.timing;
             useOwnPhase = other.useOwnPhase;
             ownPhase = new AlpsPhaseSettings(other.ownPhase);
         }
 
-        /// <summary>The range the "R" toggle drives: the spread range while spread is on.</summary>
-        public Vector2 ActiveRange => hasSpread ? spreadRange : range;
-
         /// <summary>
-        /// True when the active range has two distinct ends, which is the condition for
-        /// showing timing and own phase.
+        /// True when the range moves between two distinct values, or two distinct spreads while
+        /// spread is on, which is the condition for showing timing and own phase.
         /// </summary>
-        public bool HasMultipleStops => isRange && !Mathf.Approximately(ActiveRange.x, ActiveRange.y);
+        public bool HasMultipleStops =>
+            isRange && (hasSpread
+                ? !Approximately(spreadRange, spreadRangeEnd)
+                : !Mathf.Approximately(range.x, range.y));
+
+        /// <summary>True when the two ends of a spread differ, so the fixtures do not all match.</summary>
+        public static bool IsOpen(Vector2 spread)
+        {
+            return !Mathf.Approximately(spread.x, spread.y);
+        }
+
+        public static bool Approximately(Vector2 a, Vector2 b)
+        {
+            return Mathf.Approximately(a.x, b.x) && Mathf.Approximately(a.y, b.y);
+        }
+
+        public void OnBeforeSerialize()
+        {
+            version = CurrentVersion;
+        }
+
+        public void OnAfterDeserialize()
+        {
+            if (version < CurrentVersion)
+            {
+                spreadRange = new Vector2(value, value);
+                spreadRangeEnd = spreadRange;
+            }
+
+            version = CurrentVersion;
+        }
     }
 }

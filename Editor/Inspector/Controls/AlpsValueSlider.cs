@@ -174,8 +174,25 @@ namespace AdzukiSoft.ALPS.Editor
         public Vector2? DefaultValue { get; set; }
 
         /// <summary>
+        /// Keeps each end on its own thumb when one is dragged past the other, so the value
+        /// can run from a larger x down to a smaller y. The left box always shows x.
+        /// </summary>
+        public bool EndsCanCross
+        {
+            get => _track.EndsCanCross;
+            set => _track.EndsCanCross = value;
+        }
+
+        /// <summary>Names the two ends when the pointer rests on their value boxes.</summary>
+        public void SetEndTooltips(string min, string max)
+        {
+            _minBox.tooltip = min;
+            _maxBox.tooltip = max;
+        }
+
+        /// <summary>
         /// Restores the end shown by <paramref name="thumb"/>. When the restored end would pass
-        /// the other one, the whole default range comes back instead.
+        /// the other one on a range that stays in order, the whole default range comes back instead.
         /// </summary>
         public void ResetToDefault(int thumb)
         {
@@ -190,7 +207,7 @@ namespace AdzukiSoft.ALPS.Editor
                 ? new Vector2(defaults.x, current.y)
                 : new Vector2(current.x, defaults.y);
 
-            value = restored.x <= restored.y ? restored : defaults;
+            value = EndsCanCross || restored.x <= restored.y ? restored : defaults;
         }
 
         public string Unit
