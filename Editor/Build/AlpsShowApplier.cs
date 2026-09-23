@@ -11,8 +11,9 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Turns an authoring scene into the scene VRChat runs: the show is compiled into an
     /// Udon player created under the director, the director switches to the build timeline,
-    /// and the authoring only components are removed. Only ever run on a scene copy that is
-    /// not saved back.
+    /// the fixtures' volumetric materials switch to copies with cone length via DMX on, and
+    /// the authoring only components are removed. Only ever run on a scene copy that is not
+    /// saved back.
     /// </summary>
     public static class AlpsShowApplier
     {
@@ -36,12 +37,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Compiles every show in the scene and reports what would stop a build.</summary>
         public static void Validate(Scene scene, List<string> errors, List<string> warnings)
         {
-            foreach (var director in FindShowDirectors(scene))
+            var directors = FindShowDirectors(scene);
+            foreach (var director in directors)
             {
                 var show = AlpsShowCompiler.Compile(director);
                 errors.AddRange(show.errors);
                 warnings.AddRange(show.warnings);
             }
+
+            AssignDmxRows(directors, errors);
         }
 
         /// <summary>
@@ -55,9 +59,14 @@ namespace AdzukiSoft.ALPS.Editor
         {
             var startErrors = errors.Count;
             var builds = new Dictionary<TimelineAsset, TimelineAsset>();
-            foreach (var director in FindShowDirectors(scene))
+            var directors = FindShowDirectors(scene);
+            var rows = AssignDmxRows(directors, errors);
+            if (errors.Count == startErrors)
             {
-                ApplyDirector(director, generateTimelines, builds, errors);
+                foreach (var director in directors)
+                {
+                    ApplyDirector(director, generateTimelines, builds, rows, errors);
+                }
             }
 
             AlpsBuildReferences.Retarget(scene, builds);
@@ -65,8 +74,34 @@ namespace AdzukiSoft.ALPS.Editor
             return errors.Count == startErrors;
         }
 
+        /// <summary>
+        /// Hands every fixture of the scene's shows its own row of VRSL's DMX grid, which all
+        /// the shows share. A fixture in several shows keeps one row.
+        /// </summary>
+        private static Dictionary<AlpsFixture, int> AssignDmxRows(List<PlayableDirector> directors, List<string> errors)
+        {
+            var rows = new Dictionary<AlpsFixture, int>();
+            foreach (var director in directors)
+            {
+                foreach (var fixture in AlpsShowCompiler.Compile(director).fixtures)
+                {
+                    if (fixture != null && !rows.ContainsKey(fixture))
+                    {
+                        rows.Add(fixture, rows.Count);
+                    }
+                }
+            }
+
+            if (rows.Count > AlpsShowPlayer.GpuMaxFixtures)
+            {
+                errors.Add($"The shows of a scene drive {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, which is what VRSL's DMX grid holds. This scene's shows drive {rows.Count}.");
+            }
+
+            return rows;
+        }
+
         private static void ApplyDirector(PlayableDirector director, bool generateTimelines,
-            Dictionary<TimelineAsset, TimelineAsset> builds, List<string> errors)
+            Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
             var show = AlpsShowCompiler.Compile(director);
@@ -76,25 +111,11 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
-            var gpu = AlpsGpuPlayback.Enabled;
-            Material framesMaterial = null;
-            Material gridMaterial = null;
-            RenderTexture frames = null;
-            RenderTexture grid = null;
-            RenderTexture spin = null;
-            if (gpu)
+            var shared = AlpsGpuAssets.GetShared(generateTimelines);
+            if (!shared.IsComplete)
             {
-                if (show.fixtures.Count > AlpsShowPlayer.GpuMaxFixtures)
-                {
-                    errors.Add($"GPU playback holds {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, the show of director '{director.name}' has {show.fixtures.Count}.");
-                    return;
-                }
-
-                if (!AlpsGpuPlayback.GetAssets(generateTimelines, out framesMaterial, out gridMaterial, out frames, out grid, out spin))
-                {
-                    errors.Add("The GPU playback materials and targets are missing.");
-                    return;
-                }
+                errors.Add("The show player's materials and targets are missing.");
+                return;
             }
 
             var player = AlpsShowSetup.GetOrCreatePlayer(director);
@@ -121,12 +142,23 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             CopyShowToPlayer(show, player, director);
-            player.gpu = gpu;
-            player.gpuFramesMaterial = framesMaterial;
-            player.gpuGridMaterial = gridMaterial;
-            player.gpuFrames = frames;
-            player.gpuGrid = grid;
-            player.gpuSpin = spin;
+            player.dmxRows = new int[show.fixtures.Count];
+            for (var i = 0; i < show.fixtures.Count; i++)
+            {
+                var fixture = show.fixtures[i];
+                player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : i;
+                if (player.vrslFixtures[i] != null)
+                {
+                    AlpsGpuAssets.UseConeLengthMaterials(player.vrslFixtures[i], generateTimelines, errors);
+                }
+            }
+
+            player.framesMaterial = shared.framesMaterial;
+            player.gridMaterial = shared.gridMaterial;
+            player.frames = shared.frames;
+            player.framesPrevious = shared.framesPrevious;
+            player.grid = shared.grid;
+            player.spin = shared.spin;
             player.gameObject.SetActive(true);
             UdonSharpEditorUtility.CopyProxyToUdon(player);
             AlpsBuildTimeline.SwapAndRebind(director, source, build);

@@ -127,12 +127,11 @@ download_package \
   "https://github.com/llealloo/audiolink/releases/download/3.1.2/com.llealloo.audiolink-3.1.2.zip" \
   "f52f2fe04b7c6b86e79468ffa70e1e8fa1726a5c618f782f8e6d62e02da7c236"
 
-# VRSL with the gobo rotation patch that lets scripts turn gobos while DMX is off.
+# Stock VRSL 2.8.4, released under the v2.8.1 tag.
 download_package \
   "com.acchosen.vr-stage-lighting" \
-  "https://codeload.github.com/adzukyat/VR-Stage-Lighting/zip/89eaa5a5152ccc6ee3539d5b70db40aeb5ab19ab" \
-  "0819ff7f3be810932c112da86f9c32df182d43fa8dfb0767cf40e4ab92962173" \
-  "Packages/com.acchosen.vr-stage-lighting"
+  "https://github.com/AcChosen/VR-Stage-Lighting/releases/download/v2.8.1/com.acchosen.vr-stage-lighting.zip" \
+  "7b2e7c3ae697d398a494aab022425f539ac2238ff87f01f27c7281b4af50529a"
 
 patch_udonsharp_batchmode_guard
 patch_udonsharp_runtime_watcher_batchmode_guard

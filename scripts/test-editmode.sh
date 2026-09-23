@@ -51,10 +51,10 @@ echo "[unity-local-test] Using Unity: ${UNITY_EXECUTABLE}"
 echo "[unity-local-test] Project: ${PROJECT_PATH}"
 echo "[unity-local-test] Results: ${RESULTS_XML}"
 
+# No -nographics: the show is evaluated on the GPU, so the tests need a graphics device.
 set +e
 "${UNITY_EXECUTABLE}" \
   -batchmode \
-  -nographics \
   -projectPath "${PROJECT_PATH}" \
   -runTests \
   -testPlatform EditMode \

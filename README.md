@@ -2,7 +2,7 @@
 
 Adzuki Live Performance System (ALPS) is a Timeline based lighting show tool for VRChat worlds. Shows are authored as effect cues on Timeline tracks, previewed live in the Unity Editor, and played back in VRChat by an Udon player that drives VR Stage Lighting (VRSL) fixtures.
 
-The effect parameters themselves travel to the Udon player. Nothing is sampled into keyframes, so editor preview and VRChat run the same evaluator on the same data.
+The effect parameters themselves travel to the Udon player. Nothing is sampled into keyframes. The show is evaluated by a shader into the DMX grid VRSL's fixtures read, so editor preview and VRChat run the same evaluator on the same data, and Udon does almost no work per frame.
 
 ## Installation
 
@@ -14,7 +14,7 @@ The project must already resolve these packages:
 - VRChat SDK Base `com.vrchat.base` `3.10.2`
 - VRChat SDK Worlds `com.vrchat.worlds` `3.10.2`
 
-Gobo rotation needs VRSL shaders that accept a script driven gobo angle. The patch lives on the `alps-gobo-rotation` branch of [adzukyat/VR-Stage-Lighting](https://github.com/adzukyat/VR-Stage-Lighting/tree/alps-gobo-rotation). With stock VRSL everything else works and gobos simply do not turn.
+Stock VRSL is enough, gobo rotation included. ALPS runs on PC only, since Quest cannot run the evaluator shader. It takes VRSL's DMX grid over, so fixtures cannot also follow a DMX video or another DMX source.
 
 ## Setup
 
@@ -58,21 +58,24 @@ Select an ALPS clip to edit it in the Inspector:
 
 ## Preview
 
-Scrub or play the Timeline. ALPS writes the evaluated show to the VRSL fixtures. When the Timeline window stops previewing, the fixture properties are reverted to their authored values and the scene is not marked dirty.
+Scrub or play the Timeline. ALPS switches the VRSL fixtures to DMX mode and plays the show through the DMX grid, the way VRChat does. When the Timeline window stops previewing, the fixture properties are reverted to their authored values and the scene is not marked dirty.
 
 ## Building and play mode
 
 Nothing needs to be baked by hand.
 
-- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, an `ALPS Show Player` is added under every director whose Timeline has ALPS tracks and the show is compiled into it, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Any other component in the scene that references the authoring Timeline, such as a player that assigns it to a director itself or an UdonBehaviour variable, is switched to the build copy too, and a director that holds bindings for the authoring Timeline gets the same bindings for the build copy. Containers are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
+- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`, and the materials and render textures the player needs to `Assets/ALPS/Gpu`, including copies of the fixtures' volumetric materials with VRSL's cone length via DMX turned on. While Unity processes the scene copy for the build, an `ALPS Show Player` is added under every director whose Timeline has ALPS tracks and the show is compiled into it, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Any other component in the scene that references the authoring Timeline, such as a player that assigns it to a director itself or an UdonBehaviour variable, is switched to the build copy too, and a director that holds bindings for the authoring Timeline gets the same bindings for the build copy. Containers are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
 - **Play mode and ClientSim**: the same conversion runs on the play mode scene, so what plays there is what VRChat plays.
 
-A build stops with an error when a fixture has no target.
+A build stops with an error when a fixture has no target, when the shows of a scene drive more than 118 fixtures (what VRSL's DMX grid holds), or when a show tracks more than 8 users.
+
+Every show of a scene shares the DMX grid. The show whose Timeline moves is the one the fixtures follow, and fixtures it does not drive go dark, so shows meant to play at the same time should drive their fixtures from one Timeline.
 
 ## Current limitations
 
 - Only VRSL DMX Static fixtures are driven. The fixture and adapter split is ready for other fixture types.
-- Tracking a user (`Move > Track user`) only runs in VRChat and ClientSim. Its pan and tilt mapping still needs checking against real fixtures.
+- Tracking a user (`Move > Track user`) only runs in VRChat and ClientSim. Its pan and tilt mapping still needs checking against real fixtures, and fixtures are aimed from where they stood when the world loaded.
+- Cone length scales the fixture's volumetric mesh. VRSL's fade along the cone cannot be driven through DMX, so it stays fully open.
 - Clips do not snap to beats yet.
 
 ## Validation
@@ -83,13 +86,13 @@ A build stops with an error when a fixture has no target.
 scripts/test-all.sh
 ```
 
-This runs the metadata check, the EditMode tests (`AdzukiSoft.ALPS.EditorTests`) and the UI tests (`AdzukiSoft.ALPS.EditorUiTests`) with Unity `2022.3.22f1`. Set `UNITY_EXECUTABLE` when Unity is installed elsewhere. Results are written to `TestProject~/TestResults~/`.
+This runs the metadata check, the EditMode tests (`AdzukiSoft.ALPS.EditorTests`) and the UI tests (`AdzukiSoft.ALPS.EditorUiTests`) with Unity `2022.3.22f1`. The show is evaluated on the GPU, so the tests run with a graphics device. Set `UNITY_EXECUTABLE` when Unity is installed elsewhere. Results are written to `TestProject~/TestResults~/`.
 
-`scripts/bootstrap-test-project.sh` downloads the VRChat SDK, AudioLink, and the patched VRSL into the harness.
+`scripts/bootstrap-test-project.sh` downloads the VRChat SDK, AudioLink, and VRSL into the harness.
 
 Test levels:
 
-- Level 1: evaluator math on compiled arrays (order, phase, ranges, palettes, layers, blending), and where arrangements place each child.
+- Level 1: the show's maths on compiled arrays, evaluated on the GPU (order, phase, ranges, palettes, layers, blending, tracking, the DMX grid), and where arrangements place each child.
 - Level 3: the real `PreviewSmoke` Timeline previewed in edit mode.
 - Level 4: the build conversion applied to that scene, with the Udon player matching the preview and other tracks kept.
 

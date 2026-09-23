@@ -1832,7 +1832,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(1f, AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 0f), 0.0001f);
             Assert.AreEqual(0f, AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 1f), 0.0001f);
             Assert.AreEqual(
-                AlpsShowEvaluator.Wave(0, (int)AlpsEaseType.OutQuad, 0f, 0f, 1f, 0.3f),
+                AlpsPhaseCurve.Wave(0, (int)AlpsEaseType.OutQuad, 0f, 0f, 1f, 0.3f),
                 AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 0.3f),
                 0.0001f,
                 "A fall tile is the fall the wave plays.");
@@ -1842,7 +1842,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void PhaseSettings_FixtureGroupSizeBundlesNeighbours()
         {
             // A fixture group size of 2 means fixtures 0 and 1 share a phase, 2 and 3 share the next.
-            int Position(int fixture) => AlpsShowEvaluator.OrderPosition(AlpsShowEvaluator.OrderNormal, 0, fixture, 4, 2);
+            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, 0, fixture, 4, 2);
 
             Assert.AreEqual(Position(0), Position(1));
             Assert.AreNotEqual(Position(0), Position(2));

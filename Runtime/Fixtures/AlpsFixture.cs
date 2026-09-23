@@ -5,9 +5,9 @@ using UnityEngine.Timeline;
 namespace AdzukiSoft.ALPS
 {
     /// <summary>
-    /// One light the show can drive. Subclasses adapt the logical frame of
-    /// <see cref="AlpsShowEvaluator"/> to a concrete fixture system, so the timeline side
-    /// never needs to know which lighting package is underneath.
+    /// One light the show can drive. Subclasses capture a concrete fixture's state as the
+    /// logical frame of <see cref="AlpsShowLayout"/> and hand it to the GPU playback, so the
+    /// timeline side never needs to know which lighting package is underneath.
     ///
     /// A track can be bound to one fixture directly, which then drives it alone.
     /// </summary>
@@ -29,16 +29,12 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public abstract void CaptureDefault(float[] frame, int offset);
 
-        /// <summary>Writes a frame to the fixture for editor preview.</summary>
-        public abstract void ApplyFrame(float[] frame, int offset);
-
         /// <summary>
         /// Puts the fixture back the way it was authored once the preview ends.
         /// <paramref name="frame"/> is what <see cref="CaptureDefault"/> read.
         /// </summary>
         public virtual void RestoreAuthored(float[] frame, int offset)
         {
-            ApplyFrame(frame, offset);
         }
 
         /// <summary>
@@ -52,16 +48,13 @@ namespace AdzukiSoft.ALPS
         {
         }
 
-        /// <summary>Whether the experimental GPU playback can drive this fixture.</summary>
-        public virtual bool SupportsGpu => false;
-
         /// <summary>
-        /// Readies the fixture for GPU playback as fixture <paramref name="index"/> of the
-        /// show and writes what the GPU needs to know about it into <paramref name="info"/>
-        /// at <paramref name="infoOffset"/>. <paramref name="defaults"/> holds its captured
+        /// Readies the fixture for the preview on DMX grid row <paramref name="row"/> and
+        /// writes what the GPU needs to know about it into <paramref name="info"/> at
+        /// <paramref name="infoOffset"/>. <paramref name="defaults"/> holds its captured
         /// default frame at <paramref name="offset"/>.
         /// </summary>
-        public virtual void ConfigureGpu(int index, float[] defaults, int offset, float[] info, int infoOffset)
+        public virtual void ConfigureGpu(int row, float[] defaults, int offset, float[] info, int infoOffset)
         {
             AlpsShowPlayer.WriteNeutralDmxInfo(info, infoOffset);
         }

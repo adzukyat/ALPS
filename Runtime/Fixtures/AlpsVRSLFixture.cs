@@ -11,11 +11,18 @@ namespace AdzukiSoft.ALPS
         [Tooltip("The VRSL fixture to drive. Found in children when left empty.")]
         public VRStageLighting_DMX_Static target;
 
+        /// <summary>Every field <see cref="AlpsShowPlayer.ConfigureVRSLDmx"/> writes.</summary>
         private static readonly string[] PreviewProperties =
         {
             "enableDMXChannels",
             "enableStrobe",
             "enableAutoSpin",
+            "enableFineChannels",
+            "dmxChannel",
+            "dmxUniverse",
+            "nineUniverseMode",
+            "useLegacySectorMode",
+            "singleChannelMode",
             "panOffsetBlueGreen",
             "tiltOffsetBlue",
             "globalIntensity",
@@ -23,16 +30,8 @@ namespace AdzukiSoft.ALPS
             "lightColorTint.g",
             "lightColorTint.b",
             "lightColorTint.a",
-            "coneWidth",
             "coneLength",
             "maxConeLength",
-            "selectGOBO",
-            "enableFineChannels",
-            "dmxChannel",
-            "dmxUniverse",
-            "nineUniverseMode",
-            "useLegacySectorMode",
-            "singleChannelMode",
         };
 
         private MaterialPropertyBlock _block;
@@ -46,6 +45,12 @@ namespace AdzukiSoft.ALPS
         private bool _authoredNineUniverses;
         private bool _authoredSectors;
         private bool _authoredSingleChannel;
+        private float _authoredPan;
+        private float _authoredTilt;
+        private float _authoredIntensity;
+        private Color _authoredTint;
+        private float _authoredConeLength;
+        private float _authoredMaxConeLength;
 
         public override int AdapterKind => AlpsShowPlayer.AdapterVRSLDmxStatic;
 
@@ -83,36 +88,24 @@ namespace AdzukiSoft.ALPS
             _authoredNineUniverses = fixture.nineUniverseMode;
             _authoredSectors = fixture.useLegacySectorMode;
             _authoredSingleChannel = fixture.singleChannelMode;
-        }
-
-        public override void ApplyFrame(float[] frame, int offset)
-        {
-            var fixture = ResolveTarget();
-            if (fixture == null)
-            {
-                return;
-            }
-
-            if (_block == null)
-            {
-                _block = new MaterialPropertyBlock();
-            }
-
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, offset, _block);
+            _authoredPan = fixture.panOffsetBlueGreen;
+            _authoredTilt = fixture.tiltOffsetBlue;
+            _authoredIntensity = fixture.globalIntensity;
+            _authoredTint = fixture.lightColorTint;
+            _authoredConeLength = fixture.coneLength;
+            _authoredMaxConeLength = fixture.maxConeLength;
         }
 
         public override void RestoreAuthored(float[] frame, int offset)
         {
-            ApplyFrame(frame, offset);
-
             var fixture = ResolveTarget();
             if (fixture == null || !_hasAuthored)
             {
                 return;
             }
 
-            // The preview switched these off. Updating again also rebuilds the property block,
-            // which drops the gobo angle the preview added.
+            // The preview put the fixture in DMX mode. Updating again also rebuilds the
+            // property block, which drops the cone length via DMX the preview turned on.
             fixture.enableDMXChannels = _authoredDmx;
             fixture.enableStrobe = _authoredStrobe;
             fixture.enableAutoSpin = _authoredAutoSpin;
@@ -122,6 +115,12 @@ namespace AdzukiSoft.ALPS
             fixture.nineUniverseMode = _authoredNineUniverses;
             fixture.useLegacySectorMode = _authoredSectors;
             fixture.singleChannelMode = _authoredSingleChannel;
+            fixture.panOffsetBlueGreen = _authoredPan;
+            fixture.tiltOffsetBlue = _authoredTilt;
+            fixture.globalIntensity = _authoredIntensity;
+            fixture.lightColorTint = _authoredTint;
+            fixture.coneLength = _authoredConeLength;
+            fixture.maxConeLength = _authoredMaxConeLength;
             fixture._UpdateInstancedProperties();
         }
 
@@ -144,26 +143,56 @@ namespace AdzukiSoft.ALPS
             var fixture = ResolveTarget();
             if (fixture != null)
             {
-                // Rebuilds the property block from the reverted fields, which also drops the gobo angle.
+                // Rebuilds the property block from the reverted fields.
                 fixture._UpdateInstancedProperties();
             }
 
             _hasAuthored = false;
         }
 
-        public override bool SupportsGpu => ResolveTarget() != null;
-
-        public override void ConfigureGpu(int index, float[] defaults, int offset, float[] info, int infoOffset)
+        public override void ConfigureGpu(int row, float[] defaults, int offset, float[] info, int infoOffset)
         {
             var fixture = ResolveTarget();
             if (fixture == null)
             {
-                base.ConfigureGpu(index, defaults, offset, info, infoOffset);
+                base.ConfigureGpu(row, defaults, offset, info, infoOffset);
                 return;
             }
 
             AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, infoOffset);
-            AlpsShowPlayer.ConfigureVRSLDmx(fixture, index, defaults, offset);
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, defaults, offset);
+            EnableConeLengthViaDmx(fixture);
+        }
+
+        /// <summary>
+        /// Turns VRSL's cone length via DMX on in each renderer's property block, after VRSL
+        /// rebuilt the blocks. A build turns it on in the materials instead, since a block
+        /// with a property outside VRSL's instanced ones could keep the renderers from being
+        /// drawn together.
+        /// </summary>
+        private void EnableConeLengthViaDmx(VRStageLighting_DMX_Static fixture)
+        {
+            if (fixture.objRenderers == null)
+            {
+                return;
+            }
+
+            if (_block == null)
+            {
+                _block = new MaterialPropertyBlock();
+            }
+
+            foreach (var renderer in fixture.objRenderers)
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.GetPropertyBlock(_block);
+                _block.SetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty, 1f);
+                renderer.SetPropertyBlock(_block);
+            }
         }
 
         private void Reset()

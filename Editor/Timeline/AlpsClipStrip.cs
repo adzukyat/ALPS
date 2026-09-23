@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace AdzukiSoft.ALPS.Editor
 {
@@ -8,9 +9,10 @@ namespace AdzukiSoft.ALPS.Editor
     /// dimmed by its brightness and fade, where the clip's shared phase starts a new cycle,
     /// and the slopes of its own fade in and fade out.
     ///
-    /// The clip is compiled on its own and run through <see cref="AlpsShowEvaluator.EvaluateClip"/>,
-    /// so the strip shows the same math as the preview. Fixtures differ by order position,
-    /// so each lane follows one representative fixture, the one at order position 0.
+    /// The clip is compiled on its own and evaluated by the same shader code as the show
+    /// (<c>Hidden/ALPS/Clip Strip</c>), so the strip shows the same maths as the preview.
+    /// Fixtures differ by order position, so each lane follows one representative fixture,
+    /// the one at order position 0.
     /// When the clip's color or brightness is split by parity, odd and even fixtures get a
     /// lane each, odd on top.
     /// </summary>
@@ -40,17 +42,33 @@ namespace AdzukiSoft.ALPS.Editor
         public float fadeInSeconds;
         public float fadeOutSeconds;
 
-        private float[] _clipRow;
-        private float _start;
+        /// <summary>Length of the clip in seconds.</summary>
+        public float duration;
+
+        public const string ShaderName = "Hidden/ALPS/Clip Strip";
 
         public bool HasColor => pixels != null;
 
         public bool HasFade => fadeInSeconds > 0f || fadeOutSeconds > 0f;
 
-        /// <summary>The clip's own fade at <paramref name="local"/> seconds from its start, 1 when it has none.</summary>
+        /// <summary>
+        /// The clip's own fade at <paramref name="local"/> seconds from its start, 1 when it
+        /// has none. Fades longer than the clip meet in a triangle.
+        /// </summary>
         public float FadeAt(float local)
         {
-            return _clipRow != null ? AlpsShowEvaluator.ClipFade(_clipRow, 0, _start + local) : 1f;
+            var scale = 1f;
+            if (fadeInSeconds > 0f)
+            {
+                scale = Mathf.Min(scale, local / fadeInSeconds);
+            }
+
+            if (fadeOutSeconds > 0f)
+            {
+                scale = Mathf.Min(scale, (duration - local) / fadeOutSeconds);
+            }
+
+            return Mathf.Clamp01(scale);
         }
 
         public static AlpsClipStrip Build(
@@ -61,7 +79,7 @@ namespace AdzukiSoft.ALPS.Editor
             float end,
             int seed)
         {
-            var strip = new AlpsClipStrip { lanes = 1 };
+            var strip = new AlpsClipStrip { lanes = 1, duration = Mathf.Max(0f, end - start) };
             if (set == null || end <= start)
             {
                 return strip;
@@ -78,15 +96,13 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             // The compiled row carries the tempo that plays, a clip BPM override included.
-            var rowBpm = show.clips[AlpsShowEvaluator.ClipBpm];
+            var rowBpm = show.clips[AlpsShowLayout.ClipBpm];
             FindCycles(strip, show, rowBpm, start, end);
 
-            strip._clipRow = show.clips;
-            strip._start = start;
             if (rowBpm > 0f)
             {
-                strip.fadeInSeconds = show.clips[AlpsShowEvaluator.ClipFadeIn] * 60f / rowBpm;
-                strip.fadeOutSeconds = show.clips[AlpsShowEvaluator.ClipFadeOut] * 60f / rowBpm;
+                strip.fadeInSeconds = show.clips[AlpsShowLayout.ClipFadeIn] * 60f / rowBpm;
+                strip.fadeOutSeconds = show.clips[AlpsShowLayout.ClipFadeOut] * 60f / rowBpm;
             }
 
             var representatives = Representatives(set, show, fixtureCount);
@@ -95,52 +111,33 @@ namespace AdzukiSoft.ALPS.Editor
             var beats = (end - start) * Mathf.Max(0f, rowBpm) / 60f;
             strip.width = Mathf.Clamp(Mathf.CeilToInt(beats * SamplesPerBeat), MinSamples, MaxSamples);
 
+            var values = Render(show, fixtureCount, representatives, start, end, strip.width);
+            if (values == null)
+            {
+                return strip;
+            }
+
             var pixels = new Color[strip.width * strip.lanes];
-            var frame = new float[AlpsShowEvaluator.FrameStride];
-            var written = new float[AlpsShowEvaluator.FrameStride];
-            var scratch = new float[1];
             var anyColor = false;
             for (var lane = 0; lane < strip.lanes; lane++)
             {
                 for (var i = 0; i < strip.width; i++)
                 {
-                    var time = start + (end - start) * (i + 0.5f) / strip.width;
-                    for (var ch = 0; ch < AlpsShowEvaluator.FrameStride; ch++)
-                    {
-                        frame[ch] = 0f;
-                        written[ch] = 0f;
-                    }
-
-                    AlpsShowEvaluator.EvaluateClip(
-                        show.clips,
-                        show.effects,
-                        show.parameters,
-                        show.colors,
-                        show.gobos,
-                        show.positions,
-                        0,
-                        representatives[lane],
-                        time,
-                        frame,
-                        written,
-                        scratch);
-
-                    if (written[AlpsShowEvaluator.FrameRed] < 0.5f)
+                    var value = values[lane * strip.width + i];
+                    if (value.a < -0.5f)
                     {
                         pixels[lane * strip.width + i] = Color.clear;
                         continue;
                     }
 
-                    anyColor = true;
                     // Brightness is dark unless an effect lights it, as in the show.
-                    var alpha = written[AlpsShowEvaluator.FrameBrightness] > 0.5f
-                        ? Mathf.Clamp01(frame[AlpsShowEvaluator.FrameBrightness] / 100f) * strip.FadeAt(time - start)
-                        : 0f;
+                    anyColor = true;
+                    var local = (end - start) * (i + 0.5f) / strip.width;
                     pixels[lane * strip.width + i] = new Color(
-                        Mathf.Clamp01(frame[AlpsShowEvaluator.FrameRed]),
-                        Mathf.Clamp01(frame[AlpsShowEvaluator.FrameGreen]),
-                        Mathf.Clamp01(frame[AlpsShowEvaluator.FrameBlue]),
-                        alpha);
+                        Mathf.Clamp01(value.r),
+                        Mathf.Clamp01(value.g),
+                        Mathf.Clamp01(value.b),
+                        Mathf.Clamp01(value.a) * strip.FadeAt(local));
                 }
             }
 
@@ -149,14 +146,70 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
+        /// Evaluates clip 0 of <paramref name="show"/> on the GPU, one row per lane and one
+        /// texel per sample, and reads it back. Null without a graphics device.
+        /// </summary>
+        private static Color[] Render(AlpsCompiledShow show, int fixtureCount, List<int> representatives, float start, float end, int width)
+        {
+            var shader = Shader.Find(ShaderName);
+            if (shader == null || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                return null;
+            }
+
+            var lanes = representatives.Count;
+            var info = new float[fixtureCount * AlpsShowPlayer.GpuFixtureInfoStride];
+            var defaults = new float[fixtureCount * AlpsShowLayout.FrameStride];
+            var rows = new int[fixtureCount];
+            for (var i = 0; i < fixtureCount; i++)
+            {
+                AlpsShowPlayer.WriteNeutralFrame(defaults, i * AlpsShowLayout.FrameStride);
+                AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                rows[i] = i;
+            }
+
+            var data = AlpsShowPlayer.CreateShowTexture(AlpsShowPlayer.PackShowData(
+                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
+                show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
+                fixtureCount, defaults, info, rows, new float[fixtureCount * AlpsShowPlayer.GpuAimStride]));
+            var material = new Material(shader);
+            var target = AlpsPreviewDriver.CreateGpuTarget("ALPS Clip Strip", width, lanes);
+            var readback = new Texture2D(width, lanes, TextureFormat.RGBAFloat, false, true);
+            var active = RenderTexture.active;
+            try
+            {
+                material.SetTexture("_AlpsData", data);
+                material.SetFloat("_AlpsStripStart", start);
+                material.SetFloat("_AlpsStripEnd", end);
+                material.SetFloat("_AlpsStripLanes", lanes);
+                material.SetFloat("_AlpsStripFixture0", representatives[0]);
+                material.SetFloat("_AlpsStripFixture1", representatives[lanes > 1 ? 1 : 0]);
+                Graphics.Blit(data, target, material, 0);
+
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, width, lanes), 0, 0);
+                readback.Apply(false);
+                return readback.GetPixels();
+            }
+            finally
+            {
+                RenderTexture.active = active;
+                Object.DestroyImmediate(readback);
+                Object.DestroyImmediate(target);
+                Object.DestroyImmediate(material);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        /// <summary>
         /// Fixtures to sample, one per lane. The evaluator counts odd fixtures from 1, so
         /// list index 0 is odd. Each lane takes its fixture with the lowest order position.
         /// </summary>
         private static List<int> Representatives(AlpsClipEffectSet set, AlpsCompiledShow show, int fixtureCount)
         {
-            var order = AlpsShowEvaluator.ToInt(show.clips[AlpsShowEvaluator.ClipOrder]);
-            var seed = AlpsShowEvaluator.ToInt(show.clips[AlpsShowEvaluator.ClipSeed]);
-            var groupSize = AlpsShowEvaluator.ToInt(show.clips[AlpsShowEvaluator.ClipPhase + AlpsShowEvaluator.PhaseGroupSize]);
+            var order = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipOrder]);
+            var seed = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipSeed]);
+            var groupSize = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipPhase + AlpsShowLayout.PhaseGroupSize]);
 
             int Lowest(int parity)
             {
@@ -169,7 +222,7 @@ namespace AdzukiSoft.ALPS.Editor
                         continue;
                     }
 
-                    var k = AlpsShowEvaluator.OrderPosition(order, seed, i, fixtureCount, groupSize);
+                    var k = AlpsShowLayout.OrderPosition(order, seed, i, fixtureCount, groupSize);
                     if (k < bestK)
                     {
                         best = i;
@@ -215,7 +268,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private static void FindCycles(AlpsClipStrip strip, AlpsCompiledShow show, float bpm, float start, float end)
         {
-            var beatsPerCycle = show.clips[AlpsShowEvaluator.ClipPhase + AlpsShowEvaluator.PhaseBeatsPerCycle];
+            var beatsPerCycle = show.clips[AlpsShowLayout.ClipPhase + AlpsShowLayout.PhaseBeatsPerCycle];
             if (bpm <= 0f || beatsPerCycle <= 0f)
             {
                 return;

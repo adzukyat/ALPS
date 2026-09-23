@@ -36,9 +36,6 @@ namespace AdzukiSoft.ALPS.Tests
         public const int Gobo = 4;
         public static readonly Color Tint = new Color(0.25f, 0.5f, 1f, 1f);
 
-        public const float ExpectedVrslConeWidth = 2.5f;
-        public const float ExpectedVrslConeLength = 5.25f;
-
         public const double ActivationStart = 0.25;
         public const double ActivationDuration = 1.25;
         public const double AnimationStart = 0.5;
@@ -236,32 +233,48 @@ namespace AdzukiSoft.ALPS.Tests
                 Director.Evaluate();
                 return Fixtures.Select(FixtureState.Capture).ToArray();
             }
+
+            /// <summary>What the preview last drew for every fixture of the show, channel after channel.</summary>
+            public float[] Frames()
+            {
+                var frames = AlpsPreviewDriver.GetFrames(Director);
+                NUnit.Framework.Assert.NotNull(frames, "The preview drew no frames.");
+                return AlpsGpuShow.ReadFrames(frames, AlpsPreviewDriver.GetShow(Director).FixtureCount);
+            }
         }
 
         internal readonly struct FixtureState
         {
             public readonly bool EnableDmx;
+            public readonly bool EnableStrobe;
+            public readonly int DmxChannel;
             public readonly float Pan;
             public readonly float Tilt;
             public readonly float Intensity;
             public readonly Color Color;
             public readonly float ConeWidth;
             public readonly float ConeLength;
+            public readonly float MaxConeLength;
             public readonly int Gobo;
 
-            /// <summary>What the first renderer's property block hands the shaders.</summary>
-            public readonly BlockState Block;
+            /// <summary>Cone length via DMX in the first renderer's property block.</summary>
+            public readonly float ExtraChannels;
 
             private FixtureState(VRStageLighting_DMX_Static fixture)
             {
-                Block = new BlockState(fixture.objRenderers[0]);
+                var block = new MaterialPropertyBlock();
+                fixture.objRenderers[0].GetPropertyBlock(block);
+                ExtraChannels = block.GetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty);
                 EnableDmx = fixture.enableDMXChannels;
+                EnableStrobe = fixture.enableStrobe;
+                DmxChannel = fixture.dmxChannel;
                 Pan = fixture.panOffsetBlueGreen;
                 Tilt = fixture.tiltOffsetBlue;
                 Intensity = fixture.globalIntensity;
                 Color = fixture.lightColorTint;
                 ConeWidth = fixture.coneWidth;
                 ConeLength = fixture.coneLength;
+                MaxConeLength = fixture.maxConeLength;
                 Gobo = fixture.selectGOBO;
             }
 
@@ -272,42 +285,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             public override string ToString()
             {
-                return $"dmx={EnableDmx}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, gobo={Gobo}\n  block: {Block}";
-            }
-        }
-
-        internal readonly struct BlockState
-        {
-            public readonly float Pan;
-            public readonly float Tilt;
-            public readonly float Intensity;
-            public readonly Color Emission;
-            public readonly Color EmissionDmx;
-            public readonly float ConeWidth;
-            public readonly float ConeLength;
-            public readonly float MaxConeLength;
-            public readonly float Gobo;
-            public readonly float GoboRotation;
-
-            public BlockState(Renderer renderer)
-            {
-                var block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                Pan = block.GetFloat("_FixtureBaseRotationY");
-                Tilt = block.GetFloat("_FixtureRotationX");
-                Intensity = block.GetFloat("_GlobalIntensity");
-                Emission = block.GetColor("_Emission");
-                EmissionDmx = block.GetColor("_EmissionDMX");
-                ConeWidth = block.GetFloat("_ConeWidth");
-                ConeLength = block.GetFloat("_ConeLength");
-                MaxConeLength = block.GetFloat("_MaxConeLength");
-                Gobo = block.GetFloat("_ProjectionSelection");
-                GoboRotation = block.GetFloat(AlpsShowPlayer.GoboRotationProperty);
-            }
-
-            public override string ToString()
-            {
-                return $"pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, emission={Emission}, emissionDmx={EmissionDmx}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, maxConeLength={MaxConeLength:0.###}, gobo={Gobo}, goboRotation={GoboRotation:0.###}";
+                return $"dmx={EnableDmx}, channel={DmxChannel}, strobe={EnableStrobe}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, maxConeLength={MaxConeLength:0.###}, gobo={Gobo}, extraChannels={ExtraChannels}";
             }
         }
     }

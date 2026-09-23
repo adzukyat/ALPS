@@ -6,19 +6,33 @@ using UnityEngine;
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// Level 1: the evaluator's math on compiled arrays, with no timeline or scene involved.
-    /// Tempo is 60 BPM throughout, so one beat is one second.
+    /// Level 1: the show's maths on compiled arrays, with no timeline or scene involved. Shows
+    /// are evaluated by the GPU evaluator, so these need a graphics device. Tempo is 60 BPM
+    /// throughout, so one beat is one second.
     /// </summary>
-    public class AlpsShowEvaluatorTests
+    public class AlpsShowTests
     {
         private const float Bpm = 60f;
+
+        private readonly Dictionary<AlpsCompiledShow, AlpsGpuShow> _gpu = new Dictionary<AlpsCompiledShow, AlpsGpuShow>();
+
+        [TearDown]
+        public void ReleaseGpu()
+        {
+            foreach (var gpu in _gpu.Values)
+            {
+                gpu.Dispose();
+            }
+
+            _gpu.Clear();
+        }
 
         // ------------------------------------------------------------------ order
 
         [Test]
         public void Order_NormalGroupsNeighboursBeforeCounting()
         {
-            int Position(int fixture) => AlpsShowEvaluator.OrderPosition(AlpsShowEvaluator.OrderNormal, 0, fixture, 6, 2);
+            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, 0, fixture, 6, 2);
 
             CollectionAssert.AreEqual(new[] { 0, 0, 1, 1, 2, 2 }, Enumerable.Range(0, 6).Select(Position).ToArray());
         }
@@ -26,7 +40,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Order_SymmetricCountsOutwardFromTheCentre()
         {
-            int Position(int fixture, int count) => AlpsShowEvaluator.OrderPosition(AlpsShowEvaluator.OrderSymmetric, 0, fixture, count, 1);
+            int Position(int fixture, int count) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderSymmetric, 0, fixture, count, 1);
 
             CollectionAssert.AreEqual(new[] { 2, 1, 0, 1, 2 }, Enumerable.Range(0, 5).Select(i => Position(i, 5)).ToArray());
             CollectionAssert.AreEqual(new[] { 1, 0, 0, 1 }, Enumerable.Range(0, 4).Select(i => Position(i, 4)).ToArray());
@@ -35,31 +49,31 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Order_ReverseCountsFromTheLastGroup()
         {
-            int Position(int fixture, int groupSize) => AlpsShowEvaluator.OrderPosition(AlpsShowEvaluator.OrderReverse, 0, fixture, 6, groupSize);
+            int Position(int fixture, int groupSize) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderReverse, 0, fixture, 6, groupSize);
 
             CollectionAssert.AreEqual(new[] { 5, 4, 3, 2, 1, 0 }, Enumerable.Range(0, 6).Select(i => Position(i, 1)).ToArray());
             CollectionAssert.AreEqual(new[] { 2, 2, 1, 1, 0, 0 }, Enumerable.Range(0, 6).Select(i => Position(i, 2)).ToArray());
-            Assert.IsFalse(AlpsShowEvaluator.IsMirrored(AlpsShowEvaluator.OrderReverse, 0, 6, 1), "Only symmetric mirrors pan.");
+            Assert.IsFalse(AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderReverse, 0, 6, 1), "Only symmetric mirrors pan.");
         }
 
         [Test]
         public void Order_SymmetricMirrorsOnlyTheFirstHalf()
         {
-            bool Mirrored(int fixture, int count) => AlpsShowEvaluator.IsMirrored(AlpsShowEvaluator.OrderSymmetric, fixture, count, 1);
+            bool Mirrored(int fixture, int count) => AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderSymmetric, fixture, count, 1);
 
             CollectionAssert.AreEqual(
                 new[] { true, true, false, false, false },
                 Enumerable.Range(0, 5).Select(i => Mirrored(i, 5)).ToArray(),
                 "The middle fixture stays unmirrored.");
             CollectionAssert.AreEqual(new[] { true, true, false, false }, Enumerable.Range(0, 4).Select(i => Mirrored(i, 4)).ToArray());
-            Assert.IsFalse(AlpsShowEvaluator.IsMirrored(AlpsShowEvaluator.OrderNormal, 0, 5, 1));
+            Assert.IsFalse(AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderNormal, 0, 5, 1));
         }
 
         [Test]
         public void Order_RandomIsAPermutationThatDependsOnTheSeed()
         {
             int[] Positions(int seed) => Enumerable.Range(0, 8)
-                .Select(i => AlpsShowEvaluator.OrderPosition(AlpsShowEvaluator.OrderRandom, seed, i, 8, 1))
+                .Select(i => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderRandom, seed, i, 8, 1))
                 .ToArray();
 
             var first = Positions(11);
@@ -79,7 +93,7 @@ namespace AdzukiSoft.ALPS.Tests
             AlpsEaseType ease = AlpsEaseType.Linear,
             AlpsEaseType fallEase = AlpsEaseType.Linear)
         {
-            return AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseWave, (int)ease, (int)fallEase, rise, holdHigh, fall, inverse, cycles, 0, 0);
+            return AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, (int)ease, (int)fallEase, rise, holdHigh, fall, inverse, cycles, 0, 0);
         }
 
         [Test]
@@ -151,8 +165,8 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 50; i++)
             {
                 var cycles = i * 0.137f;
-                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
-                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var a = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var b = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
                 Assert.That(a, Is.InRange(0f, 1f));
                 Assert.AreEqual(a, b);
             }
@@ -189,17 +203,17 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Phase_ReturnLegIsTheFallAndTheLowHold()
         {
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.45f), "Still at the top.");
-            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.55f), "Falling.");
-            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.9f), "Waiting at the bottom.");
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseRandom, 0.25f, 0.25f, 0.9f), "Only a wave has a return leg.");
+            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.45f), "Still at the top.");
+            Assert.IsTrue(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.55f), "Falling.");
+            Assert.IsTrue(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.9f), "Waiting at the bottom.");
+            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseRandom, 0.25f, 0.25f, 0.9f), "Only a wave has a return leg.");
         }
 
         [Test]
         public void Phase_AWaveThatNeverFallsNeverReturns()
         {
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 1f, 0f, 0.99f), "A sawtooth drops but does not return.");
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.5f, 0.5f, 0.99f));
+            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 1f, 0f, 0.99f), "A sawtooth drops but does not return.");
+            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.5f, 0.5f, 0.99f));
         }
 
         // ------------------------------------------------------------------ values
@@ -213,7 +227,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             for (var fixture = 0; fixture < 4; fixture++)
             {
-                Assert.AreEqual(40f, Evaluate(show, fixture, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+                Assert.AreEqual(40f, Evaluate(show, fixture, 0.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
             }
         }
 
@@ -226,8 +240,8 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.range = new Vector2(0f, 100f);
             var show = Compile(1, set);
 
-            Assert.AreEqual(25f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(75f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -241,13 +255,13 @@ namespace AdzukiSoft.ALPS.Tests
                 1, Bpm, new AlpsStandaloneClip { set = set, start = 0.5f, end = 2f });
 
             var show = CompileFromHalfSecond();
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The clip starts on its own first beat.");
-            Assert.AreEqual(12.5f, Evaluate(show, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "An eighth of a beat at the show's 60 BPM after the clip starts.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "The clip starts on its own first beat.");
+            Assert.AreEqual(12.5f, Evaluate(show, 0, 0.625f)[AlpsShowLayout.FrameBrightness], 0.01f, "An eighth of a beat at the show's 60 BPM after the clip starts.");
 
             set.bpm = 120f;
             var overridden = CompileFromHalfSecond();
-            Assert.AreEqual(25f, Evaluate(overridden, 0, 0.625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "A quarter beat at the clip's own 120 BPM.");
-            Assert.AreEqual(75f, Evaluate(overridden, 0, 0.875f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(overridden, 0, 0.625f)[AlpsShowLayout.FrameBrightness], 0.01f, "A quarter beat at the clip's own 120 BPM.");
+            Assert.AreEqual(75f, Evaluate(overridden, 0, 0.875f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -265,8 +279,8 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = a, start = 0f, end = 1.3f },
                 new AlpsStandaloneClip { set = b, start = 1.3f, end = 3f });
 
-            Assert.AreEqual(20f, Evaluate(show, 0, 1.2f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The first clip is 1.2 beats in.");
-            Assert.AreEqual(10f, Evaluate(show, 0, 1.4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The next clip starts over at its own start.");
+            Assert.AreEqual(20f, Evaluate(show, 0, 1.2f)[AlpsShowLayout.FrameBrightness], 0.01f, "The first clip is 1.2 beats in.");
+            Assert.AreEqual(10f, Evaluate(show, 0, 1.4f)[AlpsShowLayout.FrameBrightness], 0.01f, "The next clip starts over at its own start.");
         }
 
         [Test]
@@ -278,11 +292,11 @@ namespace AdzukiSoft.ALPS.Tests
             set.fadeOutBeats = 2f;
             var show = Compile(1, set, end: 4f);
 
-            Assert.AreEqual(0f, Evaluate(show, 0, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Dark on the first beat.");
-            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade in.");
-            Assert.AreEqual(80f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Between the fades.");
-            Assert.AreEqual(40f, Evaluate(show, 0, 3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade out.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Dark at the end.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "Dark on the first beat.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade in.");
+            Assert.AreEqual(80f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "Between the fades.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 3f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade out.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 4f)[AlpsShowLayout.FrameBrightness], 0.01f, "Dark at the end.");
         }
 
         [Test]
@@ -294,7 +308,7 @@ namespace AdzukiSoft.ALPS.Tests
             set.fadeInBeats = 2f;
             var show = Compile(1, set, end: 4f);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "One of two beats at 120 BPM.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "One of two beats at 120 BPM.");
         }
 
         [Test]
@@ -309,10 +323,10 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(1, set, end: 4f);
 
             var entering = Evaluate(show, 0, 0.5f);
-            Assert.AreEqual(30f, entering[AlpsShowEvaluator.FrameTilt], 0.01f, "Half way from the default tilt of 0.");
-            Assert.AreEqual(45f, entering[AlpsShowEvaluator.FramePan], 0.01f, "Half way from the default pan of 0.");
-            Assert.AreEqual(60f, Evaluate(show, 0, 2f)[AlpsShowEvaluator.FrameTilt], 0.01f);
-            Assert.AreEqual(15f, Evaluate(show, 0, 3.75f)[AlpsShowEvaluator.FrameTilt], 0.01f, "A quarter of the fade out left.");
+            Assert.AreEqual(30f, entering[AlpsShowLayout.FrameTilt], 0.01f, "Half way from the default tilt of 0.");
+            Assert.AreEqual(45f, entering[AlpsShowLayout.FramePan], 0.01f, "Half way from the default pan of 0.");
+            Assert.AreEqual(60f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(15f, Evaluate(show, 0, 3.75f)[AlpsShowLayout.FrameTilt], 0.01f, "A quarter of the fade out left.");
         }
 
         [Test]
@@ -329,7 +343,7 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = below, start = 0f, end = 4f, layer = 0 },
                 new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1 });
 
-            Assert.AreEqual(60f, Evaluate(show, 0, 1f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way from the lower layer's 100 to 20.");
+            Assert.AreEqual(60f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way from the lower layer's 100 to 20.");
         }
 
         [Test]
@@ -345,7 +359,7 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = lit, start = 0f, end = 2f, mixOut = 1f },
                 new AlpsStandaloneClip { set = plain, start = 1f, end = 3f, mixIn = 1f });
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from 100 to dark.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameBrightness], 0.5f, "Half way from 100 to dark.");
         }
 
         [Test]
@@ -355,9 +369,9 @@ namespace AdzukiSoft.ALPS.Tests
             set.Add(AlpsEffectKind.Cone);
             var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, start = 1f, end = 2f });
 
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Before the clip.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Inside a clip without a brightness effect.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 2.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "After the clip.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.001f, "Before the clip.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameBrightness], 0.001f, "Inside a clip without a brightness effect.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FrameBrightness], 0.001f, "After the clip.");
         }
 
         [Test]
@@ -370,9 +384,9 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.timing = AlpsTimingMode.PerCycle;
             var show = Compile(1, set, end: 4f);
 
-            Assert.AreEqual(10f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
-            Assert.AreEqual(90f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
-            Assert.AreEqual(10f, Evaluate(show, 0, 2.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(10f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
+            Assert.AreEqual(90f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
+            Assert.AreEqual(10f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
         }
 
         [Test]
@@ -386,9 +400,9 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.range = new Vector2(0f, 100f);
             var show = Compile(3, set);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(25f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(0f, Evaluate(show, 2, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(show, 1, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(0f, Evaluate(show, 2, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -401,7 +415,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneWidth.spreadRange = new Vector2(10f, 25f);
             var show = Compile(4, set);
 
-            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
+            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowLayout.FrameConeWidth]).ToArray();
             CollectionAssert.AreEqual(new[] { 10f, 15f, 20f, 25f }, widths, "The spread replaces the value and spaces the fixtures between evenly.");
         }
 
@@ -416,17 +430,17 @@ namespace AdzukiSoft.ALPS.Tests
             foreach (var count in new[] { 2, 3, 7 })
             {
                 var show = Compile(count, set);
-                Assert.AreEqual(10f, Evaluate(show, 0, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, $"First of {count}.");
-                Assert.AreEqual(40f, Evaluate(show, count - 1, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, $"Last of {count}.");
+                Assert.AreEqual(10f, Evaluate(show, 0, 0.1f)[AlpsShowLayout.FrameConeWidth], 0.001f, $"First of {count}.");
+                Assert.AreEqual(40f, Evaluate(show, count - 1, 0.1f)[AlpsShowLayout.FrameConeWidth], 0.001f, $"Last of {count}.");
             }
 
             var single = Compile(1, set);
-            Assert.AreEqual(10f, Evaluate(single, 0, 0.1f)[AlpsShowEvaluator.FrameConeWidth], 0.001f, "A lone fixture takes the first value.");
+            Assert.AreEqual(10f, Evaluate(single, 0, 0.1f)[AlpsShowLayout.FrameConeWidth], 0.001f, "A lone fixture takes the first value.");
 
             // Grouped fixtures share a position, so the last group takes the last value.
             set.phase.fixtureGroupSize = 2;
             var grouped = Compile(6, set);
-            var widths = Enumerable.Range(0, 6).Select(i => Evaluate(grouped, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
+            var widths = Enumerable.Range(0, 6).Select(i => Evaluate(grouped, i, 0.1f)[AlpsShowLayout.FrameConeWidth]).ToArray();
             CollectionAssert.AreEqual(new[] { 10f, 10f, 25f, 25f, 40f, 40f }, widths);
         }
 
@@ -441,7 +455,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneLength.spreadRangeEnd = new Vector2(0f, 30f);
             var show = Compile(4, set);
 
-            float[] Lengths(float time) => Enumerable.Range(0, 4).Select(i => Evaluate(show, i, time)[AlpsShowEvaluator.FrameConeLength]).ToArray();
+            float[] Lengths(float time) => Enumerable.Range(0, 4).Select(i => Evaluate(show, i, time)[AlpsShowLayout.FrameConeLength]).ToArray();
 
             CollectionAssert.AreEqual(new[] { 0f, 0f, 0f, 0f }, Lengths(0f), "At the start of the cycle the fan is closed.");
             var half = Lengths(0.5f);
@@ -467,7 +481,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneLength.spreadRangeEnd = new Vector2(20f, 50f);
             var show = Compile(3, set);
 
-            float[] Lengths(float time) => Enumerable.Range(0, 3).Select(i => Evaluate(show, i, time)[AlpsShowEvaluator.FrameConeLength]).ToArray();
+            float[] Lengths(float time) => Enumerable.Range(0, 3).Select(i => Evaluate(show, i, time)[AlpsShowLayout.FrameConeLength]).ToArray();
 
             var quarter = Lengths(0.25f);
             Assert.AreEqual(5f, quarter[0], 0.01f, "The first fixture is a quarter of the way from 0 to 20.");
@@ -487,13 +501,13 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneLength.hasSpread = true;
             var show = Compile(2, set);
 
-            Assert.AreEqual(5f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "Without R the first spread holds.");
+            Assert.AreEqual(5f, Evaluate(show, 1, 0.5f)[AlpsShowLayout.FrameConeLength], 0.01f, "Without R the first spread holds.");
 
             // R now moves between the two spreads and the value range is ignored.
             cone.coneLength.isRange = true;
             show = Compile(2, set);
-            Assert.AreEqual(3f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
-            Assert.AreEqual(9f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
+            Assert.AreEqual(3f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameConeLength], 0.01f);
+            Assert.AreEqual(9f, Evaluate(show, 1, 0.5f)[AlpsShowLayout.FrameConeLength], 0.01f);
 
             // The spreads take the row's own phase like any range.
             cone.coneLength.useOwnPhase = true;
@@ -501,13 +515,13 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneLength.ownPhase.ease = AlpsEaseType.Linear;
             cone.coneLength.ownPhase.beatsPerCycle = 2f;
             show = Compile(2, set);
-            Assert.AreEqual(7f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f, "A quarter of the own cycle is a quarter of the way.");
+            Assert.AreEqual(7f, Evaluate(show, 1, 0.5f)[AlpsShowLayout.FrameConeLength], 0.01f, "A quarter of the own cycle is a quarter of the way.");
 
             // Turning spread off brings the value range back and drops the spread.
             cone.coneLength.hasSpread = false;
             cone.coneLength.useOwnPhase = false;
             show = Compile(2, set);
-            Assert.AreEqual(4f, Evaluate(show, 1, 0.5f)[AlpsShowEvaluator.FrameConeLength], 0.01f);
+            Assert.AreEqual(4f, Evaluate(show, 1, 0.5f)[AlpsShowLayout.FrameConeLength], 0.01f);
         }
 
         [Test]
@@ -520,7 +534,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneWidth.spreadRange = new Vector2(0f, 30f);
             var show = Compile(4, set);
 
-            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
+            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowLayout.FrameConeWidth]).ToArray();
             CollectionAssert.AreEqual(new[] { 30f, 20f, 10f, 0f }, widths);
         }
 
@@ -533,7 +547,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.coneWidth.spreadRange = new Vector2(30f, 15f);
             var show = Compile(4, set);
 
-            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameConeWidth]).ToArray();
+            var widths = Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowLayout.FrameConeWidth]).ToArray();
             CollectionAssert.AreEqual(new[] { 30f, 25f, 20f, 15f }, widths);
         }
 
@@ -551,16 +565,16 @@ namespace AdzukiSoft.ALPS.Tests
 
             float[] Channel(int channel) => Enumerable.Range(0, 5).Select(i => Evaluate(show, i, 0.1f)[channel]).ToArray();
 
-            CollectionAssert.AreEqual(new[] { -40f, -20f, 0f, 20f, 40f }, Channel(AlpsShowEvaluator.FramePan), "Pan mirrors into a fan.");
-            CollectionAssert.AreEqual(new[] { 20f, 15f, 10f, 15f, 20f }, Channel(AlpsShowEvaluator.FrameTilt), "Tilt has no left and right, the first value sits in the middle.");
+            CollectionAssert.AreEqual(new[] { -40f, -20f, 0f, 20f, 40f }, Channel(AlpsShowLayout.FramePan), "Pan mirrors into a fan.");
+            CollectionAssert.AreEqual(new[] { 20f, 15f, 10f, 15f, 20f }, Channel(AlpsShowLayout.FrameTilt), "Tilt has no left and right, the first value sits in the middle.");
 
             move.pan.spreadRange = new Vector2(0f, -40f);
             show = Compile(5, set);
-            CollectionAssert.AreEqual(new[] { 40f, 20f, 0f, -20f, -40f }, Channel(AlpsShowEvaluator.FramePan), "A downward spread crosses the fan.");
+            CollectionAssert.AreEqual(new[] { 40f, 20f, 0f, -20f, -40f }, Channel(AlpsShowLayout.FramePan), "A downward spread crosses the fan.");
 
             // With an even count the middle pair takes the first value and the edges the last.
             show = Compile(4, set);
-            CollectionAssert.AreEqual(new[] { 20f, 10f, 10f, 20f }, Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowEvaluator.FrameTilt]).ToArray());
+            CollectionAssert.AreEqual(new[] { 20f, 10f, 10f, 20f }, Enumerable.Range(0, 4).Select(i => Evaluate(show, i, 0.1f)[AlpsShowLayout.FrameTilt]).ToArray());
         }
 
         [Test]
@@ -577,8 +591,8 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 var time = i / 8f;
                 Assert.AreEqual(
-                    -Evaluate(show, 3, time)[AlpsShowEvaluator.FramePan],
-                    Evaluate(show, 0, time)[AlpsShowEvaluator.FramePan],
+                    -Evaluate(show, 3, time)[AlpsShowLayout.FramePan],
+                    Evaluate(show, 0, time)[AlpsShowLayout.FramePan],
                     0.001f,
                     "The edges sweep as mirror images.");
             }
@@ -587,8 +601,8 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Spread_NegativeRunsTheOrderBackwards()
         {
-            Assert.AreEqual(0.25f, AlpsShowEvaluator.FixtureCycles(0f, 1f, -0.25f, 1, 0f), 0.0001f);
-            Assert.AreEqual(-0.25f, AlpsShowEvaluator.FixtureCycles(0f, 1f, 0.25f, 1, 0f), 0.0001f);
+            Assert.AreEqual(0.25f, AlpsPhaseCurve.FixtureCycles(0f, 1f, -0.25f, 1, 0f), 0.0001f);
+            Assert.AreEqual(-0.25f, AlpsPhaseCurve.FixtureCycles(0f, 1f, 0.25f, 1, 0f), 0.0001f);
 
             var set = Set();
             set.order = AlpsOrderMode.Symmetric;
@@ -600,8 +614,8 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.range = new Vector2(0f, 100f);
             var show = Compile(5, set);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The edges lead.");
-            Assert.AreEqual(0f, Evaluate(show, 2, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The centre trails.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "The edges lead.");
+            Assert.AreEqual(0f, Evaluate(show, 2, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "The centre trails.");
         }
 
         [Test]
@@ -617,24 +631,24 @@ namespace AdzukiSoft.ALPS.Tests
             var four = Compile(4, set);
             var eight = Compile(8, set);
 
-            Assert.AreEqual(50f, Evaluate(four, 2, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(four, 2, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
             Assert.AreEqual(
                 50f,
-                Evaluate(eight, 4, 0f)[AlpsShowEvaluator.FrameBrightness],
+                Evaluate(eight, 4, 0f)[AlpsShowLayout.FrameBrightness],
                 0.01f,
                 "Half way along the group is half way through the cycle, whatever the count.");
 
-            Assert.AreEqual(75f, Evaluate(four, 1, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(75f, Evaluate(eight, 2, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(four, 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(eight, 2, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
 
             Assert.AreEqual(
                 0.25f,
-                AlpsShowEvaluator.DelayFromSpread(1f, AlpsShowEvaluator.OrderNormal, 4, 1),
+                AlpsShowLayout.DelayFromSpread(1f, AlpsShowLayout.OrderNormal, 4, 1),
                 0.0001f,
                 "A full spread over four positions steps a quarter cycle each.");
             Assert.AreEqual(
                 1f / 3f,
-                AlpsShowEvaluator.DelayFromSpread(1f, AlpsShowEvaluator.OrderSymmetric, 5, 1),
+                AlpsShowLayout.DelayFromSpread(1f, AlpsShowLayout.OrderSymmetric, 5, 1),
                 0.0001f,
                 "Symmetric only reaches from the middle to the edge.");
         }
@@ -651,11 +665,11 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.range = new Vector2(0f, 100f);
 
             // Two beats over a two beat cycle is the full trip, a quarter each over four.
-            Assert.AreEqual(75f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
 
             // Doubling the speed keeps the two beats, which is now half the trip.
             set.phase.beatsPerCycle = 4f;
-            Assert.AreEqual(87.5f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(87.5f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
 
             // Without a speed there are no beats, so the delay falls back to its share of the cycle.
             set.phase.beatsPerCycle = 0f;
@@ -681,10 +695,10 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.ownPhase.spread = 1f;
             var show = Compile(8, set);
 
-            Assert.AreEqual(0f, Evaluate(show, 1, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "The first pair starts the cycle.");
-            Assert.AreEqual(75f, Evaluate(show, 2, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(50f, Evaluate(show, 4, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(25f, Evaluate(show, 6, 0f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(0f, Evaluate(show, 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "The first pair starts the cycle.");
+            Assert.AreEqual(75f, Evaluate(show, 2, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(show, 4, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(show, 6, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -701,7 +715,7 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.ownPhase.beatsPerCycle = 1f;
             var show = Compile(1, set);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -714,9 +728,9 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(AlpsParity.Odd, set.effects[1].parity);
             var show = Compile(4, set);
 
-            Assert.AreEqual(80f, Evaluate(show, 0, 0.1f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Fixture 1 of 4 is odd.");
-            Assert.AreEqual(20f, Evaluate(show, 1, 0.1f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
-            Assert.AreEqual(80f, Evaluate(show, 2, 0.1f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(80f, Evaluate(show, 0, 0.1f)[AlpsShowLayout.FrameBrightness], 0.001f, "Fixture 1 of 4 is odd.");
+            Assert.AreEqual(20f, Evaluate(show, 1, 0.1f)[AlpsShowLayout.FrameBrightness], 0.001f);
+            Assert.AreEqual(80f, Evaluate(show, 2, 0.1f)[AlpsShowLayout.FrameBrightness], 0.001f);
         }
 
         [Test]
@@ -729,8 +743,8 @@ namespace AdzukiSoft.ALPS.Tests
             effect.blackoutOnReturn = true;
             var show = Compile(1, set);
 
-            Assert.AreEqual(75f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(75f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f);
         }
 
         [Test]
@@ -745,10 +759,10 @@ namespace AdzukiSoft.ALPS.Tests
             effect.blackoutFadeOut = 0.5f;
             var show = Compile(1, set);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.0625f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade in.");
-            Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Between the two fades.");
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Half way through the fade out.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark on the return leg.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.0625f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade in.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f, "Between the two fades.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade out.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f, "Dark on the return leg.");
         }
 
         [Test]
@@ -762,9 +776,9 @@ namespace AdzukiSoft.ALPS.Tests
             effect.blackoutFadeOut = 0.5f;
             var show = Compile(1, set);
 
-            Assert.AreEqual(100f, Evaluate(show, 0, 0.2f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit while going out.");
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Fading out during the hold.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.6f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark on the way back.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.2f)[AlpsShowLayout.FrameBrightness], 0.01f, "Lit while going out.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowLayout.FrameBrightness], 0.01f, "Fading out during the hold.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.6f)[AlpsShowLayout.FrameBrightness], 0.001f, "Dark on the way back.");
         }
 
         [Test]
@@ -776,9 +790,9 @@ namespace AdzukiSoft.ALPS.Tests
             effect.blackoutOnReturn = true;
             var show = Compile(1, set);
 
-            Assert.AreEqual(100f, Evaluate(show, 0, 0.4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit at the top.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.9f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark at the bottom.");
-            Assert.AreEqual(100f, Evaluate(show, 0, 1.1f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit again on the next rise.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.4f)[AlpsShowLayout.FrameBrightness], 0.01f, "Lit at the top.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.9f)[AlpsShowLayout.FrameBrightness], 0.001f, "Dark at the bottom.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 1.1f)[AlpsShowLayout.FrameBrightness], 0.01f, "Lit again on the next rise.");
         }
 
         [Test]
@@ -796,7 +810,7 @@ namespace AdzukiSoft.ALPS.Tests
             effect.blackoutOnReturn = true;
             var show = Compile(1, set);
 
-            Assert.AreEqual(87.5f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(87.5f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -816,12 +830,12 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(4, set);
 
             // Fixture index 0 is fixture 1, which is odd.
-            Assert.AreEqual(100f, Evaluate(show, 1, 0.3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Even is on.");
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Odd is off meanwhile.");
-            Assert.AreEqual(0f, Evaluate(show, 1, 0.8f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Then even is off.");
-            Assert.AreEqual(100f, Evaluate(show, 0, 0.8f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "And odd is on.");
-            Assert.AreEqual(50f, Evaluate(show, 1, 0.55f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Even half way through its fade out.");
-            Assert.AreEqual(50f, Evaluate(show, 0, 0.55f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "As odd is half way through its fade in.");
+            Assert.AreEqual(100f, Evaluate(show, 1, 0.3f)[AlpsShowLayout.FrameBrightness], 0.01f, "Even is on.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.3f)[AlpsShowLayout.FrameBrightness], 0.01f, "Odd is off meanwhile.");
+            Assert.AreEqual(0f, Evaluate(show, 1, 0.8f)[AlpsShowLayout.FrameBrightness], 0.01f, "Then even is off.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.8f)[AlpsShowLayout.FrameBrightness], 0.01f, "And odd is on.");
+            Assert.AreEqual(50f, Evaluate(show, 1, 0.55f)[AlpsShowLayout.FrameBrightness], 0.01f, "Even half way through its fade out.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.55f)[AlpsShowLayout.FrameBrightness], 0.01f, "As odd is half way through its fade in.");
         }
 
         [Test]
@@ -840,8 +854,8 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(1, set);
 
             var frame = Evaluate(show, 0, 0.5f);
-            Assert.AreEqual(-20f, frame[AlpsShowEvaluator.FrameTilt], 0.01f, "Half a cycle in, tilt is where it was a quarter in.");
-            Assert.AreEqual(1f, frame[AlpsShowEvaluator.FrameRed], 0.01f, "The palette is still on its first colour.");
+            Assert.AreEqual(-20f, frame[AlpsShowLayout.FrameTilt], 0.01f, "Half a cycle in, tilt is where it was a quarter in.");
+            Assert.AreEqual(1f, frame[AlpsShowLayout.FrameRed], 0.01f, "The palette is still on its first colour.");
         }
 
         [Test]
@@ -854,8 +868,8 @@ namespace AdzukiSoft.ALPS.Tests
             effect.phaseOffset = 0.5f;
             var show = Compile(1, set);
 
-            Assert.AreEqual(0f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Half a cycle late, the card is still on its way back.");
-            Assert.AreEqual(100f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.001f, "Half a cycle late, the card is still on its way back.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -871,8 +885,8 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(1, set);
 
             var frame = Evaluate(show, 0, 0.25f);
-            Assert.AreEqual(25f, frame[AlpsShowEvaluator.FrameTilt], 0.01f);
-            Assert.AreEqual(50f, frame[AlpsShowEvaluator.FramePan], 0.01f, "90 degrees is a quarter cycle ahead.");
+            Assert.AreEqual(25f, frame[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(50f, frame[AlpsShowLayout.FramePan], 0.01f, "90 degrees is a quarter cycle ahead.");
         }
 
         // ------------------------------------------------------------------ circle
@@ -894,7 +908,7 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     var frame = Evaluate(show, 0, i / 12f);
                     var opening = Vector3.Angle(
-                        Direction(frame[AlpsShowEvaluator.FrameTilt], frame[AlpsShowEvaluator.FramePan]),
+                        Direction(frame[AlpsShowLayout.FrameTilt], frame[AlpsShowLayout.FramePan]),
                         Direction(centerTilt, 40f));
                     Assert.AreEqual(12f, opening, 0.01f, $"center tilt {centerTilt}, step {i} left the ring.");
                 }
@@ -920,19 +934,19 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(
                 180f,
                 Vector3.Angle(
-                    Vector3.ProjectOnPlane(Direction(start[AlpsShowEvaluator.FrameTilt], start[AlpsShowEvaluator.FramePan]), center),
-                    Vector3.ProjectOnPlane(Direction(half[AlpsShowEvaluator.FrameTilt], half[AlpsShowEvaluator.FramePan]), center)),
+                    Vector3.ProjectOnPlane(Direction(start[AlpsShowLayout.FrameTilt], start[AlpsShowLayout.FramePan]), center),
+                    Vector3.ProjectOnPlane(Direction(half[AlpsShowLayout.FrameTilt], half[AlpsShowLayout.FramePan]), center)),
                 0.05f,
                 "Half a cycle is the opposite side of the ring.");
             Assert.AreEqual(
                 90f,
                 Vector3.Angle(
-                    Vector3.ProjectOnPlane(Direction(start[AlpsShowEvaluator.FrameTilt], start[AlpsShowEvaluator.FramePan]), center),
-                    Vector3.ProjectOnPlane(Direction(quarter[AlpsShowEvaluator.FrameTilt], quarter[AlpsShowEvaluator.FramePan]), center)),
+                    Vector3.ProjectOnPlane(Direction(start[AlpsShowLayout.FrameTilt], start[AlpsShowLayout.FramePan]), center),
+                    Vector3.ProjectOnPlane(Direction(quarter[AlpsShowLayout.FrameTilt], quarter[AlpsShowLayout.FramePan]), center)),
                 0.05f,
                 "A quarter cycle is a quarter turn.");
-            Assert.AreEqual(start[AlpsShowEvaluator.FrameTilt], full[AlpsShowEvaluator.FrameTilt], 0.01f);
-            Assert.AreEqual(start[AlpsShowEvaluator.FramePan], full[AlpsShowEvaluator.FramePan], 0.01f);
+            Assert.AreEqual(start[AlpsShowLayout.FrameTilt], full[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(start[AlpsShowLayout.FramePan], full[AlpsShowLayout.FramePan], 0.01f);
         }
 
         [Test]
@@ -945,18 +959,18 @@ namespace AdzukiSoft.ALPS.Tests
             move.circleCenterPan.value = -20f;
             move.circleRadius.value = 0f;
             var still = Evaluate(Compile(1, set), 0, 0.3f);
-            Assert.AreEqual(35f, still[AlpsShowEvaluator.FrameTilt], 0.01f);
-            Assert.AreEqual(-20f, still[AlpsShowEvaluator.FramePan], 0.01f);
+            Assert.AreEqual(35f, still[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(-20f, still[AlpsShowLayout.FramePan], 0.01f);
 
             move.circleRadius.value = 10f;
             move.circleAspect = 2f;
             var show = Compile(1, set);
             var center = Direction(35f, -20f);
             var wide = Vector3.Angle(
-                Direction(Evaluate(show, 0, 0f)[AlpsShowEvaluator.FrameTilt], Evaluate(show, 0, 0f)[AlpsShowEvaluator.FramePan]),
+                Direction(Evaluate(show, 0, 0f)[AlpsShowLayout.FrameTilt], Evaluate(show, 0, 0f)[AlpsShowLayout.FramePan]),
                 center);
             var tall = Vector3.Angle(
-                Direction(Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameTilt], Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FramePan]),
+                Direction(Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameTilt], Evaluate(show, 0, 0.25f)[AlpsShowLayout.FramePan]),
                 center);
             Assert.AreEqual(20f, wide, 0.01f, "Width is the radius times the ratio.");
             Assert.AreEqual(10f, tall, 0.01f, "Height stays the radius.");
@@ -979,7 +993,7 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 var frame = Evaluate(show, fixture, 0f);
                 return Vector3.ProjectOnPlane(
-                    Direction(frame[AlpsShowEvaluator.FrameTilt], frame[AlpsShowEvaluator.FramePan]),
+                    Direction(frame[AlpsShowLayout.FrameTilt], frame[AlpsShowLayout.FramePan]),
                     center);
             }
 
@@ -1005,14 +1019,14 @@ namespace AdzukiSoft.ALPS.Tests
                 var time = i / 8f;
                 var left = Evaluate(show, 0, time);
                 var right = Evaluate(show, 3, time);
-                Assert.AreEqual(right[AlpsShowEvaluator.FrameTilt], left[AlpsShowEvaluator.FrameTilt], 0.01f);
-                Assert.AreEqual(-right[AlpsShowEvaluator.FramePan], left[AlpsShowEvaluator.FramePan], 0.01f, "The outer rings turn as mirror images.");
+                Assert.AreEqual(right[AlpsShowLayout.FrameTilt], left[AlpsShowLayout.FrameTilt], 0.01f);
+                Assert.AreEqual(-right[AlpsShowLayout.FramePan], left[AlpsShowLayout.FramePan], 0.01f, "The outer rings turn as mirror images.");
             }
 
             var edge = Evaluate(show, 3, 0.3f);
             Assert.AreEqual(
                 8f,
-                Vector3.Angle(Direction(edge[AlpsShowEvaluator.FrameTilt], edge[AlpsShowEvaluator.FramePan]), Direction(30f, 25f)),
+                Vector3.Angle(Direction(edge[AlpsShowLayout.FrameTilt], edge[AlpsShowLayout.FramePan]), Direction(30f, 25f)),
                 0.01f,
                 "Spread moves the ring's centre, the ring keeps its size.");
         }
@@ -1036,7 +1050,7 @@ namespace AdzukiSoft.ALPS.Tests
             float Opening(float time)
             {
                 var frame = Evaluate(show, 0, time);
-                return Vector3.Angle(Direction(frame[AlpsShowEvaluator.FrameTilt], frame[AlpsShowEvaluator.FramePan]), Direction(40f, 0f));
+                return Vector3.Angle(Direction(frame[AlpsShowLayout.FrameTilt], frame[AlpsShowLayout.FramePan]), Direction(40f, 0f));
             }
 
             Assert.AreEqual(5f, Opening(2f), 0.01f, "A quarter of the slow phase opens a quarter of the range.");
@@ -1059,7 +1073,7 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(1, set);
 
             var frame = Evaluate(show, 0, 0.3f);
-            Assert.AreEqual(1f, frame[AlpsShowEvaluator.FrameRed], 0.001f, "The neutral default is white.");
+            Assert.AreEqual(1f, frame[AlpsShowLayout.FrameRed], 0.001f, "The neutral default is white.");
         }
 
         [Test]
@@ -1105,7 +1119,7 @@ namespace AdzukiSoft.ALPS.Tests
             color.colorStops.Add(new AlpsColorStop { isGradient = true, gradient = gradient });
             var show = Compile(1, set);
 
-            Assert.AreEqual(0.5f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameRed], 0.05f);
+            Assert.AreEqual(0.5f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameRed], 0.05f);
         }
 
         [Test]
@@ -1120,11 +1134,11 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(2, set);
 
             var early = Evaluate(show, 0, 0.25f);
-            Assert.AreEqual(AlpsGoboStop.OffIndex, early[AlpsShowEvaluator.FrameGobo], 0.001f);
-            Assert.AreEqual(5f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameGobo], 0.001f);
+            Assert.AreEqual(AlpsGoboStop.OffIndex, early[AlpsShowLayout.FrameGobo], 0.001f);
+            Assert.AreEqual(5f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameGobo], 0.001f);
 
-            Assert.AreEqual(22.5f, early[AlpsShowEvaluator.FrameGoboRotation], 0.01f, "A quarter beat of a four beat turn.");
-            Assert.AreEqual(52.5f, Evaluate(show, 1, 0.25f)[AlpsShowEvaluator.FrameGoboRotation], 0.01f);
+            Assert.AreEqual(22.5f, early[AlpsShowLayout.FrameGoboRotation], 0.01f, "A quarter beat of a four beat turn.");
+            Assert.AreEqual(52.5f, Evaluate(show, 1, 0.25f)[AlpsShowLayout.FrameGoboRotation], 0.01f);
         }
 
         [Test]
@@ -1139,9 +1153,9 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 20; i++)
             {
                 var time = i * 0.173f;
-                var scale = Evaluate(show, 1, time)[AlpsShowEvaluator.FrameBrightnessScale];
+                var scale = Evaluate(show, 1, time)[AlpsShowLayout.FrameBrightnessScale];
                 Assert.That(scale, Is.InRange(0.5f, 1f));
-                Assert.AreEqual(scale, Evaluate(show, 1, time)[AlpsShowEvaluator.FrameBrightnessScale]);
+                Assert.AreEqual(scale, Evaluate(show, 1, time)[AlpsShowLayout.FrameBrightnessScale]);
             }
         }
 
@@ -1164,9 +1178,9 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = lower, start = 0f, end = 2f, layer = 0 },
                 new AlpsStandaloneClip { set = upper, start = 1f, end = 2f, layer = 1 });
 
-            Assert.AreEqual(80f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(80f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
             var covered = Evaluate(show, 0, 1.5f);
-            Assert.AreEqual(20f, covered[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(20f, covered[AlpsShowLayout.FrameBrightness], 0.001f);
             Assert.AreEqual(Color.red, ColorOf(covered), "The upper layer has no color effect, so red shows through.");
         }
 
@@ -1184,8 +1198,8 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = a, start = 0f, end = 2f, mixOut = 1f },
                 new AlpsStandaloneClip { set = b, start = 1f, end = 3f, mixIn = 1f });
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 1.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f);
-            Assert.AreEqual(100f, Evaluate(show, 0, 2.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f);
+            Assert.AreEqual(50f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameBrightness], 0.5f);
+            Assert.AreEqual(100f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FrameBrightness], 0.001f);
         }
 
         [Test]
@@ -1198,7 +1212,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Bpm,
                 new AlpsStandaloneClip { set = set, start = 0f, end = 2f, mixIn = 1f });
 
-            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.5f, "Half way from dark to 80.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.5f, "Half way from dark to 80.");
 
             var plain = Set();
             plain.Add(AlpsEffectKind.Cone);
@@ -1207,7 +1221,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Bpm,
                 new AlpsStandaloneClip { set = plain, start = 0f, end = 2f, mixIn = 1f });
 
-            Assert.AreEqual(0f, Evaluate(withoutBrightness, 0, 0.5f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Nothing lights it.");
+            Assert.AreEqual(0f, Evaluate(withoutBrightness, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.001f, "Nothing lights it.");
         }
 
         [Test]
@@ -1217,15 +1231,15 @@ namespace AdzukiSoft.ALPS.Tests
             var show = Compile(8, set);
 
             Assert.AreEqual(1, show.ClipCount);
-            Assert.AreEqual(set.effects.Count, show.effects.Length / AlpsShowEvaluator.EffectStride);
+            Assert.AreEqual(set.effects.Count, show.effects.Length / AlpsShowLayout.EffectStride);
             Assert.AreEqual(
                 set.effects.Sum(ParameterCount),
-                show.parameters.Length / AlpsShowEvaluator.ParamStride);
+                show.parameters.Length / AlpsShowLayout.ParamStride);
 
             var tiltRow = 0;
             var tilt = set.effects.First(e => e.kind == AlpsEffectKind.Move).tilt;
-            Assert.AreEqual(tilt.range.x, show.parameters[tiltRow + AlpsShowEvaluator.ParamRangeMin]);
-            Assert.AreEqual(tilt.range.y, show.parameters[tiltRow + AlpsShowEvaluator.ParamRangeMax]);
+            Assert.AreEqual(tilt.range.x, show.parameters[tiltRow + AlpsShowLayout.ParamRangeMin]);
+            Assert.AreEqual(tilt.range.y, show.parameters[tiltRow + AlpsShowLayout.ParamRangeMax]);
 
             for (var fixture = 0; fixture < 8; fixture++)
             {
@@ -1237,7 +1251,7 @@ namespace AdzukiSoft.ALPS.Tests
         // ------------------------------------------------------------------ playback cost
 
         [Test]
-        public void TimeIndex_FindsExactlyTheWeightedClipsInLayerOrder()
+        public void TimeIndex_ListsEveryClipOverlappingABucketInClipOrder()
         {
             void Check(AlpsCompiledShow show, float from, float to, IEnumerable<float> extraTimes)
             {
@@ -1247,27 +1261,23 @@ namespace AdzukiSoft.ALPS.Tests
                     times.Add(time);
                 }
 
-                var active = new int[show.ClipCount];
-                var weights = new float[show.ClipCount];
                 foreach (var time in times)
                 {
-                    var expected = new List<int>();
-                    for (var clip = 0; clip < show.ClipCount; clip++)
+                    var bucket = AlpsShowLayout.TimeBucket(show.bucketStart, show.bucketSeconds, time);
+                    var listed = new List<int>();
+                    for (var i = show.bucketStart[bucket]; i < show.bucketStart[bucket + 1]; i++)
                     {
-                        if (AlpsShowEvaluator.ClipWeight(show.clips, clip, time) * AlpsShowEvaluator.ClipFade(show.clips, clip, time) > 0f)
-                        {
-                            expected.Add(clip);
-                        }
+                        listed.Add(show.bucketClips[i]);
                     }
 
-                    var count = AlpsShowEvaluator.ActiveClips(
-                        show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, active, weights);
-                    CollectionAssert.AreEqual(expected, active.Take(count), $"Clips at {time}s.");
-                    for (var i = 0; i < count; i++)
+                    CollectionAssert.AreEqual(listed.OrderBy(clip => clip), listed, $"Clips at {time}s are in clip order.");
+                    for (var clip = 0; clip < show.ClipCount; clip++)
                     {
-                        var clip = active[i];
-                        var weight = AlpsShowEvaluator.ClipWeight(show.clips, clip, time) * AlpsShowEvaluator.ClipFade(show.clips, clip, time);
-                        Assert.AreEqual(weight, weights[i], 1e-6f, $"Weight of clip {clip} at {time}s.");
+                        var row = clip * AlpsShowLayout.ClipStride;
+                        if (time >= show.clips[row + AlpsShowLayout.ClipStart] && time <= show.clips[row + AlpsShowLayout.ClipEnd])
+                        {
+                            CollectionAssert.Contains(listed, clip, $"Clip {clip} plays at {time}s.");
+                        }
                     }
                 }
             }
@@ -1281,10 +1291,9 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     var set = Set();
                     set.Add(AlpsEffectKind.Brightness).brightness.value = 50f;
-                    set.fadeInBeats = i % 3 == 0 ? 0.5f : 0f;
                     var start = i * 1.7f + layer * 0.3f;
                     var end = start + (i % 4 == 0 ? 9f : 0.6f + i * 0.1f);
-                    clips.Add(new AlpsStandaloneClip { set = set, start = start, end = end, mixIn = i % 2 == 0 ? 0.2f : 0f, layer = layer });
+                    clips.Add(new AlpsStandaloneClip { set = set, start = start, end = end, layer = layer });
                     edges.Add(start);
                     edges.Add(end);
                 }
@@ -1293,6 +1302,12 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(4, Bpm, clips.ToArray());
             Assert.AreEqual(AlpsShowCompiler.MinBucketSeconds, show.bucketSeconds);
             Check(show, -1f, 32f, edges);
+
+            // The GPU walks the same buckets: a clip playing across bucket edges stays lit.
+            for (var time = 0.05f; time < 10f; time += 0.23f)
+            {
+                Assert.AreEqual(50f, Evaluate(show, 0, time)[AlpsShowLayout.FrameBrightness], 0.001f, $"At {time}s.");
+            }
 
             // A long show stretches its buckets instead of making more of them.
             var longSet = Set();
@@ -1304,11 +1319,10 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = longSet, start = 2500f, end = 2501f, layer = 1 });
             Assert.AreEqual(AlpsShowCompiler.MaxBuckets, longShow.bucketStart.Length - 1);
             Assert.Greater(longShow.bucketSeconds, AlpsShowCompiler.MinBucketSeconds);
-            Check(longShow, 2490f, 2510f, new[] { 0f, 2500f, 2501f, 5000f, 5001f });
+            Check(longShow, 2490f, 2510f, new[] { 0f, 2500f, 2501f, 5000f });
 
             var empty = AlpsShowCompiler.CompileStandalone(1, Bpm);
-            Assert.AreEqual(0, AlpsShowEvaluator.ActiveClips(
-                empty.clips, empty.bucketStart, empty.bucketClips, empty.bucketSeconds, 1f, new int[0], new float[0]));
+            Assert.AreEqual(0f, Evaluate(empty, 0, 1f)[AlpsShowLayout.FrameBrightness], "A show without clips is dark.");
         }
 
         [Test]
@@ -1338,13 +1352,13 @@ namespace AdzukiSoft.ALPS.Tests
                 var order = (int)set.order;
                 var groupSize = set.phase.fixtureGroupSize;
                 var seed = clips[clip].seed;
-                var start = AlpsShowEvaluator.ToInt(show.clips[clip * AlpsShowEvaluator.ClipStride + AlpsShowEvaluator.ClipPositionStart]);
+                var start = AlpsShowLayout.ToInt(show.clips[clip * AlpsShowLayout.ClipStride + AlpsShowLayout.ClipPositionStart]);
                 rows.Add(start);
                 for (var i = 0; i < fixtures; i++)
                 {
-                    Assert.AreEqual(AlpsShowEvaluator.OrderPosition(order, seed, i, fixtures, groupSize), show.positions[start + i * 2],
+                    Assert.AreEqual(AlpsShowLayout.OrderPosition(order, seed, i, fixtures, groupSize), show.positions[start + i * 2],
                         $"k of fixture {i}, {set.order}, groups of {groupSize}, seed {seed}.");
-                    Assert.AreEqual(AlpsShowEvaluator.IsMirrored(order, i, fixtures, groupSize) ? 1 : 0, show.positions[start + i * 2 + 1],
+                    Assert.AreEqual(AlpsShowLayout.IsMirrored(order, i, fixtures, groupSize) ? 1 : 0, show.positions[start + i * 2 + 1],
                         $"Mirror of fixture {i}, {set.order}, groups of {groupSize}.");
                 }
             }
@@ -1354,95 +1368,47 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void SharedPhase_IsWorkedOutWheneverAValueFollowsIt()
+        public void PhaseCurve_DrawsWhatPlays()
         {
-            AlpsClipEffectSet With(System.Action<AlpsClipEffectSet> build)
+            var cases = new (string name, System.Action<AlpsPhaseSettings> build)[]
             {
-                var set = Set(0.4f, 0.1f, 0.3f);
-                set.phase.ease = AlpsEaseType.InOutSine;
-                set.phase.spread = 0.5f;
-                build(set);
-                return set;
-            }
-
-            var cases = new (string name, AlpsClipEffectSet set, bool uses)[]
-            {
-                ("values only", With(s =>
+                ("sawtooth", p => p.SetShares(1f, 0f, 0f)),
+                ("eased wave", p =>
                 {
-                    s.Add(AlpsEffectKind.Brightness).brightness.value = 40f;
-                    s.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
-                    s.Add(AlpsEffectKind.Gobo).goboStops.Add(new AlpsGoboStop(2));
-                    s.Add(AlpsEffectKind.Flicker);
-                }), false),
-                ("full set", FullSet(), true),
-                ("ranged cone", With(s => s.Add(AlpsEffectKind.Cone).coneLength.isRange = true), true),
-                ("circle", With(s => s.Add(AlpsEffectKind.Move).moveMode = AlpsMoveMode.Circle), true),
-                ("color stops", With(s =>
+                    p.SetShares(0.3f, 0.2f, 0.4f);
+                    p.ease = AlpsEaseType.InOutCubic;
+                    p.fallEase = AlpsEaseType.OutBounce;
+                }),
+                ("inverted bounce", p =>
                 {
-                    var color = s.Add(AlpsEffectKind.Color);
-                    color.colorStops.Add(new AlpsColorStop(Color.red));
-                    color.colorStops.Add(new AlpsColorStop(Color.blue));
-                }), true),
-                ("one gradient", With(s =>
-                {
-                    var stop = new AlpsColorStop(Color.red) { isGradient = true };
-                    s.Add(AlpsEffectKind.Color).colorStops.Add(stop);
-                }), true),
-                ("gobo stops", With(s =>
-                {
-                    var gobo = s.Add(AlpsEffectKind.Gobo);
-                    gobo.goboStops.Add(new AlpsGoboStop(2));
-                    gobo.goboStops.Add(new AlpsGoboStop(5));
-                }), true),
-                ("offset brightness", With(s =>
-                {
-                    var brightness = s.Add(AlpsEffectKind.Brightness);
-                    brightness.brightness.isRange = true;
-                    brightness.phaseOffset = 0.25f;
-                }), true),
+                    p.SetShares(0.5f, 0f, 0.5f);
+                    p.ease = AlpsEaseType.InOutBounce;
+                    p.fallEase = AlpsEaseType.InBack;
+                    p.inverse = true;
+                }),
+                ("random", p => p.mode = AlpsPhaseMode.Random),
             };
 
-            foreach (var (name, set, uses) in cases)
+            foreach (var (name, build) in cases)
             {
-                var show = Compile(6, set, 4f);
-                Assert.AreEqual(uses ? 1f : 0f, show.clips[AlpsShowEvaluator.ClipUsesPhase], name);
-
-                // Working the phase out on every clip must not change what a marked one shows.
-                var always = Compile(6, set, 4f);
-                always.clips[AlpsShowEvaluator.ClipUsesPhase] = 1f;
-                for (var fixture = 0; fixture < 6; fixture++)
+                var set = Set();
+                build(set.phase);
+                var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+                brightness.isRange = true;
+                brightness.range = new Vector2(0f, 100f);
+                const int seed = 23;
+                var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 4f, seed = seed });
+                var phase = set.phase;
+                for (var time = 0.01f; time < 4f; time += 0.07f)
                 {
-                    for (var time = 0.05f; time < 4f; time += 0.21f)
-                    {
-                        CollectionAssert.AreEqual(Evaluate(always, fixture, time), Evaluate(show, fixture, time), $"{name}, fixture {fixture} at {time}s.");
-                    }
+                    var expected = 100f * AlpsPhaseCurve.Phase(
+                        (int)phase.mode, (int)phase.ease, (int)phase.fallEase, phase.rise, phase.holdHigh, phase.fall, phase.inverse,
+                        time / phase.beatsPerCycle, 0, seed);
+                    // The noise hashes large products, where the GPU may round a step differently.
+                    var tolerance = phase.mode == AlpsPhaseMode.Random ? 0.5f : 0.05f;
+                    Assert.AreEqual(expected, Evaluate(show, 0, time)[AlpsShowLayout.FrameBrightness], tolerance, $"{name} at {time}s.");
                 }
             }
-        }
-
-        [Test]
-        public void FrameChange_MarksEveryChangedChannel()
-        {
-            var stride = AlpsShowEvaluator.FrameStride;
-            var frame = new float[stride];
-            AlpsShowPlayer.WriteNeutralFrame(frame, 0);
-            var applied = new float[stride * 2];
-
-            var first = AlpsShowPlayer.FrameChange(frame, 0, applied, stride);
-            Assert.AreEqual(frame.Select((value, ch) => value != 0f ? 1 << ch : 0).Sum(), first, "Every channel that differs from the zeros.");
-            CollectionAssert.AreEqual(frame, applied.Skip(stride), "The written frame is kept.");
-            Assert.AreEqual(0f, applied[0], "Only its own row is kept.");
-            Assert.AreEqual(0, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
-
-            frame[AlpsShowEvaluator.FrameGoboRotation] = 30f;
-            Assert.AreEqual(1 << AlpsShowEvaluator.FrameGoboRotation, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
-            Assert.AreEqual(0, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
-
-            frame[AlpsShowEvaluator.FrameGoboRotation] = 60f;
-            frame[AlpsShowEvaluator.FramePan] = 10f;
-            Assert.AreEqual(
-                (1 << AlpsShowEvaluator.FrameGoboRotation) | (1 << AlpsShowEvaluator.FramePan),
-                AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
         }
 
         // ------------------------------------------------------------------ helpers
@@ -1520,33 +1486,21 @@ namespace AdzukiSoft.ALPS.Tests
             return AlpsShowCompiler.CompileStandalone(fixtures, Bpm, new AlpsStandaloneClip { set = set, start = 0f, end = end });
         }
 
-        private static float[] Evaluate(AlpsCompiledShow show, int fixture, float time)
+        /// <summary>The fixture's frame at <paramref name="time"/>, from the GPU evaluator.</summary>
+        private float[] Evaluate(AlpsCompiledShow show, int fixture, float time)
         {
-            var stride = AlpsShowEvaluator.FrameStride;
-            var fixtureCount = show.fixtureCount;
-            var defaults = new float[fixtureCount * stride];
-            for (var i = 0; i < fixtureCount; i++)
+            if (!_gpu.TryGetValue(show, out var gpu))
             {
-                AlpsShowPlayer.WriteNeutralFrame(defaults, i * stride);
+                gpu = new AlpsGpuShow(show, Mathf.Max(1, show.fixtureCount));
+                _gpu.Add(show, gpu);
             }
 
-            var frame = new float[stride];
-            var active = new int[show.ClipCount];
-            var activeWeight = new float[show.ClipCount];
-            var activeCount = AlpsShowEvaluator.ActiveClips(
-                show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, active, activeWeight);
-            AlpsShowEvaluator.EvaluateFixture(
-                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
-                active, activeWeight, activeCount,
-                show.groupCount, show.groupIndex,
-                fixture, time, defaults, frame,
-                new float[stride], new float[stride], new float[stride], new float[stride], new float[1]);
-            return frame;
+            return gpu.Evaluate(fixture, time);
         }
 
         private static Color ColorOf(IReadOnlyList<float> frame)
         {
-            return new Color(frame[AlpsShowEvaluator.FrameRed], frame[AlpsShowEvaluator.FrameGreen], frame[AlpsShowEvaluator.FrameBlue], 1f);
+            return new Color(frame[AlpsShowLayout.FrameRed], frame[AlpsShowLayout.FrameGreen], frame[AlpsShowLayout.FrameBlue], 1f);
         }
     }
 }

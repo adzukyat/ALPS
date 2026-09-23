@@ -132,7 +132,7 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Every value for slot <paramref name="index"/> of <paramref name="count"/>: the
         /// value, or its spread at the slot's order position. The math is the one
-        /// <see cref="AlpsShowEvaluator.ResolveScalar"/> uses without a range.
+        /// the show evaluator uses for a value without a range.
         /// </summary>
         public void ResolveValues(int index, int count, float[] values)
         {

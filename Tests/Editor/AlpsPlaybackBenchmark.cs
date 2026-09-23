@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
@@ -19,8 +18,9 @@ using Object = UnityEngine.Object;
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// Times the compiled Udon player in play mode on real VRSL movers. Explicit, since it
-    /// enters play mode and only reports numbers. Results are logged with an [ALPS Bench] prefix.
+    /// Times the compiled Udon player in play mode on real VRSL movers, and renders a moment
+    /// of a show to look at. Explicit, since these enter play mode and only report. Results
+    /// are logged with an [ALPS Bench] prefix and written to TestResults~.
     /// </summary>
     [Explicit]
     public class AlpsPlaybackBenchmark
@@ -53,31 +53,14 @@ namespace AdzukiSoft.ALPS.Tests
             yield return new ExitPlayMode();
         }
 
-        private const string GpuWasOnKey = "AdzukiSoft.ALPS.Benchmark.GpuWasOn";
         private const float CaptureTime = 13.37f;
 
-        /// <summary>
-        /// Renders the same moment of a small show on the CPU path and on the GPU path into
-        /// TestResults~/capture-cpu.png and capture-gpu.png, to compare the two by eye.
-        /// </summary>
+        /// <summary>Renders a moment of a small show into TestResults~/capture.png, to look at by eye.</summary>
         [UnityTest]
-        public IEnumerator Capture_Cpu()
-        {
-            return Capture(false, "capture-cpu.png");
-        }
-
-        [UnityTest]
-        public IEnumerator Capture_Gpu()
-        {
-            return Capture(true, "capture-gpu.png");
-        }
-
-        private static IEnumerator Capture(bool gpu, string file)
+        public IEnumerator Capture()
         {
             if (!Application.isPlaying)
             {
-                SessionState.SetBool(GpuWasOnKey, AlpsGpuPlayback.Enabled);
-                AlpsGpuPlayback.Enabled = gpu;
                 BuildCaptureScene();
                 yield return new EnterPlayMode();
             }
@@ -88,15 +71,7 @@ namespace AdzukiSoft.ALPS.Tests
                 yield return null;
             }
 
-            try
-            {
-                RenderCapture(file);
-            }
-            finally
-            {
-                AlpsGpuPlayback.Enabled = SessionState.GetBool(GpuWasOnKey, false);
-            }
-
+            RenderCapture("capture.png");
             yield return new ExitPlayMode();
         }
 
@@ -110,6 +85,8 @@ namespace AdzukiSoft.ALPS.Tests
             player.RunProgram("_update");
 
             var camera = Object.FindObjectOfType<Camera>();
+            // VRSL's volumetric cones fade out where they meet the scene, read from the depth texture.
+            camera.depthTextureMode = DepthTextureMode.Depth;
 
             var target = new RenderTexture(1280, 720, 24, RenderTextureFormat.ARGB32);
             camera.targetTexture = target;
@@ -169,6 +146,12 @@ namespace AdzukiSoft.ALPS.Tests
             clip.duration = 60.0;
             var set = MovingSet(0);
             set.effects.First(e => e.kind == AlpsEffectKind.Gobo).goboStops[0] = new AlpsGoboStop(4);
+
+            // Each fixture a longer cone, from a fifth of its mesh to twice it.
+            var cone = set.effects.First(e => e.kind == AlpsEffectKind.Cone).coneLength;
+            cone.hasSpread = true;
+            cone.spreadRange = new Vector2(10f, 100f);
+            cone.spreadRangeEnd = cone.spreadRange;
             ((AlpsTimelineClip)clip.asset).data = set;
             director.SetGenericBinding(track, container);
 
@@ -177,43 +160,19 @@ namespace AdzukiSoft.ALPS.Tests
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
-        [UnityTest]
-        public IEnumerator Benchmark_GpuPlayerFrameCost()
+        /// <summary>
+        /// Kept out of the test's iterator: entering play mode reloads the domain, and the
+        /// iterator comes back without the closure its lambdas would capture into.
+        /// </summary>
+        private static void Measure()
         {
-            if (!Application.isPlaying)
-            {
-                SessionState.SetBool(GpuWasOnKey, AlpsGpuPlayback.Enabled);
-                AlpsGpuPlayback.Enabled = true;
-                BuildScene();
-                yield return new EnterPlayMode();
-            }
-
-            LogAssert.ignoreFailingMessages = true;
-            for (var i = 0; i < 5; i++)
-            {
-                yield return null;
-            }
-
-            try
-            {
-                MeasureGpu();
-            }
-            finally
-            {
-                AlpsGpuPlayback.Enabled = SessionState.GetBool(GpuWasOnKey, false);
-            }
-
-            yield return new ExitPlayMode();
-        }
-
-        private static void MeasureGpu()
-        {
-            var player = Object.FindObjectsOfType<UdonBehaviour>().FirstOrDefault(b => b.gameObject.name == AlpsShowSetup.PlayerName);
-            Assert.NotNull(player, "No player in play mode.");
-            Assert.AreEqual(true, player.GetProgramVariable("gpu"), "The player plays on the GPU.");
+            var behaviours = Object.FindObjectsOfType<UdonBehaviour>();
+            var player = behaviours.FirstOrDefault(b => b.gameObject.name == AlpsShowSetup.PlayerName);
+            Assert.NotNull(player, "No player in play mode. Udon behaviours: " + string.Join(", ", behaviours.Select(b => b.gameObject.name)));
             var director = Object.FindObjectOfType<PlayableDirector>();
+            Assert.NotNull(director, "No director in play mode.");
             director.timeUpdateMode = DirectorUpdateMode.Manual;
-            var grid = (RenderTexture)player.GetProgramVariable("gpuGrid");
+            var grid = (RenderTexture)player.GetProgramVariable("grid");
             var readback = new Texture2D(1, 1, TextureFormat.RGBAFloat, false, true);
 
             var start = 10f;
@@ -254,158 +213,9 @@ namespace AdzukiSoft.ALPS.Tests
             Object.Destroy(readback);
 
             var report =
-                $"[ALPS Bench] GPU playback, {Containers * FixturesPerContainer} fixtures\n" +
+                $"[ALPS Bench] {Containers * FixturesPerContainer} VRSL movers\n" +
                 $"[ALPS Bench] player frame on the CPU:          {cpu:0.000} ms\n" +
                 $"[ALPS Bench] until the GPU has drawn the grid: {waited - waitOnly:0.000} ms (readback alone {waitOnly:0.000} ms)";
-            Debug.Log(report);
-            File.WriteAllText(Path.Combine(Application.dataPath, "..", "TestResults~", "benchmark-gpu.txt"), report);
-        }
-
-        /// <summary>
-        /// Kept out of the test's iterator: entering play mode reloads the domain, and the
-        /// iterator comes back without the closure its lambdas would capture into.
-        /// </summary>
-        private static void Measure()
-        {
-            var behaviours = Object.FindObjectsOfType<UdonBehaviour>();
-            var player = behaviours.FirstOrDefault(b => b.gameObject.name == AlpsShowSetup.PlayerName);
-            Assert.NotNull(player, "No player in play mode. Udon behaviours: " + string.Join(", ", behaviours.Select(b => b.gameObject.name)));
-            var director = Object.FindObjectOfType<PlayableDirector>();
-            Assert.NotNull(director, "No director in play mode.");
-            director.timeUpdateMode = DirectorUpdateMode.Manual;
-            var vrsl = behaviours.Where(b => b != player).ToArray();
-
-            var start = 10f;
-            double Run(Action<float> perFrame)
-            {
-                // Warm up, then time.
-                for (var i = 0; i < 30; i++)
-                {
-                    perFrame(start + i * FrameSeconds);
-                }
-
-                var watch = Stopwatch.StartNew();
-                for (var i = 0; i < Frames; i++)
-                {
-                    perFrame(start + (30 + i) * FrameSeconds);
-                }
-
-                watch.Stop();
-                start += 20f;
-                return watch.Elapsed.TotalMilliseconds / Frames;
-            }
-
-            void Frame(float time)
-            {
-                director.time = time;
-                player.RunProgram("_update");
-            }
-
-            var full = Run(Frame);
-            var paused = Run(_ =>
-            {
-                director.time = 5f;
-                player.RunProgram("_update");
-            });
-            var vrslOnly = Run(_ =>
-            {
-                foreach (var fixture in vrsl)
-                {
-                    fixture.SendCustomEvent("_UpdateInstancedProperties");
-                }
-            });
-
-            var fixtures = player.GetProgramVariable("vrslFixtures") as Array;
-            player.SetProgramVariable("vrslFixtures", Array.CreateInstance(fixtures.GetType().GetElementType(), 0));
-            var evaluateOnly = Run(Frame);
-            player.SetProgramVariable("vrslFixtures", fixtures);
-
-            var report =
-                $"[ALPS Bench] {vrsl.Length} VRSL movers, {Containers * FixturesPerContainer} fixtures in the show\n" +
-                $"[ALPS Bench] player frame, full:           {full:0.000} ms\n" +
-                $"[ALPS Bench] player frame, no VRSL writes: {evaluateOnly:0.000} ms\n" +
-                $"[ALPS Bench] player frame, paused:         {paused:0.000} ms\n" +
-                $"[ALPS Bench] VRSL rebuild of every mover:  {vrslOnly:0.000} ms\n";
-
-            // One clip over every fixture at a time, evaluated without VRSL writes, to see what each effect costs.
-            var fixtureCount = Containers * FixturesPerContainer;
-            double EvaluateShow(AlpsCompiledShow show)
-            {
-                player.SetProgramVariable("clips", show.clips);
-                player.SetProgramVariable("effects", show.effects);
-                player.SetProgramVariable("parameters", show.parameters);
-                player.SetProgramVariable("colors", show.colors);
-                player.SetProgramVariable("gobos", show.gobos);
-                player.SetProgramVariable("userNames", show.userNames);
-                player.SetProgramVariable("positions", show.positions);
-                player.SetProgramVariable("bucketStart", show.bucketStart);
-                player.SetProgramVariable("bucketClips", show.bucketClips);
-                player.SetProgramVariable("bucketSeconds", show.bucketSeconds);
-                player.SetProgramVariable("groupCount", show.groupCount);
-                player.SetProgramVariable("groupIndex", show.groupIndex);
-                player.SetProgramVariable("vrslFixtures", Array.CreateInstance(fixtures.GetType().GetElementType(), 0));
-                player.SendCustomEvent("Initialize");
-                return Run(Frame);
-            }
-
-            double Effect(Action<AlpsClipEffectSet> build)
-            {
-                var set = new AlpsClipEffectSet();
-                set.phase.beatsPerCycle = 4f;
-                set.phase.spread = 0.5f;
-                build(set);
-                return EvaluateShow(AlpsShowCompiler.CompileStandalone(fixtureCount, 120f, new AlpsStandaloneClip { set = set, start = 0f, end = 1000f }));
-            }
-
-            var noClips = EvaluateShow(AlpsShowCompiler.CompileStandalone(fixtureCount, 120f));
-            var emptyClip = Effect(_ => { });
-            var rows = new (string name, Action<AlpsClipEffectSet> build)[]
-            {
-                ("brightness value", s => s.Add(AlpsEffectKind.Brightness)),
-                ("brightness range", s =>
-                {
-                    var b = s.Add(AlpsEffectKind.Brightness).brightness;
-                    b.isRange = true;
-                    b.range = new Vector2(0f, 100f);
-                }),
-                ("move angle, values", s => s.Add(AlpsEffectKind.Move)),
-                ("move angle, ranges", s =>
-                {
-                    var m = s.Add(AlpsEffectKind.Move);
-                    m.pan.isRange = true;
-                    m.pan.range = new Vector2(-60f, 60f);
-                    m.tilt.isRange = true;
-                    m.tilt.range = new Vector2(30f, 90f);
-                }),
-                ("move circle", s => s.Add(AlpsEffectKind.Move).moveMode = AlpsMoveMode.Circle),
-                ("color, 1 stop", s => s.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red))),
-                ("color, 3 stops", s =>
-                {
-                    var c = s.Add(AlpsEffectKind.Color);
-                    c.colorStops.Add(new AlpsColorStop(Color.red));
-                    c.colorStops.Add(new AlpsColorStop(Color.green));
-                    c.colorStops.Add(new AlpsColorStop(Color.blue));
-                }),
-                ("cone values", s => s.Add(AlpsEffectKind.Cone)),
-                ("gobo, turning", s =>
-                {
-                    var g = s.Add(AlpsEffectKind.Gobo);
-                    g.goboStops.Add(new AlpsGoboStop(3));
-                    g.goboRotationBeats = 4f;
-                }),
-                ("flicker", s => s.Add(AlpsEffectKind.Flicker)),
-            };
-
-            report += $"[ALPS Bench] evaluate only, no clips:     {noClips:0.000} ms\n";
-            report += $"[ALPS Bench] evaluate only, empty clip:   {emptyClip:0.000} ms\n";
-            foreach (var row in rows)
-            {
-                var cost = Effect(row.build);
-                report += $"[ALPS Bench] + {row.name,-22} {cost - emptyClip:0.000} ms\n";
-            }
-
-            report += $"[ALPS Bench] moving set as one clip:      {EvaluateShow(AlpsShowCompiler.CompileStandalone(fixtureCount, 120f, new AlpsStandaloneClip { set = MovingSet(0), start = 0f, end = 1000f })):0.000} ms";
-            player.SetProgramVariable("vrslFixtures", fixtures);
             Debug.Log(report);
             File.WriteAllText(Path.Combine(Application.dataPath, "..", "TestResults~", "benchmark.txt"), report);
         }

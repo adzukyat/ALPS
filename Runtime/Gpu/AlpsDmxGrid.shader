@@ -1,5 +1,7 @@
 // Lays the evaluated frames out as the DMX grid VRSL's mover shaders read in DMX mode.
-// Fixture n starts on absolute DMX channel 13n + 1, one row of the 13 column grid each.
+// The fixture on DMX row n starts on absolute DMX channel 13n + 1, one row of the 13 column
+// grid each. Rows are handed out across every show of a scene, and the show data says which
+// of its fixtures sits on which row. Rows it holds no fixture for stay dark.
 // Pass 0 is the grid VRSL reads its channels from, pass 1 the gobo spin phase grid.
 //
 // Which texel VRSL reads a channel from is worked out the way VRSL's getValueAtCoords
@@ -25,6 +27,9 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_GRID_WIDTH 26.0
     #define ALPS_GRID_HEIGHT 240.0
 
+    // AlpsShowPlayer.ModelConeLengthLimit, the model length of the fixture's own mesh.
+    #define ALPS_CONE_LENGTH_LIMIT 50.0
+
     float AlpsFrameChannel(int fixture, int channel)
     {
         return _MainTex.Load(int3(channel / 4, fixture, 0))[channel % 4];
@@ -46,8 +51,8 @@ Shader "Hidden/ALPS/DMX Grid"
         return int2(floor(uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT)));
     }
 
-    // Finds the fixture and channel offset VRSL reads from texel <p>, or returns false.
-    bool AlpsCellAt(int2 p, int fixtureCount, out int fixture, out int offset)
+    // Finds the show's fixture and the channel offset VRSL reads from texel <p>, or returns false.
+    bool AlpsCellAt(int2 p, AlpsShow show, out int fixture, out int offset)
     {
         fixture = 0;
         offset = 0;
@@ -70,7 +75,7 @@ Shader "Hidden/ALPS/DMX Grid"
         }
 
         int n = (p.y - 1) / 2;
-        if (n >= fixtureCount)
+        if (n >= ALPS_MAX_FIXTURES)
         {
             return false;
         }
@@ -81,7 +86,12 @@ Shader "Hidden/ALPS/DMX Grid"
             return false;
         }
 
-        fixture = n;
+        fixture = AlpsReadInt(show.rowFixtures + n);
+        if (fixture < 0 || fixture >= show.fixtureCount)
+        {
+            return false;
+        }
+
         offset = x - 1;
         return true;
     }
@@ -90,12 +100,22 @@ Shader "Hidden/ALPS/DMX Grid"
     // kept, since the grid holds floats.
     float AlpsDmxValue(int fixture, int offset, AlpsShow show)
     {
-        int info = show.fixtureInfo + fixture * 4;
+        int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
         if (offset == 0)
         {
             // Pan: VRSL adds the DMX angle to a base rotation of 0 and mirrors the model's sign.
             float range = AlpsRead(info);
             return range != 0.0 ? (-AlpsFrameChannel(fixture, FramePan) + range) / (2.0 * range) : 0.5;
+        }
+
+        if (offset == 1)
+        {
+            // The fine pan channel is free, since fine channels are off, and VRSL's volumetric
+            // mesh reads it to stretch the cone when cone length via DMX is on, by 4 per unit
+            // on top of the fixture's own mesh length. The model length is a share of the
+            // mesh at ModelConeLengthLimit.
+            float mesh = AlpsFrameChannel(fixture, FrameConeMeshLength);
+            return mesh * (max(0.0, AlpsFrameChannel(fixture, FrameConeLength)) / ALPS_CONE_LENGTH_LIMIT - 1.0) / 4.0;
         }
 
         if (offset == 2)
@@ -137,7 +157,7 @@ Shader "Hidden/ALPS/DMX Grid"
             return clamp(round(AlpsFrameChannel(fixture, FrameGobo)), 1.0, 8.0) * AlpsRead(info + 3) / 255.0;
         }
 
-        // Fine pan, fine tilt and the spin direction stay at 0.
+        // Fine tilt and the spin direction stay at 0.
         return 0.0;
     }
     ENDCG
@@ -160,7 +180,7 @@ Shader "Hidden/ALPS/DMX Grid"
                 AlpsShow show = AlpsLoadShow();
                 int fixture;
                 int offset;
-                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show.fixtureCount, fixture, offset))
+                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show, fixture, offset))
                 {
                     return 0;
                 }
@@ -183,14 +203,14 @@ Shader "Hidden/ALPS/DMX Grid"
                 AlpsShow show = AlpsLoadShow();
                 int fixture;
                 int offset;
-                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show.fixtureCount, fixture, offset) || offset != 10)
+                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show, fixture, offset) || offset != 10)
                 {
                     return 0;
                 }
 
                 // VRSL turns the phase into an angle of degrees(phase * 4) and flips it for
                 // an inverted pan, so the gobo angle goes in as that phase.
-                float sign = AlpsRead(show.fixtureInfo + fixture * 4 + 2);
+                float sign = AlpsRead(show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE + 2);
                 float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
                 return float4(phase, 0, 0, 1);
             }

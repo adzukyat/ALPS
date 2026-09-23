@@ -48,7 +48,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// The curve a tile draws, in 0..1 over the part it shapes: the ease itself for the
-        /// rise, and one minus it for the fall, matching <see cref="AlpsShowEvaluator.Wave"/>.
+        /// rise, and one minus it for the fall, matching <see cref="AlpsPhaseCurve.Wave"/>.
         /// </summary>
         public static float TileValue(AlpsEaseType easeType, bool falling, float t)
         {

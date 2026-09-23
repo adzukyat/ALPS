@@ -228,13 +228,13 @@ namespace AdzukiSoft.ALPS.Tests
         /// </summary>
         private static float SharedEasePhase(AlpsEaseType shared, AlpsPhaseSettings settings, bool inverse, float u)
         {
-            var wave = AlpsShowEvaluator.Wave(0, 0, settings.rise, settings.holdHigh, settings.fall, u);
+            var wave = AlpsPhaseCurve.Wave(0, 0, settings.rise, settings.holdHigh, settings.fall, u);
             return AlpsEase.Evaluate(shared, inverse ? 1f - wave : wave);
         }
 
         private static float Phase(AlpsPhaseSettings settings, float u)
         {
-            return AlpsShowEvaluator.Phase(
+            return AlpsPhaseCurve.Phase(
                 (int)settings.mode,
                 (int)settings.ease,
                 (int)settings.fallEase,

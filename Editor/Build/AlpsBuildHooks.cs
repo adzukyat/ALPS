@@ -11,7 +11,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Runs before VRChat starts a build: validates every open show, compiles the Udon
-    /// player, and writes the build timelines the scene processor will switch to.
+    /// player, and writes the build timelines and the GPU assets the scene processor will
+    /// switch to.
     /// </summary>
     public class AlpsBuildPreflight : IVRCSDKBuildRequestedCallback
     {
@@ -53,9 +54,18 @@ namespace AdzukiSoft.ALPS.Editor
             if (hasShow)
             {
                 AlpsShowSetup.EnsureProgramAsset();
-                if (AlpsGpuPlayback.Enabled && !AlpsGpuPlayback.GetAssets(true, out _, out _, out _, out _, out _))
+                if (!AlpsGpuAssets.GetShared(true).IsComplete)
                 {
-                    errors.Add("The GPU playback materials and targets could not be created.");
+                    errors.Add("The show player's materials and targets could not be created.");
+                }
+
+                for (var i = 0; i < SceneManager.sceneCount; i++)
+                {
+                    var scene = SceneManager.GetSceneAt(i);
+                    if (scene.isLoaded)
+                    {
+                        AlpsGpuAssets.PrepareConeLengthMaterials(scene);
+                    }
                 }
             }
 
@@ -97,11 +107,16 @@ namespace AdzukiSoft.ALPS.Editor
                 var scene = SceneManager.GetSceneAt(i);
                 if (scene.isLoaded && AlpsShowApplier.FindShowDirectors(scene).Count > 0)
                 {
+                    // Assets cannot be made once the play mode scene is being processed.
                     AlpsShowSetup.EnsureProgramAsset();
-                    if (AlpsGpuPlayback.Enabled)
+                    AlpsGpuAssets.GetShared(true);
+                    for (var j = 0; j < SceneManager.sceneCount; j++)
                     {
-                        // Assets cannot be made once the play mode scene is being processed.
-                        AlpsGpuPlayback.GetAssets(true, out _, out _, out _, out _, out _);
+                        var other = SceneManager.GetSceneAt(j);
+                        if (other.isLoaded)
+                        {
+                            AlpsGpuAssets.PrepareConeLengthMaterials(other);
+                        }
                     }
 
                     return;

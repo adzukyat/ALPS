@@ -187,9 +187,6 @@ namespace AdzukiSoft.ALPS
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
 
-            // Whether a value on the clip being encoded follows the clip's shared phase.
-            private bool _clipUsesPhase;
-
             public Builder(PlayableDirector director, AlpsCompiledShow show, float showBpm)
             {
                 _director = director;
@@ -321,46 +318,30 @@ namespace AdzukiSoft.ALPS
                 _clipOrder = (int)set.order;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
-                _clipUsesPhase = false;
 
-                var row = new float[AlpsShowEvaluator.ClipStride];
-                row[AlpsShowEvaluator.ClipStart] = start;
-                row[AlpsShowEvaluator.ClipEnd] = end;
-                row[AlpsShowEvaluator.ClipMixInDuration] = mixInDuration;
-                row[AlpsShowEvaluator.ClipMixOutDuration] = mixOutDuration;
-                row[AlpsShowEvaluator.ClipLayer] = layer;
-                row[AlpsShowEvaluator.ClipGroup] = groupIndex;
-                row[AlpsShowEvaluator.ClipEffectStart] = _effects.Count / AlpsShowEvaluator.EffectStride;
-                row[AlpsShowEvaluator.ClipEffectCount] = set.effects.Count;
-                row[AlpsShowEvaluator.ClipOrder] = (int)set.order;
-                row[AlpsShowEvaluator.ClipSeed] = seed;
-                row[AlpsShowEvaluator.ClipBpm] = bpm;
-                row[AlpsShowEvaluator.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
-                row[AlpsShowEvaluator.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
-                row[AlpsShowEvaluator.ClipPositionStart] = AddPositions(groupIndex, seed);
-                WritePhase(row, AlpsShowEvaluator.ClipPhase, set.phase);
-                WriteCurve(row, AlpsShowEvaluator.ClipMixInCurve, mixInCurve, 0f, 1f);
-                WriteCurve(row, AlpsShowEvaluator.ClipMixOutCurve, mixOutCurve, 1f, 0f);
-                var rowStart = _clips.Count;
+                var row = new float[AlpsShowLayout.ClipStride];
+                row[AlpsShowLayout.ClipStart] = start;
+                row[AlpsShowLayout.ClipEnd] = end;
+                row[AlpsShowLayout.ClipMixInDuration] = mixInDuration;
+                row[AlpsShowLayout.ClipMixOutDuration] = mixOutDuration;
+                row[AlpsShowLayout.ClipLayer] = layer;
+                row[AlpsShowLayout.ClipGroup] = groupIndex;
+                row[AlpsShowLayout.ClipEffectStart] = _effects.Count / AlpsShowLayout.EffectStride;
+                row[AlpsShowLayout.ClipEffectCount] = set.effects.Count;
+                row[AlpsShowLayout.ClipOrder] = (int)set.order;
+                row[AlpsShowLayout.ClipSeed] = seed;
+                row[AlpsShowLayout.ClipBpm] = bpm;
+                row[AlpsShowLayout.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
+                row[AlpsShowLayout.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
+                row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex, seed);
+                WritePhase(row, AlpsShowLayout.ClipPhase, set.phase);
+                WriteCurve(row, AlpsShowLayout.ClipMixInCurve, mixInCurve, 0f, 1f);
+                WriteCurve(row, AlpsShowLayout.ClipMixOutCurve, mixOutCurve, 1f, 0f);
                 _clips.AddRange(row);
 
                 foreach (var effect in set.effects)
                 {
                     AddEffect(effect ?? new AlpsEffect());
-                }
-
-                _clips[rowStart + AlpsShowEvaluator.ClipUsesPhase] = _clipUsesPhase ? 1f : 0f;
-            }
-
-            /// <summary>
-            /// Notes that the clip's shared phase is read, when <paramref name="phasing"/> has no
-            /// phase of its own. It errs on the side of reading, since a phase left out plays wrong.
-            /// </summary>
-            private void UsesSharedPhase(AlpsAnimatableValue phasing)
-            {
-                if (phasing == null || !phasing.useOwnPhase)
-                {
-                    _clipUsesPhase = true;
                 }
             }
 
@@ -371,7 +352,7 @@ namespace AdzukiSoft.ALPS
             /// </summary>
             private int AddPositions(int groupIndex, int seed)
             {
-                var key = (groupIndex, _clipOrder, _clipGroupSize, _clipOrder == AlpsShowEvaluator.OrderRandom ? seed : 0);
+                var key = (groupIndex, _clipOrder, _clipGroupSize, _clipOrder == AlpsShowLayout.OrderRandom ? seed : 0);
                 if (_positionRows.TryGetValue(key, out var existing))
                 {
                     return existing;
@@ -380,8 +361,8 @@ namespace AdzukiSoft.ALPS
                 var start = _positions.Count;
                 for (var i = 0; i < _clipFixtureCount; i++)
                 {
-                    _positions.Add(AlpsShowEvaluator.OrderPosition(_clipOrder, seed, i, _clipFixtureCount, _clipGroupSize));
-                    _positions.Add(AlpsShowEvaluator.IsMirrored(_clipOrder, i, _clipFixtureCount, _clipGroupSize) ? 1 : 0);
+                    _positions.Add(AlpsShowLayout.OrderPosition(_clipOrder, seed, i, _clipFixtureCount, _clipGroupSize));
+                    _positions.Add(AlpsShowLayout.IsMirrored(_clipOrder, i, _clipFixtureCount, _clipGroupSize) ? 1 : 0);
                 }
 
                 _positionRows.Add(key, start);
@@ -390,11 +371,11 @@ namespace AdzukiSoft.ALPS
 
             private void AddEffect(AlpsEffect effect)
             {
-                var row = new float[AlpsShowEvaluator.EffectStride];
-                row[AlpsShowEvaluator.EffectKind] = (int)effect.kind;
-                row[AlpsShowEvaluator.EffectParity] = (int)effect.parity;
-                row[AlpsShowEvaluator.EffectPhaseOffset] = Mathf.Clamp01(effect.phaseOffset);
-                row[AlpsShowEvaluator.EffectParamStart] = _parameters.Count / AlpsShowEvaluator.ParamStride;
+                var row = new float[AlpsShowLayout.EffectStride];
+                row[AlpsShowLayout.EffectKind] = (int)effect.kind;
+                row[AlpsShowLayout.EffectParity] = (int)effect.parity;
+                row[AlpsShowLayout.EffectPhaseOffset] = Mathf.Clamp01(effect.phaseOffset);
+                row[AlpsShowLayout.EffectParamStart] = _parameters.Count / AlpsShowLayout.ParamStride;
 
                 switch (effect.kind)
                 {
@@ -404,83 +385,63 @@ namespace AdzukiSoft.ALPS
                         AddParameter(effect.circleCenterTilt);
                         AddParameter(effect.circleCenterPan);
                         AddParameter(effect.circleRadius);
-                        row[AlpsShowEvaluator.EffectScalarA] = (int)effect.moveMode;
-                        row[AlpsShowEvaluator.EffectScalarB] = effect.panTiltPhaseOffsetDegrees;
-                        row[AlpsShowEvaluator.EffectScalarC] = effect.trackSpeed;
-                        row[AlpsShowEvaluator.EffectScalarD] = AddUserName(effect.trackUserName);
-                        row[AlpsShowEvaluator.EffectScalarE] = effect.circleAspect;
-                        if (effect.moveMode == AlpsMoveMode.Circle)
-                        {
-                            // The turn around the circle follows the shared phase.
-                            _clipUsesPhase = true;
-                        }
-
+                        row[AlpsShowLayout.EffectScalarA] = (int)effect.moveMode;
+                        row[AlpsShowLayout.EffectScalarB] = effect.panTiltPhaseOffsetDegrees;
+                        row[AlpsShowLayout.EffectScalarC] = effect.trackSpeed;
+                        row[AlpsShowLayout.EffectScalarD] = AddUserName(effect.trackUserName);
+                        row[AlpsShowLayout.EffectScalarE] = effect.circleAspect;
                         break;
                     case AlpsEffectKind.Cone:
                         AddParameter(effect.coneWidth);
                         AddParameter(effect.coneLength);
                         break;
                     case AlpsEffectKind.Color:
-                        AddParameter(effect.colorPhasing, false);
-                        row[AlpsShowEvaluator.EffectPaletteStart] = _colors.Count / AlpsShowEvaluator.ColorStride;
-                        row[AlpsShowEvaluator.EffectPaletteCount] = effect.colorStops.Count;
+                        AddParameter(effect.colorPhasing);
+                        row[AlpsShowLayout.EffectPaletteStart] = _colors.Count / AlpsShowLayout.ColorStride;
+                        row[AlpsShowLayout.EffectPaletteCount] = effect.colorStops.Count;
                         foreach (var stop in effect.colorStops)
                         {
                             AddColor(stop ?? new AlpsColorStop());
                         }
 
-                        if (effect.colorStops.Count > 1 || effect.colorStops.Exists(stop => stop != null && stop.isGradient))
-                        {
-                            UsesSharedPhase(effect.colorPhasing);
-                        }
-
                         break;
                     case AlpsEffectKind.Brightness:
                         AddParameter(effect.brightness);
-                        row[AlpsShowEvaluator.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
-                        row[AlpsShowEvaluator.EffectScalarB] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
-                        row[AlpsShowEvaluator.EffectScalarC] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
+                        row[AlpsShowLayout.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
+                        row[AlpsShowLayout.EffectScalarB] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
+                        row[AlpsShowLayout.EffectScalarC] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
                         break;
                     case AlpsEffectKind.Flicker:
-                        row[AlpsShowEvaluator.EffectScalarA] = effect.flickerSpeed;
-                        row[AlpsShowEvaluator.EffectScalarB] = effect.flickerStrength;
-                        row[AlpsShowEvaluator.EffectScalarC] = effect.flickerFixtureStagger;
+                        row[AlpsShowLayout.EffectScalarA] = effect.flickerSpeed;
+                        row[AlpsShowLayout.EffectScalarB] = effect.flickerStrength;
+                        row[AlpsShowLayout.EffectScalarC] = effect.flickerFixtureStagger;
                         break;
                     case AlpsEffectKind.Gobo:
-                        AddParameter(effect.goboPhasing, false);
-                        row[AlpsShowEvaluator.EffectPaletteStart] = _gobos.Count;
-                        row[AlpsShowEvaluator.EffectPaletteCount] = effect.goboStops.Count;
+                        AddParameter(effect.goboPhasing);
+                        row[AlpsShowLayout.EffectPaletteStart] = _gobos.Count;
+                        row[AlpsShowLayout.EffectPaletteCount] = effect.goboStops.Count;
                         foreach (var stop in effect.goboStops)
                         {
                             _gobos.Add(stop != null ? Mathf.Clamp(stop.goboIndex, AlpsGoboStop.OffIndex, AlpsGoboStop.MaxIndex) : AlpsGoboStop.OffIndex);
                         }
 
-                        if (effect.goboStops.Count > 1)
-                        {
-                            UsesSharedPhase(effect.goboPhasing);
-                        }
-
-                        row[AlpsShowEvaluator.EffectScalarA] = effect.goboRotationBeats;
-                        row[AlpsShowEvaluator.EffectScalarB] = effect.goboFixtureStaggerDegrees;
+                        row[AlpsShowLayout.EffectScalarA] = effect.goboRotationBeats;
+                        row[AlpsShowLayout.EffectScalarB] = effect.goboFixtureStaggerDegrees;
                         break;
                 }
 
                 _effects.AddRange(row);
             }
 
-            /// <summary>
-            /// Encodes one parameter. A palette's phasing is never read as a value, only its
-            /// phase is, so <paramref name="resolved"/> is false for it and the palette decides
-            /// whether the shared phase is read.
-            /// </summary>
-            private void AddParameter(AlpsAnimatableValue value, bool resolved = true)
+            /// <summary>Encodes one parameter. A palette's phasing is one too, read only for its phase.</summary>
+            private void AddParameter(AlpsAnimatableValue value)
             {
                 if (value == null)
                 {
                     value = new AlpsAnimatableValue();
                 }
 
-                var row = new float[AlpsShowEvaluator.ParamStride];
+                var row = new float[AlpsShowLayout.ParamStride];
                 if (value.hasSpread)
                 {
                     // The spread's first value takes the value's place and its last becomes a
@@ -488,49 +449,44 @@ namespace AdzukiSoft.ALPS
                     var start = value.spreadRange;
                     var end = value.spreadRangeEnd;
                     var step = SpreadStep(start);
-                    row[AlpsShowEvaluator.ParamValue] = start.x;
-                    row[AlpsShowEvaluator.ParamRangeMin] = start.x;
-                    row[AlpsShowEvaluator.ParamRangeMax] = end.x;
-                    row[AlpsShowEvaluator.ParamSpread] = step;
-                    row[AlpsShowEvaluator.ParamSpreadMin] = step;
-                    row[AlpsShowEvaluator.ParamSpreadMax] = SpreadStep(end);
+                    row[AlpsShowLayout.ParamValue] = start.x;
+                    row[AlpsShowLayout.ParamRangeMin] = start.x;
+                    row[AlpsShowLayout.ParamRangeMax] = end.x;
+                    row[AlpsShowLayout.ParamSpread] = step;
+                    row[AlpsShowLayout.ParamSpreadMin] = step;
+                    row[AlpsShowLayout.ParamSpreadMax] = SpreadStep(end);
                 }
                 else
                 {
-                    row[AlpsShowEvaluator.ParamValue] = value.value;
-                    row[AlpsShowEvaluator.ParamRangeMin] = value.range.x;
-                    row[AlpsShowEvaluator.ParamRangeMax] = value.range.y;
+                    row[AlpsShowLayout.ParamValue] = value.value;
+                    row[AlpsShowLayout.ParamRangeMin] = value.range.x;
+                    row[AlpsShowLayout.ParamRangeMax] = value.range.y;
                 }
 
-                row[AlpsShowEvaluator.ParamIsRange] = value.isRange ? 1f : 0f;
-                if (resolved && value.isRange)
-                {
-                    UsesSharedPhase(value);
-                }
-
-                row[AlpsShowEvaluator.ParamHasSpread] = value.hasSpread ? 1f : 0f;
-                row[AlpsShowEvaluator.ParamTiming] = (int)value.timing;
-                row[AlpsShowEvaluator.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;
-                WritePhase(row, AlpsShowEvaluator.ParamOwnPhase, value.ownPhase ?? new AlpsPhaseSettings());
+                row[AlpsShowLayout.ParamIsRange] = value.isRange ? 1f : 0f;
+                row[AlpsShowLayout.ParamHasSpread] = value.hasSpread ? 1f : 0f;
+                row[AlpsShowLayout.ParamTiming] = (int)value.timing;
+                row[AlpsShowLayout.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;
+                WritePhase(row, AlpsShowLayout.ParamOwnPhase, value.ownPhase ?? new AlpsPhaseSettings());
                 _parameters.AddRange(row);
             }
 
             private float SpreadStep(Vector2 spread)
             {
-                return AlpsShowEvaluator.StepFromSpread(spread.x, spread.y, _clipOrder, _clipFixtureCount, _clipGroupSize);
+                return AlpsShowLayout.StepFromSpread(spread.x, spread.y, _clipOrder, _clipFixtureCount, _clipGroupSize);
             }
 
             private void AddColor(AlpsColorStop stop)
             {
-                var row = new float[AlpsShowEvaluator.ColorStride];
-                row[AlpsShowEvaluator.ColorIsGradient] = stop.isGradient ? 1f : 0f;
-                row[AlpsShowEvaluator.ColorSolid] = stop.color.r;
-                row[AlpsShowEvaluator.ColorSolid + 1] = stop.color.g;
-                row[AlpsShowEvaluator.ColorSolid + 2] = stop.color.b;
-                for (var i = 0; i < AlpsShowEvaluator.CurveSamples; i++)
+                var row = new float[AlpsShowLayout.ColorStride];
+                row[AlpsShowLayout.ColorIsGradient] = stop.isGradient ? 1f : 0f;
+                row[AlpsShowLayout.ColorSolid] = stop.color.r;
+                row[AlpsShowLayout.ColorSolid + 1] = stop.color.g;
+                row[AlpsShowLayout.ColorSolid + 2] = stop.color.b;
+                for (var i = 0; i < AlpsShowLayout.CurveSamples; i++)
                 {
-                    var color = stop.Evaluate(i / (float)(AlpsShowEvaluator.CurveSamples - 1));
-                    var offset = AlpsShowEvaluator.ColorGradient + i * 3;
+                    var color = stop.Evaluate(i / (float)(AlpsShowLayout.CurveSamples - 1));
+                    var offset = AlpsShowLayout.ColorGradient + i * 3;
                     row[offset] = color.r;
                     row[offset + 1] = color.g;
                     row[offset + 2] = color.b;
@@ -539,11 +495,12 @@ namespace AdzukiSoft.ALPS
                 _colors.AddRange(row);
             }
 
+            /// <summary>The index of a tracked user's name, or -1 for none.</summary>
             private int AddUserName(string userName)
             {
-                if (userName == null)
+                if (string.IsNullOrEmpty(userName))
                 {
-                    userName = string.Empty;
+                    return -1;
                 }
 
                 var index = _userNames.IndexOf(userName);
@@ -564,27 +521,27 @@ namespace AdzukiSoft.ALPS
             /// </summary>
             private void WritePhase(float[] row, int offset, AlpsPhaseSettings phase)
             {
-                row[offset + AlpsShowEvaluator.PhaseMode] = (int)phase.mode;
-                row[offset + AlpsShowEvaluator.PhaseEase] = (int)phase.ease;
-                row[offset + AlpsShowEvaluator.PhaseRise] = phase.rise;
-                row[offset + AlpsShowEvaluator.PhaseHoldHigh] = phase.holdHigh;
-                row[offset + AlpsShowEvaluator.PhaseFall] = phase.fall;
-                row[offset + AlpsShowEvaluator.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
-                row[offset + AlpsShowEvaluator.PhaseDelay] = AlpsShowEvaluator.DelayFromSpread(
+                row[offset + AlpsShowLayout.PhaseMode] = (int)phase.mode;
+                row[offset + AlpsShowLayout.PhaseEase] = (int)phase.ease;
+                row[offset + AlpsShowLayout.PhaseRise] = phase.rise;
+                row[offset + AlpsShowLayout.PhaseHoldHigh] = phase.holdHigh;
+                row[offset + AlpsShowLayout.PhaseFall] = phase.fall;
+                row[offset + AlpsShowLayout.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
+                row[offset + AlpsShowLayout.PhaseDelay] = AlpsShowLayout.DelayFromSpread(
                     phase.SpreadCycles,
                     _clipOrder,
                     _clipFixtureCount,
                     _clipGroupSize);
-                row[offset + AlpsShowEvaluator.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
-                row[offset + AlpsShowEvaluator.PhaseInverse] = phase.inverse ? 1f : 0f;
-                row[offset + AlpsShowEvaluator.PhaseFallEase] = (int)phase.fallEase;
+                row[offset + AlpsShowLayout.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
+                row[offset + AlpsShowLayout.PhaseInverse] = phase.inverse ? 1f : 0f;
+                row[offset + AlpsShowLayout.PhaseFallEase] = (int)phase.fallEase;
             }
 
             private static void WriteCurve(float[] row, int offset, AnimationCurve curve, float from, float to)
             {
-                for (var i = 0; i < AlpsShowEvaluator.CurveSamples; i++)
+                for (var i = 0; i < AlpsShowLayout.CurveSamples; i++)
                 {
-                    var t = i / (float)(AlpsShowEvaluator.CurveSamples - 1);
+                    var t = i / (float)(AlpsShowLayout.CurveSamples - 1);
                     row[offset + i] = curve != null && curve.length > 0 ? curve.Evaluate(t) : Mathf.Lerp(from, to, t);
                 }
             }
@@ -597,6 +554,11 @@ namespace AdzukiSoft.ALPS
                 _show.colors = _colors.ToArray();
                 _show.gobos = _gobos.ToArray();
                 _show.userNames = _userNames.ToArray();
+                if (_userNames.Count > AlpsShowPlayer.GpuMaxTrackedUsers)
+                {
+                    _show.errors.Add($"A show tracks {AlpsShowPlayer.GpuMaxTrackedUsers} users at most, this one tracks {_userNames.Count}.");
+                }
+
                 _show.positions = _positions.ToArray();
                 _show.groupCount = _groupCount.ToArray();
                 BuildTimeIndex();
@@ -627,16 +589,16 @@ namespace AdzukiSoft.ALPS
             /// Splits the show into time buckets and lists the clips overlapping each one, so
             /// playback only weighs the clips near the current time. A clip from start to end
             /// is listed in every bucket from the one its start falls in to the one its end
-            /// falls in, found with <see cref="AlpsShowEvaluator.TimeBucket"/> as playback does.
+            /// falls in, found with <see cref="AlpsShowLayout.TimeBucket"/> as the GPU does.
             /// </summary>
             private void BuildTimeIndex()
             {
-                var stride = AlpsShowEvaluator.ClipStride;
+                var stride = AlpsShowLayout.ClipStride;
                 var clipCount = _clips.Count / stride;
                 var span = 0f;
                 for (var clip = 0; clip < clipCount; clip++)
                 {
-                    span = Mathf.Max(span, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                    span = Mathf.Max(span, _clips[clip * stride + AlpsShowLayout.ClipEnd]);
                 }
 
                 var seconds = Mathf.Max(MinBucketSeconds, span / MaxBuckets);
@@ -648,8 +610,8 @@ namespace AdzukiSoft.ALPS
                 // Count first, then fill, so every bucket's clips stay in clip order.
                 for (var clip = 0; clip < clipCount; clip++)
                 {
-                    var first = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipStart]);
-                    var last = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                    var first = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipStart]);
+                    var last = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipEnd]);
                     for (var bucket = first; bucket <= last; bucket++)
                     {
                         bucketStart[bucket + 1]++;
@@ -665,8 +627,8 @@ namespace AdzukiSoft.ALPS
                 var filled = new int[buckets];
                 for (var clip = 0; clip < clipCount; clip++)
                 {
-                    var first = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipStart]);
-                    var last = AlpsShowEvaluator.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowEvaluator.ClipEnd]);
+                    var first = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipStart]);
+                    var last = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipEnd]);
                     for (var bucket = first; bucket <= last; bucket++)
                     {
                         bucketClips[bucketStart[bucket] + filled[bucket]++] = clip;

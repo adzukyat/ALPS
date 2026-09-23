@@ -135,8 +135,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>The value at a slot for a spread that runs from first to last over the order.</summary>
         public static float SpreadValue(float first, float last, int order, int seed, int index, int count)
         {
-            var step = AlpsShowEvaluator.StepFromSpread(first, last, order, count, 1);
-            return first + step * AlpsShowEvaluator.OrderPosition(order, seed, index, count, 1);
+            var step = AlpsShowLayout.StepFromSpread(first, last, order, count, 1);
+            return first + step * AlpsShowLayout.OrderPosition(order, seed, index, count, 1);
         }
 
         /// <summary>
@@ -154,8 +154,8 @@ namespace AdzukiSoft.ALPS
                 return Quaternion.identity;
             }
 
-            var shape = AlpsShowEvaluator.ToInt(layout[LayoutShape]);
-            var spacing = AlpsShowEvaluator.ToInt(layout[LayoutSpacing]);
+            var shape = AlpsShowLayout.ToInt(layout[LayoutShape]);
+            var spacing = AlpsShowLayout.ToInt(layout[LayoutSpacing]);
             var sweep = Mathf.Clamp(values[ValueSweep], 0f, 360f);
             var closed = IsClosed(shape, sweep);
 
@@ -184,7 +184,7 @@ namespace AdzukiSoft.ALPS
             var position = frame[SlotPosition] + Vector3.up * values[ValueHeight] + normal * values[ValueOutward];
             frame[SlotPosition] = position;
 
-            var facing = AlpsShowEvaluator.ToInt(layout[LayoutFacing]);
+            var facing = AlpsShowLayout.ToInt(layout[LayoutFacing]);
             var aim = Quaternion.identity;
             if (facing == FacingOutward)
             {
@@ -205,10 +205,10 @@ namespace AdzukiSoft.ALPS
 
             // A symmetric order mirrors the first half like it mirrors clip pan, so a
             // rotation spread opens into a fan that turns away from the middle on both sides.
-            var order = AlpsShowEvaluator.ToInt(layout[LayoutOrder]);
+            var order = AlpsShowLayout.ToInt(layout[LayoutOrder]);
             var rotationY = values[ValueRotationY];
             var rotationZ = values[ValueRotationZ];
-            if (AlpsShowEvaluator.IsMirrored(order, index, count, 1))
+            if (AlpsShowLayout.IsMirrored(order, index, count, 1))
             {
                 rotationY = -rotationY;
                 rotationZ = -rotationZ;
@@ -275,13 +275,13 @@ namespace AdzukiSoft.ALPS
         /// <summary>How many columns a grid of <paramref name="count"/> slots uses.</summary>
         public static int GridColumns(float columns, int count)
         {
-            return Mathf.Clamp(AlpsShowEvaluator.ToInt(columns), 1, Mathf.Max(1, count));
+            return Mathf.Clamp(AlpsShowLayout.ToInt(columns), 1, Mathf.Max(1, count));
         }
 
         /// <summary>How many corners the closed path of a polygon or rectangle has.</summary>
         public static int PolylineCorners(int shape, float sides)
         {
-            return shape == ShapeRectangle ? 4 : Mathf.Clamp(AlpsShowEvaluator.ToInt(sides), MinSides, MaxSides);
+            return shape == ShapeRectangle ? 4 : Mathf.Clamp(AlpsShowLayout.ToInt(sides), MinSides, MaxSides);
         }
 
         /// <summary>

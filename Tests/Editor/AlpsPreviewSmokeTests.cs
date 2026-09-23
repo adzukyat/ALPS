@@ -20,11 +20,18 @@ namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
     /// Level 3 evaluates the real PreviewSmoke timeline in edit mode. Level 4 applies the
-    /// show the way a build does and checks the Udon player reproduces the preview.
+    /// show the way a build does and checks the Udon player reproduces the preview. Both
+    /// evaluate on the GPU, so these need a graphics device.
     /// </summary>
     public class AlpsPreviewSmokeTests
     {
         private const float Tolerance = 0.0005f;
+
+        [SetUp]
+        public void RequireGraphics()
+        {
+            AlpsGpuShow.RequireGraphics();
+        }
 
         [TearDown]
         public void CloseScene()
@@ -37,21 +44,26 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var context = OpenFreshScene();
             var states = context.Sample(BaseTime);
+            var frames = context.Frames();
             var diagnostics = string.Join("\n", states.Select(s => s.ToString()));
 
             for (var i = 0; i < states.Length; i++)
             {
                 var state = states[i];
-                Assert.IsFalse(state.EnableDmx, diagnostics);
-                Assert.AreEqual(-(Pan + PanSpread * i), state.Pan, Tolerance, "Pan spread adds per fixture.\n" + diagnostics);
-                Assert.AreEqual(Tilt + AlpsShowPlayer.VrslDefaultTiltOffset, state.Tilt, Tolerance, diagnostics);
-                Assert.AreEqual(BaseBrightness / 100f, state.Intensity, Tolerance, diagnostics);
-                Assert.AreEqual(Tint.r, state.Color.r, Tolerance, diagnostics);
-                Assert.AreEqual(Tint.g, state.Color.g, Tolerance, diagnostics);
-                Assert.AreEqual(Tint.b, state.Color.b, Tolerance, diagnostics);
-                Assert.AreEqual(ExpectedVrslConeWidth, state.ConeWidth, Tolerance, diagnostics);
-                Assert.AreEqual(ExpectedVrslConeLength, state.ConeLength, Tolerance, diagnostics);
-                Assert.AreEqual(Gobo, state.Gobo, diagnostics);
+                float Channel(int channel) => frames[i * AlpsShowLayout.FrameStride + channel];
+                Assert.IsTrue(state.EnableDmx, "The fixture reads the DMX grid.\n" + diagnostics);
+                Assert.AreEqual(13 * i + 1, state.DmxChannel, "Each fixture has a row of its own.\n" + diagnostics);
+                Assert.IsFalse(state.EnableStrobe, diagnostics);
+                Assert.AreEqual(1f, state.ExtraChannels, "Cone length via DMX is on.\n" + diagnostics);
+                Assert.AreEqual(Pan + PanSpread * i, Channel(AlpsShowLayout.FramePan), Tolerance, "Pan spread adds per fixture.");
+                Assert.AreEqual(Tilt, Channel(AlpsShowLayout.FrameTilt), Tolerance);
+                Assert.AreEqual(BaseBrightness, Channel(AlpsShowLayout.FrameBrightness), Tolerance);
+                Assert.AreEqual(Tint.r, Channel(AlpsShowLayout.FrameRed), Tolerance);
+                Assert.AreEqual(Tint.g, Channel(AlpsShowLayout.FrameGreen), Tolerance);
+                Assert.AreEqual(Tint.b, Channel(AlpsShowLayout.FrameBlue), Tolerance);
+                Assert.AreEqual(ConeWidth, Channel(AlpsShowLayout.FrameConeWidth), Tolerance);
+                Assert.AreEqual(ConeLength, Channel(AlpsShowLayout.FrameConeLength), Tolerance);
+                Assert.AreEqual(Gobo, Channel(AlpsShowLayout.FrameGobo), Tolerance);
             }
         }
 
@@ -59,10 +71,11 @@ namespace AdzukiSoft.ALPS.Tests
         public void Level3_LaterTrackOverridesOnlyItsOwnChannels()
         {
             var context = OpenFreshScene();
-            var states = context.Sample(AccentTime);
+            context.Sample(AccentTime);
+            var frames = context.Frames();
 
-            Assert.AreEqual(AccentBrightness / 100f, states[0].Intensity, Tolerance, "The accent track sets brightness.");
-            Assert.AreEqual(Tint.b, states[0].Color.b, Tolerance, "Color still comes from the base track.");
+            Assert.AreEqual(AccentBrightness, frames[AlpsShowLayout.FrameBrightness], Tolerance, "The accent track sets brightness.");
+            Assert.AreEqual(Tint.b, frames[AlpsShowLayout.FrameBlue], Tolerance, "Color still comes from the base track.");
         }
 
         [Test]
@@ -83,7 +96,8 @@ namespace AdzukiSoft.ALPS.Tests
 
             // Alone, it is the first fixture of its track, so the spread adds nothing.
             var states = context.Sample(BaseTime);
-            Assert.AreEqual(-Pan, states[1].Pan, Tolerance, states[1].ToString());
+            Assert.AreEqual(Pan, context.Frames()[AlpsShowLayout.FramePan], Tolerance);
+            Assert.AreEqual(1, states[1].DmxChannel, "The show's only fixture takes the first row.");
             Assert.AreEqual(0f, states[0].Intensity, Tolerance, "A fixture outside the binding is not driven.");
         }
 
@@ -98,8 +112,8 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.brightness.value = 12f;
             AlpsPreviewDriver.MarkDirty();
 
-            var states = context.Sample(BaseTime);
-            Assert.AreEqual(0.12f, states[0].Intensity, Tolerance);
+            context.Sample(BaseTime);
+            Assert.AreEqual(12f, context.Frames()[AlpsShowLayout.FrameBrightness], Tolerance);
         }
 
         [Test]
@@ -125,7 +139,7 @@ namespace AdzukiSoft.ALPS.Tests
                     Assert.That(collector.Registered, Has.Some.EqualTo(((Component)fixture, "lightColorTint.b")));
                 }
 
-                Assert.IsFalse(context.Sample(BaseTime)[0].EnableDmx, "The preview drives the fixtures.");
+                Assert.AreEqual(1f, context.Sample(BaseTime)[0].Intensity, Tolerance, "The preview drives the fixtures.");
             }
             finally
             {
@@ -154,14 +168,16 @@ namespace AdzukiSoft.ALPS.Tests
                 baseClip.duration = 1.0;
                 context.Director.RebuildGraph();
 
-                var states = context.Sample(0.5f);
-                for (var i = 0; i < states.Length; i++)
+                context.Sample(0.5f);
+                var frames = context.Frames();
+                for (var i = 0; i < authored.Length; i++)
                 {
-                    var diagnostics = $"authored: {authored[i]}\nnow: {states[i]}";
-                    Assert.AreEqual(authored[i].Pan, states[i].Pan, Tolerance, "Undriven channels fall back to the authored state.\n" + diagnostics);
-                    Assert.AreEqual(authored[i].Intensity, states[i].Intensity, Tolerance, diagnostics);
-                    Assert.AreEqual(authored[i].Color, states[i].Color, diagnostics);
-                    Assert.AreEqual(authored[i].Gobo, states[i].Gobo, diagnostics);
+                    float Channel(int channel) => frames[i * AlpsShowLayout.FrameStride + channel];
+                    var diagnostics = $"authored: {authored[i]}";
+                    Assert.AreEqual(-authored[i].Pan, Channel(AlpsShowLayout.FramePan), Tolerance, "Undriven channels fall back to the authored state.\n" + diagnostics);
+                    Assert.AreEqual(authored[i].Tilt - AlpsShowPlayer.VrslDefaultTiltOffset, Channel(AlpsShowLayout.FrameTilt), Tolerance, diagnostics);
+                    Assert.AreEqual(authored[i].Color.r, Channel(AlpsShowLayout.FrameRed), Tolerance, "Not the white the preview gave VRSL.\n" + diagnostics);
+                    Assert.AreEqual(authored[i].Gobo, Channel(AlpsShowLayout.FrameGobo), Tolerance, diagnostics);
                 }
             }
             finally
@@ -172,54 +188,52 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Level3_BrightnessAbove100ScalesTheTintAndCapturesBack()
+        public void Level3_BrightnessAbove100CapturesAsAnSdrColor()
         {
             var fixture = OpenFreshScene().Fixtures[0];
-            var frame = new float[AlpsShowEvaluator.FrameStride];
-            var block = new MaterialPropertyBlock();
+            var frame = new float[AlpsShowLayout.FrameStride];
 
             // VRSL's default HDR white reads as white at 200%.
             fixture.globalIntensity = 1f;
             fixture.lightColorTint = new Color(2f, 2f, 2f, 1f);
             AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
-            Assert.AreEqual(200f, frame[AlpsShowEvaluator.FrameBrightness], Tolerance);
-            Assert.AreEqual(1f, frame[AlpsShowEvaluator.FrameRed], Tolerance);
+            Assert.AreEqual(200f, frame[AlpsShowLayout.FrameBrightness], Tolerance);
+            Assert.AreEqual(1f, frame[AlpsShowLayout.FrameRed], Tolerance);
 
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
-            Assert.AreEqual(1f, fixture.globalIntensity, Tolerance);
-            Assert.AreEqual(2f, fixture.lightColorTint.r, Tolerance, "The captured default applies back unchanged.");
-
-            frame[AlpsShowEvaluator.FrameBrightness] = 150f;
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
-            Assert.AreEqual(1f, fixture.globalIntensity, Tolerance);
-            Assert.AreEqual(1.5f, fixture.lightColorTint.g, Tolerance, "Above 100% the tint carries the rest.");
-
-            frame[AlpsShowEvaluator.FrameBrightness] = 50f;
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
-            Assert.AreEqual(0.5f, fixture.globalIntensity, Tolerance);
-            Assert.AreEqual(1f, fixture.lightColorTint.b, Tolerance, "White at or below 100% is a tint of 1.");
+            fixture.globalIntensity = 0.5f;
+            fixture.lightColorTint = new Color(0.25f, 0.5f, 1f, 1f);
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+            Assert.AreEqual(50f, frame[AlpsShowLayout.FrameBrightness], Tolerance, "An SDR tint keeps its intensity.");
+            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameGreen], Tolerance);
         }
 
         [Test]
-        public void Level3_ConeLengthPastTheLimitStretchesTheFixturesOwnMesh()
+        public void Level3_ConeLengthScalesTheFixturesOwnMesh()
         {
-            var fixture = OpenFreshScene().Fixtures[0];
-            var frame = new float[AlpsShowEvaluator.FrameStride];
-            var block = new MaterialPropertyBlock();
+            var context = OpenFreshScene();
+            foreach (var fixture in context.Fixtures)
+            {
+                fixture.maxConeLength = 1.5f;
+            }
 
-            fixture.maxConeLength = 1.5f;
-            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
-            Assert.AreEqual(1.5f, frame[AlpsShowEvaluator.FrameConeMeshLength], Tolerance);
+            var states = context.Sample(BaseTime);
+            Assert.AreEqual(1.5f, states[0].MaxConeLength, Tolerance, "The mesh keeps its own length.");
+            Assert.AreEqual(AlpsShowPlayer.VrslMaxConeLength, states[0].ConeLength, Tolerance, "The fade along the cone is left open.");
 
-            frame[AlpsShowEvaluator.FrameConeLength] = AlpsShowPlayer.ModelConeLengthLimit / 2f;
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
-            Assert.AreEqual(1.5f, fixture.maxConeLength, Tolerance, "Up to the limit the mesh keeps its own length.");
-            Assert.Less(fixture.coneLength, AlpsShowPlayer.VrslMaxConeLength);
-
-            frame[AlpsShowEvaluator.FrameConeLength] = AlpsShowPlayer.ModelConeLengthLimit * 3f;
-            AlpsShowPlayer.ApplyVRSL(fixture, frame, 0, block);
-            Assert.AreEqual(AlpsShowPlayer.VrslMaxConeLength, fixture.coneLength, Tolerance, "Past the limit the cone fills the mesh.");
-            Assert.AreEqual(4.5f, fixture.maxConeLength, Tolerance, "Three times the limit is three times the mesh.");
+            // The fine pan channel stretches the mesh by 4 per unit on top of its own length.
+            var grid = (RenderTexture)Shader.GetGlobalTexture("_Udon_DMXGridRenderTexture");
+            Assert.NotNull(grid, "The preview hands VRSL its grid.");
+            var pixels = AlpsGpuShow.ReadBackTexture(grid);
+            try
+            {
+                var stretch = pixels.GetPixel(3, 1).r;
+                Assert.AreEqual(1.5f * (ConeLength / AlpsShowPlayer.ModelConeLengthLimit - 1f) / 4f, stretch, Tolerance,
+                    "A cone half the limit long is half its mesh.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(pixels);
+            }
         }
 
         private static void AssertRestored(Context context, FixtureState[] authored)
@@ -286,8 +300,10 @@ namespace AdzukiSoft.ALPS.Tests
         public void Level4_AppliedShowMatchesThePreviewAndKeepsOtherTracks()
         {
             var context = OpenFreshScene();
-            var preview = context.Sample(AccentTime);
-            var previewBase = context.Sample(BaseTime);
+            context.Sample(AccentTime);
+            var preview = context.Frames();
+            context.Sample(BaseTime);
+            var previewBase = context.Frames();
 
             // Swapping the timeline out and back gives the build conversion a fresh graph.
             context.Director.playableAsset = null;
@@ -327,44 +343,32 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsNull(Object.FindObjectOfType<AlpsFixture>(), "Authoring components are stripped.");
                 Assert.IsNull(Object.FindObjectOfType<AlpsContainer>());
 
-                void AssertMatches(FixtureState[] expected, float time, bool fields)
+                for (var i = 0; i < context.Fixtures.Length; i++)
+                {
+                    Assert.AreEqual(i, player.dmxRows[i], "The scene's only show hands out the rows in order.");
+                }
+
+                void AssertMatches(float[] expected, float time)
                 {
                     player.EvaluateAt(time);
+                    var runtime = AlpsGpuShow.ReadFrames(player.GetCurrentFrames(), context.Fixtures.Length);
+                    for (var i = 0; i < expected.Length; i++)
+                    {
+                        Assert.AreEqual(expected[i], runtime[i], Tolerance,
+                            $"Fixture {i / AlpsShowLayout.FrameStride}, channel {i % AlpsShowLayout.FrameStride} at {time}s.");
+                    }
+
                     for (var i = 0; i < context.Fixtures.Length; i++)
                     {
-                        var runtime = FixtureState.Capture(context.Fixtures[i]);
-                        var diagnostics = $"at {time}s\npreview: {expected[i]}\nruntime: {runtime}";
-                        if (fields)
-                        {
-                            Assert.AreEqual(expected[i].Pan, runtime.Pan, Tolerance, diagnostics);
-                            Assert.AreEqual(expected[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
-                            Assert.AreEqual(expected[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
-                            Assert.AreEqual(expected[i].Color, runtime.Color, diagnostics);
-                            Assert.AreEqual(expected[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
-                            Assert.AreEqual(expected[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
-                            Assert.AreEqual(expected[i].Gobo, runtime.Gobo, diagnostics);
-                        }
-
-                        var want = expected[i].Block;
-                        var got = runtime.Block;
-                        Assert.AreEqual(want.Pan, got.Pan, Tolerance, diagnostics);
-                        Assert.AreEqual(want.Tilt, got.Tilt, Tolerance, diagnostics);
-                        Assert.AreEqual(want.Intensity, got.Intensity, Tolerance, diagnostics);
-                        Assert.AreEqual(want.Emission, got.Emission, diagnostics);
-                        Assert.AreEqual(want.EmissionDmx, got.EmissionDmx, diagnostics);
-                        Assert.AreEqual(want.ConeWidth, got.ConeWidth, Tolerance, diagnostics);
-                        Assert.AreEqual(want.ConeLength, got.ConeLength, Tolerance, diagnostics);
-                        Assert.AreEqual(want.MaxConeLength, got.MaxConeLength, Tolerance, diagnostics);
-                        Assert.AreEqual(want.Gobo, got.Gobo, diagnostics);
-                        Assert.AreEqual(want.GoboRotation, got.GoboRotation, Tolerance, diagnostics);
+                        var state = FixtureState.Capture(context.Fixtures[i]);
+                        Assert.IsTrue(state.EnableDmx, state.ToString());
+                        Assert.AreEqual(13 * i + 1, state.DmxChannel, state.ToString());
                     }
                 }
 
-                // The first time goes through VRSL. The second only writes the shader properties
-                // that changed straight into the blocks, except for the one fixture refreshed in
-                // turn, and the blocks still have to match what VRSL made of the preview.
-                AssertMatches(preview, AccentTime, true);
-                AssertMatches(previewBase, BaseTime, false);
+                // Each time draws into the other frames target, so both are checked.
+                AssertMatches(preview, AccentTime);
+                AssertMatches(previewBase, BaseTime);
 
                 var programAsset = UdonSharpProgramAsset.GetProgramAssetForClass(typeof(AlpsShowPlayer));
                 Assert.NotNull(programAsset, "No UdonSharp program asset was created for the player.");
@@ -375,6 +379,8 @@ namespace AdzukiSoft.ALPS.Tests
             }
             finally
             {
+                // The player's last blit left one of the generated targets active.
+                RenderTexture.active = null;
                 if (AssetDatabase.IsValidFolder(AlpsShowSetup.GeneratedFolder))
                 {
                     AssetDatabase.DeleteAsset(AlpsShowSetup.GeneratedFolder);

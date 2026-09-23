@@ -361,12 +361,14 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(count, 60f, new AlpsStandaloneClip { set = set, end = 4f, seed = seed });
 
             var values = new float[AlpsArrangementEvaluator.ValueCount];
-            for (var i = 0; i < count; i++)
+            using (var gpu = new AlpsGpuShow(show, count))
             {
-                settings.ResolveValues(i, count, values);
-                var k = AlpsShowEvaluator.OrderPosition((int)order, seed, i, count, 1);
-                var expected = AlpsShowEvaluator.ResolveScalar(show.clips, show.parameters, 0, 0, k, 0f, seed, 0f);
-                Assert.That(values[AlpsArrangementEvaluator.ValueHeight], Is.EqualTo(expected).Within(Tolerance), $"slot {i}");
+                for (var i = 0; i < count; i++)
+                {
+                    settings.ResolveValues(i, count, values);
+                    var expected = gpu.Evaluate(i, 0.5f)[AlpsShowLayout.FrameBrightness];
+                    Assert.That(values[AlpsArrangementEvaluator.ValueHeight], Is.EqualTo(expected).Within(Tolerance), $"slot {i}");
+                }
             }
         }
 

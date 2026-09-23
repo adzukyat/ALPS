@@ -8,7 +8,7 @@ namespace AdzukiSoft.ALPS
     /// Shared settings: the phase side of the model. Turns a fixture's normalized position
     /// p_i and the clip time into a phase φ_i(t), and parameters then look their own value
     /// up with that phase. The same panel is reused verbatim when a single parameter
-    /// opts out with own phase. <see cref="AlpsShowEvaluator.Phase"/> does the math.
+    /// opts out with own phase. <see cref="AlpsPhaseCurve.Phase"/> does the math.
     /// </summary>
     [Serializable]
     public class AlpsPhaseSettings : ISerializationCallbackReceiver
@@ -68,7 +68,7 @@ namespace AdzukiSoft.ALPS
         /// Spread: the phase offset across the whole fixture group, in cycles. 1 walks the
         /// wave over every order position in exactly one cycle, whatever the fixture count,
         /// so the look survives adding or removing fixtures. The compiler divides it by
-        /// <see cref="AlpsShowEvaluator.SpreadPositions"/> to get the per position delay.
+        /// <see cref="AlpsShowLayout.SpreadPositions"/> to get the per position delay.
         /// Used while <see cref="spreadInBeats"/> is off.
         /// </summary>
         public float spread = 0f;

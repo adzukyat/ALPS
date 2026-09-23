@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace AdzukiSoft.ALPS
 {
     /// <summary>
-    /// A timeline flattened into the arrays <see cref="AlpsShowEvaluator"/> reads, plus the
+    /// A timeline flattened into the arrays laid out by <see cref="AlpsShowLayout"/>, plus the
     /// fixtures they refer to. The same object feeds editor preview and the Udon player.
     /// </summary>
     public class AlpsCompiledShow
@@ -46,7 +46,7 @@ namespace AdzukiSoft.ALPS
 
         public readonly List<string> warnings = new List<string>();
 
-        public int ClipCount => clips.Length / AlpsShowEvaluator.ClipStride;
+        public int ClipCount => clips.Length / AlpsShowLayout.ClipStride;
 
         public int FixtureCount => fixtures.Count;
     }

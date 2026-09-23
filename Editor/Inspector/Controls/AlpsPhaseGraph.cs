@@ -91,8 +91,8 @@ namespace AdzukiSoft.ALPS.Editor
                 for (var i = 0; i <= Samples; i++)
                 {
                     var t = i / (float)Samples;
-                    var cycles = AlpsShowEvaluator.FixtureCycles(t * CycleCount, 1f, offset, 1, 0f);
-                    var phase = AlpsShowEvaluator.Phase(
+                    var cycles = AlpsPhaseCurve.FixtureCycles(t * CycleCount, 1f, offset, 1, 0f);
+                    var phase = AlpsPhaseCurve.Phase(
                         (int)_settings.mode,
                         (int)_settings.ease,
                         (int)_settings.fallEase,

@@ -88,7 +88,7 @@ namespace AdzukiSoft.ALPS
         Target,
     }
 
-    /// <summary>Easing functions offered as thumbnails. Order drives the tile grid and matches <see cref="AlpsShowEvaluator.Ease"/>.</summary>
+    /// <summary>Easing functions offered as thumbnails. Order drives the tile grid and matches <see cref="AlpsPhaseCurve.Ease"/>.</summary>
     public enum AlpsEaseType
     {
         Linear,

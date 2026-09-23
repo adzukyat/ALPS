@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// The experimental GPU evaluator against the C# one it was ported from, and the DMX grid
-    /// against where VRSL reads it. These need a graphics device, so they are ignored under
-    /// -nographics. Random phases and flicker use a noise of the GPU's own and are left out.
+    /// The DMX grid against where VRSL reads it, the DMX rows shows share, and tracking a
+    /// user. These need a graphics device, so they are ignored under -nographics.
     /// </summary>
     public class AlpsGpuEvaluatorTests
     {
@@ -16,56 +14,118 @@ namespace AdzukiSoft.ALPS.Tests
         private const int Fixtures = 6;
 
         private readonly List<Object> _created = new List<Object>();
+        private readonly List<AlpsGpuShow> _shows = new List<AlpsGpuShow>();
 
         [SetUp]
         public void RequireGraphics()
         {
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
-            {
-                Assert.Ignore("Needs a graphics device.");
-            }
+            AlpsGpuShow.RequireGraphics();
         }
 
         [TearDown]
         public void DestroyCreated()
         {
+            // A blit leaves its target active, and releasing the active target warns.
+            RenderTexture.active = null;
             foreach (var created in _created)
             {
                 Object.DestroyImmediate(created);
             }
 
+            foreach (var show in _shows)
+            {
+                show.Dispose();
+            }
+
             _created.Clear();
+            _shows.Clear();
         }
 
         [Test]
-        public void Frames_MatchTheCpuEvaluator()
+        public void Tracking_AimsAtTheUserAndFollowsAtItsSpeed()
         {
-            var cases = new (string name, AlpsCompiledShow show)[]
-            {
-                ("moves", Standalone(MoveSet(), CircleSet())),
-                ("colors", Standalone(ColorSet(), GradientSet())),
-                ("brightness", Standalone(BrightnessSet(), ConeSet())),
-                ("gobos", Standalone(GoboSet())),
-                ("layers", LayeredShow()),
-            };
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.moveMode = AlpsMoveMode.TrackUser;
+            move.trackUserName = "Someone";
+            move.trackSpeed = 2f;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+            Assert.AreEqual(new[] { "Someone" }, show.userNames);
 
-            foreach (var (name, show) in cases)
+            // The fixture's aim space is the world turned by 90 degrees around Y.
+            var aim = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 90f, 0f), Vector3.one).inverse, aim, 0);
+            var gpu = Keep(new AlpsGpuShow(show, 1, aim: aim));
+            var previous = Keep(AlpsPreviewDriver.CreateGpuTarget("Previous", AlpsShowPlayer.GpuFrameTexels, 1));
+            gpu.FramesMaterial.SetTexture("_AlpsPrevFrames", previous);
+
+            float[] Render(Vector3 head, float deltaTime)
             {
-                for (var time = 0.05f; time < 6f; time += 0.37f)
-                {
-                    var gpu = RenderFrames(show, time, out _);
-                    for (var fixture = 0; fixture < Fixtures; fixture++)
-                    {
-                        var cpu = EvaluateCpu(show, fixture, time);
-                        for (var ch = 0; ch < AlpsShowEvaluator.FrameStride; ch++)
-                        {
-                            var expected = cpu[ch];
-                            var actual = gpu[fixture * AlpsShowEvaluator.FrameStride + ch];
-                            var tolerance = 2e-3f * Mathf.Max(1f, Mathf.Abs(expected));
-                            Assert.AreEqual(expected, actual, tolerance, $"{name}, fixture {fixture}, channel {ch} at {time}s.");
-                        }
-                    }
-                }
+                gpu.FramesMaterial.SetVector("_AlpsTrackTarget0", new Vector4(head.x, head.y, head.z, 1f));
+                gpu.FramesMaterial.SetFloat("_AlpsDeltaTime", deltaTime);
+                gpu.Render(1f);
+                var frame = AlpsGpuShow.ReadFrames(gpu.Frames, 1, AlpsShowLayout.FrameAimed + 1);
+                Graphics.Blit(gpu.Frames, previous);
+                return frame;
+            }
+
+            float Pan(Vector3 head)
+            {
+                var local = Quaternion.Inverse(Quaternion.Euler(0f, 90f, 0f)) * head;
+                return AimPan(local);
+            }
+
+            var first = new Vector3(1f, -2f, 3f);
+            var aimed = Render(first, 0f);
+            Assert.AreEqual(1f, aimed[AlpsShowLayout.FrameAimed], "The head is aimed.");
+            Assert.AreEqual(Pan(first), aimed[AlpsShowLayout.FramePan], 0.01f, "The first frame points straight at the user.");
+            var local = Quaternion.Inverse(Quaternion.Euler(0f, 90f, 0f)) * first;
+            Assert.AreEqual(AimTilt(local), aimed[AlpsShowLayout.FrameTilt], 0.01f);
+
+            // Half a follow later the head has turned part of the way to where the user went.
+            var second = new Vector3(-2f, -2f, 1f);
+            var followed = Render(second, 0.1f);
+            var share = 1f - Mathf.Exp(-2f * 0.1f);
+            var expectedPan = aimed[AlpsShowLayout.FramePan] + Mathf.DeltaAngle(aimed[AlpsShowLayout.FramePan], Pan(second)) * share;
+            Assert.AreEqual(expectedPan, followed[AlpsShowLayout.FramePan], 0.01f, "Pan follows the short way round.");
+
+            // Once the user leaves, the head keeps what the layers give it and is no longer aimed.
+            gpu.FramesMaterial.SetVector("_AlpsTrackTarget0", Vector4.zero);
+            gpu.Render(1f);
+            var gone = AlpsGpuShow.ReadFrames(gpu.Frames, 1, AlpsShowLayout.FrameAimed + 1);
+            Assert.AreEqual(0f, gone[AlpsShowLayout.FrameAimed]);
+            Assert.AreEqual(0f, gone[AlpsShowLayout.FramePan], 0.001f, "The neutral default pan.");
+        }
+
+        /// <summary>Pan that points the head at a point in its aim space. VRSL pans around the mesh's local Z axis.</summary>
+        private static float AimPan(Vector3 local)
+        {
+            return Mathf.Atan2(local.x, -local.y) * Mathf.Rad2Deg;
+        }
+
+        /// <summary>Tilt that points the head at a point in its aim space. Tilt 0 aims along the mesh's local -Z axis.</summary>
+        private static float AimTilt(Vector3 local)
+        {
+            return Mathf.Atan2(Mathf.Sqrt(local.x * local.x + local.y * local.y), -local.z) * Mathf.Rad2Deg;
+        }
+
+        [Test]
+        public void Grid_PutsEachFixtureOnItsSharedRow()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 50f;
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
+            var show = AlpsShowCompiler.CompileStandalone(2, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+
+            // Another show holds rows 0 to 4, so these two fixtures went on rows 5 and 9.
+            var gpu = Keep(new AlpsGpuShow(show, 2, new[] { 5, 9 }));
+            gpu.Render(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+            for (var row = 0; row < 12; row++)
+            {
+                var texel = VrslTexel(13 * row + 1 + 7);
+                var red = grid.GetPixel(texel.x, texel.y).r;
+                Assert.AreEqual(row == 5 || row == 9 ? 1f : 0f, red, 1e-4f, $"Red of row {row}.");
             }
         }
 
@@ -74,14 +134,15 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var show = Standalone(MoveSet(), ColorSet(), BrightnessSet(), ConeSet(), GoboSet());
             const float time = 1.3f;
-            var frames = RenderFrames(show, time, out var grids);
-            var grid = ReadBack(grids[0]);
-            var spin = ReadBack(grids[1]);
+            var gpu = Keep(new AlpsGpuShow(show, Fixtures));
+            var frames = gpu.FramesAt(time);
+            var grid = gpu.ReadBack(gpu.Grid);
+            var spin = gpu.ReadBack(gpu.Spin);
             var info = NeutralInfo();
 
             for (var fixture = 0; fixture < Fixtures; fixture++)
             {
-                float Channel(int ch) => frames[fixture * AlpsShowEvaluator.FrameStride + ch];
+                float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
                 float Read(Texture2D texture, int offset)
                 {
                     var texel = VrslTexel(13 * fixture + 1 + offset);
@@ -89,17 +150,18 @@ namespace AdzukiSoft.ALPS.Tests
                     return texture == grid ? color.r * 0.2126729f + color.g * 0.7151522f + color.b * 0.0721750f : color.r;
                 }
 
-                var level = Mathf.Max(0f, Channel(AlpsShowEvaluator.FrameBrightness) * Channel(AlpsShowEvaluator.FrameBrightnessScale) / 100f);
+                var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
                 var diagnostics = $"fixture {fixture}";
-                Assert.AreEqual((-Channel(AlpsShowEvaluator.FramePan) + info[0]) / (2f * info[0]), Read(grid, 0), 1e-4f, "Pan. " + diagnostics);
-                Assert.AreEqual((Channel(AlpsShowEvaluator.FrameTilt) + info[1]) / (2f * info[1]), Read(grid, 2), 1e-4f, "Tilt. " + diagnostics);
-                Assert.AreEqual(Mathf.Max(0f, Channel(AlpsShowEvaluator.FrameConeWidth)) / 90f * 6f / 5.5f, Read(grid, 4), 1e-4f, "Cone width. " + diagnostics);
+                Assert.AreEqual((-Channel(AlpsShowLayout.FramePan) + info[0]) / (2f * info[0]), Read(grid, 0), 1e-4f, "Pan. " + diagnostics);
+                Assert.AreEqual(ConeStretch(Channel(AlpsShowLayout.FrameConeLength), Channel(AlpsShowLayout.FrameConeMeshLength)), Read(grid, 1), 1e-4f, "Cone length. " + diagnostics);
+                Assert.AreEqual((Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]), Read(grid, 2), 1e-4f, "Tilt. " + diagnostics);
+                Assert.AreEqual(Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f, Read(grid, 4), 1e-4f, "Cone width. " + diagnostics);
                 Assert.AreEqual(1f, Read(grid, 5), 1e-4f, "Dimmer. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowEvaluator.FrameRed) * level * 2f, Read(grid, 7), 1e-4f, "Red. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowEvaluator.FrameGreen) * level * 2f, Read(grid, 8), 1e-4f, "Green. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowEvaluator.FrameBlue) * level * 2f, Read(grid, 9), 1e-4f, "Blue. " + diagnostics);
-                Assert.AreEqual(Mathf.Round(Channel(AlpsShowEvaluator.FrameGobo)), Mathf.Round(Read(grid, 11) * 255f / 30f), "Gobo. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowEvaluator.FrameGoboRotation) * Mathf.Deg2Rad / 4f, Read(spin, 10), 1e-4f, "Gobo angle. " + diagnostics);
+                Assert.AreEqual(Channel(AlpsShowLayout.FrameRed) * level * 2f, Read(grid, 7), 1e-4f, "Red. " + diagnostics);
+                Assert.AreEqual(Channel(AlpsShowLayout.FrameGreen) * level * 2f, Read(grid, 8), 1e-4f, "Green. " + diagnostics);
+                Assert.AreEqual(Channel(AlpsShowLayout.FrameBlue) * level * 2f, Read(grid, 9), 1e-4f, "Blue. " + diagnostics);
+                Assert.AreEqual(Mathf.Round(Channel(AlpsShowLayout.FrameGobo)), Mathf.Round(Read(grid, 11) * 255f / 30f), "Gobo. " + diagnostics);
+                Assert.AreEqual(Channel(AlpsShowLayout.FrameGoboRotation) * Mathf.Deg2Rad / 4f, Read(spin, 10), 1e-4f, "Gobo angle. " + diagnostics);
             }
         }
 
@@ -108,7 +170,9 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var show = Standalone(MoveSet(), ColorSet(), BrightnessSet(), ConeSet(), GoboSet());
             const float time = 1.3f;
-            var frames = RenderFrames(show, time, out var grids);
+            var gpu = Keep(new AlpsGpuShow(show, Fixtures));
+            var frames = gpu.FramesAt(time);
+            var grids = new[] { gpu.Grid, gpu.Spin };
             var info = NeutralInfo();
 
             var probeShader = Shader.Find("Hidden/ALPS/Tests/VRSL Probe");
@@ -121,28 +185,28 @@ namespace AdzukiSoft.ALPS.Tests
             Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / grids[0].width, 1f / grids[0].height, grids[0].width, grids[0].height));
             var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", channels, 1));
             Graphics.Blit(null, read, probe);
-            var values = ReadBack(read);
+            var values = Keep(AlpsGpuShow.ReadBackTexture(read));
 
             var failures = new List<string>();
             for (var fixture = 0; fixture < Fixtures; fixture++)
             {
-                float Channel(int ch) => frames[fixture * AlpsShowEvaluator.FrameStride + ch];
+                float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
                 float Vrsl(int offset) => values.GetPixel(13 * fixture + offset, 0).r;
-                var level = Mathf.Max(0f, Channel(AlpsShowEvaluator.FrameBrightness) * Channel(AlpsShowEvaluator.FrameBrightnessScale) / 100f);
+                var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
                 var expected = new[]
                 {
-                    (-Channel(AlpsShowEvaluator.FramePan) + info[0]) / (2f * info[0]),
+                    (-Channel(AlpsShowLayout.FramePan) + info[0]) / (2f * info[0]),
+                    ConeStretch(Channel(AlpsShowLayout.FrameConeLength), Channel(AlpsShowLayout.FrameConeMeshLength)),
+                    (Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]),
                     0f,
-                    (Channel(AlpsShowEvaluator.FrameTilt) + info[1]) / (2f * info[1]),
-                    0f,
-                    Mathf.Max(0f, Channel(AlpsShowEvaluator.FrameConeWidth)) / 90f * 6f / 5.5f,
+                    Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f,
                     1f,
                     1f,
-                    Channel(AlpsShowEvaluator.FrameRed) * level * 2f,
-                    Channel(AlpsShowEvaluator.FrameGreen) * level * 2f,
-                    Channel(AlpsShowEvaluator.FrameBlue) * level * 2f,
+                    Channel(AlpsShowLayout.FrameRed) * level * 2f,
+                    Channel(AlpsShowLayout.FrameGreen) * level * 2f,
+                    Channel(AlpsShowLayout.FrameBlue) * level * 2f,
                     0f,
-                    Mathf.Round(Channel(AlpsShowEvaluator.FrameGobo)) * 30f / 255f,
+                    Mathf.Round(Channel(AlpsShowLayout.FrameGobo)) * 30f / 255f,
                 };
 
                 for (var offset = 0; offset < expected.Length; offset++)
@@ -154,7 +218,7 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 var spin = values.GetPixel(13 * fixture + 10, 0).g;
-                if (Mathf.Abs(Channel(AlpsShowEvaluator.FrameGoboRotation) * Mathf.Deg2Rad / 4f - spin) > 1e-3f)
+                if (Mathf.Abs(Channel(AlpsShowLayout.FrameGoboRotation) * Mathf.Deg2Rad / 4f - spin) > 1e-3f)
                 {
                     failures.Add($"fixture {fixture} gobo angle: VRSL reads {spin:0.####}");
                 }
@@ -190,7 +254,7 @@ namespace AdzukiSoft.ALPS.Tests
             Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", grid);
             var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", channels, 1));
             Graphics.Blit(null, read, probe);
-            var values = ReadBack(read);
+            var values = Keep(AlpsGpuShow.ReadBackTexture(read));
 
             var text = new System.Text.StringBuilder("[ALPS Probe] channel: texel x,y\n");
             for (var c = 0; c < channels; c++)
@@ -236,17 +300,6 @@ namespace AdzukiSoft.ALPS.Tests
             return set;
         }
 
-        private static AlpsClipEffectSet CircleSet()
-        {
-            var set = Set();
-            var move = set.Add(AlpsEffectKind.Move);
-            move.moveMode = AlpsMoveMode.Circle;
-            move.circleCenterTilt.value = 40f;
-            move.circleRadius.value = 15f;
-            move.phaseOffset = 0.25f;
-            return set;
-        }
-
         private static AlpsClipEffectSet ColorSet()
         {
             var set = Set();
@@ -256,17 +309,6 @@ namespace AdzukiSoft.ALPS.Tests
             color.colorStops.Add(new AlpsColorStop(Color.green));
             color.colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
             set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
-            return set;
-        }
-
-        private static AlpsClipEffectSet GradientSet()
-        {
-            var set = Set();
-            var color = set.Add(AlpsEffectKind.Color);
-            color.colorStops.Add(new AlpsColorStop(Color.white) { isGradient = true });
-            color.colorPhasing.useOwnPhase = true;
-            color.colorPhasing.ownPhase = new AlpsPhaseSettings { beatsPerCycle = 3f, spread = 0.3f };
-            color.parity = AlpsParity.Even;
             return set;
         }
 
@@ -319,88 +361,15 @@ namespace AdzukiSoft.ALPS.Tests
             return AlpsShowCompiler.CompileStandalone(Fixtures, Bpm, clips);
         }
 
-        /// <summary>Crossfades on one layer, a fading clip above it, and gaps with nothing playing.</summary>
-        private static AlpsCompiledShow LayeredShow()
+        // ------------------------------------------------------------------ helpers
+
+        /// <summary>
+        /// What VRSL's volumetric mesh adds to the fixture's own mesh length, 4 per unit of
+        /// the fine pan channel, for a model cone length.
+        /// </summary>
+        private static float ConeStretch(float length, float mesh)
         {
-            var dim = Set();
-            dim.Add(AlpsEffectKind.Brightness).brightness.value = 20f;
-            dim.Add(AlpsEffectKind.Gobo).goboStops.Add(new AlpsGoboStop(3));
-            var bright = BrightnessSet();
-            var over = ColorSet();
-            over.fadeInBeats = 1f;
-            over.fadeOutBeats = 0.5f;
-
-            return AlpsShowCompiler.CompileStandalone(
-                Fixtures,
-                Bpm,
-                new AlpsStandaloneClip { set = dim, start = 0f, end = 3f, mixOut = 1f },
-                new AlpsStandaloneClip { set = bright, start = 2f, end = 5f, mixIn = 1f },
-                new AlpsStandaloneClip { set = over, start = 1f, end = 4f, layer = 1 });
-        }
-
-        // ------------------------------------------------------------------ evaluation
-
-        private static float[] EvaluateCpu(AlpsCompiledShow show, int fixture, float time)
-        {
-            var stride = AlpsShowEvaluator.FrameStride;
-            var defaults = NeutralDefaults();
-            var active = new int[show.ClipCount];
-            var weights = new float[show.ClipCount];
-            var count = AlpsShowEvaluator.ActiveClips(show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, active, weights);
-            var frame = new float[stride];
-            AlpsShowEvaluator.EvaluateFixture(
-                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
-                active, weights, count, show.groupCount, show.groupIndex,
-                fixture, time, defaults, frame,
-                new float[stride], new float[stride], new float[stride], new float[stride], new float[1]);
-            return frame;
-        }
-
-        /// <summary>Runs the GPU passes and returns every fixture's frame, channel after channel.</summary>
-        private float[] RenderFrames(AlpsCompiledShow show, float time, out RenderTexture[] grids)
-        {
-            var info = new float[Fixtures * AlpsShowPlayer.GpuFixtureInfoStride];
-            for (var i = 0; i < Fixtures; i++)
-            {
-                AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
-            }
-
-            var data = Keep(AlpsShowPlayer.CreateShowTexture(AlpsShowPlayer.PackShowData(
-                show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
-                show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                Fixtures, NeutralDefaults(), info)));
-            var framesMaterial = Keep(new Material(Shader.Find(AlpsPreviewDriver.GpuFramesShader)));
-            var gridMaterial = Keep(new Material(Shader.Find(AlpsPreviewDriver.GpuGridShader)));
-            var frames = Keep(AlpsPreviewDriver.CreateGpuTarget("Frames", AlpsShowPlayer.GpuFrameTexels, Fixtures));
-            var grid = Keep(AlpsPreviewDriver.CreateGpuTarget("Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight));
-            var spin = Keep(AlpsPreviewDriver.CreateGpuTarget("Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight));
-            AlpsShowPlayer.BindGpu(data, framesMaterial, gridMaterial, frames, grid, spin);
-            framesMaterial.SetFloat("_AlpsTime", time);
-            AlpsShowPlayer.RenderGpuPasses(data, framesMaterial, gridMaterial, frames, grid, spin);
-            grids = new[] { grid, spin };
-
-            var pixels = ReadBack(frames);
-            var result = new float[Fixtures * AlpsShowEvaluator.FrameStride];
-            for (var fixture = 0; fixture < Fixtures; fixture++)
-            {
-                for (var ch = 0; ch < AlpsShowEvaluator.FrameStride; ch++)
-                {
-                    result[fixture * AlpsShowEvaluator.FrameStride + ch] = pixels.GetPixel(ch / 4, fixture)[ch % 4];
-                }
-            }
-
-            return result;
-        }
-
-        private Texture2D ReadBack(RenderTexture target)
-        {
-            var previous = RenderTexture.active;
-            RenderTexture.active = target;
-            var texture = Keep(new Texture2D(target.width, target.height, TextureFormat.RGBAFloat, false, true));
-            texture.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
-            texture.Apply();
-            RenderTexture.active = previous;
-            return texture;
+            return mesh * (Mathf.Max(0f, length) / AlpsShowPlayer.ModelConeLengthLimit - 1f) / 4f;
         }
 
         private T Keep<T>(T created) where T : Object
@@ -409,15 +378,10 @@ namespace AdzukiSoft.ALPS.Tests
             return created;
         }
 
-        private static float[] NeutralDefaults()
+        private AlpsGpuShow Keep(AlpsGpuShow gpu)
         {
-            var defaults = new float[Fixtures * AlpsShowEvaluator.FrameStride];
-            for (var i = 0; i < Fixtures; i++)
-            {
-                AlpsShowPlayer.WriteNeutralFrame(defaults, i * AlpsShowEvaluator.FrameStride);
-            }
-
-            return defaults;
+            _shows.Add(gpu);
+            return gpu;
         }
 
         private static float[] NeutralInfo()

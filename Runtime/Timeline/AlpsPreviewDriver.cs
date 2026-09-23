@@ -8,9 +8,11 @@ namespace AdzukiSoft.ALPS
     /// Plays a director's ALPS tracks on the scene fixtures while the timeline is evaluated
     /// outside VRChat, which is editor preview and play mode without an applied show.
     ///
-    /// The whole director compiles into one <see cref="AlpsCompiledShow"/> and runs through
-    /// the same <see cref="AlpsShowEvaluator.EvaluateFixture"/> the Udon player uses. Fixture
-    /// state from before the preview is captured once and restored when the graph goes away.
+    /// The whole director compiles into one <see cref="AlpsCompiledShow"/> and is evaluated
+    /// on the GPU into VRSL's DMX grid, by the same shaders and passes the Udon player uses.
+    /// Fixture state from before the preview is captured once and restored when the graph
+    /// goes away. The preview holds no users, so a head set to track one keeps the angle
+    /// the layers below give it.
     /// </summary>
     public static class AlpsPreviewDriver
     {
@@ -23,17 +25,8 @@ namespace AdzukiSoft.ALPS
             public float lastTime = float.NaN;
             public AlpsCompiledShow show;
             public float[] defaults = new float[0];
-            public int[] active = new int[0];
-            public float[] activeWeight = new float[0];
             public readonly Dictionary<AlpsFixture, float[]> captured = new Dictionary<AlpsFixture, float[]>();
-            public readonly float[] frame = new float[AlpsShowEvaluator.FrameStride];
-            public readonly float[] clipFrame = new float[AlpsShowEvaluator.FrameStride];
-            public readonly float[] clipWritten = new float[AlpsShowEvaluator.FrameStride];
-            public readonly float[] sum = new float[AlpsShowEvaluator.FrameStride];
-            public readonly float[] weightSum = new float[AlpsShowEvaluator.FrameStride];
-            public readonly float[] scratch = new float[1];
 
-            // Experimental GPU playback, set up with the compiled show.
             public Texture2D gpuData;
             public Material gpuFramesMaterial;
             public Material gpuGridMaterial;
@@ -47,11 +40,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>Bumped by every clip or profile edit, so compiled shows know to rebuild.</summary>
         public static int Revision { get; private set; }
 
-        /// <summary>
-        /// Experimental: preview on the GPU through VRSL's DMX mode, the way the player does
-        /// with <see cref="AlpsShowPlayer.gpu"/> on. Set by the editor's menu toggle.
-        /// </summary>
-        public static bool UseGpu;
+        public const string GpuFramesShader = "Hidden/ALPS/Frames";
+        public const string GpuGridShader = "Hidden/ALPS/DMX Grid";
 
         public static void MarkDirty()
         {
@@ -157,33 +147,22 @@ namespace AdzukiSoft.ALPS
             state.lastFrameId = frameId;
             state.lastTime = time;
 
-            var show = EnsureCompiled(director, state);
-            if (state.gpuData != null)
+            EnsureCompiled(director, state);
+            if (state.gpuData == null)
             {
-                state.gpuFramesMaterial.SetFloat("_AlpsTime", time);
-                AlpsShowPlayer.RenderGpuPasses(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
                 return;
             }
 
-            var activeCount = AlpsShowEvaluator.ActiveClips(
-                show.clips, show.bucketStart, show.bucketClips, show.bucketSeconds, time, state.active, state.activeWeight);
-            for (var fixture = 0; fixture < show.fixtures.Count; fixture++)
-            {
-                var target = show.fixtures[fixture];
-                if (target == null)
-                {
-                    continue;
-                }
+            // Another director's preview may have taken VRSL's grid since, so it is handed back each time.
+            state.gpuFramesMaterial.SetFloat("_AlpsTime", time);
+            AlpsShowPlayer.BindGrid(state.gpuGrid, state.gpuSpin);
+            AlpsShowPlayer.RenderPasses(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+        }
 
-                AlpsShowEvaluator.EvaluateFixture(
-                    show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
-                    state.active, state.activeWeight, activeCount,
-                    show.groupCount, show.groupIndex,
-                    fixture, time, state.defaults, state.frame,
-                    state.clipFrame, state.clipWritten, state.sum, state.weightSum, state.scratch);
-
-                target.ApplyFrame(state.frame, 0);
-            }
+        /// <summary>The frames target a director's preview last drew, for tests and debugging.</summary>
+        public static RenderTexture GetFrames(PlayableDirector director)
+        {
+            return director != null && States.TryGetValue(director, out var state) ? state.gpuFrames : null;
         }
 
         private static void PurgeDestroyedDirectors()
@@ -221,10 +200,8 @@ namespace AdzukiSoft.ALPS
             state.show = AlpsShowCompiler.Compile(director);
             state.stale = false;
             state.revision = Revision;
-            state.active = new int[state.show.ClipCount];
-            state.activeWeight = new float[state.show.ClipCount];
 
-            var stride = AlpsShowEvaluator.FrameStride;
+            var stride = AlpsShowLayout.FrameStride;
             state.defaults = new float[state.show.fixtures.Count * stride];
             for (var i = 0; i < state.show.fixtures.Count; i++)
             {
@@ -247,11 +224,7 @@ namespace AdzukiSoft.ALPS
             }
 
             ReleaseGpu(state);
-            if (UseGpu)
-            {
-                SetUpGpu(state);
-            }
-
+            SetUpGpu(state);
             return state.show;
         }
 
@@ -266,25 +239,28 @@ namespace AdzukiSoft.ALPS
 
             if (count > AlpsShowPlayer.GpuMaxFixtures)
             {
-                Debug.LogWarning($"[ALPS] GPU preview holds {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, this show has {count}. Previewing on the CPU.");
+                Debug.LogWarning($"[ALPS] A show drives {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, this one has {count}. It is not previewed.");
                 return;
             }
 
             var framesShader = Shader.Find(GpuFramesShader);
             var gridShader = Shader.Find(GpuGridShader);
-            if (framesShader == null || gridShader == null)
+            if (framesShader == null || gridShader == null || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             {
-                Debug.LogWarning("[ALPS] The GPU preview shaders are missing. Previewing on the CPU.");
+                Debug.LogWarning("[ALPS] The show shaders are missing or there is no graphics device. The show is not previewed.");
                 return;
             }
 
+            // The preview plays one director, so its fixtures take the rows in their own order.
             var info = new float[count * AlpsShowPlayer.GpuFixtureInfoStride];
+            var rows = new int[count];
             for (var i = 0; i < count; i++)
             {
+                rows[i] = i;
                 var fixture = show.fixtures[i];
-                if (fixture != null && fixture.SupportsGpu)
+                if (fixture != null)
                 {
-                    fixture.ConfigureGpu(i, state.defaults, i * AlpsShowEvaluator.FrameStride, info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                    fixture.ConfigureGpu(i, state.defaults, i * AlpsShowLayout.FrameStride, info, i * AlpsShowPlayer.GpuFixtureInfoStride);
                 }
                 else
                 {
@@ -295,7 +271,7 @@ namespace AdzukiSoft.ALPS
             var data = AlpsShowPlayer.PackShowData(
                 show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
                 show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                count, state.defaults, info);
+                count, state.defaults, info, rows, new float[count * AlpsShowPlayer.GpuAimStride]);
             state.gpuData = AlpsShowPlayer.CreateShowTexture(data);
             state.gpuData.hideFlags = HideFlags.HideAndDontSave;
             state.gpuFramesMaterial = new Material(framesShader) { hideFlags = HideFlags.HideAndDontSave };
@@ -303,11 +279,10 @@ namespace AdzukiSoft.ALPS
             state.gpuFrames = CreateGpuTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, count);
             state.gpuGrid = CreateGpuTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
             state.gpuSpin = CreateGpuTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
-            AlpsShowPlayer.BindGpu(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+            state.gpuFramesMaterial.SetTexture("_AlpsData", state.gpuData);
+            state.gpuFramesMaterial.SetFloat("_AlpsFrameRows", state.gpuFrames.height);
+            state.gpuGridMaterial.SetTexture("_AlpsData", state.gpuData);
         }
-
-        public const string GpuFramesShader = "Hidden/ALPS/Frames";
-        public const string GpuGridShader = "Hidden/ALPS/DMX Grid";
 
         /// <summary>A float target read texel by texel, as the GPU evaluator and VRSL read it.</summary>
         public static RenderTexture CreateGpuTarget(string name, int width, int height)
@@ -345,6 +320,12 @@ namespace AdzukiSoft.ALPS
         {
             if (target != null)
             {
+                // A blit leaves its target active, and releasing the active target warns.
+                if (RenderTexture.active == target)
+                {
+                    RenderTexture.active = null;
+                }
+
                 Object.DestroyImmediate(target);
             }
         }

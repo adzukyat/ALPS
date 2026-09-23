@@ -1,9 +1,13 @@
-// The show evaluator on the GPU. A port of AlpsShowEvaluator that reads the compiled show
-// from one float texture laid out by AlpsShowPlayer.PackShowData, and gives the frame of
-// one fixture.
+// The show evaluator. Reads the compiled show from one float texture laid out by
+// AlpsShowPlayer.PackShowData and gives the frame of one fixture, for the preview and the
+// Udon player alike.
 //
-// Every index and constant here mirrors AlpsShowEvaluator and PackShowData. Changing the
+// Every index and constant here mirrors AlpsShowLayout and PackShowData. Changing the
 // layout on one side means changing it here too.
+//
+// Each value, phase and ease is worked out at a single place in the code, inside loops the
+// compiler keeps as loops. Calling them from every effect instead has the compiler inline
+// them over and over, which is what makes a shader like this take minutes to compile.
 
 #ifndef ALPS_EVALUATOR_INCLUDED
 #define ALPS_EVALUATOR_INCLUDED
@@ -32,8 +36,14 @@ float _AlpsTime;
 #define ALPS_HEADER_DEFAULTS 16
 #define ALPS_HEADER_FIXTURE_INFO 17
 #define ALPS_HEADER_GROUP_COLUMNS 18
+#define ALPS_HEADER_ROW_FIXTURES 19
+#define ALPS_HEADER_AIM 20
 
-// --- Evaluator constants, mirrored from AlpsShowEvaluator ------------------------------
+#define ALPS_FIXTURE_INFO_STRIDE 4
+#define ALPS_AIM_STRIDE 12
+#define ALPS_MAX_FIXTURES 118
+
+// --- Layout constants, mirrored from AlpsShowLayout -----------------------------------
 
 #define PhaseWave 0
 #define PhaseRandom 1
@@ -73,7 +83,7 @@ float _AlpsTime;
 #define ClipFadeIn 11
 #define ClipFadeOut 12
 #define ClipPositionStart 13
-#define ClipPhase 15
+#define ClipPhase 14
 #define CurveSamples 16
 #define ClipMixInCurve (ClipPhase + PhaseStride)
 #define ClipMixOutCurve (ClipMixInCurve + CurveSamples)
@@ -87,6 +97,7 @@ float _AlpsTime;
 #define EffectScalarA 5
 #define EffectScalarB 6
 #define EffectScalarC 7
+#define EffectScalarD 8
 #define EffectScalarE 9
 #define EffectPhaseOffset 10
 #define EffectStride 11
@@ -123,6 +134,10 @@ float _AlpsTime;
 #define FrameTrackEffect 11
 #define FrameConeMeshLength 12
 #define FrameStride 13
+#define FrameAimed 13
+
+// Most values one effect reads: a circle's turn, its center tilt and pan, and its radius.
+#define ALPS_MAX_SLOTS 4
 
 #define ALPS_PI 3.14159265358979
 
@@ -136,11 +151,6 @@ float AlpsRead(int index)
 int AlpsReadInt(int index)
 {
     return (int)round(AlpsRead(index));
-}
-
-int AlpsHeader(int slot)
-{
-    return AlpsReadInt(slot);
 }
 
 // Sections of the data texture, read once per evaluation.
@@ -164,29 +174,33 @@ struct AlpsShow
     int defaults;
     int fixtureInfo;
     int groupColumns;
+    int rowFixtures;
+    int aim;
 };
 
 AlpsShow AlpsLoadShow()
 {
     AlpsShow show;
-    show.clips = AlpsHeader(ALPS_HEADER_CLIPS);
-    show.clipCount = AlpsHeader(ALPS_HEADER_CLIP_COUNT);
-    show.effects = AlpsHeader(ALPS_HEADER_EFFECTS);
-    show.parameters = AlpsHeader(ALPS_HEADER_PARAMETERS);
-    show.colors = AlpsHeader(ALPS_HEADER_COLORS);
-    show.gobos = AlpsHeader(ALPS_HEADER_GOBOS);
-    show.positions = AlpsHeader(ALPS_HEADER_POSITIONS);
-    show.bucketStart = AlpsHeader(ALPS_HEADER_BUCKET_START);
-    show.bucketCount = AlpsHeader(ALPS_HEADER_BUCKET_COUNT);
-    show.bucketClips = AlpsHeader(ALPS_HEADER_BUCKET_CLIPS);
+    show.clips = AlpsReadInt(ALPS_HEADER_CLIPS);
+    show.clipCount = AlpsReadInt(ALPS_HEADER_CLIP_COUNT);
+    show.effects = AlpsReadInt(ALPS_HEADER_EFFECTS);
+    show.parameters = AlpsReadInt(ALPS_HEADER_PARAMETERS);
+    show.colors = AlpsReadInt(ALPS_HEADER_COLORS);
+    show.gobos = AlpsReadInt(ALPS_HEADER_GOBOS);
+    show.positions = AlpsReadInt(ALPS_HEADER_POSITIONS);
+    show.bucketStart = AlpsReadInt(ALPS_HEADER_BUCKET_START);
+    show.bucketCount = AlpsReadInt(ALPS_HEADER_BUCKET_COUNT);
+    show.bucketClips = AlpsReadInt(ALPS_HEADER_BUCKET_CLIPS);
     show.bucketSeconds = AlpsRead(ALPS_HEADER_BUCKET_SECONDS);
-    show.groupCount = AlpsHeader(ALPS_HEADER_GROUP_COUNT);
-    show.groups = AlpsHeader(ALPS_HEADER_GROUPS);
-    show.groupIndex = AlpsHeader(ALPS_HEADER_GROUP_INDEX);
-    show.fixtureCount = AlpsHeader(ALPS_HEADER_FIXTURE_COUNT);
-    show.defaults = AlpsHeader(ALPS_HEADER_DEFAULTS);
-    show.fixtureInfo = AlpsHeader(ALPS_HEADER_FIXTURE_INFO);
-    show.groupColumns = AlpsHeader(ALPS_HEADER_GROUP_COLUMNS);
+    show.groupCount = AlpsReadInt(ALPS_HEADER_GROUP_COUNT);
+    show.groups = AlpsReadInt(ALPS_HEADER_GROUPS);
+    show.groupIndex = AlpsReadInt(ALPS_HEADER_GROUP_INDEX);
+    show.fixtureCount = AlpsReadInt(ALPS_HEADER_FIXTURE_COUNT);
+    show.defaults = AlpsReadInt(ALPS_HEADER_DEFAULTS);
+    show.fixtureInfo = AlpsReadInt(ALPS_HEADER_FIXTURE_INFO);
+    show.groupColumns = AlpsReadInt(ALPS_HEADER_GROUP_COLUMNS);
+    show.rowFixtures = AlpsReadInt(ALPS_HEADER_ROW_FIXTURES);
+    show.aim = AlpsReadInt(ALPS_HEADER_AIM);
     return show;
 }
 
@@ -201,10 +215,33 @@ float AlpsOutBounce(float t)
     return 7.5625 * t * t + 0.984375;
 }
 
-// Powers are spelled out, since pow is undefined for a negative base on the GPU.
+// AlpsPhaseCurve.Ease. Powers are spelled out, since pow is undefined for a negative base
+// on the GPU. The three bounce eases share one bounce, as base + scale * bounce(x).
 float AlpsEase(int type, float t)
 {
     t = saturate(t);
+    if (type == 10 || type == 16 || type == 17)
+    {
+        float x = t;
+        float base = 0.0;
+        float scale = 1.0;
+        if (type == 16)
+        {
+            x = 1.0 - t;
+            base = 1.0;
+            scale = -1.0;
+        }
+        else if (type == 17)
+        {
+            bool first = t < 0.5;
+            x = first ? 1.0 - 2.0 * t : 2.0 * t - 1.0;
+            base = 0.5;
+            scale = first ? -0.5 : 0.5;
+        }
+
+        return base + scale * AlpsOutBounce(x);
+    }
+
     if (type == 1) return 1.0 - cos(t * ALPS_PI * 0.5);
     if (type == 2) return sin(t * ALPS_PI * 0.5);
     if (type == 3) return -(cos(ALPS_PI * t) - 1.0) * 0.5;
@@ -222,7 +259,6 @@ float AlpsEase(int type, float t)
         float u = t - 1.0;
         return 1.0 + 2.70158 * u * u * u + 1.70158 * u * u;
     }
-    if (type == 10) return AlpsOutBounce(t);
     if (type == 11) return t * t * t;
     if (type == 12) return 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t);
     if (type == 13)
@@ -240,15 +276,10 @@ float AlpsEase(int type, float t)
             ? a * a * ((c2 + 1.0) * 2.0 * t - c2) * 0.5
             : (b * b * ((c2 + 1.0) * (t * 2.0 - 2.0) + c2) + 2.0) * 0.5;
     }
-    if (type == 16) return 1.0 - AlpsOutBounce(1.0 - t);
-    if (type == 17)
-    {
-        return t < 0.5 ? (1.0 - AlpsOutBounce(1.0 - 2.0 * t)) * 0.5 : (1.0 + AlpsOutBounce(2.0 * t - 1.0)) * 0.5;
-    }
     return t;
 }
 
-// Smooth 2D noise in 0..1, the GPU's own stand-in for Mathf.PerlinNoise.
+// Smooth 2D value noise in 0..1, AlpsPhaseCurve.Noise.
 float AlpsHash(float2 p)
 {
     p = frac(p * float2(123.34, 456.21));
@@ -260,7 +291,7 @@ float AlpsNoise(float x, float y)
 {
     float2 p = float2(x, y);
     float2 i = floor(p);
-    float2 f = frac(p);
+    float2 f = p - i;
     float2 u = f * f * (3.0 - 2.0 * f);
     float a = AlpsHash(i);
     float b = AlpsHash(i + float2(1, 0));
@@ -280,18 +311,22 @@ float AlpsFixtureCycles(float beats, float beatsPerCycle, float delay, int k, fl
     return cycles - delay * k + extraCycles;
 }
 
+// AlpsPhaseCurve.Wave, with the rise and the fall sharing one ease.
 float AlpsWave(int riseEase, int fallEase, float rise, float holdHigh, float fall, float u)
 {
     float riseEnd = saturate(rise);
     float highEnd = riseEnd + clamp(holdHigh, 0.0, 1.0 - riseEnd);
     float fallEnd = highEnd + clamp(fall, 0.0, 1.0 - highEnd);
-    if (u < riseEnd) return AlpsEase(riseEase, u / riseEnd);
-    if (u < highEnd) return 1.0;
-    if (u < fallEnd) return 1.0 - AlpsEase(fallEase, (u - highEnd) / (fallEnd - highEnd));
-    return 0.0;
+    if (u >= riseEnd && u < highEnd) return 1.0;
+    if (u >= fallEnd) return 0.0;
+
+    bool rising = u < riseEnd;
+    float t = rising ? u / riseEnd : (u - highEnd) / (fallEnd - highEnd);
+    float eased = AlpsEase(rising ? riseEase : fallEase, t);
+    return rising ? eased : 1.0 - eased;
 }
 
-// Phase φ from the phase block starting at data index <row>.
+// Phase from the phase block starting at data index <row>.
 float AlpsPhaseAt(int row, float cycles, int k, int seed)
 {
     if (AlpsReadInt(row + PhaseMode) == PhaseRandom)
@@ -324,6 +359,7 @@ float AlpsSampleCurve(int offset, float t)
     return lerp(AlpsRead(offset + i), AlpsRead(offset + i + 1), x - i);
 }
 
+// Timeline style weight from the sampled mix in and mix out curves, 0 outside the clip.
 float AlpsClipWeight(int row, float time)
 {
     float start = AlpsRead(row + ClipStart);
@@ -346,6 +382,7 @@ float AlpsClipWeight(int row, float time)
     return saturate(weight);
 }
 
+// The clip's own fade in and fade out, counted in beats at the clip's tempo.
 float AlpsClipFade(int row, float time)
 {
     float bpm = AlpsRead(row + ClipBpm);
@@ -370,43 +407,44 @@ struct AlpsClipContext
     float sharedPhase;
 };
 
-float AlpsCyclesOf(AlpsClipContext c, int paramRow, float extraCycles)
+// One value an effect reads: the parameter at data index <paramRow> run late by <extra>
+// cycles, spread and range included. Also gives the cycles and the phase it followed, which
+// palettes and blackout read. A <paramRow> below 0 reads only the clip's shared phase.
+//
+// A value follows its own phase if it has one, otherwise the clip's shared phase, which is
+// already worked out unless the value runs late.
+float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles, out float phase)
 {
-    if (AlpsRead(paramRow + ParamUseOwnPhase) > 0.5)
+    bool own = paramRow >= 0 && AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
+    int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
+    cycles = own
+        ? AlpsFixtureCycles(c.beats, AlpsRead(phaseRow + PhaseBeatsPerCycle), AlpsRead(phaseRow + PhaseDelay), c.k, extra)
+        : c.sharedCycles + extra;
+
+    [branch]
+    if (own || extra != 0.0)
     {
-        int own = paramRow + ParamOwnPhase;
-        return AlpsFixtureCycles(c.beats, AlpsRead(own + PhaseBeatsPerCycle), AlpsRead(own + PhaseDelay), c.k, extraCycles);
+        phase = AlpsPhaseAt(phaseRow, cycles, c.k, c.seed);
+    }
+    else
+    {
+        phase = c.sharedPhase;
     }
 
-    return c.sharedCycles + extraCycles;
-}
+    if (paramRow < 0) return phase;
 
-float AlpsPhaseOf(AlpsClipContext c, int paramRow, float cycles, float extraCycles)
-{
-    if (AlpsRead(paramRow + ParamUseOwnPhase) > 0.5)
-    {
-        return AlpsPhaseAt(paramRow + ParamOwnPhase, cycles, c.k, c.seed);
-    }
-
-    return extraCycles == 0.0 ? c.sharedPhase : AlpsPhaseAt(c.row + ClipPhase, cycles, c.k, c.seed);
-}
-
-float AlpsResolveValue(AlpsClipContext c, int paramRow, float extraCycles)
-{
     float value;
     float step;
     if (AlpsRead(paramRow + ParamIsRange) > 0.5)
     {
-        float cycles = AlpsCyclesOf(c, paramRow, extraCycles);
         if (AlpsReadInt(paramRow + ParamTiming) == TimingPerCycle)
         {
             bool atMin = ((int)floor(cycles) & 1) == 0;
-            value = atMin ? AlpsRead(paramRow + ParamRangeMin) : AlpsRead(paramRow + ParamRangeMax);
-            step = atMin ? AlpsRead(paramRow + ParamSpreadMin) : AlpsRead(paramRow + ParamSpreadMax);
+            value = AlpsRead(paramRow + (atMin ? ParamRangeMin : ParamRangeMax));
+            step = AlpsRead(paramRow + (atMin ? ParamSpreadMin : ParamSpreadMax));
         }
         else
         {
-            float phase = AlpsPhaseOf(c, paramRow, cycles, extraCycles);
             float rangeMin = AlpsRead(paramRow + ParamRangeMin);
             float spreadMin = AlpsRead(paramRow + ParamSpreadMin);
             value = rangeMin + (AlpsRead(paramRow + ParamRangeMax) - rangeMin) * phase;
@@ -444,17 +482,15 @@ int AlpsPaletteStop(int paramRow, int count, float cycles, float phase, out floa
     return stop;
 }
 
-float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float extraCycles, float fadeIn, float fadeOut)
+// Brightness multiplier for blackout on return, 0 on the return leg of the wave the value
+// follows and faded at both ends of the outbound leg.
+float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float cycles, float fadeIn, float fadeOut)
 {
     bool own = AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
     int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
-    int mode = AlpsReadInt(phaseRow + PhaseMode);
-    float rise = AlpsRead(phaseRow + PhaseRise);
-    float holdHigh = AlpsRead(phaseRow + PhaseHoldHigh);
-    float outbound = AlpsOutboundLeg(rise, holdHigh);
-    if (mode != PhaseWave || outbound >= 1.0) return 1.0;
+    float outbound = AlpsOutboundLeg(AlpsRead(phaseRow + PhaseRise), AlpsRead(phaseRow + PhaseHoldHigh));
+    if (AlpsReadInt(phaseRow + PhaseMode) != PhaseWave || outbound >= 1.0) return 1.0;
 
-    float cycles = AlpsCyclesOf(c, paramRow, extraCycles);
     float u = cycles - floor(cycles);
     if (u >= outbound) return 0.0;
 
@@ -463,6 +499,33 @@ float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float extraCycles, floa
     if (fadeIn > 0.0) scale = min(scale, u / fadeIn);
     if (fadeOut > 0.0) scale = min(scale, (1.0 - u) / fadeOut);
     return saturate(scale);
+}
+
+// Pan and tilt of a beam on a ring around a center direction, <turn> radians round. The
+// ring is worked out on the sphere, so it stays a ring wherever the center points, where
+// sweeping pan and tilt with two waves would fold into a figure eight.
+float2 AlpsCircle(float centerTilt, float centerPan, float radius, float aspect, float turn)
+{
+    float sinTilt = sin(centerTilt);
+    float cosTilt = cos(centerTilt);
+    float sinPan = sin(centerPan);
+    float cosPan = cos(centerPan);
+    float3 center = float3(-sinTilt * sinPan, -cosTilt, -sinTilt * cosPan);
+    float3 acrossAxis = float3(cosPan, 0.0, -sinPan);
+    float3 upAxis = float3(cosTilt * sinPan, -sinTilt, cosTilt * cosPan);
+
+    float across = radius * aspect * cos(turn);
+    float up = radius * sin(turn);
+    float opening = sqrt(across * across + up * up);
+
+    float3 dir = center;
+    if (opening > 0.0001)
+    {
+        float3 step = (across * acrossAxis + up * upAxis) / opening;
+        dir = cos(radians(opening)) * center + sin(radians(opening)) * step;
+    }
+
+    return float2(degrees(atan2(-dir.x, -dir.z)), degrees(acos(clamp(-dir.y, -1.0, 1.0))));
 }
 
 // --- One clip, one fixture ---------------------------------------------------------------
@@ -480,38 +543,7 @@ void AlpsWrite(inout AlpsFrame frame, int channel, float value)
     frame.written[channel] = true;
 }
 
-void AlpsEvaluateCircle(AlpsClipContext c, int effectRow, int paramStart, float extraCycles, inout AlpsFrame frame, AlpsShow show)
-{
-    float phase = extraCycles == 0.0 ? c.sharedPhase : AlpsPhaseAt(c.row + ClipPhase, c.sharedCycles + extraCycles, c.k, c.seed);
-    float centerTilt = radians(AlpsResolveValue(c, show.parameters + (paramStart + 2) * ParamStride, extraCycles));
-    float centerPan = radians(AlpsResolveValue(c, show.parameters + (paramStart + 3) * ParamStride, extraCycles));
-    float radius = AlpsResolveValue(c, show.parameters + (paramStart + 4) * ParamStride, extraCycles);
-    float aspect = AlpsRead(effectRow + EffectScalarE);
-
-    float sinTilt = sin(centerTilt);
-    float cosTilt = cos(centerTilt);
-    float sinPan = sin(centerPan);
-    float cosPan = cos(centerPan);
-    float3 center = float3(-sinTilt * sinPan, -cosTilt, -sinTilt * cosPan);
-    float3 acrossAxis = float3(cosPan, 0.0, -sinPan);
-    float3 upAxis = float3(cosTilt * sinPan, -sinTilt, cosTilt * cosPan);
-
-    float turn = phase * 2.0 * ALPS_PI;
-    float across = radius * aspect * cos(turn);
-    float up = radius * sin(turn);
-    float opening = sqrt(across * across + up * up);
-
-    float3 dir = center;
-    if (opening > 0.0001)
-    {
-        float3 step = (across * acrossAxis + up * upAxis) / opening;
-        dir = cos(radians(opening)) * center + sin(radians(opening)) * step;
-    }
-
-    AlpsWrite(frame, FrameTilt, degrees(acos(clamp(-dir.y, -1.0, 1.0))));
-    AlpsWrite(frame, FramePan, degrees(atan2(-dir.x, -dir.z)));
-}
-
+// Evaluates clip <clip> for the fixture at position <fixtureIndex> of the clip's group.
 void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame frame, AlpsShow show)
 {
     AlpsClipContext c;
@@ -536,76 +568,120 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
         if ((parity == ParityOdd && !isOdd) || (parity == ParityEven && isOdd)) continue;
 
         int kind = AlpsReadInt(effectRow + EffectKind);
-        int paramStart = AlpsReadInt(effectRow + EffectParamStart);
-        int paramRow = show.parameters + paramStart * ParamStride;
+        int paramRow = show.parameters + AlpsReadInt(effectRow + EffectParamStart) * ParamStride;
+        int mode = AlpsReadInt(effectRow + EffectScalarA);
+        int paletteCount = AlpsReadInt(effectRow + EffectPaletteCount);
+
+        // The effect's phase offset runs every value on it late by that share of a cycle.
         float late = -AlpsRead(effectRow + EffectPhaseOffset);
+
+        // Which values the effect reads, worked out below in one loop.
+        int slots = 0;
+        int slotParam[ALPS_MAX_SLOTS];
+        float slotExtra[ALPS_MAX_SLOTS];
+        [unroll]
+        for (int s = 0; s < ALPS_MAX_SLOTS; s++)
+        {
+            slotParam[s] = paramRow;
+            slotExtra[s] = late;
+        }
+
+        if (kind == KindMove && mode == MoveCircle)
+        {
+            // The turn follows the shared phase, then center tilt, center pan and radius.
+            slots = 4;
+            slotParam[0] = -1;
+            slotParam[1] = paramRow + 2 * ParamStride;
+            slotParam[2] = paramRow + 3 * ParamStride;
+            slotParam[3] = paramRow + 4 * ParamStride;
+        }
+        else if (kind == KindMove && mode != MoveTrackUser)
+        {
+            // Tilt, then pan, which a phase offset in degrees may run ahead of tilt.
+            int panRow = paramRow + ParamStride;
+            bool bothRanged = AlpsRead(paramRow + ParamIsRange) > 0.5 && AlpsRead(panRow + ParamIsRange) > 0.5;
+            slots = 2;
+            slotParam[1] = panRow;
+            slotExtra[1] = late + (bothRanged ? AlpsRead(effectRow + EffectScalarB) / 360.0 : 0.0);
+        }
+        else if (kind == KindCone)
+        {
+            slots = 2;
+            slotParam[1] = paramRow + ParamStride;
+        }
+        else if (kind == KindBrightness || ((kind == KindColor || kind == KindGobo) && paletteCount > 0))
+        {
+            slots = 1;
+        }
+
+        float value[ALPS_MAX_SLOTS];
+        float cycles[ALPS_MAX_SLOTS];
+        float phase[ALPS_MAX_SLOTS];
+        [unroll]
+        for (int z = 0; z < ALPS_MAX_SLOTS; z++)
+        {
+            value[z] = 0.0;
+            cycles[z] = 0.0;
+            phase[z] = 0.0;
+        }
+
+        [loop]
+        for (int v = 0; v < slots; v++)
+        {
+            float slotCycles;
+            float slotPhase;
+            float resolved = AlpsResolve(c, slotParam[v], slotExtra[v], slotCycles, slotPhase);
+            value[v] = resolved;
+            cycles[v] = slotCycles;
+            phase[v] = slotPhase;
+        }
 
         if (kind == KindMove)
         {
-            int mode = AlpsReadInt(effectRow + EffectScalarA);
             if (mode == MoveTrackUser)
             {
+                // The frames pass aims the head at the user, and the order does not apply.
                 AlpsWrite(frame, FrameTrackEffect, e + 1);
                 continue;
             }
 
+            // An angle move above a tracking move takes the head back from the user.
             AlpsWrite(frame, FrameTrackEffect, 0.0);
-            if (mode == MoveCircle)
-            {
-                AlpsEvaluateCircle(c, effectRow, paramStart, late, frame, show);
-            }
-            else
-            {
-                int panRow = paramRow + ParamStride;
-                bool bothRanged = AlpsRead(paramRow + ParamIsRange) > 0.5 && AlpsRead(panRow + ParamIsRange) > 0.5;
-                float panOffsetCycles = bothRanged ? AlpsRead(effectRow + EffectScalarB) / 360.0 : 0.0;
-                AlpsWrite(frame, FrameTilt, AlpsResolveValue(c, paramRow, late));
-                AlpsWrite(frame, FramePan, AlpsResolveValue(c, panRow, late + panOffsetCycles));
-            }
-
-            if (mirrored) frame.value[FramePan] = -frame.value[FramePan];
+            float2 panTilt = mode == MoveCircle
+                ? AlpsCircle(radians(value[1]), radians(value[2]), value[3], AlpsRead(effectRow + EffectScalarE), value[0] * 2.0 * ALPS_PI)
+                : float2(value[1], value[0]);
+            AlpsWrite(frame, FrameTilt, panTilt.y);
+            AlpsWrite(frame, FramePan, mirrored ? -panTilt.x : panTilt.x);
         }
         else if (kind == KindCone)
         {
-            AlpsWrite(frame, FrameConeWidth, AlpsResolveValue(c, paramRow, late));
-            AlpsWrite(frame, FrameConeLength, AlpsResolveValue(c, paramRow + ParamStride, late));
+            AlpsWrite(frame, FrameConeWidth, value[0]);
+            AlpsWrite(frame, FrameConeLength, value[1]);
         }
         else if (kind == KindBrightness)
         {
-            float brightness = AlpsResolveValue(c, paramRow, late);
-            if (AlpsRead(effectRow + EffectScalarA) > 0.5)
+            float brightness = value[0];
+            if (mode > 0)
             {
-                brightness *= AlpsBlackoutScale(c, paramRow, late, AlpsRead(effectRow + EffectScalarB), AlpsRead(effectRow + EffectScalarC));
+                // Blackout on return: dark on the return leg, still covering lower layers.
+                brightness *= AlpsBlackoutScale(c, paramRow, cycles[0], AlpsRead(effectRow + EffectScalarB), AlpsRead(effectRow + EffectScalarC));
             }
 
             AlpsWrite(frame, FrameBrightness, brightness);
         }
         else if (kind == KindColor)
         {
-            int count = AlpsReadInt(effectRow + EffectPaletteCount);
-            if (count <= 0) continue;
+            if (paletteCount <= 0) continue;
 
-            int colorRow = show.colors + AlpsReadInt(effectRow + EffectPaletteStart) * ColorStride;
-            float t = 0.0;
-            if (count > 1)
-            {
-                float cycles = AlpsCyclesOf(c, paramRow, late);
-                colorRow += AlpsPaletteStop(paramRow, count, cycles, AlpsPhaseOf(c, paramRow, cycles, late), t) * ColorStride;
-            }
-
+            float t;
+            int colorRow = show.colors + (AlpsReadInt(effectRow + EffectPaletteStart) + AlpsPaletteStop(paramRow, paletteCount, cycles[0], phase[0], t)) * ColorStride;
             float3 rgb;
             if (AlpsRead(colorRow + ColorIsGradient) > 0.5)
             {
-                if (count == 1)
-                {
-                    t = AlpsPhaseOf(c, paramRow, AlpsCyclesOf(c, paramRow, late), late);
-                }
-
                 float x = saturate(t) * (CurveSamples - 1);
                 int i = min(CurveSamples - 2, (int)floor(x));
                 int a = colorRow + ColorGradient + i * 3;
-                float f = x - i;
-                rgb = lerp(float3(AlpsRead(a), AlpsRead(a + 1), AlpsRead(a + 2)), float3(AlpsRead(a + 3), AlpsRead(a + 4), AlpsRead(a + 5)), f);
+                rgb = lerp(float3(AlpsRead(a), AlpsRead(a + 1), AlpsRead(a + 2)), float3(AlpsRead(a + 3), AlpsRead(a + 4), AlpsRead(a + 5)), x - i);
             }
             else
             {
@@ -631,17 +707,10 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             float angle = 360.0 * turn + fixtureIndex * AlpsRead(effectRow + EffectScalarB);
             AlpsWrite(frame, FrameGoboRotation, angle - floor(angle / 360.0) * 360.0);
 
-            int count = AlpsReadInt(effectRow + EffectPaletteCount);
-            if (count <= 0) continue;
+            if (paletteCount <= 0) continue;
 
-            int stop = 0;
-            if (count > 1)
-            {
-                float cycles = AlpsCyclesOf(c, paramRow, late);
-                float local;
-                stop = AlpsPaletteStop(paramRow, count, cycles, AlpsPhaseOf(c, paramRow, cycles, late), local);
-            }
-
+            float local;
+            int stop = AlpsPaletteStop(paramRow, paletteCount, cycles[0], phase[0], local);
             AlpsWrite(frame, FrameGobo, AlpsRead(show.gobos + AlpsReadInt(effectRow + EffectPaletteStart) + stop));
         }
     }
@@ -649,6 +718,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
 
 // --- Composition -------------------------------------------------------------------------
 
+// Channels that switch instead of blending.
 bool AlpsIsDiscrete(int channel)
 {
     return channel == FrameGobo || channel == FrameTrackEffect;
@@ -661,7 +731,13 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
     return AlpsReadInt(show.groupIndex + group * show.groupColumns + fixture);
 }
 
-// The final frame of one fixture at <time>, as AlpsShowEvaluator.EvaluateFixture gives it.
+// The final frame of one fixture at <time>.
+//
+// Clips are listed by layer. Inside a layer, overlapping clips blend by their weights. A
+// layer then covers the layers below it by its total weight, per channel, so a later track
+// only overrides the channels its effects drive. Channels nobody drives keep the fixture
+// default, except brightness, which is dark until a brightness effect lights it. A clip's
+// own fade scales its weight, so fading behaves like blending with an empty clip.
 void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride], AlpsShow show)
 {
     int defaultRow = show.defaults + fixture * FrameStride;
@@ -680,6 +756,13 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
 
     float sum[FrameStride];
     float weightSum[FrameStride];
+    [unroll]
+    for (int w = 0; w < FrameStride; w++)
+    {
+        sum[w] = 0.0;
+        weightSum[w] = 0.0;
+    }
+
     float layer = -1.0;
     [loop]
     for (int i = first; i <= end; i++)
@@ -691,27 +774,17 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
         float clipLayer = last ? -2.0 : AlpsRead(row + ClipLayer);
         if (clipLayer != layer)
         {
-            if (layer >= 0.0)
-            {
-                [unroll]
-                for (int ch = 0; ch < FrameStride; ch++)
-                {
-                    float coverage = weightSum[ch];
-                    if (coverage <= 0.0) continue;
-                    if (AlpsIsDiscrete(ch))
-                    {
-                        if (coverage >= 0.5) result[ch] = sum[ch];
-                    }
-                    else
-                    {
-                        result[ch] = lerp(result[ch], sum[ch] / coverage, saturate(coverage));
-                    }
-                }
-            }
-
             [unroll]
             for (int ch = 0; ch < FrameStride; ch++)
             {
+                float coverage = weightSum[ch];
+                if (coverage > 0.0)
+                {
+                    result[ch] = AlpsIsDiscrete(ch)
+                        ? (coverage >= 0.5 ? sum[ch] : result[ch])
+                        : lerp(result[ch], sum[ch] / coverage, saturate(coverage));
+                }
+
                 sum[ch] = 0.0;
                 weightSum[ch] = 0.0;
             }
@@ -731,10 +804,10 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
 
         AlpsFrame frame;
         [unroll]
-        for (int ch = 0; ch < FrameStride; ch++)
+        for (int f = 0; f < FrameStride; f++)
         {
-            frame.value[ch] = 0.0;
-            frame.written[ch] = false;
+            frame.value[f] = 0.0;
+            frame.written[f] = false;
         }
 
         AlpsEvaluateClip(clip, index, time, frame, show);
