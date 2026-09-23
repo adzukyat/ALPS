@@ -95,8 +95,9 @@ namespace AdzukiSoft.ALPS.Editor
                     var phase = AlpsShowEvaluator.Phase(
                         (int)_settings.mode,
                         (int)_settings.ease,
-                        _settings.pingPongRatio,
-                        _settings.pingPongHold,
+                        _settings.rise,
+                        _settings.holdHigh,
+                        _settings.fall,
                         _settings.inverse,
                         cycles,
                         k,

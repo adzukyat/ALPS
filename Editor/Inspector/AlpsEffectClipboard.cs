@@ -40,6 +40,10 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>
         /// The pasted effect: every parameter from the payload, but this card's identity.
         /// Built through the copy constructor so a field added later cannot be missed.
+        ///
+        /// The phase offset stays with the card too. It usually sets one half of an even /
+        /// odd pair against the other, and pasting the even card onto the odd one to match
+        /// them must not undo that.
         /// </summary>
         public static AlpsEffect Paste(AlpsEffect target)
         {
@@ -53,6 +57,7 @@ namespace AdzukiSoft.ALPS.Editor
                 kind = target.kind,
                 parity = target.parity,
                 expanded = target.expanded,
+                phaseOffset = target.phaseOffset,
             };
         }
 

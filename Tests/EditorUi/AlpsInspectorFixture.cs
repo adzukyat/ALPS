@@ -18,9 +18,10 @@ namespace AdzukiSoft.ALPS.Tests
                 addCatalogExpanded = true,
             };
 
-            set.phase.mode = AlpsPhaseMode.PingPong;
+            set.phase.mode = AlpsPhaseMode.Wave;
             set.phase.ease = AlpsEaseType.InOutCubic;
-            set.phase.pingPongRatio = 0.65f;
+            // Every part of the wave has a share, so each gets its percentage laid out.
+            set.phase.SetShares(0.4f, 0.2f, 0.25f);
             set.phase.fixtureGroupSize = 2;
             set.phase.spread = 1.25f;
             set.phase.beatsPerCycle = 2f;
@@ -37,7 +38,7 @@ namespace AdzukiSoft.ALPS.Tests
             move.pan.isRange = true;
             move.pan.range = new Vector2(-90f, 90f);
             move.pan.useOwnPhase = true;
-            move.pan.ownPhase.mode = AlpsPhaseMode.Forward;
+            move.pan.ownPhase.SetShares(1f, 0f, 0f);
             move.pan.ownPhase.ease = AlpsEaseType.Linear;
             move.pan.ownPhase.fixtureGroupSize = 1;
             move.pan.ownPhase.spread = 0.5f;
@@ -85,6 +86,7 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.blackoutOnReturn = true;
             brightness.blackoutFadeIn = 0.1f;
             brightness.blackoutFadeOut = 0.35f;
+            brightness.phaseOffset = 0.25f;
 
             // Gobo: a blink sequence (OFF appears twice) with the + picker open, so the
             // audit lays out the picker's full row of OFF plus every patterned gobo.

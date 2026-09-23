@@ -22,9 +22,8 @@ namespace AdzukiSoft.ALPS
     {
         // --- Enum values, mirrored from the serialized model ------------------------------
 
-        public const int PhaseForward = 0;
-        public const int PhasePingPong = 1;
-        public const int PhaseRandom = 2;
+        public const int PhaseWave = 0;
+        public const int PhaseRandom = 1;
 
         public const int OrderNormal = 0;
         public const int OrderReverse = 1;
@@ -55,18 +54,21 @@ namespace AdzukiSoft.ALPS
 
         public const int PhaseMode = 0;
         public const int PhaseEase = 1;
-        public const int PhaseRatio = 2;
-        public const int PhaseGroupSize = 3;
+        /// <summary>Share of a wave cycle spent rising from 0 to 1.</summary>
+        public const int PhaseRise = 2;
+        /// <summary>Share of a wave cycle held at 1 after the rise.</summary>
+        public const int PhaseHoldHigh = 3;
+        /// <summary>Share of a wave cycle spent falling back to 0. The rest is held at 0.</summary>
+        public const int PhaseFall = 4;
+        public const int PhaseGroupSize = 5;
         /// <summary>
         /// Delay per order position, in cycles. The model stores the spread over the whole
         /// group and the compiler divides it once, so the evaluator only sees the step.
         /// </summary>
-        public const int PhaseDelay = 4;
-        public const int PhaseBeatsPerCycle = 5;
-        public const int PhaseInverse = 6;
-        /// <summary>Share of a ping-pong cycle held at the far end between the out and back legs.</summary>
-        public const int PhaseHold = 7;
-        public const int PhaseStride = 8;
+        public const int PhaseDelay = 6;
+        public const int PhaseBeatsPerCycle = 7;
+        public const int PhaseInverse = 8;
+        public const int PhaseStride = 9;
 
         // --- Clip rows ---------------------------------------------------------------------
 
@@ -108,7 +110,12 @@ namespace AdzukiSoft.ALPS
         public const int EffectScalarD = 8;
         /// <summary>Circle width over height.</summary>
         public const int EffectScalarE = 9;
-        public const int EffectStride = 10;
+        /// <summary>
+        /// Share of a cycle every value on the effect runs late by. One side of an even / odd
+        /// pair at 0.5 takes turns with the other.
+        /// </summary>
+        public const int EffectPhaseOffset = 10;
+        public const int EffectStride = 11;
 
         // --- Parameter rows ----------------------------------------------------------------
 
@@ -174,12 +181,11 @@ namespace AdzukiSoft.ALPS
             if (type == 8) return t >= 1f ? 1f : 1f - Mathf.Pow(2f, -10f * t);
             if (type == 9) return 1f + 2.70158f * Mathf.Pow(t - 1f, 3f) + 1.70158f * Mathf.Pow(t - 1f, 2f);
             if (type == 10) return OutBounce(t);
-            if (type == 11) return t < 0.5f ? 0f : 1f;
-            if (type == 12) return t * t * t;
-            if (type == 13) return 1f - Mathf.Pow(1f - t, 3f);
-            if (type == 14) return t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
-            if (type == 15) return 2.70158f * t * t * t - 1.70158f * t * t;
-            if (type == 16)
+            if (type == 11) return t * t * t;
+            if (type == 12) return 1f - Mathf.Pow(1f - t, 3f);
+            if (type == 13) return t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
+            if (type == 14) return 2.70158f * t * t * t - 1.70158f * t * t;
+            if (type == 15)
             {
                 var c2 = 1.70158f * 1.525f;
                 return t < 0.5f
@@ -187,8 +193,8 @@ namespace AdzukiSoft.ALPS
                     : (Mathf.Pow(2f * t - 2f, 2f) * ((c2 + 1f) * (t * 2f - 2f) + c2) + 2f) * 0.5f;
             }
 
-            if (type == 17) return 1f - OutBounce(1f - t);
-            if (type == 18)
+            if (type == 16) return 1f - OutBounce(1f - t);
+            if (type == 17)
             {
                 return t < 0.5f ? (1f - OutBounce(1f - 2f * t)) * 0.5f : (1f + OutBounce(2f * t - 1f)) * 0.5f;
             }
@@ -318,25 +324,18 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Phase φ in 0..1 from unwrapped cycles. Forward is a sawtooth, random a smooth
-        /// seeded wander. Ping-pong rises over the first <paramref name="ratio"/> of the
-        /// cycle, stays at 1 for the next <paramref name="hold"/>, and falls back over the
-        /// rest, so a hold of 0 is a triangle peaking at the ratio.
-        /// Invert and ease apply to forward and ping-pong only.
+        /// Phase φ in 0..1 from unwrapped cycles. A wave walks one cycle of
+        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert and ease apply to the
+        /// wave only, and the ease shapes the rise and the fall alike.
         /// </summary>
-        public static float Phase(int mode, int ease, float ratio, float hold, bool inverse, float cycles, int k, int seed)
+        public static float Phase(int mode, int ease, float rise, float holdHigh, float fall, bool inverse, float cycles, int k, int seed)
         {
             if (mode == PhaseRandom)
             {
                 return Mathf.Clamp01(Mathf.PerlinNoise(cycles * 2f, (k + 1) * 7.31f + seed * 0.137f));
             }
 
-            var u = cycles - Mathf.Floor(cycles);
-            if (mode == PhasePingPong)
-            {
-                u = PingPong(ratio, hold, u);
-            }
-
+            var u = Wave(rise, holdHigh, fall, cycles - Mathf.Floor(cycles));
             if (inverse)
             {
                 u = 1f - u;
@@ -345,45 +344,70 @@ namespace AdzukiSoft.ALPS
             return Ease(ease, u);
         }
 
-        /// <summary>The ping-pong wave for a position <paramref name="u"/> in 0..1 of the cycle.</summary>
-        public static float PingPong(float ratio, float hold, float u)
+        /// <summary><see cref="Phase"/> for the phase block at <paramref name="row"/> of <paramref name="data"/>.</summary>
+        public static float PhaseAt(float[] data, int row, float cycles, int k, int seed)
         {
-            var rise = Mathf.Clamp01(ratio);
-            var top = rise + Mathf.Clamp(hold, 0f, 1f - rise);
-            if (u < rise)
+            return Phase(
+                ToInt(data[row + PhaseMode]),
+                ToInt(data[row + PhaseEase]),
+                data[row + PhaseRise],
+                data[row + PhaseHoldHigh],
+                data[row + PhaseFall],
+                data[row + PhaseInverse] > 0.5f,
+                cycles,
+                k,
+                seed);
+        }
+
+        /// <summary>
+        /// One wave cycle at <paramref name="u"/> in 0..1: a rise from 0 to 1, a hold at 1, a
+        /// fall back to 0, and a hold at 0 for whatever the three leave over. A share of zero
+        /// skips its part, so a rise of 0 jumps straight up and a rise of 1 is a sawtooth.
+        /// </summary>
+        public static float Wave(float rise, float holdHigh, float fall, float u)
+        {
+            var riseEnd = Mathf.Clamp01(rise);
+            var highEnd = riseEnd + Mathf.Clamp(holdHigh, 0f, 1f - riseEnd);
+            var fallEnd = highEnd + Mathf.Clamp(fall, 0f, 1f - highEnd);
+            if (u < riseEnd)
             {
-                return u / rise;
+                return u / riseEnd;
             }
 
-            if (u < top)
+            if (u < highEnd)
             {
                 return 1f;
             }
 
-            var fall = 1f - top;
-            return fall > 0.0001f ? Mathf.Clamp01(1f - (u - top) / fall) : 1f;
+            if (u < fallEnd)
+            {
+                return 1f - (u - highEnd) / (fallEnd - highEnd);
+            }
+
+            return 0f;
         }
 
         /// <summary>
-        /// True while a ping-pong phase is on its return leg, the fall after the hold.
-        /// A ping-pong with no time left to fall never returns.
+        /// True while a wave is on its return leg: the fall and the low hold after it. A wave
+        /// whose rise and high hold fill the whole cycle never returns.
         /// </summary>
-        public static bool IsReturnLeg(int mode, float ratio, float hold, float cycles)
+        public static bool IsReturnLeg(int mode, float rise, float holdHigh, float cycles)
         {
-            if (mode != PhasePingPong)
+            if (mode != PhaseWave)
             {
                 return false;
             }
 
+            var outbound = OutboundLeg(rise, holdHigh);
             var u = cycles - Mathf.Floor(cycles);
-            return u >= OutboundLeg(ratio, hold);
+            return outbound < 1f && u >= outbound;
         }
 
-        /// <summary>The share of a ping-pong cycle before the return leg: the rise and the hold.</summary>
-        public static float OutboundLeg(float ratio, float hold)
+        /// <summary>The share of a wave cycle before the return leg: the rise and the high hold.</summary>
+        public static float OutboundLeg(float rise, float holdHigh)
         {
-            var rise = Mathf.Clamp01(ratio);
-            return rise + Mathf.Clamp(hold, 0f, 1f - rise);
+            var riseEnd = Mathf.Clamp01(rise);
+            return riseEnd + Mathf.Clamp(holdHigh, 0f, 1f - riseEnd);
         }
 
         public static int CycleIndex(float cycles)
@@ -505,18 +529,21 @@ namespace AdzukiSoft.ALPS
                 var kind = ToInt(effects[effectRow + EffectKind]);
                 var paramStart = ToInt(effects[effectRow + EffectParamStart]);
 
+                // The card's phase offset runs every value on it late by that share of a cycle.
+                var late = -effects[effectRow + EffectPhaseOffset];
+
                 if (kind == KindMove)
                 {
-                    EvaluateMove(clips, effects, parameters, row, e, paramStart, fixtureIndex, fixtureCount, beats, seed, frame, written);
+                    EvaluateMove(clips, effects, parameters, row, e, paramStart, fixtureIndex, fixtureCount, beats, seed, late, frame, written);
                 }
                 else if (kind == KindCone)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameConeWidth, frame, written);
-                    WriteScalar(clips, parameters, row, paramStart + 1, k, beats, seed, 0f, FrameConeLength, frame, written);
+                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, late, FrameConeWidth, frame, written);
+                    WriteScalar(clips, parameters, row, paramStart + 1, k, beats, seed, late, FrameConeLength, frame, written);
                 }
                 else if (kind == KindBrightness)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, 0f, FrameBrightness, frame, written);
+                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, late, FrameBrightness, frame, written);
                     if (effects[effectRow + EffectScalarA] > 0.5f)
                     {
                         // Blackout on return: dark on the return leg, still covering lower layers.
@@ -527,13 +554,14 @@ namespace AdzukiSoft.ALPS
                             paramStart,
                             beats,
                             k,
+                            late,
                             effects[effectRow + EffectScalarB],
                             effects[effectRow + EffectScalarC]);
                     }
                 }
                 else if (kind == KindColor)
                 {
-                    EvaluateColor(clips, effects, parameters, colors, row, e, paramStart, k, beats, seed, frame, written, scratch);
+                    EvaluateColor(clips, effects, parameters, colors, row, e, paramStart, k, beats, seed, late, frame, written, scratch);
                 }
                 else if (kind == KindFlicker)
                 {
@@ -546,7 +574,7 @@ namespace AdzukiSoft.ALPS
                 }
                 else if (kind == KindGobo)
                 {
-                    EvaluateGobo(clips, effects, parameters, gobos, row, e, paramStart, k, fixtureIndex, beats, seed, frame, written, scratch);
+                    EvaluateGobo(clips, effects, parameters, gobos, row, e, paramStart, k, fixtureIndex, beats, seed, late, frame, written, scratch);
                 }
             }
         }
@@ -562,6 +590,7 @@ namespace AdzukiSoft.ALPS
             int fixtureCount,
             float beats,
             int seed,
+            float extraCycles,
             float[] frame,
             float[] written)
         {
@@ -588,7 +617,7 @@ namespace AdzukiSoft.ALPS
 
             if (mode == MoveCircle)
             {
-                EvaluateCircle(clips, effects, parameters, clipRow, effectRow, paramStart, k, beats, seed, frame, written);
+                EvaluateCircle(clips, effects, parameters, clipRow, effectRow, paramStart, k, beats, seed, extraCycles, frame, written);
             }
             else
             {
@@ -597,8 +626,8 @@ namespace AdzukiSoft.ALPS
                 var bothRanged = parameters[tiltRow + ParamIsRange] > 0.5f && parameters[panRow + ParamIsRange] > 0.5f;
                 var panOffsetCycles = bothRanged ? effects[effectRow + EffectScalarB] / 360f : 0f;
 
-                WriteScalar(clips, parameters, clipRow, paramStart, k, beats, seed, 0f, FrameTilt, frame, written);
-                WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, panOffsetCycles, FramePan, frame, written);
+                WriteScalar(clips, parameters, clipRow, paramStart, k, beats, seed, extraCycles, FrameTilt, frame, written);
+                WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, extraCycles + panOffsetCycles, FramePan, frame, written);
             }
 
             if (written[FramePan] > 0.5f && IsMirrored(order, fixtureIndex, fixtureCount, groupSize))
@@ -627,6 +656,7 @@ namespace AdzukiSoft.ALPS
             int k,
             float beats,
             int seed,
+            float extraCycles,
             float[] frame,
             float[] written)
         {
@@ -635,20 +665,12 @@ namespace AdzukiSoft.ALPS
             var radiusParam = paramStart + 4;
 
             var phaseRow = clipRow + ClipPhase;
-            var cycles = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, 0f);
-            var phase = Phase(
-                ToInt(clips[phaseRow + PhaseMode]),
-                ToInt(clips[phaseRow + PhaseEase]),
-                clips[phaseRow + PhaseRatio],
-                clips[phaseRow + PhaseHold],
-                clips[phaseRow + PhaseInverse] > 0.5f,
-                cycles,
-                k,
-                seed);
+            var cycles = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, extraCycles);
+            var phase = PhaseAt(clips, phaseRow, cycles, k, seed);
 
-            var centerTilt = ResolveScalar(clips, parameters, clipRow, tiltParam, k, beats, seed, 0f) * Mathf.Deg2Rad;
-            var centerPan = ResolveScalar(clips, parameters, clipRow, panParam, k, beats, seed, 0f) * Mathf.Deg2Rad;
-            var radius = ResolveScalar(clips, parameters, clipRow, radiusParam, k, beats, seed, 0f);
+            var centerTilt = ResolveScalar(clips, parameters, clipRow, tiltParam, k, beats, seed, extraCycles) * Mathf.Deg2Rad;
+            var centerPan = ResolveScalar(clips, parameters, clipRow, panParam, k, beats, seed, extraCycles) * Mathf.Deg2Rad;
+            var radius = ResolveScalar(clips, parameters, clipRow, radiusParam, k, beats, seed, extraCycles);
             var aspect = effects[effectRow + EffectScalarE];
 
             // The center direction and the two axes across it, all turned by the center angles.
@@ -712,30 +734,33 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// Brightness multiplier for blackout on return, following the phase that governs
-        /// <paramref name="param"/>. 0 on a ping-pong return leg. On the outbound leg it ramps
-        /// up over <paramref name="fadeIn"/> and down over <paramref name="fadeOut"/>, both
-        /// fractions of that leg. 1 when the phase has no return leg.
+        /// <paramref name="param"/>. 0 on the return leg of a wave, the fall and the low hold
+        /// after it. On the outbound leg it ramps up over <paramref name="fadeIn"/> and down
+        /// over <paramref name="fadeOut"/>, both fractions of that leg. 1 when the phase has
+        /// no return leg.
         /// </summary>
-        public static float BlackoutScale(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float fadeIn, float fadeOut)
+        public static float BlackoutScale(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float extraCycles, float fadeIn, float fadeOut)
         {
             var paramRow = param * ParamStride;
             var own = parameters[paramRow + ParamUseOwnPhase] > 0.5f;
-            var mode = own ? ToInt(parameters[paramRow + ParamOwnPhase + PhaseMode]) : ToInt(clips[clipRow + ClipPhase + PhaseMode]);
-            if (mode != PhasePingPong)
+            var phaseData = own ? parameters : clips;
+            var phaseRow = own ? paramRow + ParamOwnPhase : clipRow + ClipPhase;
+            var mode = ToInt(phaseData[phaseRow + PhaseMode]);
+            var rise = phaseData[phaseRow + PhaseRise];
+            var holdHigh = phaseData[phaseRow + PhaseHoldHigh];
+            var outbound = OutboundLeg(rise, holdHigh);
+            if (mode != PhaseWave || outbound >= 1f)
             {
                 return 1f;
             }
 
-            var ratio = own ? parameters[paramRow + ParamOwnPhase + PhaseRatio] : clips[clipRow + ClipPhase + PhaseRatio];
-            var hold = own ? parameters[paramRow + ParamOwnPhase + PhaseHold] : clips[clipRow + ClipPhase + PhaseHold];
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
-            if (IsReturnLeg(mode, ratio, hold, cycles))
+            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
+            if (IsReturnLeg(mode, rise, holdHigh, cycles))
             {
                 return 0f;
             }
 
-            // The outbound leg includes the hold, so the lights stay on while the phase rests at the far end.
-            var u = (cycles - Mathf.Floor(cycles)) / Mathf.Max(0.001f, OutboundLeg(ratio, hold));
+            var u = (cycles - Mathf.Floor(cycles)) / Mathf.Max(0.001f, outbound);
             var scale = 1f;
             if (fadeIn > 0f)
             {
@@ -770,28 +795,10 @@ namespace AdzukiSoft.ALPS
             var paramRow = param * ParamStride;
             if (parameters[paramRow + ParamUseOwnPhase] > 0.5f)
             {
-                var own = paramRow + ParamOwnPhase;
-                return Phase(
-                    ToInt(parameters[own + PhaseMode]),
-                    ToInt(parameters[own + PhaseEase]),
-                    parameters[own + PhaseRatio],
-                    parameters[own + PhaseHold],
-                    parameters[own + PhaseInverse] > 0.5f,
-                    cycles,
-                    k,
-                    seed);
+                return PhaseAt(parameters, paramRow + ParamOwnPhase, cycles, k, seed);
             }
 
-            var shared = clipRow + ClipPhase;
-            return Phase(
-                ToInt(clips[shared + PhaseMode]),
-                ToInt(clips[shared + PhaseEase]),
-                clips[shared + PhaseRatio],
-                clips[shared + PhaseHold],
-                clips[shared + PhaseInverse] > 0.5f,
-                cycles,
-                k,
-                seed);
+            return PhaseAt(clips, clipRow + ClipPhase, cycles, k, seed);
         }
 
         /// <summary>
@@ -826,9 +833,9 @@ namespace AdzukiSoft.ALPS
         /// Which palette entry is active and where inside it: returns the stop index and
         /// writes the local 0..1 position into <paramref name="local"/>[0].
         /// </summary>
-        public static int PaletteStop(float[] clips, float[] parameters, int clipRow, int param, int count, float beats, int k, int seed, float[] local)
+        public static int PaletteStop(float[] clips, float[] parameters, int clipRow, int param, int count, float beats, int k, int seed, float extraCycles, float[] local)
         {
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
+            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
             var phase = ParamPhase(clips, parameters, clipRow, param, cycles, k, seed);
             if (count <= 1)
             {
@@ -860,6 +867,7 @@ namespace AdzukiSoft.ALPS
             int k,
             float beats,
             int seed,
+            float extraCycles,
             float[] frame,
             float[] written,
             float[] scratch)
@@ -871,12 +879,12 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, 0f);
+            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
             written[FrameRed] = 1f;
             written[FrameGreen] = 1f;
             written[FrameBlue] = 1f;
 
-            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, scratch);
+            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, extraCycles, scratch);
             var colorRow = (ToInt(effects[effectRow + EffectPaletteStart]) + stop) * ColorStride;
             if (colors[colorRow + ColorIsGradient] > 0.5f)
             {
@@ -910,6 +918,7 @@ namespace AdzukiSoft.ALPS
             int fixtureIndex,
             float beats,
             int seed,
+            float extraCycles,
             float[] frame,
             float[] written,
             float[] scratch)
@@ -928,7 +937,7 @@ namespace AdzukiSoft.ALPS
 
             written[FrameGobo] = 1f;
 
-            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, scratch);
+            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, extraCycles, scratch);
             frame[FrameGobo] = gobos[ToInt(effects[effectRow + EffectPaletteStart]) + stop];
         }
         // ==================================================================================

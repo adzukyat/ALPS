@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Shared settings: graph preview, mode, easing, ping-pong ratio, fixture group size,
+    /// Shared settings: graph preview, mode, distribution, easing, fixture group size,
     /// spread, speed, invert.
     ///
     /// The same view is reused verbatim under a parameter that turns own phase on,
@@ -29,7 +29,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly AlpsPhaseGraph _graph;
         private readonly AlpsEasingGrid _easing;
-        private readonly AlpsFadeSlider _pingPongRatio;
+        private readonly AlpsShareBar _shares;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
         private readonly AlpsRangeFlag _beatsFlag;
@@ -63,7 +63,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             Add(_graph);
 
-            var mode = new AlpsSegmentedControl("モード", "順送り", "ピンポン", "ランダム");
+            var mode = new AlpsSegmentedControl("モード", "波形", "ランダム");
             if (compact)
             {
                 mode.AddToClassList("alps-seg--compact");
@@ -79,6 +79,26 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(mode, settings, nameof(AlpsPhaseSettings.mode));
             Add(mode);
 
+            // How long the wave rises, holds at the top, falls and holds at the bottom. A rise
+            // over the whole cycle is a sawtooth, and zero length ramps make a square wave.
+            _shares = new AlpsShareBar("配分")
+            {
+                DefaultValue = new Vector3(defaults.rise, defaults.holdHigh, defaults.fall),
+            };
+            _shares.SetValueWithoutNotify(new Vector3(settings.rise, settings.holdHigh, settings.fall));
+            _shares.RegisterValueChangedCallback(evt =>
+            {
+                settings.SetShares(evt.newValue.x, evt.newValue.y, evt.newValue.z);
+                Changed();
+            });
+            mixed?.Bind(
+                _shares,
+                settings,
+                nameof(AlpsPhaseSettings.rise),
+                nameof(AlpsPhaseSettings.holdHigh),
+                nameof(AlpsPhaseSettings.fall));
+            Add(_shares);
+
             _easing = new AlpsEasingGrid("イージング");
             if (compact)
             {
@@ -93,32 +113,6 @@ namespace AdzukiSoft.ALPS.Editor
             });
             mixed?.Bind(_easing, settings, nameof(AlpsPhaseSettings.ease));
             Add(_easing);
-
-            // The going out share on the left and the coming back share on the right, like a
-            // fade. Whatever the two leave over is held at the far end. 50% / 50% spends the
-            // same time each way with no hold, and the snaps sit at each quarter of the cycle.
-            // Growing one side past what is left takes the difference from the other, so a
-            // single drag still moves the peak as it used to.
-            _pingPongRatio = new AlpsFadeSlider("往復比", 100f, "%", "0", "行き", "戻り")
-            {
-                Snaps = new[] { 25f, 50f, 75f },
-                DefaultValue = new Vector2(defaults.pingPongRatio, defaults.PingPongReturn) * 100f,
-            };
-            _pingPongRatio.SetValueWithoutNotify(new Vector2(settings.pingPongRatio, settings.PingPongReturn) * 100f);
-            _pingPongRatio.RegisterValueChangedCallback(evt =>
-            {
-                var shares = PingPongShares(evt.previousValue / 100f, evt.newValue / 100f);
-                settings.pingPongRatio = shares.x;
-                settings.pingPongHold = Mathf.Max(0f, 1f - shares.x - shares.y);
-                _pingPongRatio.SetValueWithoutNotify(shares * 100f);
-                Changed();
-            });
-            mixed?.Bind(
-                _pingPongRatio,
-                settings,
-                nameof(AlpsPhaseSettings.pingPongRatio),
-                nameof(AlpsPhaseSettings.pingPongHold));
-            Add(_pingPongRatio);
 
             var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0") { DefaultValue = defaults.fixtureGroupSize };
             group.SetValueWithoutNotify(settings.fixtureGroupSize);
@@ -211,30 +205,13 @@ namespace AdzukiSoft.ALPS.Editor
             Refresh();
         }
 
-        /// <summary>
-        /// The going out and coming back shares after an edit, kept to a whole cycle at most.
-        /// The side that moved keeps its new value and the other gives way.
-        /// </summary>
-        internal static Vector2 PingPongShares(Vector2 previous, Vector2 next)
-        {
-            var goOut = Mathf.Clamp01(next.x);
-            var back = Mathf.Clamp01(next.y);
-            if (goOut + back <= 1f)
-            {
-                return new Vector2(goOut, back);
-            }
-
-            var outMoved = !Mathf.Approximately(goOut, previous.x);
-            return outMoved ? new Vector2(goOut, 1f - goOut) : new Vector2(1f - back, back);
-        }
-
         /// <summary>Re-applies the conditional visibility rules and repaints the graph.</summary>
         public void Refresh()
         {
             var isRandom = _settings.mode == AlpsPhaseMode.Random;
             Show(_easing, !isRandom);
             Show(_inverse, !isRandom);
-            Show(_pingPongRatio, _settings.mode == AlpsPhaseMode.PingPong);
+            Show(_shares, !isRandom);
             RefreshSpread();
             _graph.SetSettings(_settings);
         }

@@ -630,6 +630,58 @@
     height: 32px;
 }
 
+/* ------------------------------------------------------ distribution bar
+ *
+ * One wave cycle in a well like the graph's, with its three corners as thumbs, and the
+ * share of each part written under it. The cycle starts 6px inside the well's 1px border
+ * (thumb half plus one), and the legend is inset by the same 7px so its percentages line
+ * up with the parts above them.
+ */
+
+.alps-root .alps-shares__input {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Centres the label on the well rather than on the whole two-line field. */
+.alps-root .alps-shares.alps-row--top .unity-base-field__label {
+    padding-top: 7px;
+}
+
+.alps-shares__well {
+    height: 30px;
+    background-color: var(--alps-well-bg);
+    border-width: 1px;
+    border-color: var(--alps-line-tile);
+    border-radius: 2px;
+}
+
+.alps-shares__thumb {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    margin-top: -5px;
+    background-color: #999999;
+    border-radius: 5px;
+}
+
+.alps-shares__legend {
+    height: 14px;
+    margin: 2px 7px 0 7px;
+}
+
+.alps-shares__share {
+    position: absolute;
+    top: 0;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+    color: var(--alps-text-hint);
+    -unity-text-align: middle-center;
+}
+
 /* ------------------------------------------------------------- palettes */
 
 .alps-palette-strip {
@@ -1063,6 +1115,10 @@
     opacity: 0.45;
 }
 
+.alps-root .alps-shares__well--mixed {
+    opacity: 0.45;
+}
+
 /* Halfway between off (3px) and on (19px). */
 .alps-root .alps-switch__knob--mixed {
     left: 11px;
@@ -1177,5 +1233,9 @@
 }
 
 .alps-slider__track:hover .alps-slider__thumb {
+    background-color: #b4b4b4;
+}
+
+.alps-shares__well:hover .alps-shares__thumb {
     background-color: #b4b4b4;
 }

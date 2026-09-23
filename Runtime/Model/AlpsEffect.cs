@@ -19,6 +19,13 @@ namespace AdzukiSoft.ALPS
         public AlpsParity parity = AlpsParity.All;
         public bool expanded = true;
 
+        /// <summary>
+        /// Phase offset: every value on this effect runs late by this share of its cycle.
+        /// Splitting an effect into even and odd and setting one side to 0.5 makes the two
+        /// sides take turns, whatever shape the wave has.
+        /// </summary>
+        [Range(0f, 1f)] public float phaseOffset;
+
         // --- Move ---
         public AlpsMoveMode moveMode = AlpsMoveMode.Angle;
         public AlpsAnimatableValue tilt = new AlpsAnimatableValue(0f, new Vector2(-90f, 90f));
@@ -56,8 +63,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>Stored on the 0–200 scale the inspector shows. 100 is white at a tint of 1.</summary>
         public AlpsAnimatableValue brightness = new AlpsAnimatableValue(100f, new Vector2(0f, 200f)) { range = new Vector2(0f, 100f) };
         /// <summary>
-        /// Blackout on return: brightness drops to 0 while the phase driving it is on a
-        /// ping-pong return leg, so the beams fly out one way only.
+        /// Blackout on return: brightness drops to 0 while the wave driving it is on its
+        /// return leg, the fall and the low hold, so the beams fly out one way only.
         /// </summary>
         public bool blackoutOnReturn;
         /// <summary>Fade in at the start of the outbound leg, as a fraction of that leg (0 to 0.5).</summary>
@@ -88,6 +95,7 @@ namespace AdzukiSoft.ALPS
             kind = other.kind;
             parity = other.parity;
             expanded = other.expanded;
+            phaseOffset = other.phaseOffset;
 
             moveMode = other.moveMode;
             tilt = new AlpsAnimatableValue(other.tilt);

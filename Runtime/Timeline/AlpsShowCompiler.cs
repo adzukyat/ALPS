@@ -340,6 +340,7 @@ namespace AdzukiSoft.ALPS
                 var row = new float[AlpsShowEvaluator.EffectStride];
                 row[AlpsShowEvaluator.EffectKind] = (int)effect.kind;
                 row[AlpsShowEvaluator.EffectParity] = (int)effect.parity;
+                row[AlpsShowEvaluator.EffectPhaseOffset] = Mathf.Clamp01(effect.phaseOffset);
                 row[AlpsShowEvaluator.EffectParamStart] = _parameters.Count / AlpsShowEvaluator.ParamStride;
 
                 switch (effect.kind)
@@ -466,8 +467,9 @@ namespace AdzukiSoft.ALPS
             {
                 row[offset + AlpsShowEvaluator.PhaseMode] = (int)phase.mode;
                 row[offset + AlpsShowEvaluator.PhaseEase] = (int)phase.ease;
-                row[offset + AlpsShowEvaluator.PhaseRatio] = phase.pingPongRatio;
-                row[offset + AlpsShowEvaluator.PhaseHold] = phase.pingPongHold;
+                row[offset + AlpsShowEvaluator.PhaseRise] = phase.rise;
+                row[offset + AlpsShowEvaluator.PhaseHoldHigh] = phase.holdHigh;
+                row[offset + AlpsShowEvaluator.PhaseFall] = phase.fall;
                 row[offset + AlpsShowEvaluator.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
                 row[offset + AlpsShowEvaluator.PhaseDelay] = AlpsShowEvaluator.DelayFromSpread(
                     phase.SpreadCycles,

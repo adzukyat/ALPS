@@ -54,11 +54,11 @@ namespace AdzukiSoft.ALPS.Tests
             other.phase.spread = 0.25f;
 
             var before = new AlpsClipEffectSet(shown);
-            shown.phase.mode = AlpsPhaseMode.Forward;
+            shown.phase.mode = AlpsPhaseMode.Random;
             shown.effects[0].brightness.ownPhase.beatsPerCycle = 16f;
             AlpsClipEditSync.Apply(before, shown, other);
 
-            Assert.AreEqual(AlpsPhaseMode.Forward, other.phase.mode);
+            Assert.AreEqual(AlpsPhaseMode.Random, other.phase.mode);
             Assert.AreEqual(0.25f, other.phase.spread, 0.0001f);
             Assert.AreEqual(16f, other.effects[0].brightness.ownPhase.beatsPerCycle, 0.0001f);
             Assert.AreNotSame(shown.phase, other.phase, "Nothing is shared between clips.");

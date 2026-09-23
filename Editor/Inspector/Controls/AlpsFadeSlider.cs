@@ -23,13 +23,7 @@ namespace AdzukiSoft.ALPS.Editor
         private float[] _mirroredSnaps = new float[0];
         private readonly float _max;
 
-        public AlpsFadeSlider(
-            string label,
-            float max,
-            string unit = "",
-            string format = "0.###",
-            string inTooltip = "フェードイン",
-            string outTooltip = "フェードアウト")
+        public AlpsFadeSlider(string label, float max, string unit = "", string format = "0.###")
             : base(label, new VisualElement())
         {
             AddToClassList(ussClassName);
@@ -40,24 +34,24 @@ namespace AdzukiSoft.ALPS.Editor
             var container = this.Q(className: BaseField<Vector2>.inputUssClassName);
             container.AddToClassList(ussClassName + "__input");
 
-            _inBox = new AlpsNumberBox(unit, format) { Limit = limit, tooltip = inTooltip };
+            _inBox = new AlpsNumberBox(unit, format) { Limit = limit, tooltip = "フェードイン" };
             _inBox.AddToClassList("alps-numberbox--left");
             _inBox.RegisterValueChangedCallback(evt => value = new Vector2(evt.newValue, value.y));
             container.Add(_inBox);
 
-            _inTrack = new AlpsSliderTrack(false) { tooltip = inTooltip };
+            _inTrack = new AlpsSliderTrack(false) { tooltip = "フェードイン" };
             _inTrack.Changed += (_, high) => value = new Vector2(_snaps.ToValue(limit, high), value.y);
             _inTrack.ResetRequested += _ => ResetToDefault(true);
             container.Add(_inTrack);
 
             // The out track runs mirrored: its fill grows from the right edge toward the middle.
-            _outTrack = new AlpsSliderTrack(false) { Origin = 1f, tooltip = outTooltip };
+            _outTrack = new AlpsSliderTrack(false) { Origin = 1f, tooltip = "フェードアウト" };
             _outTrack.AddToClassList("alps-fade__out");
             _outTrack.Changed += (_, high) => value = new Vector2(value.x, OutValue(high));
             _outTrack.ResetRequested += _ => ResetToDefault(false);
             container.Add(_outTrack);
 
-            _outBox = new AlpsNumberBox(unit, format) { Limit = limit, tooltip = outTooltip };
+            _outBox = new AlpsNumberBox(unit, format) { Limit = limit, tooltip = "フェードアウト" };
             _outBox.AddToClassList("alps-numberbox--right");
             _outBox.RegisterValueChangedCallback(evt => value = new Vector2(value.x, evt.newValue));
             container.Add(_outBox);

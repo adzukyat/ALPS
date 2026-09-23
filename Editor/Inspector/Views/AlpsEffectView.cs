@@ -20,6 +20,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly Action _onChanged;
         private readonly List<AlpsAnimatableView> _animatables = new List<AlpsAnimatableView>();
         private readonly AlpsMixedValues _mixed;
+        private Action _refreshPhaseOffset;
 
         public AlpsEffectView(
             AlpsEffect effect,
@@ -33,7 +34,14 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed = mixed;
             _defaults = AlpsEffect.Create(effect.kind);
             _clipPhase = clipPhase;
-            _onChanged = onChanged;
+
+            // Any edit on the card can start or stop something following a phase, which is
+            // what the phase offset row waits for.
+            _onChanged = () =>
+            {
+                _refreshPhaseOffset?.Invoke();
+                onChanged?.Invoke();
+            };
 
             Card = new AlpsEffectCard(
                 AlpsEffectCatalog.GetTitle(effect.kind, effect.parity),
@@ -60,6 +68,7 @@ namespace AdzukiSoft.ALPS.Editor
             };
 
             BuildBody(Card.Body);
+            BuildPhaseOffset(Card.Body);
             Card.SetChips(BuildChips());
             Card.Expanded = effect.expanded;
             RefreshPasteAvailability();
@@ -329,9 +338,10 @@ namespace AdzukiSoft.ALPS.Editor
 
             void ApplyBlackout()
             {
-                var pingPong = view.GoverningPhase.mode == AlpsPhaseMode.PingPong;
-                AlpsPhaseSettingsView.Show(blackout, pingPong);
-                AlpsPhaseSettingsView.Show(fadeFrame, pingPong && _effect.blackoutOnReturn);
+                var phase = view.GoverningPhase;
+                var returns = phase.mode == AlpsPhaseMode.Wave && AlpsShowEvaluator.OutboundLeg(phase.rise, phase.holdHigh) < 1f;
+                AlpsPhaseSettingsView.Show(blackout, returns);
+                AlpsPhaseSettingsView.Show(fadeFrame, returns && _effect.blackoutOnReturn);
             }
 
             RefreshHooks += ApplyBlackout;
@@ -399,6 +409,67 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsEffect.goboFixtureStaggerDegrees));
             goboStagger.Snaps = AlpsSnapPoints.Angles(goboStagger.Limit);
             body.Add(goboStagger);
+        }
+
+        // ------------------------------------------------------- phase offset
+
+        /// <summary>
+        /// The card's phase offset, last on every card whose values can follow a phase. It
+        /// shows only while something on the card does, since nothing else would move.
+        /// </summary>
+        private void BuildPhaseOffset(VisualElement body)
+        {
+            if (_effect.kind == AlpsEffectKind.Flicker)
+            {
+                return;
+            }
+
+            var offset = new AlpsValueSlider("位相オフセット", new Vector2(0f, 100f), "%", "0")
+            {
+                Snaps = new[] { 25f, 50f, 75f },
+                DefaultValue = _defaults.phaseOffset * 100f,
+                tooltip = "この効果の動きを周期の何%遅らせるか。偶数と奇数に分けた片方を 50% にすると交互に動きます。",
+            };
+            offset.SetValueWithoutNotify(_effect.phaseOffset * 100f);
+            offset.RegisterValueChangedCallback(evt =>
+            {
+                _effect.phaseOffset = Mathf.Clamp01(evt.newValue / 100f);
+                _onChanged?.Invoke();
+            });
+            _mixed?.Bind(offset, _effect, nameof(AlpsEffect.phaseOffset));
+            body.Add(offset);
+
+            _refreshPhaseOffset = () => AlpsPhaseSettingsView.Show(offset, FollowsPhase());
+            RefreshHooks += _refreshPhaseOffset;
+            _refreshPhaseOffset();
+        }
+
+        /// <summary>True while any value on the card moves with a phase, which the offset then shifts.</summary>
+        private bool FollowsPhase()
+        {
+            switch (_effect.kind)
+            {
+                case AlpsEffectKind.Move:
+                    if (_effect.moveMode == AlpsMoveMode.Circle)
+                    {
+                        return true;
+                    }
+
+                    return _effect.moveMode == AlpsMoveMode.Angle
+                           && (_effect.tilt.HasMultipleStops || _effect.pan.HasMultipleStops);
+                case AlpsEffectKind.Cone:
+                    return _effect.coneWidth.HasMultipleStops || _effect.coneLength.HasMultipleStops;
+                case AlpsEffectKind.Color:
+                    // A single gradient stop is walked by the phase as well.
+                    return _effect.colorStops.Count >= 2
+                           || (_effect.colorStops.Count == 1 && _effect.colorStops[0].isGradient);
+                case AlpsEffectKind.Brightness:
+                    return _effect.brightness.HasMultipleStops || _effect.blackoutOnReturn;
+                case AlpsEffectKind.Gobo:
+                    return _effect.goboStops.Count >= 2;
+                default:
+                    return false;
+            }
         }
 
         // ------------------------------------------------------------ helpers

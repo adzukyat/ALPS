@@ -15,7 +15,7 @@ namespace AdzukiSoft.ALPS.Tests
         private static AlpsClipEffectSet NewSet()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.Forward;
+            set.phase.SetShares(1f, 0f, 0f);
             set.phase.ease = AlpsEaseType.Linear;
             set.phase.beatsPerCycle = 2f;
             return set;

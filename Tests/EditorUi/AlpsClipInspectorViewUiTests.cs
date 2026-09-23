@@ -391,10 +391,9 @@ namespace AdzukiSoft.ALPS.Tests
         public void SharedSettings_RendersEveryPlannedRow()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.PingPong;
             var view = new AlpsClipInspectorView(set);
 
-            foreach (var row in new[] { "モード", "イージング", "往復比", "灯体単位", "ディレイ", "速度", "反転" })
+            foreach (var row in new[] { "モード", "配分", "イージング", "灯体単位", "ディレイ", "速度", "反転" })
             {
                 Assert.IsTrue(HasVisibleText(view, row), $"共通設定 is missing the {row} row.");
             }
@@ -482,18 +481,29 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void PingPongRatio_IsOnlyShownForPingPong()
+        public void Distribution_IsOnlyShownForTheWave()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.Forward;
+            set.phase.mode = AlpsPhaseMode.Random;
             var view = new AlpsClipInspectorView(set);
 
-            var ratio = view.Query<AlpsFadeSlider>().ToList().First(s => s.label == "往復比");
-            Assert.AreEqual(DisplayStyle.None, ratio.style.display.value, "往復比 must be hidden outside ピンポン.");
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
+            Assert.AreEqual(DisplayStyle.None, shares.style.display.value, "配分 must be hidden in ランダム.");
 
-            set.phase.mode = AlpsPhaseMode.PingPong;
+            set.phase.mode = AlpsPhaseMode.Wave;
             view.Query<AlpsPhaseSettingsView>().First().Refresh();
-            Assert.AreEqual(DisplayStyle.Flex, ratio.style.display.value);
+            Assert.AreEqual(DisplayStyle.Flex, shares.style.display.value);
+        }
+
+        [Test]
+        public void ModeControl_OffersWaveAndRandom()
+        {
+            var view = new AlpsClipInspectorView(new AlpsClipEffectSet());
+            var mode = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == "モード");
+
+            CollectionAssert.AreEqual(
+                new[] { "波形", "ランダム" },
+                mode.Query<Label>(className: "alps-seg__item").ToList().Select(l => l.text).ToArray());
         }
 
         [Test]
@@ -537,7 +547,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Frames_AreTitledRangeAndSpread()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.Forward;
+            set.phase.SetShares(1f, 0f, 0f);
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.hasSpread = true;
             move.tilt.isRange = true;
@@ -559,17 +569,17 @@ namespace AdzukiSoft.ALPS.Tests
             tilt.Refresh();
             Assert.IsTrue(frames.All(f => f.style.display.value == DisplayStyle.None));
 
-            // Ping-pong alone gives a fixed value nothing to put in the range frame.
-            set.phase.mode = AlpsPhaseMode.PingPong;
+            // Another wave alone gives a fixed value nothing to put in the range frame.
+            set.phase.SetShares(0.5f, 0f, 0.5f);
             tilt.Refresh();
             Assert.AreEqual(DisplayStyle.None, frames[0].style.display.value);
         }
 
         [Test]
-        public void BlackoutOnReturn_ShowsWhileThePhaseDrivingBrightnessPingPongs()
+        public void BlackoutOnReturn_ShowsWhileThePhaseDrivingBrightnessComesBack()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.Forward;
+            set.phase.SetShares(1f, 0f, 0f);
             var brightness = set.Add(AlpsEffectKind.Brightness);
             brightness.brightness.isRange = true;
             brightness.brightness.range = new Vector2(0f, 100f);
@@ -578,9 +588,9 @@ namespace AdzukiSoft.ALPS.Tests
             var effect = view.Query<AlpsEffectView>().First();
             var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
             var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == "フェード").parent;
-            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "Forward has no return leg.");
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "A sawtooth has no return leg.");
 
-            set.phase.mode = AlpsPhaseMode.PingPong;
+            set.phase.SetShares(0.5f, 0f, 0.5f);
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value, "Fades wait for the switch.");
@@ -590,12 +600,70 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(DisplayStyle.Flex, fadeFrame.style.display.value);
             Assert.IsNull(fadeFrame.Q<Label>(className: "alps-sub__title"), "The fade frame is untitled.");
 
+            // A wave that rises and then stays up never comes back either.
+            set.phase.SetShares(0.5f, 0.5f, 0f);
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
+
             // Own phase takes over which leg is the return.
+            set.phase.SetShares(0.5f, 0f, 0.5f);
             brightness.brightness.useOwnPhase = true;
-            brightness.brightness.ownPhase.mode = AlpsPhaseMode.Forward;
+            brightness.brightness.ownPhase.SetShares(1f, 0f, 0f);
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value);
+        }
+
+        [Test]
+        public void PhaseOffset_ShowsOnlyWhileTheCardFollowsAPhase()
+        {
+            var set = new AlpsClipEffectSet();
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            set.Add(AlpsEffectKind.Flicker);
+            var view = new AlpsClipInspectorView(set);
+
+            var cards = view.Query<AlpsEffectView>().ToList();
+            AlpsValueSlider Offset(AlpsEffectView card) =>
+                card.Query<AlpsValueSlider>().ToList().SingleOrDefault(s => s.label == "位相オフセット");
+
+            Assert.IsNull(Offset(cards[1]), "Flicker runs on its own clock, so it has no offset.");
+
+            var offset = Offset(cards[0]);
+            Assert.IsNotNull(offset);
+            Assert.AreEqual(DisplayStyle.None, offset.style.display.value, "A fixed brightness has nothing to shift.");
+
+            brightness.brightness.isRange = true;
+            brightness.brightness.range = new Vector2(0f, 100f);
+            cards[0].Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, offset.style.display.value);
+
+            brightness.brightness.isRange = false;
+            brightness.blackoutOnReturn = true;
+            cards[0].Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, offset.style.display.value, "Blackout on return follows the phase too.");
+        }
+
+        [Test]
+        public void PhaseOffset_StaysWithTheCardOnPaste()
+        {
+            var even = AlpsEffect.Create(AlpsEffectKind.Brightness);
+            even.brightness.value = 40f;
+            var odd = AlpsEffect.Create(AlpsEffectKind.Brightness);
+            odd.parity = AlpsParity.Odd;
+            odd.phaseOffset = 0.5f;
+
+            try
+            {
+                AlpsEffectClipboard.Copy(even);
+                var pasted = AlpsEffectClipboard.Paste(odd);
+
+                Assert.AreEqual(40f, pasted.brightness.value, 0.0001f);
+                Assert.AreEqual(0.5f, pasted.phaseOffset, 0.0001f, "Matching the odd card to the even one keeps it half a cycle apart.");
+            }
+            finally
+            {
+                AlpsEffectClipboard.Clear();
+            }
         }
 
         [Test]
@@ -626,7 +694,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.Forward;
+            set.phase.SetShares(1f, 0f, 0f);
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.value = 10f;
             move.tilt.spread = 12f;
@@ -1511,46 +1579,77 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void PhaseSettings_PingPongRatioMovesThePeak()
-        {
-            // 往復比 0.25 puts the triangle's peak a quarter of the way into the cycle.
-            float Phase(float cycles) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0f, false, cycles, 0, 0);
-
-            Assert.AreEqual(1f, Phase(0.25f), 0.01f, "The peak sits at 往復比.");
-            Assert.AreEqual(0.5f, Phase(0.125f), 0.01f);
-            Assert.AreEqual(0.5f, Phase(0.625f), 0.01f);
-        }
-
-        [Test]
-        public void PhaseSettings_PingPongRatioShowsGoingAndComingBack()
+        public void ShareBar_ShowsEachShareOfTheCycle()
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = AlpsPhaseMode.PingPong;
-            set.phase.pingPongRatio = 0.3f;
-            set.phase.pingPongHold = 0.2f;
+            set.phase.SetShares(0.3f, 0.2f, 0.1f);
             var view = new AlpsClipInspectorView(set);
 
-            var ratio = view.Query<AlpsFadeSlider>().ToList().First(s => s.label == "往復比");
-            Assert.AreEqual(30f, ratio.value.x, 0.001f, "行き is the ratio.");
-            Assert.AreEqual(50f, ratio.value.y, 0.001f, "戻り is what the ratio and the hold leave over.");
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
+            Assert.AreEqual(new Vector3(0.3f, 0.2f, 0.1f), shares.value);
+            Assert.AreEqual(0.3f, shares.Corner(AlpsShareBar.RiseEnd), 0.0001f);
+            Assert.AreEqual(0.5f, shares.Corner(AlpsShareBar.HighEnd), 0.0001f);
+            Assert.AreEqual(0.6f, shares.Corner(AlpsShareBar.FallEnd), 0.0001f);
+            CollectionAssert.AreEqual(
+                new[] { "30%", "20%", "10%", "40%" },
+                shares.Query<Label>(className: "alps-shares__share").ToList().Select(l => l.text).ToArray(),
+                "The low hold is what the other three leave over.");
         }
 
         [Test]
-        public void PhaseSettings_PingPongSharesGiveWayToTheSideThatMoved()
+        public void ShareBar_ACornerStaysBetweenItsNeighbours()
         {
-            // Dragging 行き from 50 to 70 takes the 20 from 戻り, the way 往復比 moved the peak before.
-            var outMoved = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.7f, 0.5f));
-            Assert.AreEqual(0.7f, outMoved.x, 0.0001f);
-            Assert.AreEqual(0.3f, outMoved.y, 0.0001f);
+            var shares = new AlpsShareBar("配分");
+            shares.SetValueWithoutNotify(new Vector3(0.25f, 0.25f, 0.25f));
 
-            var backMoved = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.8f));
-            Assert.AreEqual(0.2f, backMoved.x, 0.0001f);
-            Assert.AreEqual(0.8f, backMoved.y, 0.0001f);
+            shares.MoveCorner(AlpsShareBar.RiseEnd, 0.1f);
+            Assert.AreEqual(new Vector3(0.1f, 0.4f, 0.25f), shares.value, "Moving the end of the rise gives the difference to the high hold.");
 
-            var room = AlpsPhaseSettingsView.PingPongShares(new Vector2(0.5f, 0.5f), new Vector2(0.3f, 0.5f));
-            Assert.AreEqual(0.3f, room.x, 0.0001f, "Shrinking one side leaves a hold and does not grow the other.");
-            Assert.AreEqual(0.5f, room.y, 0.0001f);
+            shares.MoveCorner(AlpsShareBar.HighEnd, 0.9f);
+            Assert.AreEqual(0.75f, shares.Corner(AlpsShareBar.HighEnd), 0.0001f, "The high hold cannot run past the end of the fall.");
+            Assert.AreEqual(0f, shares.value.z, 0.0001f);
+
+            shares.MoveCorner(AlpsShareBar.FallEnd, 1f);
+            Assert.AreEqual(new Vector3(0.1f, 0.65f, 0.25f), shares.value);
+        }
+
+        [UnityTest]
+        public IEnumerator ShareBar_WritesTheSharesBackToTheSettings()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
+                shares.MoveCorner(AlpsShareBar.FallEnd, 0.75f);
+
+                Assert.AreEqual(0.5f, set.phase.rise, 0.0001f);
+                Assert.AreEqual(0f, set.phase.holdHigh, 0.0001f);
+                Assert.AreEqual(0.25f, set.phase.fall, 0.0001f);
+                Assert.AreEqual(0.25f, set.phase.HoldLow, 0.0001f, "The last quarter now waits at the bottom.");
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void EasingGrid_HasNoStepTile()
+        {
+            var view = new AlpsClipInspectorView(new AlpsClipEffectSet());
+            var easing = view.Query<AlpsEasingGrid>().First();
+
+            // A zero length rise or fall makes the jump a step ease used to.
+            Assert.AreEqual(18, easing.Query(className: "alps-easegrid__tile").ToList().Count);
         }
 
         [Test]

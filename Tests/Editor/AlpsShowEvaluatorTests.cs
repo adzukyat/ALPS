@@ -70,22 +70,32 @@ namespace AdzukiSoft.ALPS.Tests
 
         // ------------------------------------------------------------------ phase
 
-        [Test]
-        public void Phase_ForwardIsASawtoothAndInverseFlipsIt()
+        private static float Wave(float rise, float holdHigh, float fall, float cycles, bool inverse = false, AlpsEaseType ease = AlpsEaseType.Linear)
         {
-            float Forward(float cycles, bool inverse) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.Linear, 0.5f, 0f, inverse, cycles, 0, 0);
+            return AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseWave, (int)ease, rise, holdHigh, fall, inverse, cycles, 0, 0);
+        }
 
-            Assert.AreEqual(0.25f, Forward(0.25f, false), 0.001f);
-            Assert.AreEqual(0.25f, Forward(3.25f, false), 0.001f, "The phase wraps every cycle.");
-            Assert.AreEqual(0.75f, Forward(0.25f, true), 0.001f);
+        [Test]
+        public void Phase_RiseOverTheWholeCycleIsASawtoothAndInverseFlipsIt()
+        {
+            Assert.AreEqual(0.25f, Wave(1f, 0f, 0f, 0.25f), 0.001f);
+            Assert.AreEqual(0.25f, Wave(1f, 0f, 0f, 3.25f), 0.001f, "The phase wraps every cycle.");
+            Assert.AreEqual(0.75f, Wave(1f, 0f, 0f, 0.25f, inverse: true), 0.001f);
         }
 
         [Test]
         public void Phase_EaseShapesTheCycle()
         {
-            var eased = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseForward, (int)AlpsEaseType.InQuad, 0.5f, 0f, false, 0.5f, 0, 0);
-            Assert.AreEqual(0.25f, eased, 0.001f);
+            Assert.AreEqual(0.25f, Wave(1f, 0f, 0f, 0.5f, ease: AlpsEaseType.InQuad), 0.001f);
+        }
+
+        [Test]
+        public void Phase_TheFallRunsTheRiseEaseBackwards()
+        {
+            var up = Wave(0.5f, 0f, 0.5f, 0.1f, ease: AlpsEaseType.InQuad);
+            var down = Wave(0.5f, 0f, 0.5f, 0.9f, ease: AlpsEaseType.InQuad);
+            Assert.AreEqual(0.04f, up, 0.001f);
+            Assert.AreEqual(up, down, 0.001f, "The same distance from the bottom reads the same on both sides.");
         }
 
         [Test]
@@ -94,59 +104,55 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 50; i++)
             {
                 var cycles = i * 0.137f;
-                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, false, cycles, 3, 9);
-                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, false, cycles, 3, 9);
+                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
                 Assert.That(a, Is.InRange(0f, 1f));
                 Assert.AreEqual(a, b);
             }
         }
 
         [Test]
-        public void Phase_ReturnLegFollowsThePingPongRatio()
+        public void Phase_WaveHoldsAtTheTopAndAtTheBottom()
         {
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0f, 0.2f));
-            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0f, 0.3f));
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseForward, 0.25f, 0f, 0.3f), "Only ping-pong has a return leg.");
+            // 25% up, 25% held high, 25% down, 25% held low.
+            float Quarters(float cycles) => Wave(0.25f, 0.25f, 0.25f, cycles);
+
+            Assert.AreEqual(0.5f, Quarters(0.125f), 0.001f, "Half way up.");
+            Assert.AreEqual(1f, Quarters(0.3f), 0.001f, "Held at the top.");
+            Assert.AreEqual(0.5f, Quarters(0.625f), 0.001f, "Half way down.");
+            Assert.AreEqual(0f, Quarters(0.8f), 0.001f, "Held at the bottom.");
+            Assert.AreEqual(0f, Quarters(0.99f), 0.001f, "Still at the bottom as the cycle ends.");
         }
 
         [Test]
-        public void Phase_PingPongHoldsAtTheFarEndBetweenTheLegs()
+        public void Phase_WithoutHoldsIsATriangle()
         {
-            // 25% out, 50% held, 25% back.
-            float PingPong(float cycles) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0.5f, false, cycles, 0, 0);
-
-            Assert.AreEqual(0.5f, PingPong(0.125f), 0.001f, "Half way out.");
-            Assert.AreEqual(1f, PingPong(0.3f), 0.001f, "Held at the far end.");
-            Assert.AreEqual(1f, PingPong(0.7f), 0.001f, "Still held just before coming back.");
-            Assert.AreEqual(0.5f, PingPong(0.875f), 0.001f, "Half way back.");
-            Assert.AreEqual(0f, PingPong(1f), 0.001f, "Back at the start as the next cycle begins.");
+            Assert.AreEqual(1f, Wave(0.25f, 0f, 0.75f, 0.25f), 0.001f, "The peak sits where the rise ends.");
+            Assert.AreEqual(0.5f, Wave(0.25f, 0f, 0.75f, 0.625f), 0.001f);
         }
 
         [Test]
-        public void Phase_PingPongWithoutHoldIsTheTriangle()
+        public void Phase_ZeroLengthRampsMakeASquareWave()
         {
-            float PingPong(float cycles) => AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.25f, 0f, false, cycles, 0, 0);
-
-            Assert.AreEqual(1f, PingPong(0.25f), 0.001f);
-            Assert.AreEqual(0.5f, PingPong(0.625f), 0.001f);
+            Assert.AreEqual(1f, Wave(0f, 0.5f, 0f, 0f), 0.001f, "A rise of zero jumps straight up.");
+            Assert.AreEqual(1f, Wave(0f, 0.5f, 0f, 0.49f), 0.001f);
+            Assert.AreEqual(0f, Wave(0f, 0.5f, 0f, 0.5f), 0.001f, "A fall of zero drops straight down.");
         }
 
         [Test]
-        public void Phase_PingPongWithNothingLeftToComeBackStaysOut()
+        public void Phase_ReturnLegIsTheFallAndTheLowHold()
         {
-            // Out and hold fill the whole cycle, so there is no return leg at all.
-            Assert.AreEqual(1f, AlpsShowEvaluator.Phase(
-                AlpsShowEvaluator.PhasePingPong, (int)AlpsEaseType.Linear, 0.5f, 0.5f, false, 0.9f, 0, 0), 0.001f);
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.5f, 0.5f, 0.99f));
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.45f), "Still at the top.");
+            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.55f), "Falling.");
+            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.25f, 0.25f, 0.9f), "Waiting at the bottom.");
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseRandom, 0.25f, 0.25f, 0.9f), "Only a wave has a return leg.");
         }
 
         [Test]
-        public void Phase_ReturnLegStartsAfterTheHold()
+        public void Phase_AWaveThatNeverFallsNeverReturns()
         {
-            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.5f, 0.7f));
-            Assert.IsTrue(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhasePingPong, 0.25f, 0.5f, 0.8f));
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 1f, 0f, 0.99f), "A sawtooth drops but does not return.");
+            Assert.IsFalse(AlpsShowEvaluator.IsReturnLeg(AlpsShowEvaluator.PhaseWave, 0.5f, 0.5f, 0.99f));
         }
 
         // ------------------------------------------------------------------ values
@@ -400,7 +406,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             // The spread range takes the row's own phase like any range.
             cone.coneLength.useOwnPhase = true;
-            cone.coneLength.ownPhase.mode = AlpsPhaseMode.Forward;
+            cone.coneLength.ownPhase.SetShares(1f, 0f, 0f);
             cone.coneLength.ownPhase.ease = AlpsEaseType.Linear;
             cone.coneLength.ownPhase.beatsPerCycle = 2f;
             show = Compile(2, set);
@@ -576,7 +582,7 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
             brightness.useOwnPhase = true;
-            brightness.ownPhase.mode = AlpsPhaseMode.Forward;
+            brightness.ownPhase.SetShares(1f, 0f, 0f);
             brightness.ownPhase.ease = AlpsEaseType.Linear;
             brightness.ownPhase.beatsPerCycle = 1f;
             brightness.ownPhase.fixtureGroupSize = 1;
@@ -598,7 +604,7 @@ namespace AdzukiSoft.ALPS.Tests
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
             brightness.useOwnPhase = true;
-            brightness.ownPhase.mode = AlpsPhaseMode.Forward;
+            brightness.ownPhase.SetShares(1f, 0f, 0f);
             brightness.ownPhase.ease = AlpsEaseType.Linear;
             brightness.ownPhase.beatsPerCycle = 1f;
             var show = Compile(1, set);
@@ -624,8 +630,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void BlackoutOnReturn_MutesBrightnessOnTheReturnLeg()
         {
-            var set = Set(AlpsPhaseMode.PingPong);
-            set.phase.pingPongRatio = 0.5f;
+            var set = Set(0.5f, 0f, 0.5f);
             var effect = set.Add(AlpsEffectKind.Brightness);
             effect.brightness.isRange = true;
             effect.brightness.range = new Vector2(50f, 100f);
@@ -640,8 +645,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void BlackoutOnReturn_FadesInAndOutInsideTheOutboundLeg()
         {
             // One beat per cycle, half of it outbound: the outbound leg is 0 to 0.5.
-            var set = Set(AlpsPhaseMode.PingPong);
-            set.phase.pingPongRatio = 0.5f;
+            var set = Set(0.5f, 0f, 0.5f);
             var effect = set.Add(AlpsEffectKind.Brightness);
             effect.brightness.value = 100f;
             effect.blackoutOnReturn = true;
@@ -658,10 +662,8 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void BlackoutOnReturn_StaysLitThroughTheHold()
         {
-            // 25% out, 25% held, 50% back: the lit leg is 0 to 0.5 and the fade out takes its second half.
-            var set = Set(AlpsPhaseMode.PingPong);
-            set.phase.pingPongRatio = 0.25f;
-            set.phase.pingPongHold = 0.25f;
+            // 25% up, 25% held, 50% down: the lit leg is 0 to 0.5 and the fade out takes its second half.
+            var set = Set(0.25f, 0.25f, 0.5f);
             var effect = set.Add(AlpsEffectKind.Brightness);
             effect.brightness.value = 100f;
             effect.blackoutOnReturn = true;
@@ -674,22 +676,94 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void BlackoutOnReturn_StaysDarkWhileWaitingAtTheBottom()
+        {
+            var set = Set(0.25f, 0.25f, 0.25f);
+            var effect = set.Add(AlpsEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            var show = Compile(1, set);
+
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.4f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit at the top.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.9f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Dark at the bottom.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 1.1f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Lit again on the next rise.");
+        }
+
+        [Test]
         public void BlackoutOnReturn_FollowsTheOwnPhaseOfBrightness()
         {
-            // The clip ping-pongs, but brightness runs on its own forward phase with no return leg.
-            var set = Set(AlpsPhaseMode.PingPong);
-            set.phase.pingPongRatio = 0.5f;
+            // The clip's wave comes back, but brightness runs on its own sawtooth with no return leg.
+            var set = Set(0.5f, 0f, 0.5f);
             var effect = set.Add(AlpsEffectKind.Brightness);
             effect.brightness.isRange = true;
             effect.brightness.range = new Vector2(50f, 100f);
             effect.brightness.useOwnPhase = true;
-            effect.brightness.ownPhase.mode = AlpsPhaseMode.Forward;
+            effect.brightness.ownPhase.SetShares(1f, 0f, 0f);
             effect.brightness.ownPhase.ease = AlpsEaseType.Linear;
             effect.brightness.ownPhase.beatsPerCycle = 1f;
             effect.blackoutOnReturn = true;
             var show = Compile(1, set);
 
             Assert.AreEqual(87.5f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
+        }
+
+        [Test]
+        public void PhaseOffset_LetsOddAndEvenTakeTurns()
+        {
+            // A blink with short fades: 10% up, 40% on, 10% down, 40% off. The odd card runs
+            // half a cycle late, so one side is on while the other is off.
+            var set = Set(0.1f, 0.4f, 0.1f);
+            foreach (var parity in new[] { AlpsParity.Even, AlpsParity.Odd })
+            {
+                var effect = set.Add(AlpsEffectKind.Brightness);
+                effect.brightness.isRange = true;
+                effect.brightness.range = new Vector2(0f, 100f);
+            }
+
+            set.effects.Single(e => e.parity == AlpsParity.Odd).phaseOffset = 0.5f;
+            var show = Compile(4, set);
+
+            // Fixture index 0 is fixture 1, which is odd.
+            Assert.AreEqual(100f, Evaluate(show, 1, 0.3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Even is on.");
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.3f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Odd is off meanwhile.");
+            Assert.AreEqual(0f, Evaluate(show, 1, 0.8f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Then even is off.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.8f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "And odd is on.");
+            Assert.AreEqual(50f, Evaluate(show, 1, 0.55f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "Even half way through its fade out.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.55f)[AlpsShowEvaluator.FrameBrightness], 0.01f, "As odd is half way through its fade in.");
+        }
+
+        [Test]
+        public void PhaseOffset_RunsTheWholeCardLate()
+        {
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.isRange = true;
+            move.tilt.range = new Vector2(-40f, 40f);
+            move.phaseOffset = 0.25f;
+
+            var color = set.Add(AlpsEffectKind.Color);
+            color.colorStops.Add(new AlpsColorStop(Color.red));
+            color.colorStops.Add(new AlpsColorStop(Color.blue));
+            color.phaseOffset = 0.5f;
+            var show = Compile(1, set);
+
+            var frame = Evaluate(show, 0, 0.5f);
+            Assert.AreEqual(-20f, frame[AlpsShowEvaluator.FrameTilt], 0.01f, "Half a cycle in, tilt is where it was a quarter in.");
+            Assert.AreEqual(1f, frame[AlpsShowEvaluator.FrameRed], 0.01f, "The palette is still on its first colour.");
+        }
+
+        [Test]
+        public void PhaseOffset_MovesTheReturnLegWithTheCard()
+        {
+            var set = Set(0.5f, 0f, 0.5f);
+            var effect = set.Add(AlpsEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            effect.phaseOffset = 0.5f;
+            var show = Compile(1, set);
+
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.25f)[AlpsShowEvaluator.FrameBrightness], 0.001f, "Half a cycle late, the card is still on its way back.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.75f)[AlpsShowEvaluator.FrameBrightness], 0.01f);
         }
 
         [Test]
@@ -862,7 +936,7 @@ namespace AdzukiSoft.ALPS.Tests
             move.circleRadius.isRange = true;
             move.circleRadius.range = new Vector2(0f, 20f);
             move.circleRadius.useOwnPhase = true;
-            move.circleRadius.ownPhase.mode = AlpsPhaseMode.Forward;
+            move.circleRadius.ownPhase.SetShares(1f, 0f, 0f);
             move.circleRadius.ownPhase.ease = AlpsEaseType.Linear;
             move.circleRadius.ownPhase.beatsPerCycle = 8f;
             var show = Compile(1, set, 10f);
@@ -1073,7 +1147,7 @@ namespace AdzukiSoft.ALPS.Tests
         /// <summary>Every effect kind with ranges, own phase, palettes and an odd and even split.</summary>
         private static AlpsClipEffectSet FullSet()
         {
-            var set = Set(AlpsPhaseMode.PingPong);
+            var set = Set(0.5f, 0f, 0.5f);
             set.order = AlpsOrderMode.Symmetric;
             set.phase.fixtureGroupSize = 2;
             set.phase.spread = 0.5f;
@@ -1125,10 +1199,12 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
-        private static AlpsClipEffectSet Set(AlpsPhaseMode mode = AlpsPhaseMode.Forward)
+        /// <summary>A linear wave of one beat per cycle. By default it rises over the whole cycle, a sawtooth.</summary>
+        private static AlpsClipEffectSet Set(float rise = 1f, float holdHigh = 0f, float fall = 0f)
         {
             var set = new AlpsClipEffectSet();
-            set.phase.mode = mode;
+            set.phase.mode = AlpsPhaseMode.Wave;
+            set.phase.SetShares(rise, holdHigh, fall);
             set.phase.ease = AlpsEaseType.Linear;
             set.phase.beatsPerCycle = 1f;
             set.phase.spread = 0f;

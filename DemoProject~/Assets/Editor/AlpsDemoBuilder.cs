@@ -169,7 +169,7 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet WashSweep()
     {
-        var set = Set(AlpsPhaseMode.PingPong, AlpsEaseType.InOutSine, 4f);
+        var set = Set(AlpsEaseType.InOutSine, 4f);
         set.order = AlpsOrderMode.Symmetric;
         set.phase.spread = 0.5f;
 
@@ -190,7 +190,7 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet WashChase()
     {
-        var set = Set(AlpsPhaseMode.Forward, AlpsEaseType.OutQuad, 2f);
+        var set = Sawtooth(AlpsEaseType.OutQuad, 2f);
         set.phase.spread = 1f;
 
         var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
@@ -207,7 +207,7 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet WashOddEven()
     {
-        var set = Set(AlpsPhaseMode.PingPong, AlpsEaseType.InOutCubic, 8f);
+        var set = Set(AlpsEaseType.InOutCubic, 8f);
 
         set.Add(AlpsEffectKind.Move).tilt.value = -25f;
         set.Add(AlpsEffectKind.Move).tilt.value = 25f;
@@ -223,9 +223,9 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet BeamCircle()
     {
-        // Forward and linear, so the ring turns at a steady speed. A full spread walks the
+        // A linear sawtooth, so the ring turns at a steady speed. A full spread walks the
         // fixtures right around it, one per position.
-        var set = Set(AlpsPhaseMode.Forward, AlpsEaseType.Linear, 4f);
+        var set = Sawtooth(AlpsEaseType.Linear, 4f);
         set.phase.spread = 1f;
 
         var move = set.Add(AlpsEffectKind.Move);
@@ -244,7 +244,7 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet BeamPulse()
     {
-        var set = Set(AlpsPhaseMode.Forward, AlpsEaseType.Linear, 0.5f);
+        var set = Sawtooth(AlpsEaseType.Linear, 0.5f);
 
         var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
         brightness.isRange = true;
@@ -262,7 +262,7 @@ public static class AlpsDemoBuilder
 
     private static AlpsClipEffectSet GoboSpin()
     {
-        var set = Set(AlpsPhaseMode.Forward, AlpsEaseType.Linear, 4f);
+        var set = Sawtooth(AlpsEaseType.Linear, 4f);
 
         var gobo = set.Add(AlpsEffectKind.Gobo);
         gobo.goboStops.Add(new AlpsGoboStop(4));
@@ -281,12 +281,21 @@ public static class AlpsDemoBuilder
         return set;
     }
 
-    private static AlpsClipEffectSet Set(AlpsPhaseMode mode, AlpsEaseType ease, float beatsPerCycle)
+    /// <summary>A wave that goes up over half the cycle and comes back over the other half.</summary>
+    private static AlpsClipEffectSet Set(AlpsEaseType ease, float beatsPerCycle)
     {
         var set = new AlpsClipEffectSet();
-        set.phase.mode = mode;
+        set.phase.mode = AlpsPhaseMode.Wave;
         set.phase.ease = ease;
         set.phase.beatsPerCycle = beatsPerCycle;
+        return set;
+    }
+
+    /// <summary>A wave that rises over the whole cycle and drops back as the next one starts.</summary>
+    private static AlpsClipEffectSet Sawtooth(AlpsEaseType ease, float beatsPerCycle)
+    {
+        var set = Set(ease, beatsPerCycle);
+        set.phase.SetShares(1f, 0f, 0f);
         return set;
     }
 }

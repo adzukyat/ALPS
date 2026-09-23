@@ -9,11 +9,13 @@ namespace AdzukiSoft.ALPS
         Random,
     }
 
-    /// <summary>Mode: the waveform the shared phase generator produces.</summary>
+    /// <summary>
+    /// Mode: what the shared phase generator produces. A wave splits each cycle into a rise,
+    /// a high hold, a fall and a low hold. Random is a smooth seeded wander.
+    /// </summary>
     public enum AlpsPhaseMode
     {
-        Forward,
-        PingPong,
+        Wave,
         Random,
     }
 
@@ -65,7 +67,6 @@ namespace AdzukiSoft.ALPS
         OutExpo,
         OutBack,
         OutBounce,
-        Step,
         InCubic,
         OutCubic,
         InOutQuad,

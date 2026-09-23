@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AdzukiSoft.ALPS
 {
@@ -10,25 +11,48 @@ namespace AdzukiSoft.ALPS
     /// opts out with own phase. <see cref="AlpsShowEvaluator.Phase"/> does the math.
     /// </summary>
     [Serializable]
-    public class AlpsPhaseSettings
+    public class AlpsPhaseSettings : ISerializationCallbackReceiver
     {
-        public AlpsPhaseMode mode = AlpsPhaseMode.PingPong;
+        /// <summary>
+        /// The layout <see cref="version"/> marks. Settings saved before it had forward and
+        /// ping-pong modes and a step ease, and <see cref="OnAfterDeserialize"/> converts them.
+        /// </summary>
+        private const int CurrentVersion = 1;
 
-        /// <summary>Easing function. Ignored while <see cref="mode"/> is Random.</summary>
-        public AlpsEaseType ease = AlpsEaseType.InOutSine;
+        /// <summary>The ease list before version 1 still had Step here.</summary>
+        private const int LegacyStepEase = 11;
 
-        /// <summary>Ping-pong ratio: the share of the cycle spent going out. PingPong only.</summary>
-        [Range(0f, 1f)] public float pingPongRatio = 0.5f;
+        public AlpsPhaseMode mode = AlpsPhaseMode.Wave;
 
         /// <summary>
-        /// The share of the cycle held at the far end before coming back. The rest of the
-        /// cycle after the ratio and the hold is the return leg. Zero keeps the plain
-        /// triangle, which is also what clips saved before this field read as. PingPong only.
+        /// Easing function. The rise and the fall share it, the fall running it backwards.
+        /// Ignored while <see cref="mode"/> is Random.
         /// </summary>
-        [Range(0f, 1f)] public float pingPongHold;
+        public AlpsEaseType ease = AlpsEaseType.InOutSine;
 
-        /// <summary>The share of the cycle spent coming back, what the ratio and the hold leave over.</summary>
-        public float PingPongReturn => Mathf.Max(0f, 1f - pingPongRatio - pingPongHold);
+        /// <summary>
+        /// Distribution: the share of the cycle spent rising from 0 to 1. The four shares
+        /// (<see cref="rise"/>, <see cref="holdHigh"/>, <see cref="fall"/> and
+        /// <see cref="HoldLow"/>) always add up to one cycle. Wave only.
+        /// </summary>
+        [FormerlySerializedAs("pingPongRatio")]
+        [Range(0f, 1f)] public float rise = 0.5f;
+
+        /// <summary>The share of the cycle held at 1 after the rise. Wave only.</summary>
+        [FormerlySerializedAs("pingPongHold")]
+        [Range(0f, 1f)] public float holdHigh;
+
+        /// <summary>The share of the cycle spent falling back to 0 after the high hold. Wave only.</summary>
+        [Range(0f, 1f)] public float fall = 0.5f;
+
+        /// <summary>The share of the cycle held at 0 until the next one: what the other three leave over.</summary>
+        public float HoldLow => Mathf.Max(0f, 1f - rise - holdHigh - fall);
+
+        /// <summary>
+        /// Missing from anything saved before <see cref="CurrentVersion"/>, so it reads as 0
+        /// there. Every save writes the current one.
+        /// </summary>
+        [SerializeField, HideInInspector] private int version;
 
         /// <summary>Fixture group size: how many neighbouring fixtures share one phase.</summary>
         [Min(1)] public int fixtureGroupSize = 1;
@@ -73,14 +97,125 @@ namespace AdzukiSoft.ALPS
         {
             mode = other.mode;
             ease = other.ease;
-            pingPongRatio = other.pingPongRatio;
-            pingPongHold = other.pingPongHold;
+            rise = other.rise;
+            holdHigh = other.holdHigh;
+            fall = other.fall;
             fixtureGroupSize = other.fixtureGroupSize;
             spread = other.spread;
             spreadBeats = other.spreadBeats;
             spreadInBeats = other.spreadInBeats;
             beatsPerCycle = other.beatsPerCycle;
             inverse = other.inverse;
+        }
+
+        /// <summary>
+        /// Sets the three edited shares, keeping them inside one cycle: the rise first, then
+        /// the high hold and the fall in what is left. The low hold takes the rest.
+        /// </summary>
+        public void SetShares(float riseShare, float holdHighShare, float fallShare)
+        {
+            rise = Mathf.Clamp01(riseShare);
+            holdHigh = Mathf.Clamp(holdHighShare, 0f, 1f - rise);
+            fall = Mathf.Clamp(fallShare, 0f, 1f - rise - holdHigh);
+        }
+
+        public void OnBeforeSerialize()
+        {
+            version = CurrentVersion;
+        }
+
+        public void OnAfterDeserialize()
+        {
+            if (version < CurrentVersion)
+            {
+                UpgradeFromModes();
+            }
+
+            version = CurrentVersion;
+        }
+
+        /// <summary>
+        /// Converts settings saved with the forward / ping-pong / random modes. Forward was a
+        /// sawtooth, a rise over the whole cycle. Ping-pong kept its going out share and hold,
+        /// which the renamed fields already read, and came back over the rest. The ease list
+        /// lost Step, whose jump is now a share of zero.
+        /// </summary>
+        private void UpgradeFromModes()
+        {
+            const int legacyForward = 0;
+            const int legacyRandom = 2;
+            var legacyMode = (int)mode;
+
+            if (legacyMode == legacyForward)
+            {
+                SetShares(1f, 0f, 0f);
+            }
+            else
+            {
+                var up = Mathf.Clamp01(rise);
+                var top = Mathf.Clamp(holdHigh, 0f, 1f - up);
+                SetShares(up, top, 1f - up - top);
+            }
+
+            mode = legacyMode == legacyRandom ? AlpsPhaseMode.Random : AlpsPhaseMode.Wave;
+
+            var legacyEase = (int)ease;
+            if (legacyEase == LegacyStepEase)
+            {
+                ease = AlpsEaseType.Linear;
+                if (mode == AlpsPhaseMode.Wave)
+                {
+                    UpgradeStep(legacyMode == legacyForward);
+                }
+            }
+            else if (legacyEase > LegacyStepEase)
+            {
+                ease = (AlpsEaseType)(legacyEase - 1);
+            }
+        }
+
+        /// <summary>
+        /// A step ease switched the wave from 0 to 1 where it crossed its middle, so the phase
+        /// sat at 1 for one stretch of the cycle and at 0 for the rest. The new shares start
+        /// every cycle with the rise, so the stretch at 1 can only begin at the cycle's start,
+        /// or end at the cycle's end with invert on. When the old stretch sat in the middle,
+        /// its length is kept and it moves to whichever of the two is nearer.
+        /// </summary>
+        private void UpgradeStep(bool wasForward)
+        {
+            float start;
+            float length;
+            if (wasForward)
+            {
+                start = 0.5f;
+                length = 0.5f;
+            }
+            else
+            {
+                start = rise * 0.5f;
+                length = rise * 0.5f + holdHigh + fall * 0.5f;
+            }
+
+            // Inverting the old wave put the phase at 1 wherever it had been at 0.
+            if (inverse)
+            {
+                start = Mathf.Repeat(start + length, 1f);
+                length = 1f - length;
+            }
+
+            var end = Mathf.Repeat(start + length, 1f);
+            var toStart = Mathf.Min(start, 1f - start);
+            var toEnd = Mathf.Min(end, 1f - end);
+            if (toStart <= toEnd)
+            {
+                SetShares(0f, length, 0f);
+                inverse = false;
+            }
+            else
+            {
+                SetShares(0f, 1f - length, 0f);
+                inverse = true;
+            }
         }
     }
 }
