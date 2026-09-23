@@ -6,9 +6,14 @@ using NUnit.Framework;
 using UdonSharp;
 using UdonSharpEditor;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using VRC.Udon;
+using VRC.Udon.Common;
 using static AdzukiSoft.ALPS.Tests.AlpsPreviewSmokeFixtureBuilder;
 
 namespace AdzukiSoft.ALPS.Tests
@@ -287,8 +292,7 @@ namespace AdzukiSoft.ALPS.Tests
             context.Director.playableAsset = null;
             context.Director.playableAsset = context.Timeline;
 
-            var player = AlpsShowSetup.GetOrCreatePlayer(context.Director);
-            Assert.IsFalse(player.gameObject.activeSelf, "The player waits inactive in the authoring scene.");
+            Assert.IsNull(AlpsShowSetup.FindPlayer(context.Director), "The authoring scene holds no player.");
 
             var sourceActivation = context.Timeline.GetRootTracks().OfType<ActivationTrack>().Single();
             var sourceAnimation = context.Timeline.GetRootTracks().OfType<AnimationTrack>().Single();
@@ -303,6 +307,8 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 Assert.IsTrue(AlpsShowApplier.Apply(context.Director.gameObject.scene, true, errors), string.Join("\n", errors));
 
+                var player = AlpsShowSetup.FindPlayer(context.Director);
+                Assert.NotNull(player, "Applying creates the player under the director.");
                 var build = context.Director.playableAsset as TimelineAsset;
                 Assert.NotNull(build);
                 Assert.AreNotSame(context.Timeline, build, "The director switches to the build timeline.");
@@ -351,6 +357,71 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Level4_OtherReferencesToTheTimelineFollowTheBuildCopy()
+        {
+            var context = OpenFreshScene();
+
+            // Other players keep the timeline and hand it to a director of their own at run time.
+            var sourceActivation = context.Timeline.GetRootTracks().OfType<ActivationTrack>().Single();
+            var otherDirector = new GameObject("Other Director").AddComponent<PlayableDirector>();
+            var otherBinding = new GameObject("Other Target");
+            otherDirector.SetGenericBinding(sourceActivation, otherBinding);
+
+            var reaction = new UnityEvent();
+            UnityEventTools.AddObjectPersistentListener(reaction, (UnityAction<PlayableAsset>)otherDirector.Play, context.Timeline);
+            var receiver = new GameObject("Receiver").AddComponent<SignalReceiver>();
+            receiver.AddReaction(ScriptableObject.CreateInstance<SignalAsset>(), reaction);
+
+            var udon = new GameObject("Udon Holder").AddComponent<UdonBehaviour>();
+            udon.publicVariables.TryAddVariable(new UdonVariable<TimelineAsset>("timeline", context.Timeline));
+            udon.publicVariables.TryAddVariable(new UdonVariable<PlayableAsset[]>("timelines", new PlayableAsset[] { context.Timeline, null }));
+
+            var errors = new List<string>();
+            try
+            {
+                Assert.IsTrue(AlpsShowApplier.Apply(context.Director.gameObject.scene, true, errors), string.Join("\n", errors));
+
+                var build = context.Director.playableAsset as TimelineAsset;
+                Assert.AreNotSame(context.Timeline, build);
+                var receiverReferences = ObjectReferences(receiver);
+                CollectionAssert.Contains(receiverReferences, build, "The event argument follows the build copy.");
+                CollectionAssert.DoesNotContain(receiverReferences, context.Timeline);
+
+                Assert.IsTrue(udon.publicVariables.TryGetVariableValue("timeline", out TimelineAsset udonTimeline));
+                Assert.AreSame(build, udonTimeline);
+                Assert.IsTrue(udon.publicVariables.TryGetVariableValue("timelines", out PlayableAsset[] udonTimelines));
+                Assert.AreSame(build, udonTimelines[0]);
+                Assert.IsNull(udonTimelines[1]);
+
+                var buildActivation = build.GetRootTracks().OfType<ActivationTrack>().Single();
+                Assert.AreSame(otherBinding, otherDirector.GetGenericBinding(buildActivation),
+                    "A director handed the timeline later keeps its bindings.");
+            }
+            finally
+            {
+                if (AssetDatabase.IsValidFolder(AlpsShowSetup.GeneratedFolder))
+                {
+                    AssetDatabase.DeleteAsset(AlpsShowSetup.GeneratedFolder);
+                }
+            }
+        }
+
+        private static List<Object> ObjectReferences(Object target)
+        {
+            var result = new List<Object>();
+            var property = new SerializedObject(target).GetIterator();
+            while (property.Next(true))
+            {
+                if (property.propertyType == SerializedPropertyType.ObjectReference)
+                {
+                    result.Add(property.objectReferenceValue);
+                }
+            }
+
+            return result;
+        }
+
+        [Test]
         public void Level4_StripsAuthoringComponentsWithoutAShow()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -369,7 +440,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Level4_ValidationReportsAMissingPlayer()
+        public void Level4_ValidationNeedsNoPlayer()
         {
             var context = OpenFreshScene();
             var errors = new List<string>();
@@ -377,7 +448,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             AlpsShowApplier.Validate(context.Director.gameObject.scene, errors, warnings);
 
-            Assert.That(errors, Has.Some.Contains("Set Up Show Player"));
+            Assert.IsEmpty(errors, string.Join("\n", errors));
         }
     }
 }

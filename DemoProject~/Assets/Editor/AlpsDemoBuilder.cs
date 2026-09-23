@@ -44,7 +44,6 @@ public static class AlpsDemoBuilder
             }
         }
 
-        AlpsShowSetup.GetOrCreatePlayer(director);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();

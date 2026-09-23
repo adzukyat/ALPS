@@ -56,10 +56,6 @@ Select an ALPS clip to edit it in the Inspector:
 - **Effects**: move, cone, color, brightness, flicker and gobo. Move aims by angle, turns the beam in a circle around a center direction, or follows a user. Adding an effect that is already on the clip splits it into an even and an odd copy. Each effect has a phase offset that runs it that share of a cycle late, so setting the odd copy to 50% makes the two sides take turns.
 - **Profile**: save the clip to a profile asset, load it into other clips, or let a clip follow a profile.
 
-### 6. Show player
-
-Select the `PlayableDirector` and run `ALPS > Set Up Show Player`. This adds an inactive `ALPS Show Player` under the director. It stays empty in the authoring scene.
-
 ## Preview
 
 Scrub or play the Timeline. ALPS writes the evaluated show to the VRSL fixtures. When the Timeline window stops previewing, the fixture properties are reverted to their authored values and the scene is not marked dirty.
@@ -68,10 +64,10 @@ Scrub or play the Timeline. ALPS writes the evaluated show to the VRSL fixtures.
 
 Nothing needs to be baked by hand.
 
-- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, the show is compiled into the player, the player is switched on, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Containers are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
+- **VRChat Build & Test or Upload**: before the build starts, ALPS validates every open show and writes a build copy of each Timeline without the ALPS tracks to `Assets/ALPS/Generated`. While Unity processes the scene copy for the build, an `ALPS Show Player` is added under every director whose Timeline has ALPS tracks and the show is compiled into it, the director is pointed at the build Timeline with all other bindings carried over, and the fixture components are removed. Any other component in the scene that references the authoring Timeline, such as a player that assigns it to a director itself or an UdonBehaviour variable, is switched to the build copy too, and a director that holds bindings for the authoring Timeline gets the same bindings for the build copy. Containers are removed from every scene as well, and the children stay where they were laid out. The authoring scene and Timeline are never modified.
 - **Play mode and ClientSim**: the same conversion runs on the play mode scene, so what plays there is what VRChat plays.
 
-A build stops with an error when a director has ALPS tracks but no show player, or when a fixture has no target.
+A build stops with an error when a fixture has no target.
 
 ## Current limitations
 

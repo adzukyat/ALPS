@@ -94,15 +94,36 @@ namespace AdzukiSoft.ALPS.Editor
         public static void SwapAndRebind(PlayableDirector director, TimelineAsset source, TimelineAsset build)
         {
             var sourceTracks = FlattenWithoutAlps(source);
-            var buildTracks = FlattenWithoutAlps(build);
-            var bindings = new List<Object>(sourceTracks.Count);
-            foreach (var track in sourceTracks)
+            var bindings = ReadBindings(director, sourceTracks);
+            director.playableAsset = build;
+            WriteBindings(director, FlattenWithoutAlps(build), bindings);
+        }
+
+        /// <summary>
+        /// Gives <paramref name="build"/> the bindings <paramref name="director"/> holds for
+        /// <paramref name="source"/> without switching its asset. This is for a director that
+        /// is handed the timeline by another script while the world runs.
+        /// </summary>
+        public static void CarryBindings(PlayableDirector director, TimelineAsset source, TimelineAsset build)
+        {
+            var bindings = ReadBindings(director, FlattenWithoutAlps(source));
+            WriteBindings(director, FlattenWithoutAlps(build), bindings);
+        }
+
+        private static List<Object> ReadBindings(PlayableDirector director, List<TrackAsset> tracks)
+        {
+            var bindings = new List<Object>(tracks.Count);
+            foreach (var track in tracks)
             {
                 bindings.Add(director.GetGenericBinding(track));
             }
 
-            director.playableAsset = build;
-            var count = Mathf.Min(sourceTracks.Count, buildTracks.Count);
+            return bindings;
+        }
+
+        private static void WriteBindings(PlayableDirector director, List<TrackAsset> buildTracks, List<Object> bindings)
+        {
+            var count = Mathf.Min(bindings.Count, buildTracks.Count);
             for (var i = 0; i < count; i++)
             {
                 if (bindings[i] != null)

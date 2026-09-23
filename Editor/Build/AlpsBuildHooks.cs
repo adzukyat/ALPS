@@ -70,6 +70,37 @@ namespace AdzukiSoft.ALPS.Editor
     }
 
     /// <summary>
+    /// Makes the player's Udon program before play mode starts, since the scene processor
+    /// creates the player while Unity is already loading the play mode scene.
+    /// </summary>
+    [InitializeOnLoad]
+    internal static class AlpsPlayModePreflight
+    {
+        static AlpsPlayModePreflight()
+        {
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change != PlayModeStateChange.ExitingEditMode)
+            {
+                return;
+            }
+
+            for (var i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.isLoaded && AlpsShowApplier.FindShowDirectors(scene).Count > 0)
+                {
+                    AlpsShowSetup.EnsureProgramAsset();
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Applies the show to the scene copy Unity builds, and to the scene when entering
     /// play mode so ClientSim plays exactly what VRChat will. Runs before Udon serializes
     /// its programs, so the player's filled arrays are part of the build.

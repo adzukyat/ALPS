@@ -9,9 +9,10 @@ using VRSL;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Turns an authoring scene into the scene VRChat runs: the show is compiled into the
-    /// Udon player, the director switches to the build timeline, and the authoring only
-    /// components are removed. Only ever run on a scene copy that is not saved back.
+    /// Turns an authoring scene into the scene VRChat runs: the show is compiled into an
+    /// Udon player created under the director, the director switches to the build timeline,
+    /// and the authoring only components are removed. Only ever run on a scene copy that is
+    /// not saved back.
     /// </summary>
     public static class AlpsShowApplier
     {
@@ -40,32 +41,32 @@ namespace AdzukiSoft.ALPS.Editor
                 var show = AlpsShowCompiler.Compile(director);
                 errors.AddRange(show.errors);
                 warnings.AddRange(show.warnings);
-                if (AlpsShowSetup.FindPlayer(director) == null)
-                {
-                    errors.Add($"Director '{director.name}' has ALPS tracks but no show player. Run ALPS > Set Up Show Player.");
-                }
             }
         }
 
         /// <summary>
         /// Applies every show in <paramref name="scene"/>. With
         /// <paramref name="generateTimelines"/> off, build timelines must already exist,
-        /// which is the case during a real build after the preflight. The authoring
+        /// which is the case during a real build after the preflight. Other components that
+        /// name an authoring timeline are pointed at its build copy. The authoring
         /// components are stripped from every scene, with a show or without one.
         /// </summary>
         public static bool Apply(Scene scene, bool generateTimelines, List<string> errors)
         {
             var startErrors = errors.Count;
+            var builds = new Dictionary<TimelineAsset, TimelineAsset>();
             foreach (var director in FindShowDirectors(scene))
             {
-                ApplyDirector(director, generateTimelines, errors);
+                ApplyDirector(director, generateTimelines, builds, errors);
             }
 
+            AlpsBuildReferences.Retarget(scene, builds);
             StripAuthoringComponents(scene);
             return errors.Count == startErrors;
         }
 
-        private static void ApplyDirector(PlayableDirector director, bool generateTimelines, List<string> errors)
+        private static void ApplyDirector(PlayableDirector director, bool generateTimelines,
+            Dictionary<TimelineAsset, TimelineAsset> builds, List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
             var show = AlpsShowCompiler.Compile(director);
@@ -75,20 +76,27 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
-            var player = AlpsShowSetup.FindPlayer(director);
+            var player = AlpsShowSetup.GetOrCreatePlayer(director);
             if (player == null)
             {
-                errors.Add($"Director '{director.name}' has ALPS tracks but no show player. Run ALPS > Set Up Show Player.");
+                errors.Add($"The show player for director '{director.name}' could not be created.");
                 return;
             }
 
-            var build = generateTimelines
-                ? AlpsBuildTimeline.Generate(source, errors)
-                : UnityEditor.AssetDatabase.LoadAssetAtPath<TimelineAsset>(AlpsBuildTimeline.PathFor(source));
-            if (build == null)
+            // Directors sharing a timeline share its build copy. Generating it again would
+            // replace the asset the earlier director already points at.
+            if (!builds.TryGetValue(source, out var build))
             {
-                errors.Add($"The build timeline for '{source.name}' is missing.");
-                return;
+                build = generateTimelines
+                    ? AlpsBuildTimeline.Generate(source, errors)
+                    : UnityEditor.AssetDatabase.LoadAssetAtPath<TimelineAsset>(AlpsBuildTimeline.PathFor(source));
+                if (build == null)
+                {
+                    errors.Add($"The build timeline for '{source.name}' is missing.");
+                    return;
+                }
+
+                builds.Add(source, build);
             }
 
             CopyShowToPlayer(show, player, director);

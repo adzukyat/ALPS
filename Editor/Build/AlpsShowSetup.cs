@@ -3,15 +3,14 @@ using UdonSharp;
 using UdonSharp.Compiler;
 using UdonSharpEditor;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Puts the Udon player next to a director. The player stays inactive in the authoring
-    /// scene and is filled and switched on only in the scene VRChat builds or plays.
+    /// Puts the Udon player under a director. It is created only in the scene VRChat builds
+    /// or plays, so the authoring scene never holds one.
     /// </summary>
     public static class AlpsShowSetup
     {
@@ -19,27 +18,6 @@ namespace AdzukiSoft.ALPS.Editor
         public const string GeneratedFolder = "Assets/ALPS";
         public const string ProgramAssetFolder = GeneratedFolder + "/UdonSharpPrograms";
         public const string ProgramAssetPath = ProgramAssetFolder + "/AlpsShowPlayer.asset";
-
-        [MenuItem("ALPS/Set Up Show Player")]
-        public static void SetUpSelectedDirector()
-        {
-            var director = GetSelectedDirector();
-            if (director == null)
-            {
-                Debug.LogError("[ALPS] Select a GameObject with a PlayableDirector first.");
-                return;
-            }
-
-            var player = GetOrCreatePlayer(director);
-            EditorSceneManager.MarkSceneDirty(director.gameObject.scene);
-            EditorGUIUtility.PingObject(player);
-        }
-
-        [MenuItem("ALPS/Set Up Show Player", true)]
-        public static bool ValidateSetUpSelectedDirector()
-        {
-            return GetSelectedDirector() != null;
-        }
 
         /// <summary>The player that belongs to <paramref name="director"/>, or null.</summary>
         public static AlpsShowPlayer FindPlayer(PlayableDirector director)
@@ -60,6 +38,11 @@ namespace AdzukiSoft.ALPS.Editor
             return null;
         }
 
+        /// <summary>
+        /// The player of <paramref name="director"/>, created when it has none. A player an
+        /// older version left in the authoring scene is reused. Returns null when the Udon
+        /// program for the player cannot be made.
+        /// </summary>
         public static AlpsShowPlayer GetOrCreatePlayer(PlayableDirector director)
         {
             var player = FindPlayer(director);
@@ -68,17 +51,22 @@ namespace AdzukiSoft.ALPS.Editor
                 return player;
             }
 
+            if (EnsureProgramAsset() == null)
+            {
+                return null;
+            }
+
+            // Created inactive, so nothing runs before the show is copied in.
             var playerObject = new GameObject(PlayerName);
-            Undo.RegisterCreatedObjectUndo(playerObject, "Create ALPS Show Player");
+            playerObject.SetActive(false);
             playerObject.transform.SetParent(director.transform, false);
 
-            EnsureProgramAsset();
             player = UdonSharpUndo.AddComponent<AlpsShowPlayer>(playerObject);
             player.director = director;
             UdonSharpEditorUtility.CopyProxyToUdon(player);
 
-            // Inactive until a build or play mode fills it, so it never fights the preview.
-            playerObject.SetActive(false);
+            // Only the scene copy is touched, so the add needs no undo step.
+            Undo.ClearUndo(playerObject);
             return player;
         }
 
@@ -170,16 +158,6 @@ namespace AdzukiSoft.ALPS.Editor
 
                 current = next;
             }
-        }
-
-        private static PlayableDirector GetSelectedDirector()
-        {
-            if (Selection.activeObject is PlayableDirector selectedDirector)
-            {
-                return selectedDirector;
-            }
-
-            return Selection.activeGameObject != null ? Selection.activeGameObject.GetComponent<PlayableDirector>() : null;
         }
     }
 }
