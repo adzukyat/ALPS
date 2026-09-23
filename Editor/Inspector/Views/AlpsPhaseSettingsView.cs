@@ -28,7 +28,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly Action _onChanged;
 
         private readonly AlpsPhaseGraph _graph;
-        private readonly AlpsEasingGrid _easing;
+        private readonly AlpsEasingPicker _easing;
         private readonly AlpsShareBar _shares;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
@@ -99,19 +99,22 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsPhaseSettings.fall));
             Add(_shares);
 
-            _easing = new AlpsEasingGrid("イージング");
-            if (compact)
-            {
-                _easing.AddToClassList("alps-easegrid--compact");
-            }
-
-            _easing.SetValueWithoutNotify((int)settings.ease);
-            _easing.RegisterValueChangedCallback(evt =>
+            _easing = new AlpsEasingPicker("イージング", compact);
+            _easing.Rise.SetValueWithoutNotify((int)settings.ease);
+            _easing.Rise.RegisterValueChangedCallback(evt =>
             {
                 settings.ease = (AlpsEaseType)evt.newValue;
                 Changed();
             });
-            mixed?.Bind(_easing, settings, nameof(AlpsPhaseSettings.ease));
+            mixed?.Bind(_easing.Rise, settings, nameof(AlpsPhaseSettings.ease));
+
+            _easing.Fall.SetValueWithoutNotify((int)settings.fallEase);
+            _easing.Fall.RegisterValueChangedCallback(evt =>
+            {
+                settings.fallEase = (AlpsEaseType)evt.newValue;
+                Changed();
+            });
+            mixed?.Bind(_easing.Fall, settings, nameof(AlpsPhaseSettings.fallEase));
             Add(_easing);
 
             var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0")

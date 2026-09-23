@@ -68,7 +68,9 @@ namespace AdzukiSoft.ALPS
         public const int PhaseDelay = 6;
         public const int PhaseBeatsPerCycle = 7;
         public const int PhaseInverse = 8;
-        public const int PhaseStride = 9;
+        /// <summary>Ease of the fall. <see cref="PhaseEase"/> shapes the rise.</summary>
+        public const int PhaseFallEase = 9;
+        public const int PhaseStride = 10;
 
         // --- Clip rows ---------------------------------------------------------------------
 
@@ -350,23 +352,18 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// Phase φ in 0..1 from unwrapped cycles. A wave walks one cycle of
-        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert and ease apply to the
-        /// wave only, and the ease shapes the rise and the fall alike.
+        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert and the eases apply to
+        /// the wave only. Invert flips the eased wave upside down.
         /// </summary>
-        public static float Phase(int mode, int ease, float rise, float holdHigh, float fall, bool inverse, float cycles, int k, int seed)
+        public static float Phase(int mode, int riseEase, int fallEase, float rise, float holdHigh, float fall, bool inverse, float cycles, int k, int seed)
         {
             if (mode == PhaseRandom)
             {
                 return Mathf.Clamp01(Mathf.PerlinNoise(cycles * 2f, (k + 1) * 7.31f + seed * 0.137f));
             }
 
-            var u = Wave(rise, holdHigh, fall, cycles - Mathf.Floor(cycles));
-            if (inverse)
-            {
-                u = 1f - u;
-            }
-
-            return Ease(ease, u);
+            var u = Wave(riseEase, fallEase, rise, holdHigh, fall, cycles - Mathf.Floor(cycles));
+            return inverse ? 1f - u : u;
         }
 
         /// <summary><see cref="Phase"/> for the phase block at <paramref name="row"/> of <paramref name="data"/>.</summary>
@@ -375,6 +372,7 @@ namespace AdzukiSoft.ALPS
             return Phase(
                 ToInt(data[row + PhaseMode]),
                 ToInt(data[row + PhaseEase]),
+                ToInt(data[row + PhaseFallEase]),
                 data[row + PhaseRise],
                 data[row + PhaseHoldHigh],
                 data[row + PhaseFall],
@@ -388,15 +386,17 @@ namespace AdzukiSoft.ALPS
         /// One wave cycle at <paramref name="u"/> in 0..1: a rise from 0 to 1, a hold at 1, a
         /// fall back to 0, and a hold at 0 for whatever the three leave over. A share of zero
         /// skips its part, so a rise of 0 jumps straight up and a rise of 1 is a sawtooth.
+        /// The rise follows its ease forwards. The fall follows its own ease forwards in time
+        /// on the way down, so an OutBounce fall bounces at the bottom.
         /// </summary>
-        public static float Wave(float rise, float holdHigh, float fall, float u)
+        public static float Wave(int riseEase, int fallEase, float rise, float holdHigh, float fall, float u)
         {
             var riseEnd = Mathf.Clamp01(rise);
             var highEnd = riseEnd + Mathf.Clamp(holdHigh, 0f, 1f - riseEnd);
             var fallEnd = highEnd + Mathf.Clamp(fall, 0f, 1f - highEnd);
             if (u < riseEnd)
             {
-                return u / riseEnd;
+                return Ease(riseEase, u / riseEnd);
             }
 
             if (u < highEnd)
@@ -406,7 +406,7 @@ namespace AdzukiSoft.ALPS
 
             if (u < fallEnd)
             {
-                return 1f - (u - highEnd) / (fallEnd - highEnd);
+                return 1f - Ease(fallEase, (u - highEnd) / (fallEnd - highEnd));
             }
 
             return 0f;

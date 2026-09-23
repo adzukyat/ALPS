@@ -498,6 +498,7 @@ namespace AdzukiSoft.ALPS
                     _clipGroupSize);
                 row[offset + AlpsShowEvaluator.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
                 row[offset + AlpsShowEvaluator.PhaseInverse] = phase.inverse ? 1f : 0f;
+                row[offset + AlpsShowEvaluator.PhaseFallEase] = (int)phase.fallEase;
             }
 
             private static void WriteCurve(float[] row, int offset, AnimationCurve curve, float from, float to)

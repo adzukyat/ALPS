@@ -70,9 +70,16 @@ namespace AdzukiSoft.ALPS.Tests
 
         // ------------------------------------------------------------------ phase
 
-        private static float Wave(float rise, float holdHigh, float fall, float cycles, bool inverse = false, AlpsEaseType ease = AlpsEaseType.Linear)
+        private static float Wave(
+            float rise,
+            float holdHigh,
+            float fall,
+            float cycles,
+            bool inverse = false,
+            AlpsEaseType ease = AlpsEaseType.Linear,
+            AlpsEaseType fallEase = AlpsEaseType.Linear)
         {
-            return AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseWave, (int)ease, rise, holdHigh, fall, inverse, cycles, 0, 0);
+            return AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseWave, (int)ease, (int)fallEase, rise, holdHigh, fall, inverse, cycles, 0, 0);
         }
 
         [Test]
@@ -90,12 +97,52 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Phase_TheFallRunsTheRiseEaseBackwards()
+        public void Phase_TheFallFollowsItsOwnEaseForwards()
         {
-            var up = Wave(0.5f, 0f, 0.5f, 0.1f, ease: AlpsEaseType.InQuad);
-            var down = Wave(0.5f, 0f, 0.5f, 0.9f, ease: AlpsEaseType.InQuad);
+            // 20% into each half: InQuad rises to 0.04, OutQuad falls 0.36 of the way down.
+            var up = Wave(0.5f, 0f, 0.5f, 0.1f, ease: AlpsEaseType.InQuad, fallEase: AlpsEaseType.OutQuad);
+            var down = Wave(0.5f, 0f, 0.5f, 0.6f, ease: AlpsEaseType.InQuad, fallEase: AlpsEaseType.OutQuad);
             Assert.AreEqual(0.04f, up, 0.001f);
+            Assert.AreEqual(0.64f, down, 0.001f);
+
+            var linearFall = Wave(0.5f, 0f, 0.5f, 0.6f, ease: AlpsEaseType.InQuad);
+            Assert.AreEqual(0.8f, linearFall, 0.001f, "The rise ease does not reach the fall.");
+        }
+
+        [Test]
+        public void Phase_ReversedFallMirrorsTheRise()
+        {
+            // The reverse of the rise ease on the fall is the old shared ease run backwards.
+            var up = Wave(0.5f, 0f, 0.5f, 0.1f, ease: AlpsEaseType.InQuad, fallEase: AlpsEaseType.OutQuad);
+            var down = Wave(0.5f, 0f, 0.5f, 0.9f, ease: AlpsEaseType.InQuad, fallEase: AlpsEaseType.OutQuad);
             Assert.AreEqual(up, down, 0.001f, "The same distance from the bottom reads the same on both sides.");
+        }
+
+        [Test]
+        public void Phase_InverseFlipsTheEasedWave()
+        {
+            var plain = Wave(0.5f, 0f, 0.5f, 0.1f, ease: AlpsEaseType.InQuad, fallEase: AlpsEaseType.OutBounce);
+            var inverted = Wave(0.5f, 0f, 0.5f, 0.1f, true, AlpsEaseType.InQuad, AlpsEaseType.OutBounce);
+            Assert.AreEqual(1f - plain, inverted, 0.0001f);
+        }
+
+        [Test]
+        public void Ease_ReversedPlaysTheCurveBackwards()
+        {
+            foreach (AlpsEaseType type in System.Enum.GetValues(typeof(AlpsEaseType)))
+            {
+                var reversed = AlpsEase.Reversed(type);
+                Assert.AreEqual(type, AlpsEase.Reversed(reversed), $"{type} reversed twice is itself.");
+                for (var i = 0; i <= 20; i++)
+                {
+                    var t = i / 20f;
+                    Assert.AreEqual(
+                        1f - AlpsEase.Evaluate(type, 1f - t),
+                        AlpsEase.Evaluate(reversed, t),
+                        0.0005f,
+                        $"{reversed} is not {type} backwards at {t}.");
+                }
+            }
         }
 
         [Test]
@@ -104,8 +151,8 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 50; i++)
             {
                 var cycles = i * 0.137f;
-                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
-                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var a = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var b = AlpsShowEvaluator.Phase(AlpsShowEvaluator.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
                 Assert.That(a, Is.InRange(0f, 1f));
                 Assert.AreEqual(a, b);
             }

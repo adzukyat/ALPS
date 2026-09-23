@@ -14,10 +14,11 @@ namespace AdzukiSoft.ALPS
     public class AlpsPhaseSettings : ISerializationCallbackReceiver
     {
         /// <summary>
-        /// The layout <see cref="version"/> marks. Settings saved before it had forward and
-        /// ping-pong modes and a step ease, and <see cref="OnAfterDeserialize"/> converts them.
+        /// The layout <see cref="version"/> marks. Settings saved before version 1 had forward
+        /// and ping-pong modes and a step ease. Before version 2 the rise and the fall shared
+        /// one ease, the fall running it backwards. <see cref="OnAfterDeserialize"/> converts both.
         /// </summary>
-        private const int CurrentVersion = 1;
+        private const int CurrentVersion = 2;
 
         /// <summary>The ease list before version 1 still had Step here.</summary>
         private const int LegacyStepEase = 11;
@@ -25,10 +26,16 @@ namespace AdzukiSoft.ALPS
         public AlpsPhaseMode mode = AlpsPhaseMode.Wave;
 
         /// <summary>
-        /// Easing function. The rise and the fall share it, the fall running it backwards.
-        /// Ignored while <see cref="mode"/> is Random.
+        /// Easing of the rise. Kept under its old name, since JsonUtility cannot follow a
+        /// rename. Ignored while <see cref="mode"/> is Random.
         /// </summary>
         public AlpsEaseType ease = AlpsEaseType.InOutSine;
+
+        /// <summary>
+        /// Easing of the fall, read forwards in time on the way down, so an Out curve slows
+        /// into the bottom. Ignored while <see cref="mode"/> is Random.
+        /// </summary>
+        public AlpsEaseType fallEase = AlpsEaseType.InOutSine;
 
         /// <summary>
         /// Distribution: the share of the cycle spent rising from 0 to 1. The four shares
@@ -97,6 +104,7 @@ namespace AdzukiSoft.ALPS
         {
             mode = other.mode;
             ease = other.ease;
+            fallEase = other.fallEase;
             rise = other.rise;
             holdHigh = other.holdHigh;
             fall = other.fall;
@@ -126,12 +134,31 @@ namespace AdzukiSoft.ALPS
 
         public void OnAfterDeserialize()
         {
-            if (version < CurrentVersion)
+            if (version < 1)
             {
                 UpgradeFromModes();
             }
 
+            if (version < 2)
+            {
+                SplitEase();
+            }
+
             version = CurrentVersion;
+        }
+
+        /// <summary>
+        /// Gives the fall its own ease from the one the rise and fall shared. The fall ran the
+        /// shared ease backwards, which is its reverse read forwards. Invert used to apply
+        /// before the ease and now flips the eased wave, so an inverted wave swaps the two to
+        /// keep the same motion.
+        /// </summary>
+        private void SplitEase()
+        {
+            var shared = ease;
+            var reversed = AlpsEase.Reversed(shared);
+            ease = inverse ? reversed : shared;
+            fallEase = inverse ? shared : reversed;
         }
 
         /// <summary>

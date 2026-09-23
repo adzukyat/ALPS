@@ -513,7 +513,7 @@ namespace AdzukiSoft.ALPS.Tests
             set.phase.mode = AlpsPhaseMode.Random;
             var view = new AlpsClipInspectorView(set);
 
-            var easing = view.Query<AlpsEasingGrid>().First();
+            var easing = view.Query<AlpsEasingPicker>().First();
             var inverse = view.Query<AlpsToggleSwitch>().ToList().First(t => t.label == "反転");
 
             Assert.AreEqual(DisplayStyle.None, easing.style.display.value, "イージング must be hidden in ランダム.");
@@ -1773,6 +1773,69 @@ namespace AdzukiSoft.ALPS.Tests
 
             // A zero length rise or fall makes the jump a step ease used to.
             Assert.AreEqual(18, easing.Query(className: "alps-easegrid__tile").ToList().Count);
+        }
+
+        [UnityTest]
+        public IEnumerator EasingPicker_SwitchesBetweenTheRiseAndTheFall()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            set.phase.ease = AlpsEaseType.InQuad;
+            set.phase.fallEase = AlpsEaseType.OutBounce;
+
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            var view = new AlpsClipInspectorView(set);
+            var picker = view.Query<AlpsEasingPicker>().First();
+            try
+            {
+                window.rootVisualElement.Add(view);
+                picker.Side.value = AlpsEasingPicker.RiseSide;
+                yield return null;
+
+                Assert.AreEqual("イージング", picker.Side.label, "The switch carries the row label.");
+                Assert.AreEqual(DisplayStyle.Flex, picker.Rise.style.display.value);
+                Assert.AreEqual(DisplayStyle.None, picker.Fall.style.display.value);
+                Assert.AreEqual((int)AlpsEaseType.InQuad, picker.Rise.value);
+                Assert.AreEqual((int)AlpsEaseType.OutBounce, picker.Fall.value);
+                Assert.AreEqual(
+                    picker.Side.Q(className: "alps-seg__input").worldBound.x,
+                    picker.Rise.worldBound.x,
+                    0.6f,
+                    "The tiles start in the input column, under the switch.");
+
+                picker.Side.value = AlpsEasingPicker.FallSide;
+                Assert.AreEqual(DisplayStyle.None, picker.Rise.style.display.value);
+                Assert.AreEqual(DisplayStyle.Flex, picker.Fall.style.display.value);
+                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Switching sides edits nothing.");
+                Assert.AreEqual(AlpsEaseType.OutBounce, set.phase.fallEase);
+
+                picker.Fall.value = (int)AlpsEaseType.InBack;
+                Assert.AreEqual(AlpsEaseType.InBack, set.phase.fallEase);
+                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Picking a fall leaves the rise alone.");
+
+                var rebuilt = new AlpsClipInspectorView(set).Query<AlpsEasingPicker>().First();
+                Assert.AreEqual(AlpsEasingPicker.FallSide, rebuilt.Side.value, "A rebuild keeps the side being edited.");
+            }
+            finally
+            {
+                picker.Side.value = AlpsEasingPicker.RiseSide;
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void EasingGrid_FallTilesDrawTheCurveOnItsWayDown()
+        {
+            Assert.AreEqual(1f, AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 0f), 0.0001f);
+            Assert.AreEqual(0f, AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 1f), 0.0001f);
+            Assert.AreEqual(
+                AlpsShowEvaluator.Wave(0, (int)AlpsEaseType.OutQuad, 0f, 0f, 1f, 0.3f),
+                AlpsEasingGrid.TileValue(AlpsEaseType.OutQuad, true, 0.3f),
+                0.0001f,
+                "A fall tile is the fall the wave plays.");
         }
 
         [Test]

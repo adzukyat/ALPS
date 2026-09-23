@@ -11,5 +11,29 @@ namespace AdzukiSoft.ALPS
         {
             return AlpsShowEvaluator.Ease((int)type, t);
         }
+
+        /// <summary>
+        /// The curve that plays <paramref name="type"/> backwards, 1 - ease(1 - t): In and Out
+        /// trade places, and Linear and the InOut curves are their own reverse.
+        /// </summary>
+        public static AlpsEaseType Reversed(AlpsEaseType type)
+        {
+            switch (type)
+            {
+                case AlpsEaseType.InSine: return AlpsEaseType.OutSine;
+                case AlpsEaseType.OutSine: return AlpsEaseType.InSine;
+                case AlpsEaseType.InQuad: return AlpsEaseType.OutQuad;
+                case AlpsEaseType.OutQuad: return AlpsEaseType.InQuad;
+                case AlpsEaseType.InCubic: return AlpsEaseType.OutCubic;
+                case AlpsEaseType.OutCubic: return AlpsEaseType.InCubic;
+                case AlpsEaseType.InExpo: return AlpsEaseType.OutExpo;
+                case AlpsEaseType.OutExpo: return AlpsEaseType.InExpo;
+                case AlpsEaseType.InBack: return AlpsEaseType.OutBack;
+                case AlpsEaseType.OutBack: return AlpsEaseType.InBack;
+                case AlpsEaseType.InBounce: return AlpsEaseType.OutBounce;
+                case AlpsEaseType.OutBounce: return AlpsEaseType.InBounce;
+                default: return type;
+            }
+        }
     }
 }

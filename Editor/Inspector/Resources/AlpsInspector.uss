@@ -657,6 +657,17 @@
     height: 15px;
 }
 
+/* The 上り / 下り switch and the grid it picks read as one pair, so the grid follows the
+   switch closer than the flow's own spacing. */
+.alps-root .alps-easepicker__tiles {
+    margin-top: 4px;
+}
+
+.alps-root .alps-easepicker__grid {
+    flex-basis: 0;
+    flex-grow: 1;
+}
+
 /* -------------------------------------------------------- graph preview */
 
 .alps-graph {

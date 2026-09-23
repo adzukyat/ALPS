@@ -7,7 +7,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Easing picker tile grid listing every curve. Each thumbnail plots the actual
-    /// <see cref="AlpsEase"/> curve, so a tile can never drift from what plays back.
+    /// <see cref="AlpsEase"/> curve, so a tile can never drift from what plays back. A grid
+    /// for the fall draws each curve on its way down, the way the fall plays it.
     /// </summary>
     public class AlpsEasingGrid : BaseField<int>
     {
@@ -16,11 +17,12 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly List<VisualElement> _tiles = new List<VisualElement>();
         private readonly List<AlpsEaseType> _types = new List<AlpsEaseType>();
 
-        public AlpsEasingGrid(string label)
+        public AlpsEasingGrid(string label, bool falling = false)
             : base(label, new VisualElement())
         {
             AddToClassList(ussClassName);
             AddToClassList("alps-row--top");
+            Falling = falling;
 
             var container = this.Q(className: BaseField<int>.inputUssClassName);
             container.AddToClassList(ussClassName + "__input");
@@ -30,7 +32,7 @@ namespace AdzukiSoft.ALPS.Editor
                 var easeType = type;
                 var tile = new VisualElement { tooltip = easeType.ToString() };
                 tile.AddToClassList(ussClassName + "__tile");
-                tile.Add(BuildCurve(easeType));
+                tile.Add(BuildCurve(easeType, falling));
                 tile.RegisterCallback<PointerDownEvent>(_ => value = (int)easeType);
 
                 container.Add(tile);
@@ -41,7 +43,20 @@ namespace AdzukiSoft.ALPS.Editor
             SetValueWithoutNotify((int)AlpsEaseType.Linear);
         }
 
-        private static VisualElement BuildCurve(AlpsEaseType easeType)
+        /// <summary>True when the tiles draw the fall, from the top down.</summary>
+        public bool Falling { get; }
+
+        /// <summary>
+        /// The curve a tile draws, in 0..1 over the part it shapes: the ease itself for the
+        /// rise, and one minus it for the fall, matching <see cref="AlpsShowEvaluator.Wave"/>.
+        /// </summary>
+        public static float TileValue(AlpsEaseType easeType, bool falling, float t)
+        {
+            var v = AlpsEase.Evaluate(easeType, t);
+            return falling ? 1f - v : v;
+        }
+
+        private static VisualElement BuildCurve(AlpsEaseType easeType, bool falling)
         {
             // 24x18 view box with a 2px inset.
             var points = new List<Vector2>();
@@ -49,7 +64,7 @@ namespace AdzukiSoft.ALPS.Editor
             for (var i = 0; i <= samples; i++)
             {
                 var t = i / (float)samples;
-                var v = AlpsEase.Evaluate(easeType, t);
+                var v = TileValue(easeType, falling, t);
                 points.Add(new Vector2(2f + t * 20f, 16f - v * 14f));
             }
 

@@ -191,11 +191,53 @@ namespace AdzukiSoft.ALPS.Tests
             return profile;
         }
 
+        [Test]
+        public void SharedEase_SplitsIntoTheSameRiseAndFall()
+        {
+            var settings = Load("{\"version\":1,\"mode\":0,\"ease\":4,\"rise\":0.3,\"holdHigh\":0.2,\"fall\":0.4}");
+
+            Assert.AreEqual(AlpsEaseType.InQuad, settings.ease);
+            Assert.AreEqual(AlpsEaseType.OutQuad, settings.fallEase, "The fall ran the shared ease backwards.");
+            AssertSamePhase(settings, u => SharedEasePhase(AlpsEaseType.InQuad, settings, false, u));
+        }
+
+        [Test]
+        public void SharedEase_InvertedSwapsTheTwoAndKeepsTheMotion()
+        {
+            var settings = Load("{\"version\":1,\"mode\":0,\"ease\":10,\"rise\":0.3,\"holdHigh\":0.2,\"fall\":0.4,\"inverse\":true}");
+
+            Assert.AreEqual(AlpsEaseType.InBounce, settings.ease);
+            Assert.AreEqual(AlpsEaseType.OutBounce, settings.fallEase);
+            AssertSamePhase(settings, u => SharedEasePhase(AlpsEaseType.OutBounce, settings, true, u));
+        }
+
+        [Test]
+        public void SavedFallEase_IsNotSplitAgain()
+        {
+            var settings = new AlpsPhaseSettings { ease = AlpsEaseType.InQuad, fallEase = AlpsEaseType.InBounce, inverse = true };
+
+            var reloaded = Load(JsonUtility.ToJson(settings));
+
+            Assert.AreEqual(AlpsEaseType.InQuad, reloaded.ease);
+            Assert.AreEqual(AlpsEaseType.InBounce, reloaded.fallEase);
+        }
+
+        /// <summary>
+        /// The phase before version 2: the plain wave, inverted, then shaped by one ease that
+        /// the fall ran backwards.
+        /// </summary>
+        private static float SharedEasePhase(AlpsEaseType shared, AlpsPhaseSettings settings, bool inverse, float u)
+        {
+            var wave = AlpsShowEvaluator.Wave(0, 0, settings.rise, settings.holdHigh, settings.fall, u);
+            return AlpsEase.Evaluate(shared, inverse ? 1f - wave : wave);
+        }
+
         private static float Phase(AlpsPhaseSettings settings, float u)
         {
             return AlpsShowEvaluator.Phase(
                 (int)settings.mode,
                 (int)settings.ease,
+                (int)settings.fallEase,
                 settings.rise,
                 settings.holdHigh,
                 settings.fall,

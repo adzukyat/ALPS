@@ -285,6 +285,7 @@ public static class AlpsDemoBuilder
         var set = new AlpsClipEffectSet();
         set.phase.mode = AlpsPhaseMode.Wave;
         set.phase.ease = ease;
+        set.phase.fallEase = ease;
         set.phase.beatsPerCycle = beatsPerCycle;
         return set;
     }
