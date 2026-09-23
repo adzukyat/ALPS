@@ -15,6 +15,7 @@ namespace AdzukiSoft.ALPS.Editor
     {
         private static FontAsset _font;
         private static bool _fontBuilt;
+        private static bool _watching;
         private static readonly List<FontAsset> _built = new List<FontAsset>();
 
         /// <summary>Sets the font on the root. Without a usable font the theme's default stays.</summary>
@@ -152,11 +153,50 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             _built.Add(asset);
+            if (!_watching)
+            {
+                _watching = true;
+                EditorApplication.update += KeepNewAtlases;
+            }
         }
 
+        /// <summary>
+        /// A dynamic asset opens another atlas page whenever the current one is full, which
+        /// Japanese text at this sampling size does after a few dozen glyphs. The page is a
+        /// plain new Texture2D, so it needs DontSave too before play mode ends.
+        /// </summary>
+        private static void KeepNewAtlases()
+        {
+            foreach (var asset in _built)
+            {
+                if (asset == null || asset.atlasTextures == null)
+                {
+                    continue;
+                }
+
+                foreach (var texture in asset.atlasTextures)
+                {
+                    if (texture != null && (texture.hideFlags & HideFlags.DontSave) != HideFlags.DontSave)
+                    {
+                        texture.hideFlags |= HideFlags.DontSave;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// The atlas array grows by doubling, so its unused tail is really null. A page that
+        /// was destroyed is only null by Unity's comparison, and its glyphs no longer render.
+        /// </summary>
         private static bool IsIntact(FontAsset asset)
         {
-            return asset != null && asset.material != null;
+            if (asset == null || asset.material == null)
+            {
+                return false;
+            }
+
+            return asset.atlasTextures == null
+                || asset.atlasTextures.All(t => ReferenceEquals(t, null) || t != null);
         }
 
         /// <summary>`-unity-font-style: bold` takes weight 700 from this table rather than synthesising it.</summary>
