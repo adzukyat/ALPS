@@ -323,7 +323,8 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Starts the line on the first child and ends it on the last, and keeps a rotation
-        /// every child shares. A lone child gets a line through it.
+        /// every child shares. A lone child, or children all on one spot, get the default
+        /// line moved onto them.
         /// </summary>
         private static void SeedFromChildren(AlpsArrangement arrangement)
         {
@@ -335,19 +336,20 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
-            var first = root.GetChild(0);
-            if (count == 1)
+            var first = root.GetChild(0).localPosition;
+            var last = root.GetChild(count - 1).localPosition;
+            if ((last - first).sqrMagnitude < PositionTolerance)
             {
-                settings.lineStart = first.localPosition + settings.lineStart;
-                settings.lineEnd = first.localPosition + settings.lineEnd;
+                settings.lineStart = first + settings.lineStart;
+                settings.lineEnd = first + settings.lineEnd;
             }
             else
             {
-                settings.lineStart = first.localPosition;
-                settings.lineEnd = root.GetChild(count - 1).localPosition;
+                settings.lineStart = first;
+                settings.lineEnd = last;
             }
 
-            var rotation = first.localRotation;
+            var rotation = root.GetChild(0).localRotation;
             for (var i = 1; i < count; i++)
             {
                 if (Quaternion.Angle(root.GetChild(i).localRotation, rotation) > RotationTolerance)
@@ -394,7 +396,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        [MenuItem("CONTEXT/AlpsArrangement/再配置")]
+        [MenuItem("CONTEXT/AlpsArrangement/Rearrange Children")]
         private static void Rearrange(MenuCommand command)
         {
             if (command.context is AlpsArrangement arrangement)

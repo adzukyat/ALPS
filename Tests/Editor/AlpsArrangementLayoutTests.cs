@@ -122,6 +122,23 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Initialize_MovesTheDefaultLineOntoChildrenThatShareASpot()
+        {
+            var arrangement = Rig(3, initialized: false);
+            var children = Children(arrangement);
+            foreach (var child in children)
+            {
+                child.localPosition = new Vector3(1f, 2f, 3f);
+            }
+
+            AlpsArrangementLayout.Refresh(arrangement, recordUndo: false);
+
+            AssertPosition(new Vector3(-1f, 2f, 3f), children[0]);
+            AssertPosition(new Vector3(1f, 2f, 3f), children[1]);
+            AssertPosition(new Vector3(3f, 2f, 3f), children[2]);
+        }
+
+        [Test]
         public void Initialize_KeepsTheFixtureGroupOrder()
         {
             var arrangement = Rig(3, initialized: false);

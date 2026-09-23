@@ -22,13 +22,15 @@ Gobo rotation needs VRSL shaders that accept a script driven gobo angle. The pat
 
 Add `ALPS VRSL Fixture` (`Adzuki Live Performance System > ALPS VRSL Fixture`) to each VRSL DMX Static fixture, for example `VRSL-DMX-Mover-Spotlight-H-13CH`. Its `Target` is found in children when left empty.
 
+New fixtures can also come from the Hierarchy: right click (or the + button, or the GameObject menu) and pick `ALPS > Mover Spotlight`, `Mover Wash Light`, `Par Light`, `Blinder`, `Light Bar`, `Multi Light Bar` or `Laser`. Each is the VRSL horizontal mode prefab with `ALPS VRSL Fixture` already on it. It goes under the object you clicked, or next to it when that object is a fixture, so repeating the menu on the last fixture keeps filling the same group.
+
 ### 2. Fixture groups
 
 Add `ALPS Fixture Group` to a parent object and list its fixtures. The list order is the fixture number used by the order, the odd and even split, and every per fixture offset. `Find Fixtures In Children` in the component menu fills the list.
 
 ### 3. Arrangement (optional)
 
-Add `ALPS Arrangement` (`Adzuki Live Performance System > ALPS Arrangement`) to a parent object to lay its direct children out for you. Fixtures and any other objects work, and inactive children keep their place. The children are kept laid out while you edit: changing a value or dragging a handle in the Scene view moves them at once, adding, removing or reordering children in the Hierarchy lays them out again, and a child moved by hand goes back. Untick the component to pause it and adjust children by hand.
+Add `ALPS Arrangement` (`Adzuki Live Performance System > ALPS Arrangement`) to a parent object to lay its direct children out for you, or create one from the Hierarchy with `ALPS > Arrangement`, which comes with a fixture group ready for fixtures to be added under it. Fixtures and any other objects work, and inactive children keep their place. The children are kept laid out while you edit: changing a value or dragging a handle in the Scene view moves them at once, adding, removing or reordering children in the Hierarchy lays them out again, and a child moved by hand goes back. Untick the component to pause it and adjust children by hand.
 
 - **形状**: 直線 between a start and an end point, 円 with a radius (an arc when 角度 is under 360°), 多角形 with a number of sides, 矩形 with a width and depth, or グリッド with a column count. Everything is in the object's local space, with planar shapes on its XZ plane, so rotate the object to stand a shape up. The start and end points, the radius, the width and the depth have handles in the Scene view.
 - **配置**: 端から端 puts the first and last child on the ends, 均等割り gives every child an equal share and sits it in the middle of it.
