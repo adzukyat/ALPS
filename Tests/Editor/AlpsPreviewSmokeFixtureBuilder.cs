@@ -249,8 +249,12 @@ namespace AdzukiSoft.ALPS.Tests
             public readonly float ConeLength;
             public readonly int Gobo;
 
+            /// <summary>What the first renderer's property block hands the shaders.</summary>
+            public readonly BlockState Block;
+
             private FixtureState(VRStageLighting_DMX_Static fixture)
             {
+                Block = new BlockState(fixture.objRenderers[0]);
                 EnableDmx = fixture.enableDMXChannels;
                 Pan = fixture.panOffsetBlueGreen;
                 Tilt = fixture.tiltOffsetBlue;
@@ -268,7 +272,42 @@ namespace AdzukiSoft.ALPS.Tests
 
             public override string ToString()
             {
-                return $"dmx={EnableDmx}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, gobo={Gobo}";
+                return $"dmx={EnableDmx}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, gobo={Gobo}\n  block: {Block}";
+            }
+        }
+
+        internal readonly struct BlockState
+        {
+            public readonly float Pan;
+            public readonly float Tilt;
+            public readonly float Intensity;
+            public readonly Color Emission;
+            public readonly Color EmissionDmx;
+            public readonly float ConeWidth;
+            public readonly float ConeLength;
+            public readonly float MaxConeLength;
+            public readonly float Gobo;
+            public readonly float GoboRotation;
+
+            public BlockState(Renderer renderer)
+            {
+                var block = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(block);
+                Pan = block.GetFloat("_FixtureBaseRotationY");
+                Tilt = block.GetFloat("_FixtureRotationX");
+                Intensity = block.GetFloat("_GlobalIntensity");
+                Emission = block.GetColor("_Emission");
+                EmissionDmx = block.GetColor("_EmissionDMX");
+                ConeWidth = block.GetFloat("_ConeWidth");
+                ConeLength = block.GetFloat("_ConeLength");
+                MaxConeLength = block.GetFloat("_MaxConeLength");
+                Gobo = block.GetFloat("_ProjectionSelection");
+                GoboRotation = block.GetFloat(AlpsShowPlayer.GoboRotationProperty);
+            }
+
+            public override string ToString()
+            {
+                return $"pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, emission={Emission}, emissionDmx={EmissionDmx}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, maxConeLength={MaxConeLength:0.###}, gobo={Gobo}, goboRotation={GoboRotation:0.###}";
             }
         }
     }

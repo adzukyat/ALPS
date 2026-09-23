@@ -1354,26 +1354,95 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void FrameChange_WritesOnlyWhatChanged()
+        public void SharedPhase_IsWorkedOutWheneverAValueFollowsIt()
+        {
+            AlpsClipEffectSet With(System.Action<AlpsClipEffectSet> build)
+            {
+                var set = Set(0.4f, 0.1f, 0.3f);
+                set.phase.ease = AlpsEaseType.InOutSine;
+                set.phase.spread = 0.5f;
+                build(set);
+                return set;
+            }
+
+            var cases = new (string name, AlpsClipEffectSet set, bool uses)[]
+            {
+                ("values only", With(s =>
+                {
+                    s.Add(AlpsEffectKind.Brightness).brightness.value = 40f;
+                    s.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
+                    s.Add(AlpsEffectKind.Gobo).goboStops.Add(new AlpsGoboStop(2));
+                    s.Add(AlpsEffectKind.Flicker);
+                }), false),
+                ("full set", FullSet(), true),
+                ("ranged cone", With(s => s.Add(AlpsEffectKind.Cone).coneLength.isRange = true), true),
+                ("circle", With(s => s.Add(AlpsEffectKind.Move).moveMode = AlpsMoveMode.Circle), true),
+                ("color stops", With(s =>
+                {
+                    var color = s.Add(AlpsEffectKind.Color);
+                    color.colorStops.Add(new AlpsColorStop(Color.red));
+                    color.colorStops.Add(new AlpsColorStop(Color.blue));
+                }), true),
+                ("one gradient", With(s =>
+                {
+                    var stop = new AlpsColorStop(Color.red) { isGradient = true };
+                    s.Add(AlpsEffectKind.Color).colorStops.Add(stop);
+                }), true),
+                ("gobo stops", With(s =>
+                {
+                    var gobo = s.Add(AlpsEffectKind.Gobo);
+                    gobo.goboStops.Add(new AlpsGoboStop(2));
+                    gobo.goboStops.Add(new AlpsGoboStop(5));
+                }), true),
+                ("offset brightness", With(s =>
+                {
+                    var brightness = s.Add(AlpsEffectKind.Brightness);
+                    brightness.brightness.isRange = true;
+                    brightness.phaseOffset = 0.25f;
+                }), true),
+            };
+
+            foreach (var (name, set, uses) in cases)
+            {
+                var show = Compile(6, set, 4f);
+                Assert.AreEqual(uses ? 1f : 0f, show.clips[AlpsShowEvaluator.ClipUsesPhase], name);
+
+                // Working the phase out on every clip must not change what a marked one shows.
+                var always = Compile(6, set, 4f);
+                always.clips[AlpsShowEvaluator.ClipUsesPhase] = 1f;
+                for (var fixture = 0; fixture < 6; fixture++)
+                {
+                    for (var time = 0.05f; time < 4f; time += 0.21f)
+                    {
+                        CollectionAssert.AreEqual(Evaluate(always, fixture, time), Evaluate(show, fixture, time), $"{name}, fixture {fixture} at {time}s.");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void FrameChange_MarksEveryChangedChannel()
         {
             var stride = AlpsShowEvaluator.FrameStride;
             var frame = new float[stride];
             AlpsShowPlayer.WriteNeutralFrame(frame, 0);
             var applied = new float[stride * 2];
 
-            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, true), "The first write is always whole.");
+            var first = AlpsShowPlayer.FrameChange(frame, 0, applied, stride);
+            Assert.AreEqual(frame.Select((value, ch) => value != 0f ? 1 << ch : 0).Sum(), first, "Every channel that differs from the zeros.");
             CollectionAssert.AreEqual(frame, applied.Skip(stride), "The written frame is kept.");
             Assert.AreEqual(0f, applied[0], "Only its own row is kept.");
-            Assert.AreEqual(AlpsShowPlayer.ChangeNone, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+            Assert.AreEqual(0, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
 
             frame[AlpsShowEvaluator.FrameGoboRotation] = 30f;
-            Assert.AreEqual(AlpsShowPlayer.ChangeGoboRotation, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
-            Assert.AreEqual(AlpsShowPlayer.ChangeNone, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
+            Assert.AreEqual(1 << AlpsShowEvaluator.FrameGoboRotation, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
+            Assert.AreEqual(0, AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
 
             frame[AlpsShowEvaluator.FrameGoboRotation] = 60f;
             frame[AlpsShowEvaluator.FramePan] = 10f;
-            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, false));
-            Assert.AreEqual(AlpsShowPlayer.ChangeAll, AlpsShowPlayer.FrameChange(frame, 0, applied, stride, true), "A forced write is whole.");
+            Assert.AreEqual(
+                (1 << AlpsShowEvaluator.FrameGoboRotation) | (1 << AlpsShowEvaluator.FramePan),
+                AlpsShowPlayer.FrameChange(frame, 0, applied, stride));
         }
 
         // ------------------------------------------------------------------ helpers

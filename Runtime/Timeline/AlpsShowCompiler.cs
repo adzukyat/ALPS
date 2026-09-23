@@ -187,6 +187,9 @@ namespace AdzukiSoft.ALPS
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
 
+            // Whether a value on the clip being encoded follows the clip's shared phase.
+            private bool _clipUsesPhase;
+
             public Builder(PlayableDirector director, AlpsCompiledShow show, float showBpm)
             {
                 _director = director;
@@ -318,6 +321,7 @@ namespace AdzukiSoft.ALPS
                 _clipOrder = (int)set.order;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
+                _clipUsesPhase = false;
 
                 var row = new float[AlpsShowEvaluator.ClipStride];
                 row[AlpsShowEvaluator.ClipStart] = start;
@@ -337,11 +341,26 @@ namespace AdzukiSoft.ALPS
                 WritePhase(row, AlpsShowEvaluator.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowEvaluator.ClipMixOutCurve, mixOutCurve, 1f, 0f);
+                var rowStart = _clips.Count;
                 _clips.AddRange(row);
 
                 foreach (var effect in set.effects)
                 {
                     AddEffect(effect ?? new AlpsEffect());
+                }
+
+                _clips[rowStart + AlpsShowEvaluator.ClipUsesPhase] = _clipUsesPhase ? 1f : 0f;
+            }
+
+            /// <summary>
+            /// Notes that the clip's shared phase is read, when <paramref name="phasing"/> has no
+            /// phase of its own. It errs on the side of reading, since a phase left out plays wrong.
+            /// </summary>
+            private void UsesSharedPhase(AlpsAnimatableValue phasing)
+            {
+                if (phasing == null || !phasing.useOwnPhase)
+                {
+                    _clipUsesPhase = true;
                 }
             }
 
@@ -390,18 +409,29 @@ namespace AdzukiSoft.ALPS
                         row[AlpsShowEvaluator.EffectScalarC] = effect.trackSpeed;
                         row[AlpsShowEvaluator.EffectScalarD] = AddUserName(effect.trackUserName);
                         row[AlpsShowEvaluator.EffectScalarE] = effect.circleAspect;
+                        if (effect.moveMode == AlpsMoveMode.Circle)
+                        {
+                            // The turn around the circle follows the shared phase.
+                            _clipUsesPhase = true;
+                        }
+
                         break;
                     case AlpsEffectKind.Cone:
                         AddParameter(effect.coneWidth);
                         AddParameter(effect.coneLength);
                         break;
                     case AlpsEffectKind.Color:
-                        AddParameter(effect.colorPhasing);
+                        AddParameter(effect.colorPhasing, false);
                         row[AlpsShowEvaluator.EffectPaletteStart] = _colors.Count / AlpsShowEvaluator.ColorStride;
                         row[AlpsShowEvaluator.EffectPaletteCount] = effect.colorStops.Count;
                         foreach (var stop in effect.colorStops)
                         {
                             AddColor(stop ?? new AlpsColorStop());
+                        }
+
+                        if (effect.colorStops.Count > 1 || effect.colorStops.Exists(stop => stop != null && stop.isGradient))
+                        {
+                            UsesSharedPhase(effect.colorPhasing);
                         }
 
                         break;
@@ -417,12 +447,17 @@ namespace AdzukiSoft.ALPS
                         row[AlpsShowEvaluator.EffectScalarC] = effect.flickerFixtureStagger;
                         break;
                     case AlpsEffectKind.Gobo:
-                        AddParameter(effect.goboPhasing);
+                        AddParameter(effect.goboPhasing, false);
                         row[AlpsShowEvaluator.EffectPaletteStart] = _gobos.Count;
                         row[AlpsShowEvaluator.EffectPaletteCount] = effect.goboStops.Count;
                         foreach (var stop in effect.goboStops)
                         {
                             _gobos.Add(stop != null ? Mathf.Clamp(stop.goboIndex, AlpsGoboStop.OffIndex, AlpsGoboStop.MaxIndex) : AlpsGoboStop.OffIndex);
+                        }
+
+                        if (effect.goboStops.Count > 1)
+                        {
+                            UsesSharedPhase(effect.goboPhasing);
                         }
 
                         row[AlpsShowEvaluator.EffectScalarA] = effect.goboRotationBeats;
@@ -433,7 +468,12 @@ namespace AdzukiSoft.ALPS
                 _effects.AddRange(row);
             }
 
-            private void AddParameter(AlpsAnimatableValue value)
+            /// <summary>
+            /// Encodes one parameter. A palette's phasing is never read as a value, only its
+            /// phase is, so <paramref name="resolved"/> is false for it and the palette decides
+            /// whether the shared phase is read.
+            /// </summary>
+            private void AddParameter(AlpsAnimatableValue value, bool resolved = true)
             {
                 if (value == null)
                 {
@@ -463,6 +503,11 @@ namespace AdzukiSoft.ALPS
                 }
 
                 row[AlpsShowEvaluator.ParamIsRange] = value.isRange ? 1f : 0f;
+                if (resolved && value.isRange)
+                {
+                    UsesSharedPhase(value);
+                }
+
                 row[AlpsShowEvaluator.ParamHasSpread] = value.hasSpread ? 1f : 0f;
                 row[AlpsShowEvaluator.ParamTiming] = (int)value.timing;
                 row[AlpsShowEvaluator.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;

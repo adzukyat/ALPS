@@ -94,7 +94,9 @@ namespace AdzukiSoft.ALPS
         /// two entries, its order position k and 1 when its pan is mirrored.
         /// </summary>
         public const int ClipPositionStart = 13;
-        public const int ClipPhase = 14;
+        /// <summary>1 when some value on the clip follows the clip's shared phase, so it is worth working out.</summary>
+        public const int ClipUsesPhase = 14;
+        public const int ClipPhase = 15;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -604,6 +606,7 @@ namespace AdzukiSoft.ALPS
             float[] scratch)
         {
             var row = clip * ClipStride;
+            var phaseRow = row + ClipPhase;
             var seed = ToInt(clips[row + ClipSeed]);
             var beats = Beats(time, clips[row + ClipBpm], clips[row + ClipStart]);
             var positionRow = ToInt(clips[row + ClipPositionStart]) + fixtureIndex * 2;
@@ -611,9 +614,14 @@ namespace AdzukiSoft.ALPS
             var mirrored = positions[positionRow + 1] != 0;
             var isOdd = fixtureIndex % 2 == 0;
 
+            // The clip's shared phase without a phase offset, worked out once for every value
+            // that follows it. The compiler marks the clips where nothing does.
+            var shared = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, 0f);
+            var sharedPhase = clips[row + ClipUsesPhase] > 0.5f ? PhaseAt(clips, phaseRow, shared, k, seed) : 0f;
+
             var effectStart = ToInt(clips[row + ClipEffectStart]);
-            var effectCount = ToInt(clips[row + ClipEffectCount]);
-            for (var e = effectStart; e < effectStart + effectCount; e++)
+            var effectEnd = effectStart + ToInt(clips[row + ClipEffectCount]);
+            for (var e = effectStart; e < effectEnd; e++)
             {
                 var effectRow = e * EffectStride;
                 var parity = ToInt(effects[effectRow + EffectParity]);
@@ -630,20 +638,22 @@ namespace AdzukiSoft.ALPS
 
                 if (kind == KindMove)
                 {
-                    EvaluateMove(clips, effects, parameters, row, e, paramStart, k, mirrored, beats, seed, late, frame, written);
+                    EvaluateMove(clips, effects, parameters, row, e, paramStart, k, mirrored, beats, seed, late, shared, sharedPhase, frame, written);
                 }
                 else if (kind == KindCone)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, late, FrameConeWidth, frame, written);
-                    WriteScalar(clips, parameters, row, paramStart + 1, k, beats, seed, late, FrameConeLength, frame, written);
+                    frame[FrameConeWidth] = ResolveValue(clips, parameters, row, paramStart, k, beats, seed, late, shared, sharedPhase);
+                    written[FrameConeWidth] = 1f;
+                    frame[FrameConeLength] = ResolveValue(clips, parameters, row, paramStart + 1, k, beats, seed, late, shared, sharedPhase);
+                    written[FrameConeLength] = 1f;
                 }
                 else if (kind == KindBrightness)
                 {
-                    WriteScalar(clips, parameters, row, paramStart, k, beats, seed, late, FrameBrightness, frame, written);
+                    var brightness = ResolveValue(clips, parameters, row, paramStart, k, beats, seed, late, shared, sharedPhase);
                     if (effects[effectRow + EffectScalarA] > 0.5f)
                     {
                         // Blackout on return: dark on the return leg, still covering lower layers.
-                        frame[FrameBrightness] *= BlackoutScale(
+                        brightness *= BlackoutScale(
                             clips,
                             parameters,
                             row,
@@ -651,13 +661,17 @@ namespace AdzukiSoft.ALPS
                             beats,
                             k,
                             late,
+                            shared,
                             effects[effectRow + EffectScalarB],
                             effects[effectRow + EffectScalarC]);
                     }
+
+                    frame[FrameBrightness] = brightness;
+                    written[FrameBrightness] = 1f;
                 }
                 else if (kind == KindColor)
                 {
-                    EvaluateColor(clips, effects, parameters, colors, row, e, paramStart, k, beats, seed, late, frame, written, scratch);
+                    EvaluateColor(clips, effects, parameters, colors, row, e, paramStart, k, beats, seed, late, shared, sharedPhase, frame, written, scratch);
                 }
                 else if (kind == KindFlicker)
                 {
@@ -670,7 +684,7 @@ namespace AdzukiSoft.ALPS
                 }
                 else if (kind == KindGobo)
                 {
-                    EvaluateGobo(clips, effects, parameters, gobos, row, e, paramStart, k, fixtureIndex, beats, seed, late, frame, written, scratch);
+                    EvaluateGobo(clips, effects, parameters, gobos, row, e, paramStart, k, fixtureIndex, beats, seed, late, shared, sharedPhase, frame, written, scratch);
                 }
             }
         }
@@ -687,6 +701,8 @@ namespace AdzukiSoft.ALPS
             float beats,
             int seed,
             float extraCycles,
+            float shared,
+            float sharedPhase,
             float[] frame,
             float[] written)
         {
@@ -704,12 +720,9 @@ namespace AdzukiSoft.ALPS
             frame[FrameTrackEffect] = 0f;
             written[FrameTrackEffect] = 1f;
 
-            // Only one move reaches a fixture per clip, so this marks whether it wrote pan.
-            written[FramePan] = 0f;
-
             if (mode == MoveCircle)
             {
-                EvaluateCircle(clips, effects, parameters, clipRow, effectRow, paramStart, k, beats, seed, extraCycles, frame, written);
+                EvaluateCircle(clips, effects, parameters, clipRow, effectRow, paramStart, k, beats, seed, extraCycles, shared, sharedPhase, frame);
             }
             else
             {
@@ -718,11 +731,13 @@ namespace AdzukiSoft.ALPS
                 var bothRanged = parameters[tiltRow + ParamIsRange] > 0.5f && parameters[panRow + ParamIsRange] > 0.5f;
                 var panOffsetCycles = bothRanged ? effects[effectRow + EffectScalarB] / 360f : 0f;
 
-                WriteScalar(clips, parameters, clipRow, paramStart, k, beats, seed, extraCycles, FrameTilt, frame, written);
-                WriteScalar(clips, parameters, clipRow, paramStart + 1, k, beats, seed, extraCycles + panOffsetCycles, FramePan, frame, written);
+                frame[FrameTilt] = ResolveValue(clips, parameters, clipRow, paramStart, k, beats, seed, extraCycles, shared, sharedPhase);
+                frame[FramePan] = ResolveValue(clips, parameters, clipRow, paramStart + 1, k, beats, seed, extraCycles + panOffsetCycles, shared, sharedPhase);
             }
 
-            if (mirrored && written[FramePan] > 0.5f)
+            written[FrameTilt] = 1f;
+            written[FramePan] = 1f;
+            if (mirrored)
             {
                 frame[FramePan] = -frame[FramePan];
             }
@@ -749,20 +764,19 @@ namespace AdzukiSoft.ALPS
             float beats,
             int seed,
             float extraCycles,
-            float[] frame,
-            float[] written)
+            float shared,
+            float sharedPhase,
+            float[] frame)
         {
             var tiltParam = paramStart + 2;
             var panParam = paramStart + 3;
             var radiusParam = paramStart + 4;
 
-            var phaseRow = clipRow + ClipPhase;
-            var cycles = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, extraCycles);
-            var phase = PhaseAt(clips, phaseRow, cycles, k, seed);
+            var phase = extraCycles == 0f ? sharedPhase : PhaseAt(clips, clipRow + ClipPhase, shared + extraCycles, k, seed);
 
-            var centerTilt = ResolveScalar(clips, parameters, clipRow, tiltParam, k, beats, seed, extraCycles) * Mathf.Deg2Rad;
-            var centerPan = ResolveScalar(clips, parameters, clipRow, panParam, k, beats, seed, extraCycles) * Mathf.Deg2Rad;
-            var radius = ResolveScalar(clips, parameters, clipRow, radiusParam, k, beats, seed, extraCycles);
+            var centerTilt = ResolveValue(clips, parameters, clipRow, tiltParam, k, beats, seed, extraCycles, shared, sharedPhase) * Mathf.Deg2Rad;
+            var centerPan = ResolveValue(clips, parameters, clipRow, panParam, k, beats, seed, extraCycles, shared, sharedPhase) * Mathf.Deg2Rad;
+            var radius = ResolveValue(clips, parameters, clipRow, radiusParam, k, beats, seed, extraCycles, shared, sharedPhase);
             var aspect = effects[effectRow + EffectScalarE];
 
             // The center direction and the two axes across it, all turned by the center angles.
@@ -802,26 +816,6 @@ namespace AdzukiSoft.ALPS
 
             frame[FrameTilt] = Mathf.Acos(Mathf.Clamp(-dirY, -1f, 1f)) * Mathf.Rad2Deg;
             frame[FramePan] = Mathf.Atan2(-dirX, -dirZ) * Mathf.Rad2Deg;
-            written[FrameTilt] = 1f;
-            written[FramePan] = 1f;
-        }
-
-        /// <summary>Resolves one animatable parameter and writes it to <paramref name="channel"/>.</summary>
-        private static void WriteScalar(
-            float[] clips,
-            float[] parameters,
-            int clipRow,
-            int param,
-            int k,
-            float beats,
-            int seed,
-            float extraCycles,
-            int channel,
-            float[] frame,
-            float[] written)
-        {
-            frame[channel] = ResolveScalar(clips, parameters, clipRow, param, k, beats, seed, extraCycles);
-            written[channel] = 1f;
         }
 
         /// <summary>
@@ -829,9 +823,10 @@ namespace AdzukiSoft.ALPS
         /// <paramref name="param"/>. 0 on the return leg of a wave, the fall and the low hold
         /// after it. On the outbound leg it ramps up over <paramref name="fadeIn"/> and down
         /// over <paramref name="fadeOut"/>, both fractions of that leg. 1 when the phase has
-        /// no return leg.
+        /// no return leg. <paramref name="sharedCycles"/> are the clip's shared cycles without
+        /// a phase offset.
         /// </summary>
-        public static float BlackoutScale(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float extraCycles, float fadeIn, float fadeOut)
+        public static float BlackoutScale(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float extraCycles, float sharedCycles, float fadeIn, float fadeOut)
         {
             var paramRow = param * ParamStride;
             var own = parameters[paramRow + ParamUseOwnPhase] > 0.5f;
@@ -846,7 +841,7 @@ namespace AdzukiSoft.ALPS
                 return 1f;
             }
 
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
+            var cycles = CyclesOf(parameters, paramRow, beats, k, extraCycles, sharedCycles);
             if (IsReturnLeg(mode, rise, holdHigh, cycles))
             {
                 return 0f;
@@ -867,30 +862,35 @@ namespace AdzukiSoft.ALPS
             return Mathf.Clamp01(scale);
         }
 
-        /// <summary>Unwrapped cycles for a parameter, honoring its own phase.</summary>
-        public static float ParamCycles(float[] clips, float[] parameters, int clipRow, int param, float beats, int k, float extraCycles)
+        /// <summary>
+        /// Unwrapped cycles for the parameter at <paramref name="paramRow"/>: its own phase if
+        /// it has one, otherwise the clip's <paramref name="sharedCycles"/> run late by
+        /// <paramref name="extraCycles"/>.
+        /// </summary>
+        private static float CyclesOf(float[] parameters, int paramRow, float beats, int k, float extraCycles, float sharedCycles)
         {
-            var paramRow = param * ParamStride;
             if (parameters[paramRow + ParamUseOwnPhase] > 0.5f)
             {
                 var own = paramRow + ParamOwnPhase;
                 return FixtureCycles(beats, parameters[own + PhaseBeatsPerCycle], parameters[own + PhaseDelay], k, extraCycles);
             }
 
-            var shared = clipRow + ClipPhase;
-            return FixtureCycles(beats, clips[shared + PhaseBeatsPerCycle], clips[shared + PhaseDelay], k, extraCycles);
+            return sharedCycles + extraCycles;
         }
 
-        /// <summary>Phase φ for a parameter, honoring its own phase.</summary>
-        public static float ParamPhase(float[] clips, float[] parameters, int clipRow, int param, float cycles, int k, int seed)
+        /// <summary>
+        /// Phase φ for the parameter at <paramref name="paramRow"/> at <paramref name="cycles"/>
+        /// from <see cref="CyclesOf"/>. Without an own phase or a phase offset it is the clip's
+        /// <paramref name="sharedPhase"/>, already worked out.
+        /// </summary>
+        private static float PhaseOf(float[] clips, float[] parameters, int clipRow, int paramRow, float cycles, int k, int seed, float extraCycles, float sharedPhase)
         {
-            var paramRow = param * ParamStride;
             if (parameters[paramRow + ParamUseOwnPhase] > 0.5f)
             {
                 return PhaseAt(parameters, paramRow + ParamOwnPhase, cycles, k, seed);
             }
 
-            return PhaseAt(clips, clipRow + ClipPhase, cycles, k, seed);
+            return extraCycles == 0f ? sharedPhase : PhaseAt(clips, clipRow + ClipPhase, cycles, k, seed);
         }
 
         /// <summary>
@@ -900,13 +900,35 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public static float ResolveScalar(float[] clips, float[] parameters, int clipRow, int param, int k, float beats, int seed, float extraCycles)
         {
+            var phaseRow = clipRow + ClipPhase;
+            var shared = FixtureCycles(beats, clips[phaseRow + PhaseBeatsPerCycle], clips[phaseRow + PhaseDelay], k, 0f);
+            var sharedPhase = PhaseAt(clips, phaseRow, shared, k, seed);
+            return ResolveValue(clips, parameters, clipRow, param, k, beats, seed, extraCycles, shared, sharedPhase);
+        }
+
+        /// <summary>
+        /// <see cref="ResolveScalar"/> with the clip's shared cycles and phase, without a phase
+        /// offset, already worked out by <see cref="EvaluateClip"/>.
+        /// </summary>
+        private static float ResolveValue(
+            float[] clips,
+            float[] parameters,
+            int clipRow,
+            int param,
+            int k,
+            float beats,
+            int seed,
+            float extraCycles,
+            float shared,
+            float sharedPhase)
+        {
             var paramRow = param * ParamStride;
 
             float value;
             float step;
             if (parameters[paramRow + ParamIsRange] > 0.5f)
             {
-                var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
+                var cycles = CyclesOf(parameters, paramRow, beats, k, extraCycles, shared);
                 if (ToInt(parameters[paramRow + ParamTiming]) == TimingPerCycle)
                 {
                     var atMin = (CycleIndex(cycles) & 1) == 0;
@@ -915,7 +937,7 @@ namespace AdzukiSoft.ALPS
                 }
                 else
                 {
-                    var phase = ParamPhase(clips, parameters, clipRow, param, cycles, k, seed);
+                    var phase = PhaseOf(clips, parameters, clipRow, paramRow, cycles, k, seed, extraCycles, sharedPhase);
                     value = Mathf.LerpUnclamped(parameters[paramRow + ParamRangeMin], parameters[paramRow + ParamRangeMax], phase);
                     step = Mathf.LerpUnclamped(parameters[paramRow + ParamSpreadMin], parameters[paramRow + ParamSpreadMax], phase);
                 }
@@ -930,13 +952,13 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Which palette entry is active and where inside it: returns the stop index and
-        /// writes the local 0..1 position into <paramref name="local"/>[0].
+        /// Which palette entry is active and where inside it, for the phasing parameter
+        /// <paramref name="param"/> at <paramref name="cycles"/> and <paramref name="phase"/>:
+        /// returns the stop index and writes the local 0..1 position into
+        /// <paramref name="local"/>[0].
         /// </summary>
-        public static int PaletteStop(float[] clips, float[] parameters, int clipRow, int param, int count, float beats, int k, int seed, float extraCycles, float[] local)
+        public static int PaletteStop(float[] parameters, int param, int count, float cycles, float phase, float[] local)
         {
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
-            var phase = ParamPhase(clips, parameters, clipRow, param, cycles, k, seed);
             if (count <= 1)
             {
                 local[0] = phase;
@@ -968,6 +990,8 @@ namespace AdzukiSoft.ALPS
             float beats,
             int seed,
             float extraCycles,
+            float shared,
+            float sharedPhase,
             float[] frame,
             float[] written,
             float[] scratch)
@@ -979,16 +1003,28 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            var cycles = ParamCycles(clips, parameters, clipRow, param, beats, k, extraCycles);
             written[FrameRed] = 1f;
             written[FrameGreen] = 1f;
             written[FrameBlue] = 1f;
 
-            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, extraCycles, scratch);
-            var colorRow = (ToInt(effects[effectRow + EffectPaletteStart]) + stop) * ColorStride;
+            var paramRow = param * ParamStride;
+            var colorRow = ToInt(effects[effectRow + EffectPaletteStart]) * ColorStride;
+            var t = 0f;
+            if (count > 1)
+            {
+                var cycles = CyclesOf(parameters, paramRow, beats, k, extraCycles, shared);
+                var phase = PhaseOf(clips, parameters, clipRow, paramRow, cycles, k, seed, extraCycles, sharedPhase);
+                colorRow += PaletteStop(parameters, param, count, cycles, phase, scratch) * ColorStride;
+                t = scratch[0];
+            }
+
             if (colors[colorRow + ColorIsGradient] > 0.5f)
             {
-                var t = count == 1 ? ParamPhase(clips, parameters, clipRow, param, cycles, k, seed) : scratch[0];
+                if (count == 1)
+                {
+                    t = PhaseOf(clips, parameters, clipRow, paramRow, CyclesOf(parameters, paramRow, beats, k, extraCycles, shared), k, seed, extraCycles, sharedPhase);
+                }
+
                 var x = Mathf.Clamp01(t) * (CurveSamples - 1);
                 var i = Mathf.Min(CurveSamples - 2, Mathf.FloorToInt(x));
                 var f = x - i;
@@ -1019,6 +1055,8 @@ namespace AdzukiSoft.ALPS
             float beats,
             int seed,
             float extraCycles,
+            float shared,
+            float sharedPhase,
             float[] frame,
             float[] written,
             float[] scratch)
@@ -1037,9 +1075,18 @@ namespace AdzukiSoft.ALPS
 
             written[FrameGobo] = 1f;
 
-            var stop = count == 1 ? 0 : PaletteStop(clips, parameters, clipRow, param, count, beats, k, seed, extraCycles, scratch);
+            var stop = 0;
+            if (count > 1)
+            {
+                var paramRow = param * ParamStride;
+                var cycles = CyclesOf(parameters, paramRow, beats, k, extraCycles, shared);
+                var phase = PhaseOf(clips, parameters, clipRow, paramRow, cycles, k, seed, extraCycles, sharedPhase);
+                stop = PaletteStop(parameters, param, count, cycles, phase, scratch);
+            }
+
             frame[FrameGobo] = gobos[ToInt(effects[effectRow + EffectPaletteStart]) + stop];
         }
+
         // ==================================================================================
         // Composition
         // ==================================================================================
@@ -1117,6 +1164,24 @@ namespace AdzukiSoft.ALPS
             {
                 // Layers are whole numbers, so the float columns compare exactly.
                 var layer = clips[active[a] * ClipStride + ClipLayer];
+
+                // A clip alone on its layer at full weight covers exactly the channels it
+                // drives, so it writes straight into the frame and skips the blending. Nothing
+                // in a clip reads the written marks back, so they need no clearing here.
+                var next = a + 1;
+                if (activeWeight[a] >= 1f && (next >= activeCount || clips[active[next] * ClipStride + ClipLayer] != layer))
+                {
+                    var lone = active[a];
+                    a = next;
+                    var loneIndex = IndexInGroup(groupCount, groupIndex, ToInt(clips[lone * ClipStride + ClipGroup]), fixture);
+                    if (loneIndex >= 0)
+                    {
+                        EvaluateClip(clips, effects, parameters, colors, gobos, positions, lone, loneIndex, time, frame, clipWritten, scratch);
+                    }
+
+                    continue;
+                }
+
                 for (var ch = 0; ch < FrameStride; ch++)
                 {
                     sum[ch] = 0f;

@@ -14,10 +14,12 @@ namespace AdzukiSoft.ALPS
     /// evaluates every fixture with <see cref="AlpsShowEvaluator"/> and writes the result to
     /// the fixtures. The arrays are filled at build time by the scene processor.
     ///
-    /// Writing to VRSL costs far more than evaluating, so a fixture is only written when its
-    /// frame changed since the last write, and only its gobo angle when nothing else did.
-    /// One fixture per frame is written in full regardless, in turn, which repairs anything
-    /// that rebuilt a fixture's property block behind the player's back.
+    /// Going through VRSL costs far more than evaluating: every field is a write into another
+    /// behaviour, and VRSL then rebuilds its whole property block. So a fixture is written
+    /// through VRSL only the first time and once in a while after, one fixture per frame in
+    /// turn, which also repairs anything that rebuilt a block behind the player's back. In
+    /// between, only the shader properties of the channels that changed are written straight
+    /// into the renderers' property blocks, and nothing when no channel changed.
     /// </summary>
 #if UDONSHARP
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -31,9 +33,16 @@ namespace AdzukiSoft.ALPS
         public const int AdapterNone = 0;
         public const int AdapterVRSLDmxStatic = 1;
 
-        public const int ChangeNone = 0;
-        public const int ChangeGoboRotation = 1;
-        public const int ChangeAll = 2;
+        // Channel bits of a change mask from FrameChange, grouped by the shader properties they feed.
+        private const int ChangedPan = 1 << AlpsShowEvaluator.FramePan;
+        private const int ChangedTilt = 1 << AlpsShowEvaluator.FrameTilt;
+        private const int ChangedLight =
+            (1 << AlpsShowEvaluator.FrameBrightness) | (1 << AlpsShowEvaluator.FrameBrightnessScale) |
+            (1 << AlpsShowEvaluator.FrameRed) | (1 << AlpsShowEvaluator.FrameGreen) | (1 << AlpsShowEvaluator.FrameBlue);
+        private const int ChangedConeWidth = 1 << AlpsShowEvaluator.FrameConeWidth;
+        private const int ChangedConeLength = (1 << AlpsShowEvaluator.FrameConeLength) | (1 << AlpsShowEvaluator.FrameConeMeshLength);
+        private const int ChangedGobo = 1 << AlpsShowEvaluator.FrameGobo;
+        private const int ChangedGoboRotation = 1 << AlpsShowEvaluator.FrameGoboRotation;
 
         /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
@@ -84,6 +93,18 @@ namespace AdzukiSoft.ALPS
         private float[] _applied;
         private bool[] _hasApplied;
         private int _refreshFixture;
+        private MeshRenderer[] _renderers;
+        private int[] _rendererStart;
+        private int _idPan;
+        private int _idTilt;
+        private int _idIntensity;
+        private int _idEmission;
+        private int _idEmissionDmx;
+        private int _idConeWidth;
+        private int _idConeLength;
+        private int _idMaxConeLength;
+        private int _idGobo;
+        private int _idGoboRotation;
         private float[] _aimPan;
         private float[] _aimTilt;
         private bool[] _aiming;
@@ -129,18 +150,52 @@ namespace AdzukiSoft.ALPS
             _players = new VRCPlayerApi[82];
             _block = new MaterialPropertyBlock();
 
+            // Every fixture's renderers in one list, read from VRSL once.
+            _rendererStart = new int[count + 1];
+            var rendererCount = 0;
             for (var i = 0; i < count; i++)
             {
                 var offset = i * AlpsShowEvaluator.FrameStride;
-                if (fixtureAdapter[i] == AdapterVRSLDmxStatic && i < vrslFixtures.Length && vrslFixtures[i] != null)
+                _rendererStart[i] = rendererCount;
+                if (IsVRSL(i))
                 {
                     CaptureVRSL(vrslFixtures[i], _defaults, offset);
+                    var renderers = vrslFixtures[i].objRenderers;
+                    rendererCount += renderers != null ? renderers.Length : 0;
                 }
                 else
                 {
                     WriteNeutralFrame(_defaults, offset);
                 }
             }
+
+            _rendererStart[count] = rendererCount;
+            _renderers = new MeshRenderer[rendererCount];
+            for (var i = 0; i < count; i++)
+            {
+                if (!IsVRSL(i))
+                {
+                    continue;
+                }
+
+                var renderers = vrslFixtures[i].objRenderers;
+                var start = _rendererStart[i];
+                for (var r = 0; r < _rendererStart[i + 1] - start; r++)
+                {
+                    _renderers[start + r] = renderers[r];
+                }
+            }
+
+            _idPan = VRCShader.PropertyToID("_FixtureBaseRotationY");
+            _idTilt = VRCShader.PropertyToID("_FixtureRotationX");
+            _idIntensity = VRCShader.PropertyToID("_GlobalIntensity");
+            _idEmission = VRCShader.PropertyToID("_Emission");
+            _idEmissionDmx = VRCShader.PropertyToID("_EmissionDMX");
+            _idConeWidth = VRCShader.PropertyToID("_ConeWidth");
+            _idConeLength = VRCShader.PropertyToID("_ConeLength");
+            _idMaxConeLength = VRCShader.PropertyToID("_MaxConeLength");
+            _idGobo = VRCShader.PropertyToID("_ProjectionSelection");
+            _idGoboRotation = VRCShader.PropertyToID(GoboRotationProperty);
 
             _initialized = true;
         }
@@ -182,55 +237,141 @@ namespace AdzukiSoft.ALPS
                     _anyAiming = true;
                 }
 
-                if (fixtureAdapter[fixture] != AdapterVRSLDmxStatic || fixture >= vrslFixtures.Length || vrslFixtures[fixture] == null)
+                if (!IsVRSL(fixture))
                 {
                     continue;
                 }
 
-                var change = FrameChange(_frame, 0, _applied, fixture * AlpsShowEvaluator.FrameStride, !_hasApplied[fixture] || fixture == refresh);
-                _hasApplied[fixture] = true;
-                if (change == ChangeAll)
+                var changed = FrameChange(_frame, 0, _applied, fixture * AlpsShowEvaluator.FrameStride);
+                if (!_hasApplied[fixture] || fixture == refresh)
                 {
+                    _hasApplied[fixture] = true;
                     ApplyVRSL(vrslFixtures[fixture], _frame, 0, _block);
                 }
-                else if (change == ChangeGoboRotation)
+                else if (changed != 0)
                 {
-                    ApplyVRSLGoboRotation(vrslFixtures[fixture], _frame[AlpsShowEvaluator.FrameGoboRotation], _block);
+                    WriteChanges(fixture, changed);
                 }
             }
         }
 
+        private bool IsVRSL(int fixture)
+        {
+            return fixtureAdapter[fixture] == AdapterVRSLDmxStatic && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null;
+        }
+
         /// <summary>
         /// Compares a frame with the one last written to a fixture, keeps it as the new last
-        /// written one, and says what has to be written: nothing, only the gobo angle, or all
-        /// of it. <paramref name="force"/> asks for all of it whatever changed.
+        /// written one, and returns a mask with bit <c>1 &lt;&lt; channel</c> set for every
+        /// channel that changed.
         /// </summary>
-        public static int FrameChange(float[] frame, int offset, float[] applied, int appliedOffset, bool force)
+        public static int FrameChange(float[] frame, int offset, float[] applied, int appliedOffset)
         {
-            var change = force ? ChangeAll : ChangeNone;
+            var changed = 0;
             for (var ch = 0; ch < AlpsShowEvaluator.FrameStride; ch++)
             {
                 var value = frame[offset + ch];
-                if (applied[appliedOffset + ch] == value)
+                if (applied[appliedOffset + ch] != value)
+                {
+                    applied[appliedOffset + ch] = value;
+                    changed |= 1 << ch;
+                }
+            }
+
+            return changed;
+        }
+
+        /// <summary>
+        /// Writes the shader properties of the <paramref name="changed"/> channels straight
+        /// into each renderer's property block, with the values <see cref="ApplyVRSL"/> would
+        /// have VRSL pass on. Everything else VRSL put in the block stays as it was.
+        /// </summary>
+        private void WriteChanges(int fixture, int changed)
+        {
+            // Decided once here, since each test is an extern call in Udon and the loop runs per renderer.
+            var pan = (changed & ChangedPan) != 0;
+            var tilt = (changed & ChangedTilt) != 0;
+            var light = (changed & ChangedLight) != 0;
+            var coneWidth = (changed & ChangedConeWidth) != 0;
+            var coneLengths = (changed & ChangedConeLength) != 0;
+            var gobo = (changed & ChangedGobo) != 0;
+            var goboRotation = (changed & ChangedGoboRotation) != 0;
+
+            var frame = _frame;
+            var panValue = pan ? VrslPan(frame[AlpsShowEvaluator.FramePan]) : 0f;
+            var tiltValue = tilt ? VrslTilt(frame[AlpsShowEvaluator.FrameTilt]) : 0f;
+            var coneWidthValue = coneWidth ? VrslConeWidth(frame[AlpsShowEvaluator.FrameConeWidth]) : 0f;
+            var goboValue = gobo ? VrslGobo(frame[AlpsShowEvaluator.FrameGobo]) : 0;
+            var goboRotationValue = frame[AlpsShowEvaluator.FrameGoboRotation];
+            var intensity = 0f;
+            var tint = Color.black;
+            if (light)
+            {
+                var level = VrslLevel(frame, 0);
+                intensity = Mathf.Min(level, 1f);
+                tint = VrslTint(frame, 0, level);
+            }
+
+            var coneLength = 0f;
+            var maxConeLength = 0f;
+            if (coneLengths)
+            {
+                var share = VrslConeLengthShare(frame[AlpsShowEvaluator.FrameConeLength]);
+                // VRSL hands its shaders the distance from 10.5 rather than the length itself.
+                coneLength = Mathf.Abs(VrslConeLengthOf(share) - 10.5f);
+                maxConeLength = VrslMeshLength(frame[AlpsShowEvaluator.FrameConeMeshLength], share);
+            }
+
+            var end = _rendererStart[fixture + 1];
+            for (var r = _rendererStart[fixture]; r < end; r++)
+            {
+                var renderer = _renderers[r];
+                if (renderer == null)
                 {
                     continue;
                 }
 
-                applied[appliedOffset + ch] = value;
-                if (ch == AlpsShowEvaluator.FrameGoboRotation)
+                renderer.GetPropertyBlock(_block);
+                if (pan)
                 {
-                    if (change == ChangeNone)
-                    {
-                        change = ChangeGoboRotation;
-                    }
+                    _block.SetFloat(_idPan, panValue);
                 }
-                else
-                {
-                    change = ChangeAll;
-                }
-            }
 
-            return change;
+                if (tilt)
+                {
+                    _block.SetFloat(_idTilt, tiltValue);
+                }
+
+                if (light)
+                {
+                    _block.SetFloat(_idIntensity, intensity);
+                    _block.SetColor(_idEmission, tint);
+                    _block.SetColor(_idEmissionDmx, tint);
+                }
+
+                if (coneWidth)
+                {
+                    _block.SetFloat(_idConeWidth, coneWidthValue);
+                }
+
+                if (coneLengths)
+                {
+                    _block.SetFloat(_idConeLength, coneLength);
+                    _block.SetFloat(_idMaxConeLength, maxConeLength);
+                }
+
+                if (gobo)
+                {
+                    _block.SetFloat(_idGobo, goboValue);
+                }
+
+                if (goboRotation)
+                {
+                    _block.SetFloat(_idGoboRotation, goboRotationValue);
+                }
+
+                renderer.SetPropertyBlock(_block);
+            }
         }
 
         /// <summary>The last evaluated frame channel, for tests and debugging.</summary>
@@ -401,6 +542,69 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowEvaluator.FrameGobo] = fixture.selectGOBO;
         }
 
+        /// <summary>Shader property the patched VRSL shaders turn the gobo by.</summary>
+        public const string GoboRotationProperty = "_GoboRotation";
+
+        public static float VrslPan(float pan)
+        {
+            return -pan;
+        }
+
+        public static float VrslTilt(float tilt)
+        {
+            return tilt + VrslDefaultTiltOffset;
+        }
+
+        /// <summary>Brightness times flicker as a share of 100%, not capped.</summary>
+        public static float VrslLevel(float[] frame, int offset)
+        {
+            return Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameBrightness] * frame[offset + AlpsShowEvaluator.FrameBrightnessScale] / 100f);
+        }
+
+        /// <summary>
+        /// White at 100% is a tint of 1. VRSL caps global intensity at 1, so a
+        /// <paramref name="level"/> above 1 scales the tint instead, reaching VRSL's default
+        /// white of 2 at 200%.
+        /// </summary>
+        public static Color VrslTint(float[] frame, int offset, float level)
+        {
+            var scale = level > 1f ? level : 1f;
+            return new Color(
+                frame[offset + AlpsShowEvaluator.FrameRed] * scale,
+                frame[offset + AlpsShowEvaluator.FrameGreen] * scale,
+                frame[offset + AlpsShowEvaluator.FrameBlue] * scale,
+                1f);
+        }
+
+        /// <summary>A width typed past the limit keeps opening at the same rate.</summary>
+        public static float VrslConeWidth(float width)
+        {
+            return VrslMinConeWidth + Mathf.Max(0f, width) / ModelConeWidthLimit * (VrslMaxConeWidth - VrslMinConeWidth);
+        }
+
+        /// <summary>A model cone length as a share of <see cref="ModelConeLengthLimit"/>.</summary>
+        public static float VrslConeLengthShare(float length)
+        {
+            return Mathf.Max(0f, length) / ModelConeLengthLimit;
+        }
+
+        /// <summary>Up to the limit the cone fades in along the fixture's own mesh.</summary>
+        public static float VrslConeLengthOf(float share)
+        {
+            return Mathf.Lerp(VrslMinConeLength, VrslMaxConeLength, Mathf.Clamp01(share));
+        }
+
+        /// <summary>Past the limit the mesh itself is stretched, which VRSL scales linearly from the fixture.</summary>
+        public static float VrslMeshLength(float meshLength, float share)
+        {
+            return meshLength * Mathf.Max(1f, share);
+        }
+
+        public static int VrslGobo(float gobo)
+        {
+            return Mathf.Clamp(AlpsShowEvaluator.ToInt(gobo), 1, 8);
+        }
+
         /// <summary>Writes a model frame to a VRSL fixture.</summary>
         public static void ApplyVRSL(VRStageLighting_DMX_Static fixture, float[] frame, int offset, MaterialPropertyBlock block)
         {
@@ -415,32 +619,20 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public static void ApplyVRSLFields(VRStageLighting_DMX_Static fixture, float[] frame, int offset)
         {
-            var brightness = frame[offset + AlpsShowEvaluator.FrameBrightness] * frame[offset + AlpsShowEvaluator.FrameBrightnessScale];
+            var level = VrslLevel(frame, offset);
+            var coneLength = VrslConeLengthShare(frame[offset + AlpsShowEvaluator.FrameConeLength]);
 
             fixture.enableDMXChannels = false;
             fixture.enableStrobe = false;
             fixture.enableAutoSpin = false;
-            fixture.panOffsetBlueGreen = -frame[offset + AlpsShowEvaluator.FramePan];
-            fixture.tiltOffsetBlue = frame[offset + AlpsShowEvaluator.FrameTilt] + VrslDefaultTiltOffset;
-            // White at 100% is a tint of 1. VRSL caps global intensity at 1, so brightness
-            // above 100% scales the tint instead, reaching VRSL's default white of 2 at 200%.
-            var intensity = Mathf.Max(0f, brightness / 100f);
-            var tintScale = intensity > 1f ? intensity : 1f;
-            fixture.globalIntensity = Mathf.Min(intensity, 1f);
-            fixture.lightColorTint = new Color(
-                frame[offset + AlpsShowEvaluator.FrameRed] * tintScale,
-                frame[offset + AlpsShowEvaluator.FrameGreen] * tintScale,
-                frame[offset + AlpsShowEvaluator.FrameBlue] * tintScale,
-                1f);
-            // A width typed past the limit keeps opening at the same rate.
-            var coneWidth = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeWidth]) / ModelConeWidthLimit;
-            fixture.coneWidth = VrslMinConeWidth + coneWidth * (VrslMaxConeWidth - VrslMinConeWidth);
-            // Up to the limit the cone fades in along the fixture's own mesh. Past it the mesh
-            // itself is stretched, which VRSL scales linearly from the fixture.
-            var coneLength = Mathf.Max(0f, frame[offset + AlpsShowEvaluator.FrameConeLength]) / ModelConeLengthLimit;
-            fixture.coneLength = Mathf.Lerp(VrslMinConeLength, VrslMaxConeLength, Mathf.Clamp01(coneLength));
-            fixture.maxConeLength = frame[offset + AlpsShowEvaluator.FrameConeMeshLength] * Mathf.Max(1f, coneLength);
-            fixture.selectGOBO = Mathf.Clamp(AlpsShowEvaluator.ToInt(frame[offset + AlpsShowEvaluator.FrameGobo]), 1, 8);
+            fixture.panOffsetBlueGreen = VrslPan(frame[offset + AlpsShowEvaluator.FramePan]);
+            fixture.tiltOffsetBlue = VrslTilt(frame[offset + AlpsShowEvaluator.FrameTilt]);
+            fixture.globalIntensity = Mathf.Min(level, 1f);
+            fixture.lightColorTint = VrslTint(frame, offset, level);
+            fixture.coneWidth = VrslConeWidth(frame[offset + AlpsShowEvaluator.FrameConeWidth]);
+            fixture.coneLength = VrslConeLengthOf(coneLength);
+            fixture.maxConeLength = VrslMeshLength(frame[offset + AlpsShowEvaluator.FrameConeMeshLength], coneLength);
+            fixture.selectGOBO = VrslGobo(frame[offset + AlpsShowEvaluator.FrameGobo]);
             fixture._UpdateInstancedProperties();
         }
 
@@ -466,7 +658,7 @@ namespace AdzukiSoft.ALPS
                 }
 
                 renderer.GetPropertyBlock(block);
-                block.SetFloat("_GoboRotation", rotation);
+                block.SetFloat(GoboRotationProperty, rotation);
                 renderer.SetPropertyBlock(block);
             }
         }

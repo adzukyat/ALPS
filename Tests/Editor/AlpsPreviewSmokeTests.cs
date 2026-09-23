@@ -327,26 +327,44 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsNull(Object.FindObjectOfType<AlpsFixture>(), "Authoring components are stripped.");
                 Assert.IsNull(Object.FindObjectOfType<AlpsContainer>());
 
-                void AssertMatches(FixtureState[] expected, float time)
+                void AssertMatches(FixtureState[] expected, float time, bool fields)
                 {
                     player.EvaluateAt(time);
                     for (var i = 0; i < context.Fixtures.Length; i++)
                     {
                         var runtime = FixtureState.Capture(context.Fixtures[i]);
                         var diagnostics = $"at {time}s\npreview: {expected[i]}\nruntime: {runtime}";
-                        Assert.AreEqual(expected[i].Pan, runtime.Pan, Tolerance, diagnostics);
-                        Assert.AreEqual(expected[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
-                        Assert.AreEqual(expected[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
-                        Assert.AreEqual(expected[i].Color, runtime.Color, diagnostics);
-                        Assert.AreEqual(expected[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
-                        Assert.AreEqual(expected[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
-                        Assert.AreEqual(expected[i].Gobo, runtime.Gobo, diagnostics);
+                        if (fields)
+                        {
+                            Assert.AreEqual(expected[i].Pan, runtime.Pan, Tolerance, diagnostics);
+                            Assert.AreEqual(expected[i].Tilt, runtime.Tilt, Tolerance, diagnostics);
+                            Assert.AreEqual(expected[i].Intensity, runtime.Intensity, Tolerance, diagnostics);
+                            Assert.AreEqual(expected[i].Color, runtime.Color, diagnostics);
+                            Assert.AreEqual(expected[i].ConeWidth, runtime.ConeWidth, Tolerance, diagnostics);
+                            Assert.AreEqual(expected[i].ConeLength, runtime.ConeLength, Tolerance, diagnostics);
+                            Assert.AreEqual(expected[i].Gobo, runtime.Gobo, diagnostics);
+                        }
+
+                        var want = expected[i].Block;
+                        var got = runtime.Block;
+                        Assert.AreEqual(want.Pan, got.Pan, Tolerance, diagnostics);
+                        Assert.AreEqual(want.Tilt, got.Tilt, Tolerance, diagnostics);
+                        Assert.AreEqual(want.Intensity, got.Intensity, Tolerance, diagnostics);
+                        Assert.AreEqual(want.Emission, got.Emission, diagnostics);
+                        Assert.AreEqual(want.EmissionDmx, got.EmissionDmx, diagnostics);
+                        Assert.AreEqual(want.ConeWidth, got.ConeWidth, Tolerance, diagnostics);
+                        Assert.AreEqual(want.ConeLength, got.ConeLength, Tolerance, diagnostics);
+                        Assert.AreEqual(want.MaxConeLength, got.MaxConeLength, Tolerance, diagnostics);
+                        Assert.AreEqual(want.Gobo, got.Gobo, diagnostics);
+                        Assert.AreEqual(want.GoboRotation, got.GoboRotation, Tolerance, diagnostics);
                     }
                 }
 
-                // The second time only writes what changed since the first, which still has to match.
-                AssertMatches(preview, AccentTime);
-                AssertMatches(previewBase, BaseTime);
+                // The first time goes through VRSL. The second only writes the shader properties
+                // that changed straight into the blocks, except for the one fixture refreshed in
+                // turn, and the blocks still have to match what VRSL made of the preview.
+                AssertMatches(preview, AccentTime, true);
+                AssertMatches(previewBase, BaseTime, false);
 
                 var programAsset = UdonSharpProgramAsset.GetProgramAssetForClass(typeof(AlpsShowPlayer));
                 Assert.NotNull(programAsset, "No UdonSharp program asset was created for the player.");
