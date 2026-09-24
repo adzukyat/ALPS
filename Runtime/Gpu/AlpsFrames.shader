@@ -2,7 +2,7 @@
 // the 13 frame channels of AlpsShowLayout in order and then whether the head is aimed at a
 // tracked user.
 //
-// A head tracking a user turns toward the user's head, found from the fixture's aim space
+// A head tracking a user turns toward the user's hips, found from the fixture's aim space
 // in the show data. It follows at the effect's speed from where the previous frames left it,
 // and jumps straight there when it was not aimed before.
 Shader "Hidden/ALPS/Frames"
@@ -35,7 +35,7 @@ Shader "Hidden/ALPS/Frames"
             float _AlpsFrameRows;
             float _AlpsDeltaTime;
 
-            // Head positions of the tracked users, in the order of the show's user names.
+            // Hips positions of the tracked users, in the order of the show's user names.
             // w is 1 while the user is in the instance.
             float4 _AlpsTrackTarget0;
             float4 _AlpsTrackTarget1;
@@ -69,7 +69,7 @@ Shader "Hidden/ALPS/Frames"
                 float4 target = AlpsTrackTarget(AlpsReadInt(effectRow + EffectScalarD));
                 if (target.w < 0.5) return 0.0;
 
-                // The user's head in the space VRSL turns the head in.
+                // The user's hips in the space VRSL turns the head in.
                 int aim = show.aim + fixture * ALPS_AIM_STRIDE;
                 float3 local;
                 local.x = AlpsRead(aim) * target.x + AlpsRead(aim + 1) * target.y + AlpsRead(aim + 2) * target.z + AlpsRead(aim + 3);

@@ -266,7 +266,10 @@ namespace AdzukiSoft.ALPS
         }
 #endif
 
-        /// <summary>Hands the frames pass the head of every tracked user present.</summary>
+        /// <summary>
+        /// Hands the frames pass the hips of every tracked user present. An avatar without a
+        /// hips bone, which reads as zero, gives its head instead.
+        /// </summary>
         private void UpdateTargets()
         {
             if (_playersDirty)
@@ -285,8 +288,13 @@ namespace AdzukiSoft.ALPS
                 var target = Vector4.zero;
                 if (Utilities.IsValid(player))
                 {
-                    var head = player.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-                    target = new Vector4(head.x, head.y, head.z, 1f);
+                    var position = player.GetBonePosition(HumanBodyBones.Hips);
+                    if (position == Vector3.zero)
+                    {
+                        position = player.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+                    }
+
+                    target = new Vector4(position.x, position.y, position.z, 1f);
                 }
 
                 framesMaterial.SetVector(_idTargets[u], target);
@@ -326,7 +334,7 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// The first three rows of a world to aim space matrix, which the frames pass turns a
-        /// user's head into the space VRSL rotates the fixture head in with.
+        /// user's hips into the space VRSL rotates the fixture head in with.
         /// </summary>
         public static void WriteAim(Matrix4x4 worldToAim, float[] aim, int offset)
         {
