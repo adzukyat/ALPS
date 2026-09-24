@@ -149,6 +149,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 Minimum = -SpreadBeatsLimit,
                 Maximum = SpreadBeatsLimit,
+                Subdivides = true,
             };
             // Growing like the slider keeps the flag on the right edge in either unit.
             _spreadBeats.AddToClassList("alps-animatable__field");
@@ -189,7 +190,7 @@ namespace AdzukiSoft.ALPS.Editor
             spreadRow.Add(_beatsFlag);
             Add(spreadRow);
 
-            var speed = new AlpsStepper("速度", "拍", 1f, compact ? null : "/ 1周期") { Minimum = 0f };
+            var speed = new AlpsStepper("速度", "拍", 1f, compact ? null : "/ 1周期") { Minimum = 0f, Subdivides = true };
             speed.SetValueWithoutNotify(settings.beatsPerCycle);
             speed.RegisterValueChangedCallback(evt =>
             {

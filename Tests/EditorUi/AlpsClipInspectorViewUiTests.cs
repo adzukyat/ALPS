@@ -1847,5 +1847,34 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(Position(0), Position(1));
             Assert.AreNotEqual(Position(0), Position(2));
         }
+
+        [Test]
+        public void Stepper_SubdividesBelowOneBeat()
+        {
+            float Down(float value) => AlpsStepper.StepDown(value, 1f, true);
+            float Up(float value) => AlpsStepper.StepUp(value, 1f, true);
+
+            Assert.AreEqual(2f, Down(3f));
+            Assert.AreEqual(1f, Down(1.5f), "A step down lands on one beat before it halves.");
+            Assert.AreEqual(0.5f, Down(1f));
+            Assert.AreEqual(0.25f, Down(0.5f));
+            Assert.AreEqual(0.125f, Down(0.25f));
+            Assert.AreEqual(0.0625f, Down(0.125f));
+            Assert.AreEqual(0f, Down(0.0625f), "Past a sixteenth comes zero.");
+            Assert.AreEqual(0.25f, Down(0.3f), "An odd value snaps onto the ladder.");
+            Assert.AreEqual(-0.0625f, Down(0f), "Below zero mirrors the ladder, for the delay.");
+            Assert.AreEqual(-2f, Down(-1f));
+
+            Assert.AreEqual(0.0625f, Up(0f));
+            Assert.AreEqual(0.125f, Up(0.0625f));
+            Assert.AreEqual(1f, Up(0.5f));
+            Assert.AreEqual(1f, Up(0.75f));
+            Assert.AreEqual(2f, Up(1f));
+            Assert.AreEqual(-0.5f, Up(-1f));
+            Assert.AreEqual(0f, Up(-0.0625f));
+
+            Assert.AreEqual(0f, AlpsStepper.StepDown(1f, 1f, false), "Without subdividing a step stays a step.");
+            Assert.AreEqual(2f, AlpsStepper.StepUp(1f, 1f, false));
+        }
     }
 }

@@ -28,16 +28,17 @@ namespace AdzukiSoft.ALPS.Editor
 
             var minus = new Label("−");
             minus.AddToClassList(ussClassName + "__button");
-            minus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Max(Minimum, value - Step));
+            minus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Max(Minimum, StepDown(value, Step, Subdivides)));
 
-            _box = new AlpsNumberBox(unit, textClass: ussClassName + "__text");
+            // Four places, so the finest subdivision shows in full.
+            _box = new AlpsNumberBox(unit, "0.####", ussClassName + "__text");
             _box.AddToClassList(ussClassName + "__value");
             _box.RegisterValueChangedCallback(evt => value = evt.newValue);
             Minimum = 0f;
 
             var plus = new Label("+");
             plus.AddToClassList(ussClassName + "__button");
-            plus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Min(Maximum, value + Step));
+            plus.RegisterCallback<PointerDownEvent>(_ => value = Mathf.Min(Maximum, StepUp(value, Step, Subdivides)));
 
             box.Add(minus);
             box.Add(_box);
@@ -59,6 +60,74 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         public float Step { get; set; }
+
+        /// <summary>
+        /// Below one step the buttons halve and double instead, so a beat goes to 1/2, 1/4, 1/8
+        /// and 1/16 before 0, and negative values mirror it. Off by default.
+        /// </summary>
+        public bool Subdivides { get; set; }
+
+        /// <summary>The finest share of a step the buttons reach when subdividing.</summary>
+        public const int FinestSubdivision = 16;
+
+        /// <summary>What the + button makes of <paramref name="current"/>, before the limits.</summary>
+        public static float StepUp(float current, float step, bool subdivides)
+        {
+            if (!subdivides || step <= 0f || current >= step)
+            {
+                return current + step;
+            }
+
+            if (current < 0f)
+            {
+                return -StepDown(-current, step, true);
+            }
+
+            // The smallest subdivision above the value, which snaps odd values onto the ladder.
+            var epsilon = step * 1e-4f;
+            var next = step / FinestSubdivision;
+            while (next <= current + epsilon)
+            {
+                next *= 2f;
+            }
+
+            return Mathf.Min(next, step);
+        }
+
+        /// <summary>What the - button makes of <paramref name="current"/>, before the limits.</summary>
+        public static float StepDown(float current, float step, bool subdivides)
+        {
+            if (!subdivides || step <= 0f)
+            {
+                return current - step;
+            }
+
+            if (current > step)
+            {
+                // Lands on one step first, so 1.5 goes to 1 and then halves.
+                return Mathf.Max(current - step, step);
+            }
+
+            if (current <= 0f)
+            {
+                return -StepUp(-current, step, true);
+            }
+
+            // The largest subdivision below the value, and 0 from the finest one.
+            var epsilon = step * 1e-4f;
+            if (current <= step / FinestSubdivision + epsilon)
+            {
+                return 0f;
+            }
+
+            var next = step;
+            while (next >= current - epsilon)
+            {
+                next *= 0.5f;
+            }
+
+            return next;
+        }
 
         public float Minimum
         {

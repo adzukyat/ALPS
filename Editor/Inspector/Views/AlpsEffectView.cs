@@ -405,7 +405,7 @@ namespace AdzukiSoft.ALPS.Editor
             _animatables.Add(view);
             body.Add(view);
 
-            var rotation = new AlpsStepper("回転速度", "拍", 1f, "/ 1回転") { Minimum = 0f };
+            var rotation = new AlpsStepper("回転速度", "拍", 1f, "/ 1回転") { Minimum = 0f, Subdivides = true };
             rotation.SetValueWithoutNotify(_effect.goboRotationBeats);
             rotation.RegisterValueChangedCallback(evt =>
             {
