@@ -1876,5 +1876,31 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(0f, AlpsStepper.StepDown(1f, 1f, false), "Without subdividing a step stays a step.");
             Assert.AreEqual(2f, AlpsStepper.StepUp(1f, 1f, false));
         }
+
+        [Test]
+        public void NumberBox_ReadsSimpleExpressions()
+        {
+            float Parse(string text, string unit = "拍")
+            {
+                Assert.IsTrue(AlpsNumberBox.TryParse(text, unit, out var result), text);
+                return result;
+            }
+
+            Assert.AreEqual(4f, Parse("4"));
+            Assert.AreEqual(1f / 3f, Parse("1/3"), 0.0001f);
+            Assert.AreEqual(240f, Parse("120*2", "BPM"));
+            Assert.AreEqual(2f, Parse("(4+2)/3"), 0.0001f);
+            Assert.AreEqual(-0.5f, Parse("-1/2"), 0.0001f);
+            Assert.AreEqual(0.75f, Parse("3/4 拍"), 0.0001f, "The unit left on an entry is dropped.");
+            Assert.AreEqual(25f, Parse("50/2%", "%"), 0.0001f);
+            Assert.AreEqual(0.5f, Parse("１／２"), 0.0001f, "Full width entries from an IME read the same.");
+            Assert.AreEqual(6f, Parse("3×2"), 0.0001f);
+            Assert.AreEqual(4f, Parse("4拍"), "An entry with its unit still commits.");
+            Assert.AreEqual(12f, Parse("12 beats"), "A number followed by words reads as the number.");
+
+            Assert.IsFalse(AlpsNumberBox.TryParse("abc", "拍", out _));
+            Assert.IsFalse(AlpsNumberBox.TryParse("1/0", "拍", out _), "Infinity is not a value.");
+            Assert.IsFalse(AlpsNumberBox.TryParse(string.Empty, "拍", out _));
+        }
     }
 }

@@ -1,5 +1,7 @@
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -16,6 +18,8 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static readonly Regex LeadingNumber =
             new Regex(@"^\s*[-+]?[0-9]*\.?[0-9]+", RegexOptions.Compiled);
+
+        private static readonly Regex TrailingDigit = new Regex("[0-9]", RegexOptions.Compiled);
 
         private readonly TextField _text;
         private bool _editing;
@@ -112,15 +116,84 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void OnTextChanged(ChangeEvent<string> evt)
         {
-            var match = LeadingNumber.Match(evt.newValue ?? string.Empty);
-            if (match.Success &&
-                float.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            if (TryParse(evt.newValue, Unit, out var parsed))
             {
                 value = Mathf.Clamp(parsed, Limit.x, Limit.y);
             }
 
             // Re-render so the unit comes back even when the entry was rejected.
             SetEditing(false);
+        }
+
+        /// <summary>
+        /// Reads a typed entry: a simple expression ("1/3", "120*2", "(4+2)/3") through Unity's own
+        /// evaluator, full width characters included, or else the number it starts with, so an
+        /// entry with its unit still commits.
+        /// </summary>
+        public static bool TryParse(string text, string unit, out float result)
+        {
+            text = Normalize(text).Trim();
+            if (!string.IsNullOrEmpty(unit) && text.EndsWith(unit, StringComparison.Ordinal))
+            {
+                text = text.Substring(0, text.Length - unit.Length).TrimEnd();
+            }
+
+            // An expression that reads but divides by zero is rejected, not cut to its first number.
+            if (text.Length > 0 && ExpressionEvaluator.Evaluate(text, out result))
+            {
+                return IsFinite(result);
+            }
+
+            // Only a number followed by words, like a unit, falls back to that number. Anything
+            // with more digits was a formula the evaluator refused, such as one dividing by zero.
+            result = 0f;
+            var match = LeadingNumber.Match(text);
+            return match.Success &&
+                   !TrailingDigit.IsMatch(text.Substring(match.Length)) &&
+                   float.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out result) &&
+                   IsFinite(result);
+        }
+
+        /// <summary>Turns full width digits and signs into ASCII, and × ÷ into * /.</summary>
+        private static string Normalize(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            var chars = text.ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                if (c >= '！' && c <= '～')
+                {
+                    chars[i] = (char)(c - 0xFEE0);
+                }
+                else if (c == '　')
+                {
+                    chars[i] = ' ';
+                }
+                else if (c == '×')
+                {
+                    chars[i] = '*';
+                }
+                else if (c == '÷')
+                {
+                    chars[i] = '/';
+                }
+                else if (c == '−')
+                {
+                    chars[i] = '-';
+                }
+            }
+
+            return new string(chars);
+        }
+
+        private static bool IsFinite(float number)
+        {
+            return !float.IsNaN(number) && !float.IsInfinity(number);
         }
     }
 }
