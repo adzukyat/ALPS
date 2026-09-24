@@ -109,6 +109,29 @@ namespace AdzukiSoft.ALPS.Tests
             return Mathf.Atan2(Mathf.Sqrt(local.x * local.x + local.y * local.y), -local.z) * Mathf.Rad2Deg;
         }
 
+        /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%.</summary>
+        private static float GridDimmer(float level)
+        {
+            return level > 0f ? 1.26f * Mathf.Pow(Mathf.Min(level, 1f), 1f / 3f) : 0f;
+        }
+
+        /// <summary>The colour channel the grid holds, the tint VRSL's static path was handed turned into linear.</summary>
+        private static float GridColour(float channel, float level)
+        {
+            if (level <= 0f)
+            {
+                return 0f;
+            }
+
+            var tint = channel * Mathf.Max(level, 1f);
+            if (QualitySettings.activeColorSpace == ColorSpace.Linear)
+            {
+                tint = tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+            }
+
+            return tint * 2.02f * Mathf.Pow(Mathf.Min(level, 1f), 2f / 3f);
+        }
+
         [Test]
         public void Grid_PutsEachFixtureOnItsSharedRow()
         {
@@ -125,7 +148,7 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 var texel = VrslTexel(13 * row + 1 + 7);
                 var red = grid.GetPixel(texel.x, texel.y).r;
-                Assert.AreEqual(row == 5 || row == 9 ? 1f : 0f, red, 1e-4f, $"Red of row {row}.");
+                Assert.AreEqual(row == 5 || row == 9 ? GridColour(1f, 0.5f) : 0f, red, 1e-4f, $"Red of row {row}.");
             }
         }
 
@@ -156,10 +179,10 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(ConeStretch(Channel(AlpsShowLayout.FrameConeLength), Channel(AlpsShowLayout.FrameConeMeshLength)), Read(grid, 1), 1e-4f, "Cone length. " + diagnostics);
                 Assert.AreEqual((Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]), Read(grid, 2), 1e-4f, "Tilt. " + diagnostics);
                 Assert.AreEqual(Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f, Read(grid, 4), 1e-4f, "Cone width. " + diagnostics);
-                Assert.AreEqual(1f, Read(grid, 5), 1e-4f, "Dimmer. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowLayout.FrameRed) * level * 2f, Read(grid, 7), 1e-4f, "Red. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowLayout.FrameGreen) * level * 2f, Read(grid, 8), 1e-4f, "Green. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowLayout.FrameBlue) * level * 2f, Read(grid, 9), 1e-4f, "Blue. " + diagnostics);
+                Assert.AreEqual(GridDimmer(level), Read(grid, 5), 1e-4f, "Dimmer. " + diagnostics);
+                Assert.AreEqual(GridColour(Channel(AlpsShowLayout.FrameRed), level), Read(grid, 7), 1e-4f, "Red. " + diagnostics);
+                Assert.AreEqual(GridColour(Channel(AlpsShowLayout.FrameGreen), level), Read(grid, 8), 1e-4f, "Green. " + diagnostics);
+                Assert.AreEqual(GridColour(Channel(AlpsShowLayout.FrameBlue), level), Read(grid, 9), 1e-4f, "Blue. " + diagnostics);
                 Assert.AreEqual(Mathf.Round(Channel(AlpsShowLayout.FrameGobo)), Mathf.Round(Read(grid, 11) * 255f / 30f), "Gobo. " + diagnostics);
                 Assert.AreEqual(Channel(AlpsShowLayout.FrameGoboRotation) * Mathf.Deg2Rad / 4f, Read(spin, 10), 1e-4f, "Gobo angle. " + diagnostics);
             }
@@ -200,11 +223,11 @@ namespace AdzukiSoft.ALPS.Tests
                     (Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]),
                     0f,
                     Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f,
+                    GridDimmer(level),
                     1f,
-                    1f,
-                    Channel(AlpsShowLayout.FrameRed) * level * 2f,
-                    Channel(AlpsShowLayout.FrameGreen) * level * 2f,
-                    Channel(AlpsShowLayout.FrameBlue) * level * 2f,
+                    GridColour(Channel(AlpsShowLayout.FrameRed), level),
+                    GridColour(Channel(AlpsShowLayout.FrameGreen), level),
+                    GridColour(Channel(AlpsShowLayout.FrameBlue), level),
                     0f,
                     Mathf.Round(Channel(AlpsShowLayout.FrameGobo)) * 30f / 255f,
                 };

@@ -12,8 +12,6 @@ Shader "Hidden/ALPS/DMX Grid"
     {
         _MainTex ("Frames", 2D) = "black" {}
         _AlpsData ("Show Data", 2D) = "black" {}
-        _AlpsBrightnessGain ("Brightness Gain", Float) = 2
-        _AlpsDimmer ("Dimmer", Float) = 1
     }
 
     CGINCLUDE
@@ -21,8 +19,6 @@ Shader "Hidden/ALPS/DMX Grid"
     #include "AlpsEvaluator.hlsl"
 
     Texture2D<float4> _MainTex;
-    float _AlpsBrightnessGain;
-    float _AlpsDimmer;
 
     #define ALPS_GRID_WIDTH 26.0
     #define ALPS_GRID_HEIGHT 240.0
@@ -30,9 +26,51 @@ Shader "Hidden/ALPS/DMX Grid"
     // AlpsShowPlayer.ModelConeLengthLimit, the model length of the fixture's own mesh.
     #define ALPS_CONE_LENGTH_LIMIT 50.0
 
+    // Brightness is laid out to look the way VRSL's static path showed it, which ALPS drove
+    // before it moved to DMX. There the global intensity dimmed a fixture up to 100%, the
+    // floor linearly, the cone about by the square and the lens about by the fourth power,
+    // and a brighter tint took over past 100%. In DMX mode the dimmer scales the floor once
+    // and the cone and the lens about by the sixth and the seventh power, so the dimmer takes
+    // the cube root of the level and the colour the rest, which lands between the two on the
+    // cone and the lens. The values at 100% match the floor, the cone and the lens of VRSL's
+    // stock movers.
+    #define ALPS_DIMMER_AT_FULL 1.26
+    #define ALPS_COLOUR_AT_FULL 2.02
+    #define ALPS_DIMMER_SHARE (1.0 / 3.0)
+
     float AlpsFrameChannel(int fixture, int channel)
     {
         return _MainTex.Load(int3(channel / 4, fixture, 0))[channel % 4];
+    }
+
+    // Brightness times flicker as a share of 100%.
+    float AlpsLevel(int fixture)
+    {
+        return max(0.0, AlpsFrameChannel(fixture, FrameBrightness) * AlpsFrameChannel(fixture, FrameBrightnessScale) / 100.0);
+    }
+
+    float AlpsDimmer(int fixture)
+    {
+        float level = AlpsLevel(fixture);
+        return level > 0.0 ? ALPS_DIMMER_AT_FULL * pow(min(level, 1.0), ALPS_DIMMER_SHARE) : 0.0;
+    }
+
+    // The static path handed VRSL the colour as a tint, which Unity turns from gamma into
+    // linear in a linear project, brightness past 100% included. The DMX grid is read as
+    // it is, so the colour goes through the same conversion here.
+    float AlpsColour(int fixture, int channel)
+    {
+        float level = AlpsLevel(fixture);
+        if (level <= 0.0)
+        {
+            return 0.0;
+        }
+
+        float tint = AlpsFrameChannel(fixture, channel) * max(level, 1.0);
+        #ifndef UNITY_COLORSPACE_GAMMA
+        tint = GammaToLinearSpaceExact(tint);
+        #endif
+        return tint * ALPS_COLOUR_AT_FULL * pow(min(level, 1.0), 1.0 - ALPS_DIMMER_SHARE);
     }
 
     // The texel VRSL samples for absolute channel <dmx> on a 26 x 240 grid, following
@@ -134,7 +172,7 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset == 5)
         {
-            return _AlpsDimmer;
+            return AlpsDimmer(fixture);
         }
 
         if (offset == 6)
@@ -145,10 +183,7 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset >= 7 && offset <= 9)
         {
-            // The dimmer stays put and the colour carries the brightness, which keeps it
-            // linear on every mesh and lets it pass 100%.
-            float level = max(0.0, AlpsFrameChannel(fixture, FrameBrightness) * AlpsFrameChannel(fixture, FrameBrightnessScale) / 100.0);
-            return AlpsFrameChannel(fixture, FrameRed + offset - 7) * level * _AlpsBrightnessGain;
+            return AlpsColour(fixture, FrameRed + offset - 7);
         }
 
         if (offset == 11)
