@@ -639,6 +639,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     angle:
       limit: {x: -180, y: 180}
       value: 0
@@ -664,6 +665,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     sweep:
       limit: {x: 0, y: 360}
       value: 360
@@ -689,6 +691,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     width:
       limit: {x: 0, y: 60}
       value: 4
@@ -714,6 +717,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     depth:
       limit: {x: 0, y: 60}
       value: 4
@@ -739,6 +743,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     height:
       limit: {x: -20, y: 20}
       value: 0
@@ -764,6 +769,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     outward:
       limit: {x: -20, y: 20}
       value: 0
@@ -789,6 +795,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationX:
       limit: {x: -180, y: 180}
       value: 0
@@ -814,6 +821,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationY:
       limit: {x: -180, y: 180}
       value: 0
@@ -839,6 +847,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationZ:
       limit: {x: -180, y: 180}
       value: 0
@@ -864,6 +873,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
   initialized: 0
   legacyFixtures: []
 --- !u!1001 &237324845
@@ -1216,11 +1226,17 @@ PlayableDirector:
     value: {fileID: 930694294}
   - key: {fileID: 0}
     value: {fileID: 182557434}
-  - key: {fileID: 6241155799466864155, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 1247740771}
-  - key: {fileID: -2067482649013594509, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 930694294}
-  - key: {fileID: -4415768410560080446, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 182557434}
+  - key: {fileID: 8337983310248827485, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 1247740771}
+  - key: {fileID: -4506354891103912452, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 930694294}
+  - key: {fileID: -5954933274336768294, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 182557434}
   m_ExposedReferences:
     m_References: []
@@ -2466,6 +2482,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     angle:
       limit: {x: -180, y: 180}
       value: 0
@@ -2491,6 +2508,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     sweep:
       limit: {x: 0, y: 360}
       value: 360
@@ -2516,6 +2534,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     width:
       limit: {x: 0, y: 60}
       value: 4
@@ -2541,6 +2560,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     depth:
       limit: {x: 0, y: 60}
       value: 4
@@ -2566,6 +2586,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     height:
       limit: {x: -20, y: 20}
       value: 0
@@ -2591,6 +2612,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     outward:
       limit: {x: -20, y: 20}
       value: 0
@@ -2616,6 +2638,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationX:
       limit: {x: -180, y: 180}
       value: 0
@@ -2641,6 +2664,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationY:
       limit: {x: -180, y: 180}
       value: 0
@@ -2666,6 +2690,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationZ:
       limit: {x: -180, y: 180}
       value: 0
@@ -2691,6 +2716,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
   initialized: 0
   legacyFixtures: []
 --- !u!1001 &967059903
@@ -3053,6 +3079,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     angle:
       limit: {x: -180, y: 180}
       value: 0
@@ -3078,6 +3105,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     sweep:
       limit: {x: 0, y: 360}
       value: 360
@@ -3103,6 +3131,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     width:
       limit: {x: 0, y: 60}
       value: 4
@@ -3128,6 +3157,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     depth:
       limit: {x: 0, y: 60}
       value: 4
@@ -3153,6 +3183,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     height:
       limit: {x: -20, y: 20}
       value: 0
@@ -3178,6 +3209,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     outward:
       limit: {x: -20, y: 20}
       value: 0
@@ -3203,6 +3235,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationX:
       limit: {x: -180, y: 180}
       value: 0
@@ -3228,6 +3261,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationY:
       limit: {x: -180, y: 180}
       value: 0
@@ -3253,6 +3287,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
     rotationZ:
       limit: {x: -180, y: 180}
       value: 0
@@ -3278,6 +3313,7 @@ MonoBehaviour:
         spreadInBeats: 0
         beatsPerCycle: 2
         inverse: 0
+        fireChance: 1
   initialized: 0
   legacyFixtures: []
 --- !u!1001 &1461307558

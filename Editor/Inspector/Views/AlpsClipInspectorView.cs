@@ -96,11 +96,19 @@ namespace AdzukiSoft.ALPS.Editor
             fields.Add(bpm);
 
             // --- Order ---------------------------------------------------
+            // The seed only shuffles a random order, so it shows only for one.
+            var seed = new AlpsStepper("シード", string.Empty, 1f)
+            {
+                Minimum = 0f,
+                tooltip = "ランダムな並び順を変えます。同じシードのクリップは同じ並びになり、クリップを動かしても並びは変わりません。",
+            };
+
             var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "ランダム");
             order.SetValueWithoutNotify((int)set.order);
             order.RegisterValueChangedCallback(evt =>
             {
                 set.order = (AlpsOrderMode)evt.newValue;
+                AlpsPhaseSettingsView.Show(seed, set.order == AlpsOrderMode.Random);
                 RaiseChanged();
             });
             mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
@@ -118,6 +126,16 @@ namespace AdzukiSoft.ALPS.Editor
             });
             mixed?.Bind(symmetric, set, nameof(AlpsClipEffectSet.symmetric));
             fields.Add(symmetric);
+
+            seed.SetValueWithoutNotify(set.orderSeed);
+            seed.RegisterValueChangedCallback(evt =>
+            {
+                set.orderSeed = Mathf.Max(0, Mathf.RoundToInt(evt.newValue));
+                RaiseChanged();
+            });
+            mixed?.Bind(seed, set, nameof(AlpsClipEffectSet.orderSeed));
+            AlpsPhaseSettingsView.Show(seed, set.order == AlpsOrderMode.Random);
+            fields.Add(seed);
 
             // --- Fade ----------------------------------------------------
             // The clip's own fade in beats. It scales the clip's weight, so it acts like

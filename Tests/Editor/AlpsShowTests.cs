@@ -1370,8 +1370,9 @@ namespace AdzukiSoft.ALPS.Tests
                             var set = Set();
                             set.order = order;
                             set.symmetric = symmetric;
+                            set.orderSeed = seed;
                             set.phase.fixtureGroupSize = groupSize;
-                            clips.Add(new AlpsStandaloneClip { set = set, end = 1f, seed = seed });
+                            clips.Add(new AlpsStandaloneClip { set = set, end = 1f, seed = seed + 1 });
                         }
                     }
                 }
@@ -1385,7 +1386,7 @@ namespace AdzukiSoft.ALPS.Tests
                 var order = (int)set.order;
                 var symmetric = set.symmetric;
                 var groupSize = set.phase.fixtureGroupSize;
-                var seed = clips[clip].seed;
+                var seed = set.orderSeed;
                 var start = AlpsShowLayout.ToInt(show.clips[clip * AlpsShowLayout.ClipStride + AlpsShowLayout.ClipPositionStart]);
                 rows.Add(start);
                 for (var i = 0; i < fixtures; i++)
@@ -1397,8 +1398,8 @@ namespace AdzukiSoft.ALPS.Tests
                 }
             }
 
-            // Only a random order depends on the seed, so the other orders share one row per
-            // fold and grouping.
+            // Only a random order depends on the order seed, so the other orders share one row
+            // per fold and grouping.
             Assert.AreEqual(2 * (2 * 3 + 3 * 2), rows.Count);
         }
 
@@ -1491,6 +1492,30 @@ namespace AdzukiSoft.ALPS.Tests
                 var fires = AlpsPhaseCurve.Fires(0.5f, n + 0.3f, 0, seed);
                 Assert.AreEqual(fires ? 100f : 0f, Evaluate(show, 0, n + 0.3f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Cycle {n}.");
             }
+        }
+
+        [Test]
+        public void OrderSeed_AloneDecidesTheRandomOrder()
+        {
+            const int fixtures = 8;
+
+            int[] Positions(int orderSeed, float start, int clipSeed)
+            {
+                var set = Set();
+                set.order = AlpsOrderMode.Random;
+                set.orderSeed = orderSeed;
+                var show = AlpsShowCompiler.CompileStandalone(
+                    fixtures, Bpm, new AlpsStandaloneClip { set = set, start = start, end = start + 1f, seed = clipSeed });
+                var positionStart = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipPositionStart]);
+                return Enumerable.Range(0, fixtures).Select(i => show.positions[positionStart + i * 2]).ToArray();
+            }
+
+            var first = Positions(5, 0f, 11);
+            CollectionAssert.AreEqual(first, Positions(5, 8f, 4242), "Moving the clip keeps its order.");
+            CollectionAssert.AreNotEqual(first, Positions(6, 0f, 11), "Another seed shuffles differently.");
+            CollectionAssert.AreEqual(
+                Enumerable.Range(0, fixtures).Select(i => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderRandom, false, 5, i, fixtures, 1)).ToArray(),
+                first);
         }
 
         [Test]

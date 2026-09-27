@@ -33,6 +33,12 @@ namespace AdzukiSoft.ALPS
         public bool symmetric;
 
         /// <summary>
+        /// Shuffles the random order. The order depends on it alone, so clips with the same
+        /// seed share their order wherever they sit on the timeline.
+        /// </summary>
+        public int orderSeed;
+
+        /// <summary>
         /// Missing from anything saved before <see cref="CurrentVersion"/>, so it reads as 0
         /// there. Every save writes the current one.
         /// </summary>
@@ -61,6 +67,7 @@ namespace AdzukiSoft.ALPS
             bpm = other.bpm;
             order = other.order;
             symmetric = other.symmetric;
+            orderSeed = other.orderSeed;
             fadeInBeats = other.fadeInBeats;
             fadeOutBeats = other.fadeOutBeats;
             phaseExpanded = other.phaseExpanded;

@@ -153,7 +153,7 @@ namespace AdzukiSoft.ALPS
             return -2;
         }
 
-        /// <summary>A stable seed for a clip, so random order and noise match between runs.</summary>
+        /// <summary>A stable seed for a clip, so its noise and fire chance match between runs.</summary>
         public static int SeedFor(TimelineClip clip, int layer)
         {
             return (Mathf.RoundToInt((float)(clip.start * 1000.0)) % 65536) + layer * 7919;
@@ -185,6 +185,7 @@ namespace AdzukiSoft.ALPS
             // The clip being encoded, for the spread division its phase blocks and value spreads share.
             private int _clipOrder;
             private bool _clipSymmetric;
+            private int _clipOrderSeed;
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
 
@@ -318,6 +319,7 @@ namespace AdzukiSoft.ALPS
 
                 _clipOrder = (int)set.order;
                 _clipSymmetric = set.symmetric;
+                _clipOrderSeed = set.orderSeed;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
 
@@ -335,7 +337,7 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowLayout.ClipBpm] = bpm;
                 row[AlpsShowLayout.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
                 row[AlpsShowLayout.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
-                row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex, seed);
+                row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex);
                 WritePhase(row, AlpsShowLayout.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowLayout.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowLayout.ClipMixOutCurve, mixOutCurve, 1f, 0f);
@@ -349,12 +351,14 @@ namespace AdzukiSoft.ALPS
 
             /// <summary>
             /// Writes the order position and mirror flag of every member of the clip's group,
-            /// and returns where they start. Only a random order depends on the seed, so the
-            /// other clips of a group with the same order, fold and grouping share one row.
+            /// and returns where they start. Only a random order depends on the clip's order
+            /// seed, so the other clips of a group with the same order, fold and grouping share
+            /// one row, and random clips share one when their seeds match too.
             /// </summary>
-            private int AddPositions(int groupIndex, int seed)
+            private int AddPositions(int groupIndex)
             {
-                var key = (groupIndex, _clipOrder, _clipSymmetric, _clipGroupSize, _clipOrder == AlpsShowLayout.OrderRandom ? seed : 0);
+                var seed = _clipOrder == AlpsShowLayout.OrderRandom ? _clipOrderSeed : 0;
+                var key = (groupIndex, _clipOrder, _clipSymmetric, _clipGroupSize, seed);
                 if (_positionRows.TryGetValue(key, out var existing))
                 {
                     return existing;

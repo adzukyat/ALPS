@@ -353,7 +353,7 @@ namespace AdzukiSoft.ALPS.Tests
             settings.height.hasSpread = true;
             settings.height.spreadRange = new Vector2(first, last);
 
-            var set = new AlpsClipEffectSet { order = order, symmetric = symmetric };
+            var set = new AlpsClipEffectSet { order = order, symmetric = symmetric, orderSeed = seed };
             set.phase.fixtureGroupSize = 1;
             set.Add(AlpsEffectKind.Brightness);
             var brightness = set.effects[0].brightness;

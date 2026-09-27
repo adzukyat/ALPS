@@ -533,6 +533,19 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(25f, slider.value, 0.0001f);
         }
 
+        [Test]
+        public void OrderSeed_ShowsOnlyForARandomOrder()
+        {
+            AlpsStepper Seed(VisualElement view) => view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "シード");
+
+            Assert.AreEqual(DisplayStyle.None, Seed(new AlpsClipInspectorView(new AlpsClipEffectSet())).style.display.value);
+
+            var set = new AlpsClipEffectSet { order = AlpsOrderMode.Random, orderSeed = 12 };
+            var seed = Seed(new AlpsClipInspectorView(set));
+            Assert.AreNotEqual(DisplayStyle.None, seed.style.display.value);
+            Assert.AreEqual(12f, seed.value);
+        }
+
         private static AlpsValueSlider FireChance(VisualElement view)
         {
             return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "確率");
