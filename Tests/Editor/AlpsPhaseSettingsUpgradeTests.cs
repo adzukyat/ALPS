@@ -242,6 +242,7 @@ namespace AdzukiSoft.ALPS.Tests
                 settings.holdHigh,
                 settings.fall,
                 settings.inverse,
+                settings.fireChance,
                 u,
                 0,
                 0);

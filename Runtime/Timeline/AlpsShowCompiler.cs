@@ -537,6 +537,7 @@ namespace AdzukiSoft.ALPS
                 row[offset + AlpsShowLayout.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
                 row[offset + AlpsShowLayout.PhaseInverse] = phase.inverse ? 1f : 0f;
                 row[offset + AlpsShowLayout.PhaseFallEase] = (int)phase.fallEase;
+                row[offset + AlpsShowLayout.PhaseFireChance] = Mathf.Clamp01(phase.fireChance);
             }
 
             private static void WriteCurve(float[] row, int offset, AnimationCurve curve, float from, float to)

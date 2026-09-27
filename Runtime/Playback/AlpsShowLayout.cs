@@ -69,7 +69,12 @@ namespace AdzukiSoft.ALPS
         public const int PhaseInverse = 8;
         /// <summary>Ease of the fall. <see cref="PhaseEase"/> shapes the rise.</summary>
         public const int PhaseFallEase = 9;
-        public const int PhaseStride = 10;
+        /// <summary>
+        /// Chance, 0..1, that a wave cycle fires at an order position. A cycle that does not
+        /// rests at the bottom of the wave all the way through.
+        /// </summary>
+        public const int PhaseFireChance = 10;
+        public const int PhaseStride = 11;
 
         // --- Clip rows ---------------------------------------------------------------------
 

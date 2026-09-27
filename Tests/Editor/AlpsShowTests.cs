@@ -122,7 +122,7 @@ namespace AdzukiSoft.ALPS.Tests
             AlpsEaseType ease = AlpsEaseType.Linear,
             AlpsEaseType fallEase = AlpsEaseType.Linear)
         {
-            return AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, (int)ease, (int)fallEase, rise, holdHigh, fall, inverse, cycles, 0, 0);
+            return AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, (int)ease, (int)fallEase, rise, holdHigh, fall, inverse, 1f, cycles, 0, 0);
         }
 
         [Test]
@@ -194,8 +194,8 @@ namespace AdzukiSoft.ALPS.Tests
             for (var i = 0; i < 50; i++)
             {
                 var cycles = i * 0.137f;
-                var a = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
-                var b = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, cycles, 3, 9);
+                var a = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, 1f, cycles, 3, 9);
+                var b = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseRandom, 0, 0, 0.5f, 0f, 0.5f, false, 1f, cycles, 3, 9);
                 Assert.That(a, Is.InRange(0f, 1f));
                 Assert.AreEqual(a, b);
             }
@@ -1402,6 +1402,97 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(2 * (2 * 3 + 3 * 2), rows.Count);
         }
 
+        // ------------------------------------------------------------------ fire chance
+
+        /// <summary>A triangle wave of one second per cycle on brightness, 0 to 100.</summary>
+        private static AlpsClipEffectSet TriangleBrightness(float fireChance)
+        {
+            var set = Set(0.5f, 0f, 0.5f);
+            set.phase.fireChance = fireChance;
+            var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            return set;
+        }
+
+        [Test]
+        public void FireChance_SkipsWholeCyclesWithTheDiceTheInspectorRolls()
+        {
+            const int seed = 7;
+            const int cycleCount = 40;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1, Bpm, new AlpsStandaloneClip { set = TriangleBrightness(0.5f), end = cycleCount, seed = seed });
+
+            var fired = 0;
+            for (var n = 0; n < cycleCount; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n + 0.5f, 0, seed);
+                fired += fires ? 1 : 0;
+                Assert.AreEqual(fires ? 50f : 0f, Evaluate(show, 0, n + 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Rising in cycle {n}.");
+                Assert.AreEqual(fires ? 100f : 0f, Evaluate(show, 0, n + 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Top of cycle {n}.");
+                Assert.AreEqual(fires ? 50f : 0f, Evaluate(show, 0, n + 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Falling in cycle {n}.");
+            }
+
+            Assert.That(fired, Is.InRange(10, 30), "About half the cycles fire.");
+        }
+
+        [Test]
+        public void FireChance_AtTheEndsFiresAlwaysOrNever()
+        {
+            var always = Compile(1, TriangleBrightness(1f), 20f);
+            var never = Compile(1, TriangleBrightness(0f), 20f);
+            var inverted = TriangleBrightness(0f);
+            inverted.phase.inverse = true;
+            var restingHigh = Compile(1, inverted, 20f);
+
+            for (var n = 0; n < 20; n++)
+            {
+                Assert.AreEqual(100f, Evaluate(always, 0, n + 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Cycle {n} fires at 100%.");
+                Assert.AreEqual(0f, Evaluate(never, 0, n + 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Cycle {n} rests at 0%.");
+                Assert.AreEqual(100f, Evaluate(restingHigh, 0, n + 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "Inverted, it rests at the top.");
+            }
+
+            Assert.IsTrue(new AlpsPhaseSettings().fireChance >= 1f, "New settings fire every cycle.");
+        }
+
+        [Test]
+        public void FireChance_RollsOncePerOrderPosition()
+        {
+            var set = TriangleBrightness(0.5f);
+            set.symmetric = true;
+            var show = AlpsShowCompiler.CompileStandalone(5, Bpm, new AlpsStandaloneClip { set = set, end = 30f, seed = 3 });
+
+            var differs = false;
+            for (var n = 0; n < 30; n++)
+            {
+                var time = n + 0.5f;
+                float Brightness(int fixture) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+                Assert.AreEqual(Brightness(0), Brightness(4), 0.01f, $"The edges fire together in cycle {n}.");
+                Assert.AreEqual(Brightness(1), Brightness(3), 0.01f, $"The inner pair fires together in cycle {n}.");
+                differs |= Mathf.Abs(Brightness(0) - Brightness(1)) > 1f;
+            }
+
+            Assert.IsTrue(differs, "Each order position rolls its own dice.");
+        }
+
+        [Test]
+        public void FireChance_KeepsBlackoutOnReturnDarkThroughACycleThatRests()
+        {
+            const int seed = 11;
+            var set = Set(0.25f, 0.25f, 0.5f);
+            set.phase.fireChance = 0.5f;
+            var effect = set.Add(AlpsEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 20f, seed = seed });
+
+            for (var n = 0; n < 20; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n + 0.3f, 0, seed);
+                Assert.AreEqual(fires ? 100f : 0f, Evaluate(show, 0, n + 0.3f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Cycle {n}.");
+            }
+        }
+
         [Test]
         public void PhaseCurve_DrawsWhatPlays()
         {
@@ -1421,6 +1512,13 @@ namespace AdzukiSoft.ALPS.Tests
                     p.fallEase = AlpsEaseType.InBack;
                     p.inverse = true;
                 }),
+                ("sparse inverted", p =>
+                {
+                    p.SetShares(0.5f, 0f, 0.5f);
+                    p.beatsPerCycle = 0.5f;
+                    p.fireChance = 0.5f;
+                    p.inverse = true;
+                }),
                 ("random", p => p.mode = AlpsPhaseMode.Random),
             };
 
@@ -1438,7 +1536,7 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     var expected = 100f * AlpsPhaseCurve.Phase(
                         (int)phase.mode, (int)phase.ease, (int)phase.fallEase, phase.rise, phase.holdHigh, phase.fall, phase.inverse,
-                        time / phase.beatsPerCycle, 0, seed);
+                        phase.fireChance, time / phase.beatsPerCycle, 0, seed);
                     // The noise hashes large products, where the GPU may round a step differently.
                     var tolerance = phase.mode == AlpsPhaseMode.Random ? 0.5f : 0.05f;
                     Assert.AreEqual(expected, Evaluate(show, 0, time)[AlpsShowLayout.FrameBrightness], tolerance, $"{name} at {time}s.");

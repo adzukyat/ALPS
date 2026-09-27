@@ -7,7 +7,7 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Graph preview. Plots φ(t) for the first few fixtures of a
     /// <see cref="AlpsPhaseSettings"/>, so the spread and the fixture group size are visible as the
-    /// fading offset traces.
+    /// fading offset traces, and a fire chance below 1 as cycles that stay down.
     /// </summary>
     public class AlpsPhaseGraph : VisualElement
     {
@@ -100,6 +100,7 @@ namespace AdzukiSoft.ALPS.Editor
                         _settings.holdHigh,
                         _settings.fall,
                         _settings.inverse,
+                        _settings.fireChance,
                         cycles,
                         k,
                         0);

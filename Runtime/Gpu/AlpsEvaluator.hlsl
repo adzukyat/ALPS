@@ -68,7 +68,8 @@ float _AlpsTime;
 #define PhaseBeatsPerCycle 7
 #define PhaseInverse 8
 #define PhaseFallEase 9
-#define PhaseStride 10
+#define PhaseFireChance 10
+#define PhaseStride 11
 
 #define ClipStart 0
 #define ClipEnd 1
@@ -326,6 +327,21 @@ float AlpsWave(int riseEase, int fallEase, float rise, float holdHigh, float fal
     return rising ? eased : 1.0 - eased;
 }
 
+// PCG hash, AlpsPhaseCurve.Pcg. Integer maths, so the inspector's graphs roll the same dice.
+uint AlpsPcg(uint v)
+{
+    uint state = v * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+// True when the wave cycle <cycles> is in fires at order position <k>, AlpsPhaseCurve.Fires.
+bool AlpsFires(float chance, float cycles, int k, int seed)
+{
+    uint h = AlpsPcg(asuint((int)floor(cycles)) ^ AlpsPcg(asuint(k) ^ AlpsPcg(asuint(seed))));
+    return (h >> 8u) * (1.0 / 16777216.0) < chance;
+}
+
 // Phase from the phase block starting at data index <row>.
 float AlpsPhaseAt(int row, float cycles, int k, int seed)
 {
@@ -334,6 +350,7 @@ float AlpsPhaseAt(int row, float cycles, int k, int seed)
         return saturate(AlpsNoise(cycles * 2.0, (k + 1) * 7.31 + seed * 0.137));
     }
 
+    // A cycle that does not fire rests at the bottom of the wave all the way through.
     float u = AlpsWave(
         AlpsReadInt(row + PhaseEase),
         AlpsReadInt(row + PhaseFallEase),
@@ -341,6 +358,7 @@ float AlpsPhaseAt(int row, float cycles, int k, int seed)
         AlpsRead(row + PhaseHoldHigh),
         AlpsRead(row + PhaseFall),
         cycles - floor(cycles));
+    u = AlpsFires(AlpsRead(row + PhaseFireChance), cycles, k, seed) ? u : 0.0;
     return AlpsRead(row + PhaseInverse) > 0.5 ? 1.0 - u : u;
 }
 
@@ -483,13 +501,15 @@ int AlpsPaletteStop(int paramRow, int count, float cycles, float phase, out floa
 }
 
 // Brightness multiplier for blackout on return, 0 on the return leg of the wave the value
-// follows and faded at both ends of the outbound leg.
+// follows and faded at both ends of the outbound leg. A cycle that does not fire has no
+// outbound leg, so it stays dark.
 float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float cycles, float fadeIn, float fadeOut)
 {
     bool own = AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
     int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
     float outbound = AlpsOutboundLeg(AlpsRead(phaseRow + PhaseRise), AlpsRead(phaseRow + PhaseHoldHigh));
     if (AlpsReadInt(phaseRow + PhaseMode) != PhaseWave || outbound >= 1.0) return 1.0;
+    if (!AlpsFires(AlpsRead(phaseRow + PhaseFireChance), cycles, c.k, c.seed)) return 0.0;
 
     float u = cycles - floor(cycles);
     if (u >= outbound) return 0.0;

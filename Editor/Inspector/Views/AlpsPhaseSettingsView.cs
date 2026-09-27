@@ -7,7 +7,7 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Shared settings: graph preview, mode, distribution, easing, fixture group size,
-    /// spread, speed, invert.
+    /// spread, speed, fire chance, invert.
     ///
     /// The same view is reused verbatim under a parameter that turns own phase on,
     /// which is why it takes a plain <see cref="AlpsPhaseSettings"/> rather than reaching
@@ -33,6 +33,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
         private readonly AlpsRangeFlag _beatsFlag;
+        private readonly AlpsValueSlider _fireChance;
         private readonly AlpsToggleSwitch _inverse;
 
         /// <summary>The speed the delay's marks were last built for. NaN forces the first build.</summary>
@@ -200,6 +201,23 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
             Add(speed);
 
+            // Every cycle at every order position rolls its own dice, so a chance below 100%
+            // leaves some cycles resting at the bottom of the wave.
+            _fireChance = new AlpsValueSlider("確率", new Vector2(0f, 100f), "%", "0.#")
+            {
+                DefaultValue = defaults.fireChance * 100f,
+                Snaps = new[] { 25f, 50f, 75f },
+                tooltip = "1周期ごとに波が起きる確率です。灯体(並び順の位置)ごと、周期ごとに決まり、起きなかった周期は波の一番下で待ちます。反転中は一番上で待ちます。",
+            };
+            _fireChance.SetValueWithoutNotify(settings.fireChance * 100f);
+            _fireChance.RegisterValueChangedCallback(evt =>
+            {
+                settings.fireChance = Mathf.Clamp01(evt.newValue / 100f);
+                Changed();
+            });
+            mixed?.Bind(_fireChance, settings, nameof(AlpsPhaseSettings.fireChance));
+            Add(_fireChance);
+
             _inverse = new AlpsToggleSwitch("反転");
             _inverse.SetValueWithoutNotify(settings.inverse);
             _inverse.RegisterValueChangedCallback(evt =>
@@ -219,6 +237,7 @@ namespace AdzukiSoft.ALPS.Editor
             var isRandom = _settings.mode == AlpsPhaseMode.Random;
             Show(_easing, !isRandom);
             Show(_inverse, !isRandom);
+            Show(_fireChance, !isRandom);
             Show(_shares, !isRandom);
             RefreshSpread();
             _graph.SetSettings(_settings);

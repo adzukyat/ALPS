@@ -89,6 +89,14 @@ namespace AdzukiSoft.ALPS
         /// <summary>Invert. Ignored while <see cref="mode"/> is Random.</summary>
         public bool inverse;
 
+        /// <summary>
+        /// Chance that a cycle fires, rolled for every cycle at every order position. A cycle
+        /// that does not fire rests at the bottom of the wave, or the top when inverted. Missing
+        /// from older data, which then keeps 1 and fires every cycle. Ignored while
+        /// <see cref="mode"/> is Random.
+        /// </summary>
+        [Range(0f, 1f)] public float fireChance = 1f;
+
         public AlpsPhaseSettings() { }
 
         /// <summary>
@@ -114,6 +122,7 @@ namespace AdzukiSoft.ALPS
             spreadInBeats = other.spreadInBeats;
             beatsPerCycle = other.beatsPerCycle;
             inverse = other.inverse;
+            fireChance = other.fireChance;
         }
 
         /// <summary>

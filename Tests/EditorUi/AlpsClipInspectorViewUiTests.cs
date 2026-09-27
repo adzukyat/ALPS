@@ -518,6 +518,24 @@ namespace AdzukiSoft.ALPS.Tests
 
             Assert.AreEqual(DisplayStyle.None, easing.style.display.value, "イージング must be hidden in ランダム.");
             Assert.AreEqual(DisplayStyle.None, inverse.style.display.value, "反転 must be hidden in ランダム.");
+            Assert.AreEqual(DisplayStyle.None, FireChance(view).style.display.value, "確率 must be hidden in ランダム.");
+        }
+
+        [Test]
+        public void FireChance_ShowsAsAPercentageOfTheWave()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.fireChance = 0.25f;
+            var view = new AlpsClipInspectorView(set);
+            var slider = FireChance(view);
+
+            Assert.AreNotEqual(DisplayStyle.None, slider.style.display.value, "確率 shows for a wave.");
+            Assert.AreEqual(25f, slider.value, 0.0001f);
+        }
+
+        private static AlpsValueSlider FireChance(VisualElement view)
+        {
+            return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "確率");
         }
 
         [Test]

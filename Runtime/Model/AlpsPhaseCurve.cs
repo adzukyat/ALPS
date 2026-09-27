@@ -62,18 +62,47 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// Phase φ in 0..1 from unwrapped cycles. A wave walks one cycle of
-        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert and the eases apply to
-        /// the wave only. Invert flips the eased wave upside down.
+        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert, the eases and the fire
+        /// chance apply to the wave only. A cycle that does not fire rests at the bottom of the
+        /// wave all the way through, and invert flips the eased wave upside down.
         /// </summary>
-        public static float Phase(int mode, int riseEase, int fallEase, float rise, float holdHigh, float fall, bool inverse, float cycles, int k, int seed)
+        public static float Phase(int mode, int riseEase, int fallEase, float rise, float holdHigh, float fall, bool inverse, float fireChance, float cycles, int k, int seed)
         {
             if (mode == AlpsShowLayout.PhaseRandom)
             {
                 return Mathf.Clamp01(Noise(cycles * 2f, (k + 1) * 7.31f + seed * 0.137f));
             }
 
-            var u = Wave(riseEase, fallEase, rise, holdHigh, fall, cycles - Mathf.Floor(cycles));
+            var u = Fires(fireChance, cycles, k, seed)
+                ? Wave(riseEase, fallEase, rise, holdHigh, fall, cycles - Mathf.Floor(cycles))
+                : 0f;
             return inverse ? 1f - u : u;
+        }
+
+        /// <summary>
+        /// True when the wave cycle <paramref name="cycles"/> is in fires at order position
+        /// <paramref name="k"/>. Every cycle rolls its own seeded dice, and fixtures sharing an
+        /// order position roll the same ones. The hash is integer maths, so the GPU rolls
+        /// exactly the same dice.
+        /// </summary>
+        public static bool Fires(float chance, float cycles, int k, int seed)
+        {
+            unchecked
+            {
+                var h = Pcg((uint)Mathf.FloorToInt(cycles) ^ Pcg((uint)k ^ Pcg((uint)seed)));
+                return (h >> 8) * (1f / 16777216f) < chance;
+            }
+        }
+
+        /// <summary>The PCG hash the GPU evaluator rolls fire chances with.</summary>
+        private static uint Pcg(uint value)
+        {
+            unchecked
+            {
+                var state = value * 747796405u + 2891336453u;
+                var word = ((state >> (int)((state >> 28) + 4u)) ^ state) * 277803737u;
+                return (word >> 22) ^ word;
+            }
         }
 
         /// <summary>
