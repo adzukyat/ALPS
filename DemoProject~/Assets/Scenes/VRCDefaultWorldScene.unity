@@ -605,7 +605,9 @@ MonoBehaviour:
     shape: 0
     spacing: 0
     order: 0
+    symmetric: 0
     seed: 0
+    version: 1
     facing: 0
     sides: 6
     columns: 4
@@ -1208,11 +1210,17 @@ PlayableDirector:
     value: {fileID: 930694294}
   - key: {fileID: 0}
     value: {fileID: 182557434}
-  - key: {fileID: -8226390651478838563, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 1247740771}
-  - key: {fileID: 3878565750079101748, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 930694294}
-  - key: {fileID: 6646169744192904613, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 182557434}
+  - key: {fileID: 6241155799466864155, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 1247740771}
+  - key: {fileID: -2067482649013594509, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 930694294}
+  - key: {fileID: -4415768410560080446, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 182557434}
   m_ExposedReferences:
     m_References: []
@@ -2424,7 +2432,9 @@ MonoBehaviour:
     shape: 0
     spacing: 0
     order: 0
+    symmetric: 0
     seed: 0
+    version: 1
     facing: 0
     sides: 6
     columns: 4
@@ -3009,7 +3019,9 @@ MonoBehaviour:
     shape: 0
     spacing: 0
     order: 0
+    symmetric: 0
     seed: 0
+    version: 1
     facing: 0
     sides: 6
     columns: 4

@@ -32,7 +32,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Order_NormalGroupsNeighboursBeforeCounting()
         {
-            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, 0, fixture, 6, 2);
+            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, false, 0, fixture, 6, 2);
 
             CollectionAssert.AreEqual(new[] { 0, 0, 1, 1, 2, 2 }, Enumerable.Range(0, 6).Select(Position).ToArray());
         }
@@ -40,40 +40,69 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Order_SymmetricCountsOutwardFromTheCentre()
         {
-            int Position(int fixture, int count) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderSymmetric, 0, fixture, count, 1);
+            int Position(int fixture, int count) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, true, 0, fixture, count, 1);
 
             CollectionAssert.AreEqual(new[] { 2, 1, 0, 1, 2 }, Enumerable.Range(0, 5).Select(i => Position(i, 5)).ToArray());
             CollectionAssert.AreEqual(new[] { 1, 0, 0, 1 }, Enumerable.Range(0, 4).Select(i => Position(i, 4)).ToArray());
         }
 
         [Test]
+        public void Order_SymmetricReverseCountsInwardFromTheEdges()
+        {
+            int Position(int fixture, int count) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderReverse, true, 0, fixture, count, 1);
+
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 1, 0 }, Enumerable.Range(0, 5).Select(i => Position(i, 5)).ToArray());
+            CollectionAssert.AreEqual(new[] { 0, 1, 1, 0 }, Enumerable.Range(0, 4).Select(i => Position(i, 4)).ToArray());
+        }
+
+        [Test]
+        public void Order_SymmetricRandomShufflesTheMirroredPairs()
+        {
+            const int count = 9;
+            int[] Positions(int seed) => Enumerable.Range(0, count)
+                .Select(i => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderRandom, true, seed, i, count, 1))
+                .ToArray();
+
+            var first = Positions(11);
+            for (var i = 0; i < count; i++)
+            {
+                Assert.AreEqual(first[i], first[count - 1 - i], $"Fixture {i} shares its position with its mirror.");
+            }
+
+            CollectionAssert.AreEquivalent(Enumerable.Range(0, 5).ToArray(), first.Skip(4).ToArray(), "Every position of the half is used exactly once.");
+            CollectionAssert.AreEqual(first, Positions(11), "The same seed gives the same order.");
+            CollectionAssert.AreNotEqual(first, Positions(12), "A different seed shuffles differently.");
+            Assert.IsTrue(AlpsShowLayout.IsMirrored(true, 0, count, 1), "A shuffled symmetric order still mirrors the first half.");
+        }
+
+        [Test]
         public void Order_ReverseCountsFromTheLastGroup()
         {
-            int Position(int fixture, int groupSize) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderReverse, 0, fixture, 6, groupSize);
+            int Position(int fixture, int groupSize) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderReverse, false, 0, fixture, 6, groupSize);
 
             CollectionAssert.AreEqual(new[] { 5, 4, 3, 2, 1, 0 }, Enumerable.Range(0, 6).Select(i => Position(i, 1)).ToArray());
             CollectionAssert.AreEqual(new[] { 2, 2, 1, 1, 0, 0 }, Enumerable.Range(0, 6).Select(i => Position(i, 2)).ToArray());
-            Assert.IsFalse(AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderReverse, 0, 6, 1), "Only symmetric mirrors pan.");
+            Assert.IsFalse(AlpsShowLayout.IsMirrored(false, 0, 6, 1), "Only symmetric mirrors pan.");
         }
 
         [Test]
         public void Order_SymmetricMirrorsOnlyTheFirstHalf()
         {
-            bool Mirrored(int fixture, int count) => AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderSymmetric, fixture, count, 1);
+            bool Mirrored(int fixture, int count) => AlpsShowLayout.IsMirrored(true, fixture, count, 1);
 
             CollectionAssert.AreEqual(
                 new[] { true, true, false, false, false },
                 Enumerable.Range(0, 5).Select(i => Mirrored(i, 5)).ToArray(),
                 "The middle fixture stays unmirrored.");
             CollectionAssert.AreEqual(new[] { true, true, false, false }, Enumerable.Range(0, 4).Select(i => Mirrored(i, 4)).ToArray());
-            Assert.IsFalse(AlpsShowLayout.IsMirrored(AlpsShowLayout.OrderNormal, 0, 5, 1));
+            Assert.IsFalse(AlpsShowLayout.IsMirrored(false, 0, 5, 1));
         }
 
         [Test]
         public void Order_RandomIsAPermutationThatDependsOnTheSeed()
         {
             int[] Positions(int seed) => Enumerable.Range(0, 8)
-                .Select(i => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderRandom, seed, i, 8, 1))
+                .Select(i => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderRandom, false, seed, i, 8, 1))
                 .ToArray();
 
             var first = Positions(11);
@@ -555,7 +584,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Move_SymmetricPanSpreadFansOut()
         {
             var set = Set();
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.hasSpread = true;
             move.tilt.spreadRange = new Vector2(10f, 20f);
@@ -581,7 +610,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Move_SymmetricMirrorsTheWholePanSweep()
         {
             var set = Set();
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             var move = set.Add(AlpsEffectKind.Move);
             move.pan.isRange = true;
             move.pan.range = new Vector2(0f, 60f);
@@ -605,7 +634,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(-0.25f, AlpsPhaseCurve.FixtureCycles(0f, 1f, 0.25f, 1, 0f), 0.0001f);
 
             var set = Set();
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             // Symmetric reaches from the middle to the edge, three positions over five
             // fixtures, so a quarter cycle each again.
             set.phase.spread = -0.75f;
@@ -643,12 +672,12 @@ namespace AdzukiSoft.ALPS.Tests
 
             Assert.AreEqual(
                 0.25f,
-                AlpsShowLayout.DelayFromSpread(1f, AlpsShowLayout.OrderNormal, 4, 1),
+                AlpsShowLayout.DelayFromSpread(1f, false, 4, 1),
                 0.0001f,
                 "A full spread over four positions steps a quarter cycle each.");
             Assert.AreEqual(
                 1f / 3f,
-                AlpsShowLayout.DelayFromSpread(1f, AlpsShowLayout.OrderSymmetric, 5, 1),
+                AlpsShowLayout.DelayFromSpread(1f, true, 5, 1),
                 0.0001f,
                 "Symmetric only reaches from the middle to the edge.");
         }
@@ -1005,7 +1034,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Circle_SymmetricMirrorsTheRings()
         {
             var set = Set();
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             var move = set.Add(AlpsEffectKind.Move);
             move.moveMode = AlpsMoveMode.Circle;
             move.circleCenterTilt.value = 30f;
@@ -1332,14 +1361,18 @@ namespace AdzukiSoft.ALPS.Tests
             var clips = new List<AlpsStandaloneClip>();
             foreach (AlpsOrderMode order in System.Enum.GetValues(typeof(AlpsOrderMode)))
             {
-                foreach (var groupSize in new[] { 1, 2, 3 })
+                foreach (var symmetric in new[] { false, true })
                 {
-                    foreach (var seed in new[] { 11, 4242 })
+                    foreach (var groupSize in new[] { 1, 2, 3 })
                     {
-                        var set = Set();
-                        set.order = order;
-                        set.phase.fixtureGroupSize = groupSize;
-                        clips.Add(new AlpsStandaloneClip { set = set, end = 1f, seed = seed });
+                        foreach (var seed in new[] { 11, 4242 })
+                        {
+                            var set = Set();
+                            set.order = order;
+                            set.symmetric = symmetric;
+                            set.phase.fixtureGroupSize = groupSize;
+                            clips.Add(new AlpsStandaloneClip { set = set, end = 1f, seed = seed });
+                        }
                     }
                 }
             }
@@ -1350,21 +1383,23 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 var set = clips[clip].set;
                 var order = (int)set.order;
+                var symmetric = set.symmetric;
                 var groupSize = set.phase.fixtureGroupSize;
                 var seed = clips[clip].seed;
                 var start = AlpsShowLayout.ToInt(show.clips[clip * AlpsShowLayout.ClipStride + AlpsShowLayout.ClipPositionStart]);
                 rows.Add(start);
                 for (var i = 0; i < fixtures; i++)
                 {
-                    Assert.AreEqual(AlpsShowLayout.OrderPosition(order, seed, i, fixtures, groupSize), show.positions[start + i * 2],
-                        $"k of fixture {i}, {set.order}, groups of {groupSize}, seed {seed}.");
-                    Assert.AreEqual(AlpsShowLayout.IsMirrored(order, i, fixtures, groupSize) ? 1 : 0, show.positions[start + i * 2 + 1],
-                        $"Mirror of fixture {i}, {set.order}, groups of {groupSize}.");
+                    Assert.AreEqual(AlpsShowLayout.OrderPosition(order, symmetric, seed, i, fixtures, groupSize), show.positions[start + i * 2],
+                        $"k of fixture {i}, {set.order}, symmetric {symmetric}, groups of {groupSize}, seed {seed}.");
+                    Assert.AreEqual(AlpsShowLayout.IsMirrored(symmetric, i, fixtures, groupSize) ? 1 : 0, show.positions[start + i * 2 + 1],
+                        $"Mirror of fixture {i}, {set.order}, symmetric {symmetric}, groups of {groupSize}.");
                 }
             }
 
-            // Only a random order depends on the seed, so the other orders share one row per grouping.
-            Assert.AreEqual(3 * 3 + 3 * 2, rows.Count);
+            // Only a random order depends on the seed, so the other orders share one row per
+            // fold and grouping.
+            Assert.AreEqual(2 * (2 * 3 + 3 * 2), rows.Count);
         }
 
         [Test]
@@ -1417,7 +1452,7 @@ namespace AdzukiSoft.ALPS.Tests
         private static AlpsClipEffectSet FullSet()
         {
             var set = Set(0.5f, 0f, 0.5f);
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             set.phase.fixtureGroupSize = 2;
             set.phase.spread = 0.5f;
 

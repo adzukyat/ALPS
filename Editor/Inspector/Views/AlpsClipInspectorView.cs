@@ -96,7 +96,7 @@ namespace AdzukiSoft.ALPS.Editor
             fields.Add(bpm);
 
             // --- Order ---------------------------------------------------
-            var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "左右対称", "ランダム");
+            var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "ランダム");
             order.SetValueWithoutNotify((int)set.order);
             order.RegisterValueChangedCallback(evt =>
             {
@@ -105,6 +105,19 @@ namespace AdzukiSoft.ALPS.Editor
             });
             mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
             fields.Add(order);
+
+            var symmetric = new AlpsToggleSwitch("左右対称")
+            {
+                tooltip = "真ん中で折り返し、左右で同じ位置の灯体に同じ順番を割り当てます。通常は真ん中から、逆順は両端から数え、ランダムは左右の組ごとに並べ替えます。前半の灯体はパンが反転します。",
+            };
+            symmetric.SetValueWithoutNotify(set.symmetric);
+            symmetric.RegisterValueChangedCallback(evt =>
+            {
+                set.symmetric = evt.newValue;
+                RaiseChanged();
+            });
+            mixed?.Bind(symmetric, set, nameof(AlpsClipEffectSet.symmetric));
+            fields.Add(symmetric);
 
             // --- Fade ----------------------------------------------------
             // The clip's own fade in beats. It scales the clip's weight, so it acts like

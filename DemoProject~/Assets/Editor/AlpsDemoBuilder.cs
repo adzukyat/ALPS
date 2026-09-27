@@ -167,7 +167,7 @@ public static class AlpsDemoBuilder
     private static AlpsClipEffectSet WashSweep()
     {
         var set = Set(AlpsEaseType.InOutSine, 4f);
-        set.order = AlpsOrderMode.Symmetric;
+        set.symmetric = true;
         set.phase.spread = 0.5f;
 
         var move = set.Add(AlpsEffectKind.Move);

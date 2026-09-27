@@ -78,8 +78,8 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsFalse(ranges.Any(IsShown), "No range or spread slider shows.");
         }
 
-        [TestCase(AlpsArrangementShape.Off, new string[0], new[] { "始点", "半径", "辺の数", "幅", "列数", "配置", "並び順", "高さ", "Y回転" })]
-        [TestCase(AlpsArrangementShape.Line, new[] { "始点", "終点", "配置", "並び順", "高さ" }, new[] { "半径", "辺の数", "幅", "列数" })]
+        [TestCase(AlpsArrangementShape.Off, new string[0], new[] { "始点", "半径", "辺の数", "幅", "列数", "配置", "並び順", "左右対称", "高さ", "Y回転" })]
+        [TestCase(AlpsArrangementShape.Line, new[] { "始点", "終点", "配置", "並び順", "左右対称", "高さ" }, new[] { "半径", "辺の数", "幅", "列数" })]
         [TestCase(AlpsArrangementShape.Circle, new[] { "半径", "回転", "角度" }, new[] { "始点", "辺の数", "幅" })]
         [TestCase(AlpsArrangementShape.Polygon, new[] { "辺の数", "半径", "回転" }, new[] { "角度", "始点", "幅" })]
         [TestCase(AlpsArrangementShape.Rectangle, new[] { "幅", "奥行き" }, new[] { "列数", "半径", "始点" })]

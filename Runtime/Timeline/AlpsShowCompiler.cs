@@ -172,8 +172,8 @@ namespace AdzukiSoft.ALPS
             private readonly List<float> _gobos = new List<float>();
             private readonly List<string> _userNames = new List<string>();
             private readonly List<int> _positions = new List<int>();
-            private readonly Dictionary<(int group, int order, int groupSize, int seed), int> _positionRows =
-                new Dictionary<(int group, int order, int groupSize, int seed), int>();
+            private readonly Dictionary<(int group, int order, bool symmetric, int groupSize, int seed), int> _positionRows =
+                new Dictionary<(int group, int order, bool symmetric, int groupSize, int seed), int>();
 
             private readonly List<AlpsTarget> _groups = new List<AlpsTarget>();
             private readonly List<int> _groupStart = new List<int>();
@@ -184,6 +184,7 @@ namespace AdzukiSoft.ALPS
 
             // The clip being encoded, for the spread division its phase blocks and value spreads share.
             private int _clipOrder;
+            private bool _clipSymmetric;
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
 
@@ -316,6 +317,7 @@ namespace AdzukiSoft.ALPS
                 var bpm = set.bpm > 0f ? set.bpm : _showBpm;
 
                 _clipOrder = (int)set.order;
+                _clipSymmetric = set.symmetric;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
 
@@ -348,11 +350,11 @@ namespace AdzukiSoft.ALPS
             /// <summary>
             /// Writes the order position and mirror flag of every member of the clip's group,
             /// and returns where they start. Only a random order depends on the seed, so the
-            /// other clips of a group with the same order and grouping share one row.
+            /// other clips of a group with the same order, fold and grouping share one row.
             /// </summary>
             private int AddPositions(int groupIndex, int seed)
             {
-                var key = (groupIndex, _clipOrder, _clipGroupSize, _clipOrder == AlpsShowLayout.OrderRandom ? seed : 0);
+                var key = (groupIndex, _clipOrder, _clipSymmetric, _clipGroupSize, _clipOrder == AlpsShowLayout.OrderRandom ? seed : 0);
                 if (_positionRows.TryGetValue(key, out var existing))
                 {
                     return existing;
@@ -361,8 +363,8 @@ namespace AdzukiSoft.ALPS
                 var start = _positions.Count;
                 for (var i = 0; i < _clipFixtureCount; i++)
                 {
-                    _positions.Add(AlpsShowLayout.OrderPosition(_clipOrder, seed, i, _clipFixtureCount, _clipGroupSize));
-                    _positions.Add(AlpsShowLayout.IsMirrored(_clipOrder, i, _clipFixtureCount, _clipGroupSize) ? 1 : 0);
+                    _positions.Add(AlpsShowLayout.OrderPosition(_clipOrder, _clipSymmetric, seed, i, _clipFixtureCount, _clipGroupSize));
+                    _positions.Add(AlpsShowLayout.IsMirrored(_clipSymmetric, i, _clipFixtureCount, _clipGroupSize) ? 1 : 0);
                 }
 
                 _positionRows.Add(key, start);
@@ -473,7 +475,7 @@ namespace AdzukiSoft.ALPS
 
             private float SpreadStep(Vector2 spread)
             {
-                return AlpsShowLayout.StepFromSpread(spread.x, spread.y, _clipOrder, _clipFixtureCount, _clipGroupSize);
+                return AlpsShowLayout.StepFromSpread(spread.x, spread.y, _clipSymmetric, _clipFixtureCount, _clipGroupSize);
             }
 
             private void AddColor(AlpsColorStop stop)
@@ -514,8 +516,8 @@ namespace AdzukiSoft.ALPS
             }
 
             /// <summary>
-            /// Encodes one phase block. The spread is divided here, with the clip's order
-            /// and fixture grouping: the evaluator takes the order position k once per clip
+            /// Encodes one phase block. The spread is divided here, with the clip's symmetric
+            /// fold and fixture grouping: the evaluator takes the order position k once per clip
             /// from the clip's own phase, so an own phase has to be divided the same way or
             /// its step would not match the k it is multiplied by.
             /// </summary>
@@ -529,7 +531,7 @@ namespace AdzukiSoft.ALPS
                 row[offset + AlpsShowLayout.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
                 row[offset + AlpsShowLayout.PhaseDelay] = AlpsShowLayout.DelayFromSpread(
                     phase.SpreadCycles,
-                    _clipOrder,
+                    _clipSymmetric,
                     _clipFixtureCount,
                     _clipGroupSize);
                 row[offset + AlpsShowLayout.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);

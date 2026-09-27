@@ -12,12 +12,31 @@ namespace AdzukiSoft.ALPS
     public class AlpsClipEffectSet : ISerializationCallbackReceiver
     {
         /// <summary>
+        /// The layout <see cref="version"/> marks. Sets saved before version 1 had symmetric
+        /// as an order of its own, between reverse and random. <see cref="OnAfterDeserialize"/>
+        /// converts it.
+        /// </summary>
+        private const int CurrentVersion = 1;
+
+        /// <summary>
         /// The clip's own tempo, for songs that change tempo part way. Zero follows the
         /// show's tempo. Either way beats count from the clip's start.
         /// </summary>
         public float bpm;
 
         public AlpsOrderMode order = AlpsOrderMode.Normal;
+
+        /// <summary>
+        /// Folds the fixtures onto one half, so both halves share the order and the first half
+        /// mirrors its pan. See <see cref="AlpsShowLayout.OrderPosition"/>.
+        /// </summary>
+        public bool symmetric;
+
+        /// <summary>
+        /// Missing from anything saved before <see cref="CurrentVersion"/>, so it reads as 0
+        /// there. Every save writes the current one.
+        /// </summary>
+        [SerializeField, HideInInspector] private int version;
 
         /// <summary>
         /// Beats the clip takes to rise from dark at its start and to go dark again before
@@ -41,6 +60,7 @@ namespace AdzukiSoft.ALPS
         {
             bpm = other.bpm;
             order = other.order;
+            symmetric = other.symmetric;
             fadeInBeats = other.fadeInBeats;
             fadeOutBeats = other.fadeOutBeats;
             phaseExpanded = other.phaseExpanded;
@@ -173,10 +193,20 @@ namespace AdzukiSoft.ALPS
             }
         }
 
-        public void OnBeforeSerialize() { }
+        public void OnBeforeSerialize()
+        {
+            version = CurrentVersion;
+        }
 
         public void OnAfterDeserialize()
         {
+            if (version < 1)
+            {
+                symmetric = AlpsLegacyOrder.WasSymmetric(order);
+                order = AlpsLegacyOrder.Upgrade(order);
+            }
+
+            version = CurrentVersion;
             SortEffects();
         }
 

@@ -250,9 +250,15 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.NotNull(view.Q<HelpBox>(className: "alps-multi-notice"), "The view says it edits several clips.");
 
                 var order = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == "並び順");
-                order.value = (int)AlpsOrderMode.Symmetric;
-                Assert.AreEqual(AlpsOrderMode.Symmetric, a.data.order);
-                Assert.AreEqual(AlpsOrderMode.Symmetric, b.data.order, "The edit reaches the other clip.");
+                order.value = (int)AlpsOrderMode.Random;
+                Assert.AreEqual(AlpsOrderMode.Random, a.data.order);
+                Assert.AreEqual(AlpsOrderMode.Random, b.data.order, "The edit reaches the other clip.");
+
+                var symmetric = view.Query<AlpsToggleSwitch>().ToList().First(control => control.label == "左右対称");
+                symmetric.value = true;
+                Assert.IsTrue(a.data.symmetric);
+                Assert.IsTrue(b.data.symmetric, "The switch reaches the other clip.");
+                Assert.AreEqual(AlpsOrderMode.Random, b.data.order, "The switch leaves the order alone.");
                 Assert.AreEqual(30f, b.data.effects[b.data.IndexOf(AlpsEffectKind.Brightness, AlpsParity.All)].brightness.value, 0.0001f);
 
                     var coneCard = view.Query<AlpsEffectCard>().ToList()

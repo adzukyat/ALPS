@@ -12,8 +12,14 @@ namespace AdzukiSoft.ALPS
     /// track drives the arrangement.
     /// </summary>
     [Serializable]
-    public class AlpsArrangementSettings
+    public class AlpsArrangementSettings : ISerializationCallbackReceiver
     {
+        /// <summary>
+        /// The layout <see cref="version"/> marks. Settings saved before version 1 had symmetric
+        /// as an order of its own. <see cref="OnAfterDeserialize"/> converts it.
+        /// </summary>
+        private const int CurrentVersion = 1;
+
         public static readonly Vector2 RadiusLimit = new Vector2(0f, 30f);
         public static readonly Vector2 SizeLimit = new Vector2(0f, 60f);
         public static readonly Vector2 OffsetLimit = new Vector2(-20f, 20f);
@@ -26,13 +32,25 @@ namespace AdzukiSoft.ALPS
         public AlpsArrangementSpacing spacing = AlpsArrangementSpacing.Ends;
 
         /// <summary>
-        /// The order spreads are counted in and the symmetric mirror is based on. It does not
-        /// move where the slots are, which always follow the children's order.
+        /// The order spreads are counted in. It does not move where the slots are, which
+        /// always follow the children's order.
         /// </summary>
         public AlpsOrderMode order = AlpsOrderMode.Normal;
 
+        /// <summary>
+        /// Folds the children onto one half before the order counts, and mirrors the first
+        /// half's Y and Z rotation.
+        /// </summary>
+        public bool symmetric;
+
         /// <summary>Shuffles the random order.</summary>
         public int seed;
+
+        /// <summary>
+        /// Missing from anything saved before <see cref="CurrentVersion"/>, so it reads as 0
+        /// there. Every save writes the current one.
+        /// </summary>
+        [SerializeField, HideInInspector] private int version;
 
         public AlpsArrangementFacing facing = AlpsArrangementFacing.Keep;
 
@@ -120,6 +138,7 @@ namespace AdzukiSoft.ALPS
             layout[AlpsArrangementEvaluator.LayoutShape] = (int)shape;
             layout[AlpsArrangementEvaluator.LayoutSpacing] = (int)spacing;
             layout[AlpsArrangementEvaluator.LayoutOrder] = (int)order;
+            layout[AlpsArrangementEvaluator.LayoutSymmetric] = symmetric ? 1f : 0f;
             layout[AlpsArrangementEvaluator.LayoutSeed] = seed;
             layout[AlpsArrangementEvaluator.LayoutFacing] = (int)facing;
             layout[AlpsArrangementEvaluator.LayoutSides] = sides;
@@ -154,7 +173,23 @@ namespace AdzukiSoft.ALPS
                 return value.value;
             }
 
-            return AlpsArrangementEvaluator.SpreadValue(value.spreadRange.x, value.spreadRange.y, (int)order, seed, index, count);
+            return AlpsArrangementEvaluator.SpreadValue(value.spreadRange.x, value.spreadRange.y, (int)order, symmetric, seed, index, count);
+        }
+
+        public void OnBeforeSerialize()
+        {
+            version = CurrentVersion;
+        }
+
+        public void OnAfterDeserialize()
+        {
+            if (version < 1)
+            {
+                symmetric = AlpsLegacyOrder.WasSymmetric(order);
+                order = AlpsLegacyOrder.Upgrade(order);
+            }
+
+            version = CurrentVersion;
         }
 
         private static AlpsAnimatableValue Limited(AlpsAnimatableValue value, float fallback, Vector2 limit)

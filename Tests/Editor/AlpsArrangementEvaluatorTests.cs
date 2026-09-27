@@ -307,7 +307,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void Rotation_SymmetricOrderMirrorsTheFirstHalf()
         {
             var settings = Line(new Vector3(-2f, 0f, 0f), new Vector3(2f, 0f, 0f));
-            settings.order = AlpsOrderMode.Symmetric;
+            settings.symmetric = true;
             settings.rotationY.hasSpread = true;
             settings.rotationY.spreadRange = new Vector2(0f, 30f);
             settings.rotationZ.value = 10f;
@@ -335,23 +335,25 @@ namespace AdzukiSoft.ALPS.Tests
 
         // ---------------------------------------------------------------- spread
 
-        [TestCase(AlpsOrderMode.Normal)]
-        [TestCase(AlpsOrderMode.Reverse)]
-        [TestCase(AlpsOrderMode.Symmetric)]
-        [TestCase(AlpsOrderMode.Random)]
-        public void Spread_MatchesTheShowEvaluatorWithoutARange(AlpsOrderMode order)
+        [TestCase(AlpsOrderMode.Normal, false)]
+        [TestCase(AlpsOrderMode.Reverse, false)]
+        [TestCase(AlpsOrderMode.Random, false)]
+        [TestCase(AlpsOrderMode.Normal, true)]
+        [TestCase(AlpsOrderMode.Reverse, true)]
+        [TestCase(AlpsOrderMode.Random, true)]
+        public void Spread_MatchesTheShowEvaluatorWithoutARange(AlpsOrderMode order, bool symmetric)
         {
             const int count = 7;
             const int seed = 13;
             var first = 20f;
             var last = 140f;
 
-            var settings = new AlpsArrangementSettings { order = order, seed = seed };
+            var settings = new AlpsArrangementSettings { order = order, symmetric = symmetric, seed = seed };
             settings.height.limit = new Vector2(0f, 200f);
             settings.height.hasSpread = true;
             settings.height.spreadRange = new Vector2(first, last);
 
-            var set = new AlpsClipEffectSet { order = order };
+            var set = new AlpsClipEffectSet { order = order, symmetric = symmetric };
             set.phase.fixtureGroupSize = 1;
             set.Add(AlpsEffectKind.Brightness);
             var brightness = set.effects[0].brightness;

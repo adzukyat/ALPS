@@ -27,8 +27,7 @@ namespace AdzukiSoft.ALPS
 
         public const int OrderNormal = 0;
         public const int OrderReverse = 1;
-        public const int OrderSymmetric = 2;
-        public const int OrderRandom = 3;
+        public const int OrderRandom = 2;
 
         public const int TimingWithinCycle = 0;
         public const int TimingPerCycle = 1;
@@ -211,36 +210,43 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// Order position k of the fixture at list index <paramref name="fixtureIndex"/>.
-        /// Grouping is applied before the symmetric fold. Symmetric counts outward from the
-        /// center, so a positive spread starts in the middle and a value spread puts its first
-        /// value there and its last at the edges.
+        /// Grouping is applied first, then the symmetric fold, then the order.
+        ///
+        /// Symmetric folds the groups onto the second half, counted outward from the middle,
+        /// so both halves share their positions. The order then counts over that half: normal
+        /// starts in the middle, so a positive spread starts there and a value spread puts its
+        /// first value there and its last at the edges, reverse starts at the edges, and random
+        /// shuffles the half so each pair stays mirrored.
         /// The compiler writes every clip's positions into the positions table once, so
         /// playback never runs this, and a random order costs no more than any other.
         /// </summary>
-        public static int OrderPosition(int order, int seed, int fixtureIndex, int fixtureCount, int groupSize)
+        public static int OrderPosition(int order, bool symmetric, int seed, int fixtureIndex, int fixtureCount, int groupSize)
         {
             var groups = GroupCount(fixtureCount, groupSize);
             var group = Mathf.Clamp(Mathf.Max(0, fixtureIndex) / Mathf.Max(1, groupSize), 0, groups - 1);
 
-            if (order == OrderReverse)
+            var slots = groups;
+            var slot = group;
+            if (symmetric)
             {
-                return groups - 1 - group;
+                slots = groups - groups / 2;
+                slot = Mathf.Max(group, groups - 1 - group) - groups / 2;
             }
 
-            if (order == OrderSymmetric)
+            if (order == OrderReverse)
             {
-                return Mathf.Max(group, groups - 1 - group) - groups / 2;
+                return slots - 1 - slot;
             }
 
             if (order == OrderRandom)
             {
-                // Rank of this group's hash among all groups: a seeded permutation without arrays.
-                var own = Hash01(group, seed);
+                // Rank of this slot's hash among all slots: a seeded permutation without arrays.
+                var own = Hash01(slot, seed);
                 var rank = 0;
-                for (var other = 0; other < groups; other++)
+                for (var other = 0; other < slots; other++)
                 {
                     var value = Hash01(other, seed);
-                    if (value < own || (value == own && other < group))
+                    if (value < own || (value == own && other < slot))
                     {
                         rank++;
                     }
@@ -249,16 +255,17 @@ namespace AdzukiSoft.ALPS
                 return rank;
             }
 
-            return group;
+            return slot;
         }
 
         /// <summary>
-        /// True for fixtures on the first half of a symmetric order. Their pan is mirrored,
-        /// so both halves turn away from the center together. A middle fixture is not mirrored.
+        /// True for fixtures on the first half of a symmetric order, whatever it counts in.
+        /// Their pan is mirrored, so both halves turn away from the center together. A middle
+        /// fixture is not mirrored.
         /// </summary>
-        public static bool IsMirrored(int order, int fixtureIndex, int fixtureCount, int groupSize)
+        public static bool IsMirrored(bool symmetric, int fixtureIndex, int fixtureCount, int groupSize)
         {
-            if (order != OrderSymmetric)
+            if (!symmetric)
             {
                 return false;
             }
@@ -269,15 +276,14 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// How many order positions a spread is divided across. Normal, reverse and random
-        /// run over every fixture group, so a spread of 1 travels the whole group in one
-        /// cycle. Symmetric counts outward from the middle and only reaches the edge, so it
-        /// is divided by that half instead.
+        /// How many order positions a spread is divided across. Every order runs over every
+        /// fixture group, so a spread of 1 travels the whole group in one cycle. Symmetric
+        /// only counts over one half, so it is divided by that half instead.
         /// </summary>
-        public static int SpreadPositions(int order, int fixtureCount, int groupSize)
+        public static int SpreadPositions(bool symmetric, int fixtureCount, int groupSize)
         {
             var groups = GroupCount(fixtureCount, groupSize);
-            if (order == OrderSymmetric)
+            if (symmetric)
             {
                 return Mathf.Max(1, groups - groups / 2);
             }
@@ -289,9 +295,9 @@ namespace AdzukiSoft.ALPS
         /// The per order position delay a spread comes to for one group. The compiler
         /// applies this while it encodes the phase row, so the arrays already hold the step.
         /// </summary>
-        public static float DelayFromSpread(float spread, int order, int fixtureCount, int groupSize)
+        public static float DelayFromSpread(float spread, bool symmetric, int fixtureCount, int groupSize)
         {
-            return spread / Mathf.Max(1, SpreadPositions(order, fixtureCount, groupSize));
+            return spread / Mathf.Max(1, SpreadPositions(symmetric, fixtureCount, groupSize));
         }
 
         /// <summary>
@@ -300,9 +306,9 @@ namespace AdzukiSoft.ALPS
         /// step and keeps the first value. The compiler applies this like
         /// <see cref="DelayFromSpread"/>.
         /// </summary>
-        public static float StepFromSpread(float first, float last, int order, int fixtureCount, int groupSize)
+        public static float StepFromSpread(float first, float last, bool symmetric, int fixtureCount, int groupSize)
         {
-            var positions = SpreadPositions(order, fixtureCount, groupSize);
+            var positions = SpreadPositions(symmetric, fixtureCount, groupSize);
             return positions > 1 ? (last - first) / (positions - 1) : 0f;
         }
 

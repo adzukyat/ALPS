@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// The container inspector: the shape, spacing and order on top, then the shape's size,
-    /// the facing and the offsets in cards. While the shape is off only the shape shows,
-    /// since nothing is laid out.
+    /// The container inspector: the shape, spacing, order and symmetric switch on top, then
+    /// the shape's size, the facing and the offsets in cards. While the shape is off only the
+    /// shape shows, since nothing is laid out.
     ///
     /// Like the clip view it owns no state. It edits an <see cref="AlpsArrangementSettings"/>
     /// in place and reports every edit through <see cref="Changed"/>, and the host records
@@ -27,6 +27,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsSegmentedControl _shape;
         private readonly AlpsSegmentedControl _spacing;
         private readonly AlpsSegmentedControl _order;
+        private readonly AlpsToggleSwitch _symmetric;
         private readonly AlpsStepper _seed;
 
         private readonly AlpsVectorField _start;
@@ -86,9 +87,9 @@ namespace AdzukiSoft.ALPS.Editor
             });
             fields.Add(_spacing);
 
-            _order = new AlpsSegmentedControl("並び順", "通常", "逆順", "左右対称", "ランダム")
+            _order = new AlpsSegmentedControl("並び順", "通常", "逆順", "ランダム")
             {
-                tooltip = "S(広がり)の値をどの順番でオブジェクトに割り当てるかです。置く場所の順番は変わりません。左右対称では前半のY回転とZ回転が反転します。",
+                tooltip = "S(広がり)の値をどの順番でオブジェクトに割り当てるかです。置く場所の順番は変わりません。",
             };
             _order.SetValueWithoutNotify((int)settings.order);
             _order.RegisterValueChangedCallback(evt =>
@@ -97,6 +98,18 @@ namespace AdzukiSoft.ALPS.Editor
                 Edited();
             });
             fields.Add(_order);
+
+            _symmetric = new AlpsToggleSwitch("左右対称")
+            {
+                tooltip = "真ん中で折り返し、左右で同じ位置のオブジェクトに同じ値を割り当てます。通常は真ん中から、逆順は両端から数え、ランダムは左右の組ごとに並べ替えます。前半のY回転とZ回転は反転します。",
+            };
+            _symmetric.SetValueWithoutNotify(settings.symmetric);
+            _symmetric.RegisterValueChangedCallback(evt =>
+            {
+                settings.symmetric = evt.newValue;
+                Edited();
+            });
+            fields.Add(_symmetric);
 
             _seed = new AlpsStepper("シード", string.Empty, 1f)
             {
@@ -192,6 +205,7 @@ namespace AdzukiSoft.ALPS.Editor
             _shape.SetValueWithoutNotify((int)_settings.shape);
             _spacing.SetValueWithoutNotify((int)_settings.spacing);
             _order.SetValueWithoutNotify((int)_settings.order);
+            _symmetric.SetValueWithoutNotify(_settings.symmetric);
             _seed.SetValueWithoutNotify(_settings.seed);
             _start.SetValueWithoutNotify(_settings.lineStart);
             _end.SetValueWithoutNotify(_settings.lineEnd);
@@ -217,6 +231,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             AlpsPhaseSettingsView.Show(_spacing, arranges);
             AlpsPhaseSettingsView.Show(_order, arranges);
+            AlpsPhaseSettingsView.Show(_symmetric, arranges);
             AlpsPhaseSettingsView.Show(_seed, arranges && _settings.order == AlpsOrderMode.Random);
             AlpsPhaseSettingsView.Show(_cards, arranges);
             AlpsPhaseSettingsView.Show(_start, shape == AlpsArrangementShape.Line);

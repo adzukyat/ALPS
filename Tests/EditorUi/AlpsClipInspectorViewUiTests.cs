@@ -1842,7 +1842,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void PhaseSettings_FixtureGroupSizeBundlesNeighbours()
         {
             // A fixture group size of 2 means fixtures 0 and 1 share a phase, 2 and 3 share the next.
-            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, 0, fixture, 4, 2);
+            int Position(int fixture) => AlpsShowLayout.OrderPosition(AlpsShowLayout.OrderNormal, false, 0, fixture, 4, 2);
 
             Assert.AreEqual(Position(0), Position(1));
             Assert.AreNotEqual(Position(0), Position(2));

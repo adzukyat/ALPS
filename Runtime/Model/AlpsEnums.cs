@@ -1,12 +1,39 @@
 namespace AdzukiSoft.ALPS
 {
-    /// <summary>Order: how fixture index maps to the normalized position p_i in 0..1.</summary>
+    /// <summary>
+    /// Order: how fixture index maps to the normalized position p_i in 0..1. Symmetric is a
+    /// separate switch that folds the fixtures onto one half before any of these count.
+    /// </summary>
     public enum AlpsOrderMode
     {
         Normal,
         Reverse,
-        Symmetric,
         Random,
+    }
+
+    /// <summary>
+    /// Reads an order saved while symmetric was an order of its own, between reverse and
+    /// random. It is normal with the symmetric switch on now, since both count from the middle.
+    /// </summary>
+    public static class AlpsLegacyOrder
+    {
+        private const int Symmetric = 2;
+        private const int Random = 3;
+
+        public static bool WasSymmetric(AlpsOrderMode order)
+        {
+            return (int)order == Symmetric;
+        }
+
+        public static AlpsOrderMode Upgrade(AlpsOrderMode order)
+        {
+            switch ((int)order)
+            {
+                case Symmetric: return AlpsOrderMode.Normal;
+                case Random: return AlpsOrderMode.Random;
+                default: return order;
+            }
+        }
     }
 
     /// <summary>

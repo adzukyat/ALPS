@@ -49,17 +49,19 @@ namespace AdzukiSoft.ALPS
         public const int LayoutShape = 0;
         public const int LayoutSpacing = 1;
         public const int LayoutOrder = 2;
-        public const int LayoutSeed = 3;
-        public const int LayoutFacing = 4;
-        public const int LayoutSides = 5;
-        public const int LayoutColumns = 6;
+        /// <summary>1 when the order is folded symmetric.</summary>
+        public const int LayoutSymmetric = 3;
+        public const int LayoutSeed = 4;
+        public const int LayoutFacing = 5;
+        public const int LayoutSides = 6;
+        public const int LayoutColumns = 7;
         /// <summary>Line start, three floats.</summary>
-        public const int LayoutStart = 7;
+        public const int LayoutStart = 8;
         /// <summary>Line end, three floats.</summary>
-        public const int LayoutEnd = 10;
+        public const int LayoutEnd = 11;
         /// <summary>The point every slot looks at while facing a target, three floats.</summary>
-        public const int LayoutTarget = 13;
-        public const int LayoutStride = 16;
+        public const int LayoutTarget = 14;
+        public const int LayoutStride = 17;
 
         // --- Values: one resolved number per animatable value of the arrangement ----------
 
@@ -133,10 +135,10 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>The value at a slot for a spread that runs from first to last over the order.</summary>
-        public static float SpreadValue(float first, float last, int order, int seed, int index, int count)
+        public static float SpreadValue(float first, float last, int order, bool symmetric, int seed, int index, int count)
         {
-            var step = AlpsShowLayout.StepFromSpread(first, last, order, count, 1);
-            return first + step * AlpsShowLayout.OrderPosition(order, seed, index, count, 1);
+            var step = AlpsShowLayout.StepFromSpread(first, last, symmetric, count, 1);
+            return first + step * AlpsShowLayout.OrderPosition(order, symmetric, seed, index, count, 1);
         }
 
         /// <summary>
@@ -205,10 +207,10 @@ namespace AdzukiSoft.ALPS
 
             // A symmetric order mirrors the first half like it mirrors clip pan, so a
             // rotation spread opens into a fan that turns away from the middle on both sides.
-            var order = AlpsShowLayout.ToInt(layout[LayoutOrder]);
+            var symmetric = AlpsShowLayout.ToInt(layout[LayoutSymmetric]) != 0;
             var rotationY = values[ValueRotationY];
             var rotationZ = values[ValueRotationZ];
-            if (AlpsShowLayout.IsMirrored(order, index, count, 1))
+            if (AlpsShowLayout.IsMirrored(symmetric, index, count, 1))
             {
                 rotationY = -rotationY;
                 rotationZ = -rotationZ;

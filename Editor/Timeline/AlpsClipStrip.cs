@@ -203,13 +203,12 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Fixtures to sample, one per lane. The evaluator counts odd fixtures from 1, so
-        /// list index 0 is odd. Each lane takes its fixture with the lowest order position.
+        /// list index 0 is odd. Each lane takes its fixture with the lowest order position,
+        /// read from the positions table the compiler wrote.
         /// </summary>
         private static List<int> Representatives(AlpsClipEffectSet set, AlpsCompiledShow show, int fixtureCount)
         {
-            var order = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipOrder]);
-            var seed = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipSeed]);
-            var groupSize = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipPhase + AlpsShowLayout.PhaseGroupSize]);
+            var positionStart = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipPositionStart]);
 
             int Lowest(int parity)
             {
@@ -222,7 +221,7 @@ namespace AdzukiSoft.ALPS.Editor
                         continue;
                     }
 
-                    var k = AlpsShowLayout.OrderPosition(order, seed, i, fixtureCount, groupSize);
+                    var k = show.positions[positionStart + i * 2];
                     if (k < bestK)
                     {
                         best = i;

@@ -270,7 +270,7 @@ namespace AdzukiSoft.ALPS.Tests
                 accent.start = i * 10.0;
                 accent.duration = 8.0;
                 var set = new AlpsClipEffectSet();
-                set.order = AlpsOrderMode.Symmetric;
+                set.symmetric = true;
                 set.phase.spread = 1f;
                 var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
                 brightness.isRange = true;
@@ -290,7 +290,9 @@ namespace AdzukiSoft.ALPS.Tests
             var set = new AlpsClipEffectSet();
             set.phase.beatsPerCycle = 4f;
             set.phase.spread = 0.5f;
-            set.order = (AlpsOrderMode)(index % 4);
+            // Normal, reverse, symmetric and random in turn.
+            set.order = index % 4 == 3 ? AlpsOrderMode.Random : (AlpsOrderMode)(index % 2);
+            set.symmetric = index % 4 == 2;
 
             var move = set.Add(AlpsEffectKind.Move);
             move.pan.isRange = true;

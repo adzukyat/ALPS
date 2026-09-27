@@ -337,7 +337,7 @@ namespace AdzukiSoft.ALPS.Tests
         private static AlpsClipEffectSet MoveSet()
         {
             var set = Set();
-            set.order = AlpsOrderMode.Symmetric;
+            set.symmetric = true;
             var move = set.Add(AlpsEffectKind.Move);
             move.pan.isRange = true;
             move.pan.range = new Vector2(-60f, 60f);
