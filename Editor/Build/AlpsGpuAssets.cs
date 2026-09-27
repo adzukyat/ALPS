@@ -51,6 +51,11 @@ namespace AdzukiSoft.ALPS.Editor
                 spin = GetTarget(create, "ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
             };
 
+            if (AlpsVrslVersion.Apply(shared.gridMaterial))
+            {
+                EditorUtility.SetDirty(shared.gridMaterial);
+            }
+
             if (create)
             {
                 AssetDatabase.SaveAssets();

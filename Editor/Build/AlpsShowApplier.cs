@@ -143,6 +143,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             CopyShowToPlayer(show, player, director);
             player.dmxRows = new int[show.fixtures.Count];
+            player.vrslLegacy = AlpsVrslVersion.IsLegacy;
             for (var i = 0; i < show.fixtures.Count; i++)
             {
                 var fixture = show.fixtures[i];

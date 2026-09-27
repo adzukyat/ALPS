@@ -109,6 +109,33 @@ namespace AdzukiSoft.ALPS.Tests
             return Mathf.Atan2(Mathf.Sqrt(local.x * local.x + local.y * local.y), -local.z) * Mathf.Rad2Deg;
         }
 
+        /// <summary>What VRSL reads from a grid texel holding <paramref name="value"/>, through LinearToGammaSpaceExact before 2.7.</summary>
+        internal static float VrslReads(float value)
+        {
+            if (!AlpsVrslVersion.IsLegacy)
+            {
+                return value;
+            }
+
+            if (value <= 0f)
+            {
+                return 0f;
+            }
+
+            if (value <= 0.0031308f)
+            {
+                return 12.92f * value;
+            }
+
+            return value < 1f ? 1.055f * Mathf.Pow(value, 1f / 2.4f) - 0.055f : Mathf.Pow(value, 1f / 2.2f);
+        }
+
+        /// <summary>The spin phase for a gobo angle. VRSL turns it into degrees(phase * 4), degrees(phase) before 2.7.</summary>
+        private static float SpinPhase(float degrees)
+        {
+            return degrees * Mathf.Deg2Rad / (AlpsVrslVersion.IsLegacy ? 1f : 4f);
+        }
+
         /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%.</summary>
         private static float GridDimmer(float level)
         {
@@ -147,7 +174,7 @@ namespace AdzukiSoft.ALPS.Tests
             for (var row = 0; row < 12; row++)
             {
                 var texel = VrslTexel(13 * row + 1 + 7);
-                var red = grid.GetPixel(texel.x, texel.y).r;
+                var red = VrslReads(grid.GetPixel(texel.x, texel.y).r);
                 Assert.AreEqual(row == 5 || row == 9 ? GridColour(1f, 0.5f) : 0f, red, 1e-4f, $"Red of row {row}.");
             }
         }
@@ -170,7 +197,7 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     var texel = VrslTexel(13 * fixture + 1 + offset);
                     var color = texture.GetPixel(texel.x, texel.y);
-                    return texture == grid ? color.r * 0.2126729f + color.g * 0.7151522f + color.b * 0.0721750f : color.r;
+                    return texture == grid ? VrslReads(color.r * 0.2126729f + color.g * 0.7151522f + color.b * 0.0721750f) : color.r;
                 }
 
                 var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
@@ -184,7 +211,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(GridColour(Channel(AlpsShowLayout.FrameGreen), level), Read(grid, 8), 1e-4f, "Green. " + diagnostics);
                 Assert.AreEqual(GridColour(Channel(AlpsShowLayout.FrameBlue), level), Read(grid, 9), 1e-4f, "Blue. " + diagnostics);
                 Assert.AreEqual(Mathf.Round(Channel(AlpsShowLayout.FrameGobo)), Mathf.Round(Read(grid, 11) * 255f / 30f), "Gobo. " + diagnostics);
-                Assert.AreEqual(Channel(AlpsShowLayout.FrameGoboRotation) * Mathf.Deg2Rad / 4f, Read(spin, 10), 1e-4f, "Gobo angle. " + diagnostics);
+                Assert.AreEqual(SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)), Read(spin, 10), 1e-4f, "Gobo angle. " + diagnostics);
             }
         }
 
@@ -241,7 +268,7 @@ namespace AdzukiSoft.ALPS.Tests
                 }
 
                 var spin = values.GetPixel(13 * fixture + 10, 0).g;
-                if (Mathf.Abs(Channel(AlpsShowLayout.FrameGoboRotation) * Mathf.Deg2Rad / 4f - spin) > 1e-3f)
+                if (Mathf.Abs(SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)) - spin) > 1e-3f)
                 {
                     failures.Add($"fixture {fixture} gobo angle: VRSL reads {spin:0.####}");
                 }
@@ -392,7 +419,8 @@ namespace AdzukiSoft.ALPS.Tests
         /// </summary>
         private static float ConeStretch(float length, float mesh)
         {
-            return mesh * (Mathf.Max(0f, length) / AlpsShowPlayer.ModelConeLengthLimit - 1f) / 4f;
+            var stretched = mesh * Mathf.Max(0f, length) / AlpsShowPlayer.ModelConeLengthLimit;
+            return (stretched - AlpsShowPlayer.VrslBaseConeLength(AlpsVrslVersion.IsLegacy, mesh)) / 4f;
         }
 
         private T Keep<T>(T created) where T : Object

@@ -14,7 +14,7 @@ The project must already resolve these packages:
 - VRChat SDK Base `com.vrchat.base` `3.10.2`
 - VRChat SDK Worlds `com.vrchat.worlds` `3.10.2`
 
-Stock VRSL is enough, gobo rotation included. ALPS runs on PC only, since Quest cannot run the evaluator shader. It takes VRSL's DMX grid over, so fixtures cannot also follow a DMX video or another DMX source.
+Stock VRSL is enough, gobo rotation included. ALPS is tested with VRSL 2.4.5 and 2.8.4. ALPS runs on PC only, since Quest cannot run the evaluator shader. It takes VRSL's DMX grid over, so fixtures cannot also follow a DMX video or another DMX source.
 
 ## Setup
 

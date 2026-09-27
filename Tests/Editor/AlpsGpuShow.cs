@@ -64,6 +64,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.NotNull(gridShader, "The DMX grid shader did not compile.");
             FramesMaterial = Keep(new Material(framesShader));
             GridMaterial = Keep(new Material(gridShader));
+            AlpsVrslVersion.Apply(GridMaterial);
             Frames = Keep(AlpsPreviewDriver.CreateGpuTarget("Frames", AlpsShowPlayer.GpuFrameTexels, Mathf.Max(1, FixtureCount)));
             Grid = Keep(AlpsPreviewDriver.CreateGpuTarget("Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight));
             Spin = Keep(AlpsPreviewDriver.CreateGpuTarget("Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight));

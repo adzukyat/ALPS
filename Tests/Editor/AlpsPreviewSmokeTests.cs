@@ -217,17 +217,18 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             var states = context.Sample(BaseTime);
-            Assert.AreEqual(1.5f, states[0].MaxConeLength, Tolerance, "The mesh keeps its own length.");
+            var baseLength = AlpsShowPlayer.VrslBaseConeLength(AlpsVrslVersion.IsLegacy, 1.5f);
+            Assert.AreEqual(baseLength, states[0].MaxConeLength, Tolerance, "The cone stretches from the mesh, or from 0 before VRSL 2.7.");
             Assert.AreEqual(AlpsShowPlayer.VrslMaxConeLength, states[0].ConeLength, Tolerance, "The fade along the cone is left open.");
 
-            // The fine pan channel stretches the mesh by 4 per unit on top of its own length.
+            // The fine pan channel stretches the mesh by 4 per unit on top of the base length.
             var grid = (RenderTexture)Shader.GetGlobalTexture("_Udon_DMXGridRenderTexture");
             Assert.NotNull(grid, "The preview hands VRSL its grid.");
             var pixels = AlpsGpuShow.ReadBackTexture(grid);
             try
             {
-                var stretch = pixels.GetPixel(3, 1).r;
-                Assert.AreEqual(1.5f * (ConeLength / AlpsShowPlayer.ModelConeLengthLimit - 1f) / 4f, stretch, Tolerance,
+                var stretch = AlpsGpuEvaluatorTests.VrslReads(pixels.GetPixel(3, 1).r);
+                Assert.AreEqual((1.5f * ConeLength / AlpsShowPlayer.ModelConeLengthLimit - baseLength) / 4f, stretch, Tolerance,
                     "A cone half the limit long is half its mesh.");
             }
             finally
@@ -309,6 +310,13 @@ namespace AdzukiSoft.ALPS.Tests
             context.Director.playableAsset = null;
             context.Director.playableAsset = context.Timeline;
 
+            // Entering play mode or building leaves the preview first, which puts the fixtures
+            // back. Before VRSL 2.7 the DMX setup zeroes the mesh length a capture reads.
+            foreach (var fixture in Object.FindObjectsOfType<AlpsFixture>())
+            {
+                fixture.RestoreAuthored(null, 0);
+            }
+
             Assert.IsNull(AlpsShowSetup.FindPlayer(context.Director), "The authoring scene holds no player.");
 
             var sourceActivation = context.Timeline.GetRootTracks().OfType<ActivationTrack>().Single();
@@ -323,7 +331,6 @@ namespace AdzukiSoft.ALPS.Tests
             try
             {
                 Assert.IsTrue(AlpsShowApplier.Apply(context.Director.gameObject.scene, true, errors), string.Join("\n", errors));
-
                 var player = AlpsShowSetup.FindPlayer(context.Director);
                 Assert.NotNull(player, "Applying creates the player under the director.");
                 var build = context.Director.playableAsset as TimelineAsset;

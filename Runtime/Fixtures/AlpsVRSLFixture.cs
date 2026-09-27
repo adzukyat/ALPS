@@ -17,7 +17,6 @@ namespace AdzukiSoft.ALPS
             "enableDMXChannels",
             "enableStrobe",
             "enableAutoSpin",
-            "enableFineChannels",
             "dmxChannel",
             "dmxUniverse",
             "nineUniverseMode",
@@ -33,6 +32,9 @@ namespace AdzukiSoft.ALPS
             "coneLength",
             "maxConeLength",
         };
+
+        /// <summary>Older VRSL such as 2.8.1 has no fine channels and never reads them.</summary>
+        private static readonly bool HasFineChannels = typeof(VRStageLighting_DMX_Static).GetField(AlpsShowPlayer.VrslFineChannelsField) != null;
 
         private MaterialPropertyBlock _block;
         private bool _hasAuthored;
@@ -82,7 +84,7 @@ namespace AdzukiSoft.ALPS
             _authoredDmx = fixture.enableDMXChannels;
             _authoredStrobe = fixture.enableStrobe;
             _authoredAutoSpin = fixture.enableAutoSpin;
-            _authoredFineChannels = fixture.enableFineChannels;
+            _authoredFineChannels = fixture.GetProgramVariable(AlpsShowPlayer.VrslFineChannelsField) is bool fine && fine;
             _authoredChannel = fixture.dmxChannel;
             _authoredUniverse = fixture.dmxUniverse;
             _authoredNineUniverses = fixture.nineUniverseMode;
@@ -109,7 +111,7 @@ namespace AdzukiSoft.ALPS
             fixture.enableDMXChannels = _authoredDmx;
             fixture.enableStrobe = _authoredStrobe;
             fixture.enableAutoSpin = _authoredAutoSpin;
-            fixture.enableFineChannels = _authoredFineChannels;
+            fixture.SetProgramVariable(AlpsShowPlayer.VrslFineChannelsField, _authoredFineChannels);
             fixture.dmxChannel = _authoredChannel;
             fixture.dmxUniverse = _authoredUniverse;
             fixture.nineUniverseMode = _authoredNineUniverses;
@@ -136,6 +138,11 @@ namespace AdzukiSoft.ALPS
             {
                 driver.AddFromName(fixture, property);
             }
+
+            if (HasFineChannels)
+            {
+                driver.AddFromName(fixture, AlpsShowPlayer.VrslFineChannelsField);
+            }
         }
 
         public override void RefreshAfterPreview()
@@ -160,7 +167,7 @@ namespace AdzukiSoft.ALPS
             }
 
             AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, infoOffset);
-            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, defaults, offset);
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, AlpsShowPlayer.VrslBaseConeLength(AlpsVrslVersion.IsLegacy, defaults[offset + AlpsShowLayout.FrameConeMeshLength]));
             EnableConeLengthViaDmx(fixture);
         }
 

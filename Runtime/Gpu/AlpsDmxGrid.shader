@@ -12,6 +12,7 @@ Shader "Hidden/ALPS/DMX Grid"
     {
         _MainTex ("Frames", 2D) = "black" {}
         _AlpsData ("Show Data", 2D) = "black" {}
+        _AlpsVrslLegacy ("VRSL Before 2.7", Float) = 0
     }
 
     CGINCLUDE
@@ -19,6 +20,7 @@ Shader "Hidden/ALPS/DMX Grid"
     #include "AlpsEvaluator.hlsl"
 
     Texture2D<float4> _MainTex;
+    float _AlpsVrslLegacy;
 
     #define ALPS_GRID_WIDTH 26.0
     #define ALPS_GRID_HEIGHT 240.0
@@ -150,10 +152,12 @@ Shader "Hidden/ALPS/DMX Grid"
         {
             // The fine pan channel is free, since fine channels are off, and VRSL's volumetric
             // mesh reads it to stretch the cone when cone length via DMX is on, by 4 per unit
-            // on top of the fixture's own mesh length. The model length is a share of the
-            // mesh at ModelConeLengthLimit.
+            // on top of the fixture's own mesh length. VRSL before 2.7 reads a value below 0
+            // as 0, so the stretch starts from a length of 0 there (VrslBaseConeLength). The
+            // model length is a share of the mesh at ModelConeLengthLimit.
             float mesh = AlpsFrameChannel(fixture, FrameConeMeshLength);
-            return mesh * (max(0.0, AlpsFrameChannel(fixture, FrameConeLength)) / ALPS_CONE_LENGTH_LIMIT - 1.0) / 4.0;
+            float stretched = mesh * max(0.0, AlpsFrameChannel(fixture, FrameConeLength)) / ALPS_CONE_LENGTH_LIMIT;
+            return (stretched - (_AlpsVrslLegacy > 0.5 ? 0.0 : mesh)) / 4.0;
         }
 
         if (offset == 2)
@@ -220,7 +224,10 @@ Shader "Hidden/ALPS/DMX Grid"
                     return 0;
                 }
 
+                // VRSL before 2.7 reads every value through LinearToGammaSpaceExact, so the
+                // value goes in as its inverse there.
                 float value = AlpsDmxValue(fixture, offset, show);
+                value = _AlpsVrslLegacy > 0.5 ? GammaToLinearSpaceExact(value) : value;
                 return float4(value, value, value, 1);
             }
             ENDCG
@@ -243,10 +250,11 @@ Shader "Hidden/ALPS/DMX Grid"
                     return 0;
                 }
 
-                // VRSL turns the phase into an angle of degrees(phase * 4) and flips it for
-                // an inverted pan, so the gobo angle goes in as that phase.
+                // VRSL turns the phase into an angle of degrees(phase * 4), degrees(phase)
+                // before 2.7, and flips it for an inverted pan, so the gobo angle goes in as
+                // that phase. The spin grid is read as it is on every version.
                 float sign = AlpsRead(show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE + 2);
-                float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
+                float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / (_AlpsVrslLegacy > 0.5 ? 1.0 : 4.0) * sign;
                 return float4(phase, 0, 0, 1);
             }
             ENDCG

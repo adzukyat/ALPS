@@ -276,6 +276,7 @@ namespace AdzukiSoft.ALPS
             state.gpuData.hideFlags = HideFlags.HideAndDontSave;
             state.gpuFramesMaterial = new Material(framesShader) { hideFlags = HideFlags.HideAndDontSave };
             state.gpuGridMaterial = new Material(gridShader) { hideFlags = HideFlags.HideAndDontSave };
+            AlpsVrslVersion.Apply(state.gpuGridMaterial);
             state.gpuFrames = CreateGpuTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, count);
             state.gpuGrid = CreateGpuTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
             state.gpuSpin = CreateGpuTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
