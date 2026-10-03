@@ -25,7 +25,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             AddToClassList(ussClassName);
 
-            Side = new AlpsSegmentedControl(label, "上り", "下り");
+            Side = new AlpsSegmentedControl(label, AlpsStrings.Tr("common.rise"), AlpsStrings.Tr("common.fall"));
             if (compact)
             {
                 Side.AddToClassList("alps-seg--compact");

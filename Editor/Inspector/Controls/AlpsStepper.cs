@@ -14,9 +14,10 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsNumberBox _box;
         private readonly Label _hint;
 
-        public AlpsStepper(string label, string unit = "拍", float step = 1f, string hint = null)
+        public AlpsStepper(string label, string unit = null, float step = 1f, string hint = null)
             : base(label, new VisualElement())
         {
+            unit = unit ?? AlpsStrings.Tr("unit.beats");
             AddToClassList(ussClassName);
             Step = step;
 

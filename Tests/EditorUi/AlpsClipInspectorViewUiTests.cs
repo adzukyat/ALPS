@@ -19,6 +19,23 @@ namespace AdzukiSoft.ALPS.Tests
     /// </summary>
     public class AlpsClipInspectorViewUiTests
     {
+        private AlpsLanguage _language;
+
+        [SetUp]
+        public void PinLanguage()
+        {
+            // Pin the language so the labels the tests resolve match the ones the views build,
+            // whatever the machine's system language.
+            _language = AlpsStrings.Language;
+            AlpsStrings.Language = AlpsLanguage.English;
+        }
+
+        [TearDown]
+        public void RestoreLanguage()
+        {
+            AlpsStrings.Language = _language;
+        }
+
         private static AlpsClipEffectSet BuildFullSet()
         {
             var set = new AlpsClipEffectSet();
@@ -309,7 +326,7 @@ namespace AdzukiSoft.ALPS.Tests
                 var view = host.Q<AlpsClipInspectorView>();
                 Assert.NotNull(view, "The inspector did not rebuild after undo.");
 
-                var slider = view.Query<AlpsValueSlider>().ToList().First(s => s.label == "明るさ");
+                var slider = view.Query<AlpsValueSlider>().ToList().First(s => s.label == AlpsStrings.Tr("effect.brightness.name"));
                 Assert.AreEqual(before, slider.value, 0.001f, "The control still shows the pre-undo value.");
             }
             finally
@@ -331,9 +348,9 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
 
             Assert.AreEqual(AlpsEffectCatalog.Order.Length, set.effects.Count);
-            Assert.IsTrue(HasVisibleText(view, "共通設定"));
-            Assert.IsTrue(HasVisibleText(view, "並び順"));
-            Assert.IsTrue(HasVisibleText(view, "プロファイル"));
+            Assert.IsTrue(HasVisibleText(view, AlpsStrings.Tr("clip.common.title")));
+            Assert.IsTrue(HasVisibleText(view, AlpsStrings.Tr("common.order")));
+            Assert.IsTrue(HasVisibleText(view, AlpsStrings.Tr("common.profile")));
 
             foreach (var kind in AlpsEffectCatalog.Order)
             {
@@ -360,9 +377,9 @@ namespace AdzukiSoft.ALPS.Tests
                 yield return null;
 
                 var steppers = view.Query<AlpsStepper>().ToList();
-                var global = steppers.First(stepper => stepper.label == "全体BPM");
-                var bpm = steppers.First(stepper => stepper.label == "BPMオーバーライド");
-                Assert.Less(steppers.IndexOf(global), steppers.IndexOf(bpm), "全体BPM sits above the override.");
+                var global = steppers.First(stepper => stepper.label == AlpsStrings.Tr("clip.globalBpm"));
+                var bpm = steppers.First(stepper => stepper.label == AlpsStrings.Tr("clip.bpmOverride"));
+                Assert.Less(steppers.IndexOf(global), steppers.IndexOf(bpm), "The global BPM sits above the override.");
                 Assert.AreEqual(140f, global.value);
                 Assert.AreEqual(140f, bpm.value, "An unset clip shows the show's tempo.");
 
@@ -393,9 +410,10 @@ namespace AdzukiSoft.ALPS.Tests
             var set = new AlpsClipEffectSet();
             var view = new AlpsClipInspectorView(set);
 
-            foreach (var row in new[] { "モード", "配分", "イージング", "灯体単位", "ディレイ", "速度", "反転" })
+            foreach (var key in new[] { "phase.mode", "phase.shares", "phase.easing", "phase.group", "phase.delay", "common.speed", "phase.inverse" })
             {
-                Assert.IsTrue(HasVisibleText(view, row), $"共通設定 is missing the {row} row.");
+                var row = AlpsStrings.Tr(key);
+                Assert.IsTrue(HasVisibleText(view, row), $"The common settings are missing the {row} row.");
             }
         }
 
@@ -416,14 +434,14 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.LessOrEqual(threeBeats.Snaps.Length, AlpsSnapPoints.MaxTicks, "The rail must not crowd.");
         }
 
-        /// <summary>The ディレイ row of a clip whose cycle is <paramref name="beatsPerCycle"/> beats.</summary>
+        /// <summary>The delay row of a clip whose cycle is <paramref name="beatsPerCycle"/> beats.</summary>
         private static AlpsValueSlider DelaySlider(float beatsPerCycle)
         {
             var set = new AlpsClipEffectSet();
             set.phase.beatsPerCycle = beatsPerCycle;
             set.phase.spread = 1f;
             var view = new AlpsClipInspectorView(set);
-            return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "ディレイ");
+            return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
         }
 
         [UnityTest]
@@ -443,10 +461,10 @@ namespace AdzukiSoft.ALPS.Tests
                 window.rootVisualElement.Add(view);
                 yield return null;
 
-                var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "ディレイ");
-                var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "ディレイ");
-                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == "拍");
-                var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "速度");
+                var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
+                var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
+                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.beatsFlag.letter"));
+                var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
                 Assert.AreEqual(50f, percent.value, 0.001f);
                 Assert.AreEqual(DisplayStyle.Flex, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.None, beats.style.display.value);
@@ -487,8 +505,8 @@ namespace AdzukiSoft.ALPS.Tests
             set.phase.mode = AlpsPhaseMode.Random;
             var view = new AlpsClipInspectorView(set);
 
-            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
-            Assert.AreEqual(DisplayStyle.None, shares.style.display.value, "配分 must be hidden in ランダム.");
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == AlpsStrings.Tr("phase.shares"));
+            Assert.AreEqual(DisplayStyle.None, shares.style.display.value, "The distribution must be hidden in random mode.");
 
             set.phase.mode = AlpsPhaseMode.Wave;
             view.Query<AlpsPhaseSettingsView>().First().Refresh();
@@ -499,10 +517,10 @@ namespace AdzukiSoft.ALPS.Tests
         public void ModeControl_OffersWaveAndRandom()
         {
             var view = new AlpsClipInspectorView(new AlpsClipEffectSet());
-            var mode = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == "モード");
+            var mode = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.mode"));
 
             CollectionAssert.AreEqual(
-                new[] { "波形", "ランダム" },
+                new[] { AlpsStrings.Tr("phase.mode.wave"), AlpsStrings.Tr("phase.mode.random") },
                 mode.Query<Label>(className: "alps-seg__item").ToList().Select(l => l.text).ToArray());
         }
 
@@ -514,11 +532,11 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
 
             var easing = view.Query<AlpsEasingPicker>().First();
-            var inverse = view.Query<AlpsToggleSwitch>().ToList().First(t => t.label == "反転");
+            var inverse = view.Query<AlpsToggleSwitch>().ToList().First(t => t.label == AlpsStrings.Tr("phase.inverse"));
 
-            Assert.AreEqual(DisplayStyle.None, easing.style.display.value, "イージング must be hidden in ランダム.");
-            Assert.AreEqual(DisplayStyle.None, inverse.style.display.value, "反転 must be hidden in ランダム.");
-            Assert.AreEqual(DisplayStyle.None, FireChance(view).style.display.value, "確率 must be hidden in ランダム.");
+            Assert.AreEqual(DisplayStyle.None, easing.style.display.value, "Easing must be hidden in random mode.");
+            Assert.AreEqual(DisplayStyle.None, inverse.style.display.value, "Invert must be hidden in random mode.");
+            Assert.AreEqual(DisplayStyle.None, FireChance(view).style.display.value, "Chance must be hidden in random mode.");
         }
 
         [Test]
@@ -529,14 +547,14 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
             var slider = FireChance(view);
 
-            Assert.AreNotEqual(DisplayStyle.None, slider.style.display.value, "確率 shows for a wave.");
+            Assert.AreNotEqual(DisplayStyle.None, slider.style.display.value, "Chance shows for a wave.");
             Assert.AreEqual(25f, slider.value, 0.0001f);
         }
 
         [Test]
         public void OrderSeed_ShowsOnlyForARandomOrder()
         {
-            AlpsStepper Seed(VisualElement view) => view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == "シード");
+            AlpsStepper Seed(VisualElement view) => view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.seed"));
 
             Assert.AreEqual(DisplayStyle.None, Seed(new AlpsClipInspectorView(new AlpsClipEffectSet())).style.display.value);
 
@@ -548,7 +566,7 @@ namespace AdzukiSoft.ALPS.Tests
 
         private static AlpsValueSlider FireChance(VisualElement view)
         {
-            return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "確率");
+            return view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.fireChance"));
         }
 
         [Test]
@@ -560,12 +578,12 @@ namespace AdzukiSoft.ALPS.Tests
 
             var view = new AlpsClipInspectorView(set);
             var timing = view.Query<AlpsSegmentedControl>().ToList()
-                .First(c => c.label == "タイミング");
+                .First(c => c.label == AlpsStrings.Tr("animatable.timing"));
 
             Assert.AreEqual(
                 DisplayStyle.None,
                 timing.style.display.value,
-                "タイミング must stay hidden while the parameter is a single value.");
+                "Timing must stay hidden while the parameter is a single value.");
 
             move.tilt.isRange = true;
             move.tilt.range = new Vector2(-40f, 35f);
@@ -590,10 +608,10 @@ namespace AdzukiSoft.ALPS.Tests
             var frames = tilt.Children().Where(c => c.ClassListContains("alps-sub")).ToList();
 
             Assert.AreEqual(1, frames.Count, "A spread is set in the row itself.");
-            Assert.AreEqual("レンジ", frames[0].Q<Label>(className: "alps-sub__title").text);
+            Assert.AreEqual(AlpsStrings.Tr("common.range"), frames[0].Q<Label>(className: "alps-sub__title").text);
             Assert.AreEqual(DisplayStyle.Flex, frames[0].style.display.value, "Two different spreads are a range to move through.");
-            Assert.IsTrue(frames[0].Children().OfType<AlpsSegmentedControl>().Any(c => c.label == "タイミング"), "Timing lives in the range frame.");
-            Assert.IsFalse(tilt.Query<AlpsValueSlider>().ToList().Any(s => s.label == "オフセット"), "There is no offset to set apart from the spread.");
+            Assert.IsTrue(frames[0].Children().OfType<AlpsSegmentedControl>().Any(c => c.label == AlpsStrings.Tr("animatable.timing")), "Timing lives in the range frame.");
+            Assert.IsFalse(tilt.Query<AlpsValueSlider>().ToList().Any(s => s.label == AlpsStrings.Tr("effect.phaseOffset")), "There is no offset to set apart from the spread.");
 
             // Two equal spreads have nothing to move between.
             move.tilt.spreadRangeEnd = move.tilt.spreadRange;
@@ -623,8 +641,8 @@ namespace AdzukiSoft.ALPS.Tests
 
             var view = new AlpsClipInspectorView(set);
             var effect = view.Query<AlpsEffectView>().First();
-            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == "復路で消灯");
-            var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == "フェード").parent;
+            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == AlpsStrings.Tr("common.fade")).parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "A sawtooth has no return leg.");
 
             set.phase.SetShares(0.5f, 0f, 0.5f);
@@ -661,7 +679,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             var cards = view.Query<AlpsEffectView>().ToList();
             AlpsValueSlider Offset(AlpsEffectView card) =>
-                card.Query<AlpsValueSlider>().ToList().SingleOrDefault(s => s.label == "位相オフセット");
+                card.Query<AlpsValueSlider>().ToList().SingleOrDefault(s => s.label == AlpsStrings.Tr("effect.phaseOffset"));
 
             Assert.IsNull(Offset(cards[1]), "Flicker runs on its own clock, so it has no offset.");
 
@@ -706,7 +724,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void FadeSlider_MirrorsTheOutTrackAndResetsEachSide()
         {
-            var fade = new AlpsFadeSlider("フェード", 50f, "%") { DefaultValue = new Vector2(10f, 20f) };
+            var fade = new AlpsFadeSlider(AlpsStrings.Tr("common.fade"), 50f, "%") { DefaultValue = new Vector2(10f, 20f) };
             fade.SetValueWithoutNotify(new Vector2(25f, 40f));
 
             var tracks = fade.Query<AlpsSliderTrack>().ToList();
@@ -1033,7 +1051,7 @@ namespace AdzukiSoft.ALPS.Tests
                 tilt.ResetToDefault(AlpsSliderTrack.ThumbHigh);
                 Assert.AreEqual(new Vector2(-10f, 35f), move.tilt.range, "The high end returns to the Move default.");
 
-                var offset = view.Query<AlpsValueSlider>().ToList().First(s => s.label == "位相差");
+                var offset = view.Query<AlpsValueSlider>().ToList().First(s => s.label == AlpsStrings.Tr("effect.move.phaseDiff"));
                 offset.ResetToDefault();
                 Assert.AreEqual(90f, move.panTiltPhaseOffsetDegrees, 0.001f);
             }
@@ -1071,11 +1089,11 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var set = new AlpsClipEffectSet();
 
-            Assert.AreEqual("カラー", set.GetAddLabel(AlpsEffectKind.Color));
+            Assert.AreEqual(AlpsEffectCatalog.GetName(AlpsEffectKind.Color), set.GetAddLabel(AlpsEffectKind.Color));
             var first = set.Add(AlpsEffectKind.Color);
             Assert.AreEqual(AlpsParity.All, first.parity);
 
-            Assert.AreEqual("カラー" + AlpsEffectCatalog.OddSuffix, set.GetAddLabel(AlpsEffectKind.Color));
+            Assert.AreEqual(AlpsEffectCatalog.GetTitle(AlpsEffectKind.Color, AlpsParity.Odd), set.GetAddLabel(AlpsEffectKind.Color));
             var odd = set.Add(AlpsEffectKind.Color);
 
             Assert.AreEqual(AlpsParity.Even, first.parity, "The existing card must become （偶数）.");
@@ -1105,8 +1123,14 @@ namespace AdzukiSoft.ALPS.Tests
             CollectionAssert.AreEqual(
                 new[]
                 {
-                    "ムーブ（偶数）", "ムーブ（奇数）", "カラー（偶数）", "カラー（奇数）",
-                    "明るさ", "コーン", "フリッカー", "ゴボ",
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Move, AlpsParity.Even),
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Move, AlpsParity.Odd),
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Color, AlpsParity.Even),
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Color, AlpsParity.Odd),
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Brightness),
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Cone),
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Flicker),
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Gobo),
                 },
                 set.effects.Select(e => AlpsEffectCatalog.GetTitle(e.kind, e.parity)).ToArray());
         }
@@ -1123,7 +1147,13 @@ namespace AdzukiSoft.ALPS.Tests
             set.OnAfterDeserialize();
 
             CollectionAssert.AreEqual(
-                new[] { "ムーブ", "カラー（偶数）", "カラー（奇数）", "コーン" },
+                new[]
+                {
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Move),
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Color, AlpsParity.Even),
+                    AlpsEffectCatalog.GetTitle(AlpsEffectKind.Color, AlpsParity.Odd),
+                    AlpsEffectCatalog.GetName(AlpsEffectKind.Cone),
+                },
                 set.effects.Select(e => AlpsEffectCatalog.GetTitle(e.kind, e.parity)).ToArray());
         }
 
@@ -1138,7 +1168,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             Assert.AreEqual(1, set.effects.Count);
             Assert.AreEqual(AlpsParity.All, set.effects[0].parity);
-            Assert.AreEqual("ゴボ" + AlpsEffectCatalog.OddSuffix, set.GetAddLabel(AlpsEffectKind.Gobo));
+            Assert.AreEqual(AlpsEffectCatalog.GetTitle(AlpsEffectKind.Gobo, AlpsParity.Odd), set.GetAddLabel(AlpsEffectKind.Gobo));
         }
 
         [Test]
@@ -1152,9 +1182,9 @@ namespace AdzukiSoft.ALPS.Tests
             var catalog = new AlpsAddEffectCatalog(set, _ => { });
             var texts = Labels(catalog).Select(label => label.text).ToList();
 
-            Assert.IsTrue(texts.Contains("ムーブ"), "An unused kind is listed unsuffixed.");
+            Assert.IsTrue(texts.Contains(AlpsEffectCatalog.GetName(AlpsEffectKind.Move)), "An unused kind is listed unsuffixed.");
             Assert.IsFalse(
-                texts.Any(text => text.StartsWith("カラー")),
+                texts.Any(text => text.StartsWith(AlpsEffectCatalog.GetName(AlpsEffectKind.Color))),
                 "A kind split into both parities must leave the add list.");
         }
 
@@ -1167,7 +1197,7 @@ namespace AdzukiSoft.ALPS.Tests
             move.pan.isRange = false;
 
             var view = new AlpsClipInspectorView(set);
-            var offset = view.Query<AlpsValueSlider>().ToList().First(s => s.label == "位相差");
+            var offset = view.Query<AlpsValueSlider>().ToList().First(s => s.label == AlpsStrings.Tr("effect.move.phaseDiff"));
             Assert.AreEqual(DisplayStyle.None, offset.style.display.value);
 
             move.pan.isRange = true;
@@ -1185,27 +1215,27 @@ namespace AdzukiSoft.ALPS.Tests
             AlpsValueSlider Row(string label) => view.Query<AlpsValueSlider>().ToList().First(s => s.label == label);
 
             var tilt = Row("Tilt");
-            var radius = Row("半径");
-            var follow = Row("追従速度");
+            var radius = Row(AlpsStrings.Tr("common.radius"));
+            var follow = Row(AlpsStrings.Tr("effect.move.followSpeed"));
 
-            Assert.IsTrue(IsShown(tilt), "角度指定 must show the Tilt row.");
-            Assert.IsFalse(IsShown(radius), "半径 belongs to the 円 tab only.");
-            Assert.IsFalse(IsShown(follow), "追従速度 belongs to the ユーザー追跡 tab only.");
+            Assert.IsTrue(IsShown(tilt), "The angle tab must show the Tilt row.");
+            Assert.IsFalse(IsShown(radius), "The radius belongs to the circle tab only.");
+            Assert.IsFalse(IsShown(follow), "The follow speed belongs to the track-user tab only.");
 
             move.moveMode = AlpsMoveMode.Circle;
             view.Query<AlpsEffectView>().First().Refresh();
 
-            Assert.IsFalse(IsShown(tilt), "Switching to 円 must hide the angle rows.");
-            Assert.IsTrue(IsShown(Row("中心 Tilt")));
-            Assert.IsTrue(IsShown(Row("半径")));
-            Assert.IsFalse(IsShown(Row("追従速度")));
+            Assert.IsFalse(IsShown(tilt), "Switching to circle must hide the angle rows.");
+            Assert.IsTrue(IsShown(Row(AlpsStrings.Tr("effect.move.centerTilt"))));
+            Assert.IsTrue(IsShown(Row(AlpsStrings.Tr("common.radius"))));
+            Assert.IsFalse(IsShown(Row(AlpsStrings.Tr("effect.move.followSpeed"))));
 
             move.moveMode = AlpsMoveMode.TrackUser;
             view.Query<AlpsEffectView>().First().Refresh();
 
-            Assert.IsFalse(IsShown(Row("Tilt")), "Switching to ユーザー追跡 must hide the angle rows.");
-            Assert.IsFalse(IsShown(Row("半径")));
-            Assert.IsTrue(IsShown(Row("追従速度")));
+            Assert.IsFalse(IsShown(Row("Tilt")), "Switching to track-user must hide the angle rows.");
+            Assert.IsFalse(IsShown(Row(AlpsStrings.Tr("common.radius"))));
+            Assert.IsTrue(IsShown(Row(AlpsStrings.Tr("effect.move.followSpeed"))));
         }
 
         [UnityTest]
@@ -1227,10 +1257,10 @@ namespace AdzukiSoft.ALPS.Tests
 
                 AlpsValueSlider Row(string label) => view.Query<AlpsValueSlider>().ToList().First(s => s.label == label);
 
-                Row("中心 Tilt").value = 33f;
-                Row("中心 Pan").value = -15f;
-                Row("半径").value = 8f;
-                Row("縦横比").value = 2f;
+                Row(AlpsStrings.Tr("effect.move.centerTilt")).value = 33f;
+                Row(AlpsStrings.Tr("effect.move.centerPan")).value = -15f;
+                Row(AlpsStrings.Tr("common.radius")).value = 8f;
+                Row(AlpsStrings.Tr("effect.move.aspect")).value = 2f;
 
                 Assert.AreEqual(33f, move.circleCenterTilt.value, 0.001f);
                 Assert.AreEqual(-15f, move.circleCenterPan.value, 0.001f);
@@ -1247,7 +1277,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void ValueSpreadRunsEitherWay_AndPhaseSpreadAcceptsNegativeValues()
         {
-            var cone = new AlpsAnimatableView("幅", new AlpsAnimatableValue(5f, new Vector2(0f, 40f)), new AlpsPhaseSettings(), null);
+            var cone = new AlpsAnimatableView(AlpsStrings.Tr("common.width"), new AlpsAnimatableValue(5f, new Vector2(0f, 40f)), new AlpsPhaseSettings(), null);
             var spreads = cone.Query<AlpsRangeSlider>(className: "alps-animatable__spread").ToList();
             Assert.AreEqual(2, spreads.Count, "One spread for the row and one for the far end of its range.");
             foreach (var spread in spreads)
@@ -1261,7 +1291,7 @@ namespace AdzukiSoft.ALPS.Tests
             var view = new AlpsClipInspectorView(set);
             var sliders = view.Query<AlpsValueSlider>().ToList();
 
-            var phaseSpread = sliders.First(s => s.label == "ディレイ");
+            var phaseSpread = sliders.First(s => s.label == AlpsStrings.Tr("phase.delay"));
             Assert.AreEqual(-200f, phaseSpread.Limit.x, 0.001f, "A negative spread runs the order backwards.");
             Assert.AreEqual(200f, phaseSpread.Limit.y, 0.001f, "Two trips across the group is as far as a wave reads.");
         }
@@ -1326,7 +1356,7 @@ namespace AdzukiSoft.ALPS.Tests
             var sourceCard = new AlpsClipInspectorView(source).Query<AlpsEffectCard>().First();
             var targetView = new AlpsClipInspectorView(target);
             var targetCard = targetView.Query<AlpsEffectCard>().First();
-            Assert.AreEqual("共通設定", targetCard.Title);
+            Assert.AreEqual(AlpsStrings.Tr("clip.common.title"), targetCard.Title);
             Assert.IsFalse(targetCard.PasteAvailable, "貼り付け must be hidden with an empty clipboard.");
 
             var effect = AlpsEffect.Create(AlpsEffectKind.Cone);
@@ -1348,7 +1378,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(-0.25f, target.phase.spread, 0.0001f);
             Assert.AreEqual(8f, target.phase.beatsPerCycle, 0.0001f);
             Assert.AreEqual(1, target.effects.Count, "貼り付け leaves the effects alone.");
-            Assert.IsFalse(HasVisibleText(refreshed, "イージング"), "The rebuilt view shows the pasted mode.");
+            Assert.IsFalse(HasVisibleText(refreshed, AlpsStrings.Tr("phase.easing")), "The rebuilt view shows the pasted mode.");
         }
 
         [Test]
@@ -1399,7 +1429,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsFalse(view.Q<AlpsColorPalette>().CanDelete);
             var timings = view.Query<AlpsAnimatableView>().ToList()
                 .SelectMany(v => v.Query<AlpsSegmentedControl>().ToList())
-                .Where(c => c.label == "タイミング")
+                .Where(c => c.label == AlpsStrings.Tr("animatable.timing"))
                 .ToList();
             Assert.IsNotEmpty(timings);
             Assert.IsTrue(timings.All(t => !IsShown(t)), "Nothing to phase with no stops.");
@@ -1419,8 +1449,8 @@ namespace AdzukiSoft.ALPS.Tests
 
             var type = editor.Q<DropdownField>(className: "alps-palette__type");
             Assert.IsNotNull(type, "種類 must be a dropdown, not a hidden overlay.");
-            Assert.AreEqual("単色", type.value);
-            Assert.IsNotNull(editor.Q<ColorField>(), "単色 shows a colour picker.");
+            Assert.AreEqual(AlpsColorPalette.SolidLabel, type.value);
+            Assert.IsNotNull(editor.Q<ColorField>(), "A solid stop shows a colour picker.");
             Assert.IsNull(editor.Q<GradientField>());
 
             view.Q<AlpsColorPalette>().ChangeSelectedStopType(true);
@@ -1739,7 +1769,7 @@ namespace AdzukiSoft.ALPS.Tests
             set.phase.SetShares(0.3f, 0.2f, 0.1f);
             var view = new AlpsClipInspectorView(set);
 
-            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == AlpsStrings.Tr("phase.shares"));
             Assert.AreEqual(new Vector3(0.3f, 0.2f, 0.1f), shares.value);
             Assert.AreEqual(0.3f, shares.Corner(AlpsShareBar.RiseEnd), 0.0001f);
             Assert.AreEqual(0.5f, shares.Corner(AlpsShareBar.HighEnd), 0.0001f);
@@ -1753,7 +1783,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void ShareBar_ACornerStaysBetweenItsNeighbours()
         {
-            var shares = new AlpsShareBar("配分");
+            var shares = new AlpsShareBar(AlpsStrings.Tr("phase.shares"));
             shares.SetValueWithoutNotify(new Vector3(0.25f, 0.25f, 0.25f));
 
             shares.MoveCorner(AlpsShareBar.RiseEnd, 0.1f);
@@ -1781,7 +1811,7 @@ namespace AdzukiSoft.ALPS.Tests
                 window.rootVisualElement.Add(view);
                 yield return null;
 
-                var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == "配分");
+                var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == AlpsStrings.Tr("phase.shares"));
                 shares.MoveCorner(AlpsShareBar.FallEnd, 0.75f);
 
                 Assert.AreEqual(0.5f, set.phase.rise, 0.0001f);
@@ -1825,7 +1855,7 @@ namespace AdzukiSoft.ALPS.Tests
                 picker.Side.value = AlpsEasingPicker.RiseSide;
                 yield return null;
 
-                Assert.AreEqual("イージング", picker.Side.label, "The switch carries the row label.");
+                Assert.AreEqual(AlpsStrings.Tr("phase.easing"), picker.Side.label, "The switch carries the row label.");
                 Assert.AreEqual(DisplayStyle.Flex, picker.Rise.style.display.value);
                 Assert.AreEqual(DisplayStyle.None, picker.Fall.style.display.value);
                 Assert.AreEqual((int)AlpsEaseType.InQuad, picker.Rise.value);

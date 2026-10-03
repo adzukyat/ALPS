@@ -63,9 +63,16 @@ namespace AdzukiSoft.ALPS.Editor
             fields.AddToClassList("alps-flow9");
             Add(fields);
 
-            _shape = new AlpsSegmentedControl("形状", "オフ", "直線", "円", "多角形", "矩形", "グリッド")
+            _shape = new AlpsSegmentedControl(
+                AlpsStrings.Tr("arrangement.shape"),
+                AlpsStrings.Tr("arrangement.shape.off"),
+                AlpsStrings.Tr("arrangement.shape.line"),
+                AlpsStrings.Tr("arrangement.shape.circle"),
+                AlpsStrings.Tr("arrangement.shape.polygon"),
+                AlpsStrings.Tr("arrangement.shape.rectangle"),
+                AlpsStrings.Tr("arrangement.shape.grid"))
             {
-                tooltip = "子オブジェクトを並べる形です。オフでは子オブジェクトを動かしません。円は角度を360°未満にすると円弧になります。",
+                tooltip = AlpsStrings.Tr("arrangement.shape.tip"),
             };
             _shape.SetValueWithoutNotify((int)settings.shape);
             _shape.RegisterValueChangedCallback(evt =>
@@ -75,9 +82,12 @@ namespace AdzukiSoft.ALPS.Editor
             });
             fields.Add(_shape);
 
-            _spacing = new AlpsSegmentedControl("配置", "端から端", "均等割り")
+            _spacing = new AlpsSegmentedControl(
+                AlpsStrings.Tr("arrangement.spacing"),
+                AlpsStrings.Tr("arrangement.spacing.endToEnd"),
+                AlpsStrings.Tr("arrangement.spacing.even"))
             {
-                tooltip = "端から端: 最初と最後のオブジェクトを線の両端に置きます。均等割り: 全体をオブジェクトの数で等分し、それぞれの真ん中に置きます。",
+                tooltip = AlpsStrings.Tr("arrangement.spacing.tip"),
             };
             _spacing.SetValueWithoutNotify((int)settings.spacing);
             _spacing.RegisterValueChangedCallback(evt =>
@@ -87,9 +97,13 @@ namespace AdzukiSoft.ALPS.Editor
             });
             fields.Add(_spacing);
 
-            _order = new AlpsSegmentedControl("並び順", "通常", "逆順", "ランダム")
+            _order = new AlpsSegmentedControl(
+                AlpsStrings.Tr("common.order"),
+                AlpsStrings.Tr("common.order.normal"),
+                AlpsStrings.Tr("common.order.reverse"),
+                AlpsStrings.Tr("common.order.random"))
             {
-                tooltip = "S(広がり)の値をどの順番でオブジェクトに割り当てるかです。置く場所の順番は変わりません。",
+                tooltip = AlpsStrings.Tr("arrangement.order.tip"),
             };
             _order.SetValueWithoutNotify((int)settings.order);
             _order.RegisterValueChangedCallback(evt =>
@@ -99,9 +113,9 @@ namespace AdzukiSoft.ALPS.Editor
             });
             fields.Add(_order);
 
-            _symmetric = new AlpsToggleSwitch("左右対称")
+            _symmetric = new AlpsToggleSwitch(AlpsStrings.Tr("common.symmetric"))
             {
-                tooltip = "真ん中で折り返し、左右で同じ位置のオブジェクトに同じ値を割り当てます。通常は真ん中から、逆順は両端から数え、ランダムは左右の組ごとに並べ替えます。前半のY回転とZ回転は反転します。",
+                tooltip = AlpsStrings.Tr("arrangement.symmetric.tip"),
             };
             _symmetric.SetValueWithoutNotify(settings.symmetric);
             _symmetric.RegisterValueChangedCallback(evt =>
@@ -111,10 +125,10 @@ namespace AdzukiSoft.ALPS.Editor
             });
             fields.Add(_symmetric);
 
-            _seed = new AlpsStepper("シード", string.Empty, 1f)
+            _seed = new AlpsStepper(AlpsStrings.Tr("common.seed"), string.Empty, 1f)
             {
                 Minimum = 0f,
-                tooltip = "ランダムな並び順を変えます。",
+                tooltip = AlpsStrings.Tr("arrangement.seed.tip"),
             };
             _seed.SetValueWithoutNotify(settings.seed);
             _seed.RegisterValueChangedCallback(evt =>
@@ -130,28 +144,28 @@ namespace AdzukiSoft.ALPS.Editor
             _cards = cards;
 
             // --- Shape card ------------------------------------------------
-            var shapeCard = Card("形", "並べる線や円の大きさです。始点、終点、半径、幅と奥行きはシーン上のハンドルでも動かせます。", "shape");
+            var shapeCard = Card(AlpsStrings.Tr("arrangement.card.shape.title"), AlpsStrings.Tr("arrangement.card.shape.desc"), "shape");
             cards.Add(shapeCard);
 
-            _start = Vector("始点", settings.lineStart, value => settings.lineStart = value);
-            _end = Vector("終点", settings.lineEnd, value => settings.lineEnd = value);
+            _start = Vector(AlpsStrings.Tr("common.start"), settings.lineStart, value => settings.lineStart = value);
+            _end = Vector(AlpsStrings.Tr("common.end"), settings.lineEnd, value => settings.lineEnd = value);
             shapeCard.Body.Add(_start);
             shapeCard.Body.Add(_end);
 
-            _sides = Stepper("辺の数", settings.sides, AlpsArrangementEvaluator.MinSides, AlpsArrangementEvaluator.MaxSides,
+            _sides = Stepper(AlpsStrings.Tr("arrangement.sides"), settings.sides, AlpsArrangementEvaluator.MinSides, AlpsArrangementEvaluator.MaxSides,
                 value => settings.sides = value);
-            _columns = Stepper("列数", settings.columns, 1, AlpsArrangementEvaluator.MaxSides,
+            _columns = Stepper(AlpsStrings.Tr("arrangement.columns"), settings.columns, 1, AlpsArrangementEvaluator.MaxSides,
                 value => settings.columns = value);
             shapeCard.Body.Add(_sides);
             shapeCard.Body.Add(_columns);
 
-            _radius = Animatable("半径", settings.radius, _defaults.radius, "m", "0.##", Meters);
-            _angle = Animatable("回転", settings.angle, _defaults.angle, "°", "0.#", AlpsSnapPoints.Angles);
-            _angle.tooltip = "形全体を回します。円弧では円弧の真ん中の向きです。";
-            _sweep = Animatable("角度", settings.sweep, _defaults.sweep, "°", "0.#", AlpsSnapPoints.Angles);
-            _sweep.tooltip = "円のうち何度分に並べるかです。360°未満で円弧になります。";
-            _width = Animatable("幅", settings.width, _defaults.width, "m", "0.##", Meters);
-            _depth = Animatable("奥行き", settings.depth, _defaults.depth, "m", "0.##", Meters);
+            _radius = Animatable(AlpsStrings.Tr("common.radius"), settings.radius, _defaults.radius, "m", "0.##", Meters);
+            _angle = Animatable(AlpsStrings.Tr("common.rotation"), settings.angle, _defaults.angle, "°", "0.#", AlpsSnapPoints.Angles);
+            _angle.tooltip = AlpsStrings.Tr("arrangement.angle.tip");
+            _sweep = Animatable(AlpsStrings.Tr("arrangement.sweep"), settings.sweep, _defaults.sweep, "°", "0.#", AlpsSnapPoints.Angles);
+            _sweep.tooltip = AlpsStrings.Tr("arrangement.sweep.tip");
+            _width = Animatable(AlpsStrings.Tr("common.width"), settings.width, _defaults.width, "m", "0.##", Meters);
+            _depth = Animatable(AlpsStrings.Tr("arrangement.depth"), settings.depth, _defaults.depth, "m", "0.##", Meters);
             shapeCard.Body.Add(_radius);
             shapeCard.Body.Add(_angle);
             shapeCard.Body.Add(_sweep);
@@ -159,12 +173,18 @@ namespace AdzukiSoft.ALPS.Editor
             shapeCard.Body.Add(_depth);
 
             // --- Facing card -----------------------------------------------
-            var facingCard = Card("向き", "オブジェクトの向きです。X/Y/Z回転は向きを決めた後に各オブジェクトの軸で回り、Sで1つずつ変えるとファンになります。", "facing");
+            var facingCard = Card(AlpsStrings.Tr("arrangement.card.facing.title"), AlpsStrings.Tr("arrangement.card.facing.desc"), "facing");
             cards.Add(facingCard);
 
-            _facing = new AlpsSegmentedControl("向き", "そのまま", "外向き", "内向き", "進行方向", "注視点")
+            _facing = new AlpsSegmentedControl(
+                AlpsStrings.Tr("arrangement.facing"),
+                AlpsStrings.Tr("arrangement.facing.asIs"),
+                AlpsStrings.Tr("arrangement.facing.outward"),
+                AlpsStrings.Tr("arrangement.facing.inward"),
+                AlpsStrings.Tr("arrangement.facing.forward"),
+                AlpsStrings.Tr("arrangement.facing.target"))
             {
-                tooltip = "そのまま: コンテナーと同じ向き。外向き/内向き: 形の外側か内側。進行方向: 並ぶ方向。注視点: 指定した点の方。どれも前(+Z)をその方向へ向け、上はできるだけ上のままにします。",
+                tooltip = AlpsStrings.Tr("arrangement.facing.tip"),
             };
             _facing.SetValueWithoutNotify((int)settings.facing);
             _facing.RegisterValueChangedCallback(evt =>
@@ -174,20 +194,20 @@ namespace AdzukiSoft.ALPS.Editor
             });
             facingCard.Body.Add(_facing);
 
-            _target = Vector("注視点", settings.target, value => settings.target = value);
+            _target = Vector(AlpsStrings.Tr("arrangement.target"), settings.target, value => settings.target = value);
             facingCard.Body.Add(_target);
 
-            facingCard.Body.Add(Animatable("X回転", settings.rotationX, _defaults.rotationX, "°", "0.#", AlpsSnapPoints.Angles));
-            facingCard.Body.Add(Animatable("Y回転", settings.rotationY, _defaults.rotationY, "°", "0.#", AlpsSnapPoints.Angles));
-            facingCard.Body.Add(Animatable("Z回転", settings.rotationZ, _defaults.rotationZ, "°", "0.#", AlpsSnapPoints.Angles));
+            facingCard.Body.Add(Animatable(AlpsStrings.Tr("common.rotationX"), settings.rotationX, _defaults.rotationX, "°", "0.#", AlpsSnapPoints.Angles));
+            facingCard.Body.Add(Animatable(AlpsStrings.Tr("common.rotationY"), settings.rotationY, _defaults.rotationY, "°", "0.#", AlpsSnapPoints.Angles));
+            facingCard.Body.Add(Animatable(AlpsStrings.Tr("common.rotationZ"), settings.rotationZ, _defaults.rotationZ, "°", "0.#", AlpsSnapPoints.Angles));
 
             // --- Offset card -----------------------------------------------
-            var offsetCard = Card("位置", "形の上からずらす量です。Sで1つずつ変えると、高さなら階段や螺旋、外側なら左右対称と合わせてV字になります。", "offset");
+            var offsetCard = Card(AlpsStrings.Tr("arrangement.card.offset.title"), AlpsStrings.Tr("arrangement.card.offset.desc"), "offset");
             cards.Add(offsetCard);
 
-            offsetCard.Body.Add(Animatable("高さ", settings.height, _defaults.height, "m", "0.##", AlpsSnapPoints.Zero));
-            var outward = Animatable("外側", settings.outward, _defaults.outward, "m", "0.##", AlpsSnapPoints.Zero);
-            outward.tooltip = "形の外側へずらします。直線では前(+Z)側です。";
+            offsetCard.Body.Add(Animatable(AlpsStrings.Tr("common.height"), settings.height, _defaults.height, "m", "0.##", AlpsSnapPoints.Zero));
+            var outward = Animatable(AlpsStrings.Tr("arrangement.outward"), settings.outward, _defaults.outward, "m", "0.##", AlpsSnapPoints.Zero);
+            outward.tooltip = AlpsStrings.Tr("arrangement.outward.tip");
             offsetCard.Body.Add(outward);
 
             Refresh();
@@ -289,8 +309,8 @@ namespace AdzukiSoft.ALPS.Editor
                 snaps: snaps,
                 defaults: defaults,
                 allowRange: false,
-                spreadFirstTip: "最初のオブジェクト",
-                spreadLastTip: "最後のオブジェクト");
+                spreadFirstTip: AlpsStrings.Tr("arrangement.spread.first"),
+                spreadLastTip: AlpsStrings.Tr("arrangement.spread.last"));
             _animatables.Add(view);
             return view;
         }

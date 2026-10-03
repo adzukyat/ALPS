@@ -23,10 +23,20 @@ namespace AdzukiSoft.ALPS.Tests
             return set;
         }
 
+        private AlpsLanguage _language;
+
         [SetUp]
         public void ResetClipboard()
         {
+            _language = AlpsStrings.Language;
+            AlpsStrings.Language = AlpsLanguage.English;
             AlpsEffectClipboard.Clear();
+        }
+
+        [TearDown]
+        public void RestoreLanguage()
+        {
+            AlpsStrings.Language = _language;
         }
 
         [Test]
@@ -180,15 +190,15 @@ namespace AdzukiSoft.ALPS.Tests
                 yield return null;
 
                 var view = host.Q<AlpsClipInspectorView>();
-                var order = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == "並び順");
-                var slider = view.Query<AlpsValueSlider>().ToList().First(control => control.label == "明るさ");
+                var order = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == AlpsStrings.Tr("common.order"));
+                var slider = view.Query<AlpsValueSlider>().ToList().First(control => control.label == AlpsStrings.Tr("effect.brightness.name"));
                 var box = slider.Q<AlpsNumberBox>().Q<TextField>();
 
                 Assert.IsTrue(order.showMixedValue);
                 Assert.IsFalse(order.Query(className: "alps-seg__item--selected").ToList().Any(), "A mixed choice selects nothing.");
                 Assert.AreEqual(AlpsMixedValues.MixedText, box.value, "A mixed number shows a dash.");
 
-                var speed = view.Query<AlpsStepper>().ToList().First(control => control.label == "速度");
+                var speed = view.Query<AlpsStepper>().ToList().First(control => control.label == AlpsStrings.Tr("common.speed"));
                 Assert.IsFalse(speed.showMixedValue, "An equal value shows as usual.");
 
                 // Picking the value the shown clip already has still reaches the other clip.
@@ -249,12 +259,12 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.NotNull(view, "Several clips still get the ALPS view.");
                 Assert.NotNull(view.Q<HelpBox>(className: "alps-multi-notice"), "The view says it edits several clips.");
 
-                var order = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == "並び順");
+                var order = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == AlpsStrings.Tr("common.order"));
                 order.value = (int)AlpsOrderMode.Random;
                 Assert.AreEqual(AlpsOrderMode.Random, a.data.order);
                 Assert.AreEqual(AlpsOrderMode.Random, b.data.order, "The edit reaches the other clip.");
 
-                var symmetric = view.Query<AlpsToggleSwitch>().ToList().First(control => control.label == "左右対称");
+                var symmetric = view.Query<AlpsToggleSwitch>().ToList().First(control => control.label == AlpsStrings.Tr("common.symmetric"));
                 symmetric.value = true;
                 Assert.IsTrue(a.data.symmetric);
                 Assert.IsTrue(b.data.symmetric, "The switch reaches the other clip.");

@@ -63,16 +63,16 @@ namespace AdzukiSoft.ALPS.Editor
 
             if (showActions)
             {
-                _pasteAction = BuildAction(AlpsIcons.Paste, "パラメーターを貼り付け",
+                _pasteAction = BuildAction(AlpsIcons.Paste, AlpsStrings.Tr("card.paste"),
                     new Color(0.918f, 0.918f, 0.918f), RequestPaste);
                 _pasteAction.style.display = DisplayStyle.None;
                 _actions.Add(_pasteAction);
 
-                _actions.Add(BuildAction(AlpsIcons.Copy, "パラメーターをコピー",
+                _actions.Add(BuildAction(AlpsIcons.Copy, AlpsStrings.Tr("card.copy"),
                     new Color(0.918f, 0.918f, 0.918f), RequestCopy));
                 if (showDelete)
                 {
-                    _actions.Add(BuildAction(AlpsIcons.Trash, "削除", new Color(0.910f, 0.647f, 0.647f),
+                    _actions.Add(BuildAction(AlpsIcons.Trash, AlpsStrings.Tr("common.delete"), new Color(0.910f, 0.647f, 0.647f),
                         RequestDelete));
                 }
             }

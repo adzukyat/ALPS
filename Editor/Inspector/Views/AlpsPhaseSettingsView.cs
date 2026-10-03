@@ -64,7 +64,10 @@ namespace AdzukiSoft.ALPS.Editor
 
             Add(_graph);
 
-            var mode = new AlpsSegmentedControl("モード", "波形", "ランダム");
+            var mode = new AlpsSegmentedControl(
+                AlpsStrings.Tr("phase.mode"),
+                AlpsStrings.Tr("phase.mode.wave"),
+                AlpsStrings.Tr("phase.mode.random"));
             if (compact)
             {
                 mode.AddToClassList("alps-seg--compact");
@@ -82,7 +85,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             // How long the wave rises, holds at the top, falls and holds at the bottom. A rise
             // over the whole cycle is a sawtooth, and zero length ramps make a square wave.
-            _shares = new AlpsShareBar("配分")
+            _shares = new AlpsShareBar(AlpsStrings.Tr("phase.shares"))
             {
                 DefaultValue = new Vector3(defaults.rise, defaults.holdHigh, defaults.fall),
             };
@@ -100,7 +103,7 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsPhaseSettings.fall));
             Add(_shares);
 
-            _easing = new AlpsEasingPicker("イージング", compact);
+            _easing = new AlpsEasingPicker(AlpsStrings.Tr("phase.easing"), compact);
             _easing.Rise.SetValueWithoutNotify((int)settings.ease);
             _easing.Rise.RegisterValueChangedCallback(evt =>
             {
@@ -118,7 +121,7 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_easing.Fall, settings, nameof(AlpsPhaseSettings.fallEase));
             Add(_easing);
 
-            var group = new AlpsValueSlider("灯体単位", new Vector2(1f, 16f), "灯", "0")
+            var group = new AlpsValueSlider(AlpsStrings.Tr("phase.group"), new Vector2(1f, 16f), AlpsStrings.Tr("unit.light"), "0")
             {
                 DefaultValue = defaults.fixtureGroupSize,
                 AllowAboveLimit = true,
@@ -138,7 +141,7 @@ namespace AdzukiSoft.ALPS.Editor
             // backwards, for example from the edges in. The 拍 flag reads the same trip in
             // beats instead, which then holds when the speed changes. Beats are counted, not
             // dragged, so that unit gets the same stepper as the speed below.
-            _spread = new AlpsValueSlider("ディレイ", new Vector2(-SpreadLimit, SpreadLimit), "%", "0.##") { DefaultValue = 0f };
+            _spread = new AlpsValueSlider(AlpsStrings.Tr("phase.delay"), new Vector2(-SpreadLimit, SpreadLimit), "%", "0.##") { DefaultValue = 0f };
             _spread.AddToClassList("alps-animatable__field");
             _spread.RegisterValueChangedCallback(evt =>
             {
@@ -146,7 +149,7 @@ namespace AdzukiSoft.ALPS.Editor
                 Changed();
             });
 
-            _spreadBeats = new AlpsStepper("ディレイ", "拍", 1f)
+            _spreadBeats = new AlpsStepper(AlpsStrings.Tr("phase.delay"), AlpsStrings.Tr("unit.beats"), 1f)
             {
                 Minimum = -SpreadBeatsLimit,
                 Maximum = SpreadBeatsLimit,
@@ -162,7 +165,7 @@ namespace AdzukiSoft.ALPS.Editor
                 Changed();
             });
 
-            _beatsFlag = new AlpsRangeFlag("拍", "拍で指定");
+            _beatsFlag = new AlpsRangeFlag(AlpsStrings.Tr("phase.beatsFlag.letter"), AlpsStrings.Tr("phase.beatsFlag.tip"));
             _beatsFlag.RegisterValueChangedCallback(evt =>
             {
                 // Seed the unit being switched to from the current look, so the switch alone
@@ -191,7 +194,7 @@ namespace AdzukiSoft.ALPS.Editor
             spreadRow.Add(_beatsFlag);
             Add(spreadRow);
 
-            var speed = new AlpsStepper("速度", "拍", 1f, compact ? null : "/ 1周期") { Minimum = 0f, Subdivides = true };
+            var speed = new AlpsStepper(AlpsStrings.Tr("common.speed"), AlpsStrings.Tr("unit.beats"), 1f, compact ? null : AlpsStrings.Tr("phase.perCycle")) { Minimum = 0f, Subdivides = true };
             speed.SetValueWithoutNotify(settings.beatsPerCycle);
             speed.RegisterValueChangedCallback(evt =>
             {
@@ -203,11 +206,11 @@ namespace AdzukiSoft.ALPS.Editor
 
             // Every cycle at every order position rolls its own dice, so a chance below 100%
             // leaves some cycles resting at the bottom of the wave.
-            _fireChance = new AlpsValueSlider("確率", new Vector2(0f, 100f), "%", "0.#")
+            _fireChance = new AlpsValueSlider(AlpsStrings.Tr("phase.fireChance"), new Vector2(0f, 100f), "%", "0.#")
             {
                 DefaultValue = defaults.fireChance * 100f,
                 Snaps = new[] { 25f, 50f, 75f },
-                tooltip = "1周期ごとに波が起きる確率です。灯体(並び順の位置)ごと、周期ごとに決まり、起きなかった周期は波の一番下で待ちます。反転中は一番上で待ちます。",
+                tooltip = AlpsStrings.Tr("phase.fireChance.tip"),
             };
             _fireChance.SetValueWithoutNotify(settings.fireChance * 100f);
             _fireChance.RegisterValueChangedCallback(evt =>
@@ -218,7 +221,7 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_fireChance, settings, nameof(AlpsPhaseSettings.fireChance));
             Add(_fireChance);
 
-            _inverse = new AlpsToggleSwitch("反転");
+            _inverse = new AlpsToggleSwitch(AlpsStrings.Tr("phase.inverse"));
             _inverse.SetValueWithoutNotify(settings.inverse);
             _inverse.RegisterValueChangedCallback(evt =>
             {

@@ -18,6 +18,12 @@ namespace AdzukiSoft.ALPS.Editor
         private static bool _watching;
         private static readonly List<FontAsset> _built = new List<FontAsset>();
 
+        /// <summary>Drops the built font so the next <see cref="Apply"/> rebuilds it, e.g. after a language change.</summary>
+        public static void Invalidate()
+        {
+            _fontBuilt = false;
+        }
+
         /// <summary>Sets the font on the root. Without a usable font the theme's default stays.</summary>
         public static void Apply(VisualElement root)
         {
@@ -52,23 +58,20 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             var installed = new HashSet<string>(Font.GetOSInstalledFontNames());
-            var fallback = FromOs(EditorStyles.standardFont, installed, bold: false);
-            if (fallback != null)
-            {
-                regular.fallbackFontAssetTable = new List<FontAsset> { fallback };
-            }
+            var fallbacks = FallbacksFor(EditorStyles.standardFont, installed, bold: false);
+            regular.fallbackFontAssetTable = fallbacks;
 
             var bold = FromFont(EditorStyles.boldFont);
             if (bold != null)
             {
-                var boldFallback = FromOs(EditorStyles.boldFont, installed, bold: true);
-                if (boldFallback != null)
+                var boldFallbacks = FallbacksFor(EditorStyles.boldFont, installed, bold: true);
+                bold.fallbackFontAssetTable = boldFallbacks;
+
+                // The two lists are built in the same script order, so a regular fallback and
+                // its bold counterpart share an index.
+                for (var i = 0; i < fallbacks.Count && i < boldFallbacks.Count; i++)
                 {
-                    bold.fallbackFontAssetTable = new List<FontAsset> { boldFallback };
-                    if (fallback != null)
-                    {
-                        SetBold(fallback, boldFallback);
-                    }
+                    SetBold(fallbacks[i], boldFallbacks[i]);
                 }
 
                 SetBold(regular, bold);
@@ -76,6 +79,64 @@ namespace AdzukiSoft.ALPS.Editor
 
             _font = regular;
             return _font;
+        }
+
+        /// <summary>
+        /// A fallback font per script the UI can show, so Japanese and Korean both render whatever
+        /// the active language. The active language's font comes first, since CJK ideographs shared
+        /// between the scripts should take that language's shape.
+        /// </summary>
+        private static List<FontAsset> FallbacksFor(Font editorFont, HashSet<string> installed, bool bold)
+        {
+            var fallbacks = new List<FontAsset>();
+            foreach (var script in Scripts())
+            {
+                var asset = FromOs(editorFont, installed, bold, script);
+                if (asset != null)
+                {
+                    fallbacks.Add(asset);
+                }
+            }
+
+            return fallbacks;
+        }
+
+        /// <summary>The scripts to back the UI with, active language first. Probe is a glyph only that script has.</summary>
+        private static IEnumerable<ScriptFont> Scripts()
+        {
+            var japanese = new ScriptFont
+            {
+                Probe = 'あ',
+                WinRegular = new[] { "Meiryo UI", "Yu Gothic UI" },
+                WinBold = new[] { "Meiryo UI Bold", "Yu Gothic UI Bold" },
+                Mac = new[] { "Hiragino Sans" },
+            };
+            var korean = new ScriptFont
+            {
+                Probe = '가',
+                WinRegular = new[] { "Malgun Gothic" },
+                WinBold = new[] { "Malgun Gothic Bold" },
+                Mac = new[] { "Apple SD Gothic Neo" },
+            };
+
+            if (AlpsStrings.Language == AlpsLanguage.Korean)
+            {
+                yield return korean;
+                yield return japanese;
+            }
+            else
+            {
+                yield return japanese;
+                yield return korean;
+            }
+        }
+
+        private struct ScriptFont
+        {
+            public char Probe;
+            public string[] WinRegular;
+            public string[] WinBold;
+            public string[] Mac;
         }
 
         private static FontAsset FromFont(Font font)
@@ -95,11 +156,11 @@ namespace AdzukiSoft.ALPS.Editor
         /// only "Inter", which the editor also registers as an installed font. So a candidate
         /// only counts when it really has kana, and the platform's own UI font backs the list.
         /// </summary>
-        private static FontAsset FromOs(Font editorFont, HashSet<string> installed, bool bold)
+        private static FontAsset FromOs(Font editorFont, HashSet<string> installed, bool bold, ScriptFont script)
         {
             var defaults = Application.platform == RuntimePlatform.OSXEditor
-                ? new[] { "Hiragino Sans" }
-                : new[] { bold ? "Meiryo UI Bold" : "Meiryo UI", bold ? "Yu Gothic UI Bold" : "Yu Gothic UI" };
+                ? script.Mac
+                : (bold ? script.WinBold : script.WinRegular);
             var names = (editorFont?.fontNames ?? Array.Empty<string>()).Concat(defaults);
 
             foreach (var name in names.Where(n => installed.Contains(n) || defaults.Contains(n)))
@@ -115,7 +176,7 @@ namespace AdzukiSoft.ALPS.Editor
                 foreach (var style in styles)
                 {
                     var asset = FontAsset.CreateFontAsset(family, style, 90);
-                    if (asset != null && asset.HasCharacter('あ', false, true))
+                    if (asset != null && asset.HasCharacter(script.Probe, false, true))
                     {
                         Keep(asset);
                         return asset;

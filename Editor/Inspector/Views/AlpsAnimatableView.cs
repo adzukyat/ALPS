@@ -80,9 +80,11 @@ namespace AdzukiSoft.ALPS.Editor
             AlpsAnimatableValue defaults = null,
             AlpsMixedValues mixed = null,
             bool allowRange = true,
-            string spreadFirstTip = "最初の器具",
-            string spreadLastTip = "最後の器具")
+            string spreadFirstTip = null,
+            string spreadLastTip = null)
         {
+            spreadFirstTip = spreadFirstTip ?? AlpsStrings.Tr("animatable.spread.first");
+            spreadLastTip = spreadLastTip ?? AlpsStrings.Tr("animatable.spread.last");
             _model = model;
             _clipPhase = clipPhase;
             _onChanged = onChanged;
@@ -180,7 +182,7 @@ namespace AdzukiSoft.ALPS.Editor
                     });
                 }
 
-                _spreadFlag = new AlpsRangeFlag("S", "広がり");
+                _spreadFlag = new AlpsRangeFlag("S", AlpsStrings.Tr("common.spread"));
                 _spreadFlag.AddToClassList("alps-spreadflag");
                 _spreadFlag.SetValueWithoutNotify(model.hasSpread);
                 _spreadFlag.RegisterValueChangedCallback(evt =>
@@ -220,9 +222,12 @@ namespace AdzukiSoft.ALPS.Editor
             Add(_valueRow);
 
             // --- range frame -----------------------------------------------
-            _rangeFrame = Frame("レンジ", out _rangeLegend);
+            _rangeFrame = Frame(AlpsStrings.Tr("common.range"), out _rangeLegend);
 
-            _timing = new AlpsSegmentedControl("タイミング", "周期内", "周期ごと");
+            _timing = new AlpsSegmentedControl(
+                AlpsStrings.Tr("animatable.timing"),
+                AlpsStrings.Tr("animatable.timing.within"),
+                AlpsStrings.Tr("animatable.timing.perCycle"));
             _timing.AddToClassList("alps-seg--compact");
             _timing.SetValueWithoutNotify((int)model.timing);
             _timing.RegisterValueChangedCallback(evt =>
@@ -233,7 +238,7 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_timing, model, nameof(AlpsAnimatableValue.timing));
             _rangeFrame.Add(_timing);
 
-            _ownPhase = new AlpsToggleSwitch("独自の動き");
+            _ownPhase = new AlpsToggleSwitch(AlpsStrings.Tr("animatable.ownPhase"));
             _ownPhase.SetValueWithoutNotify(model.useOwnPhase);
             _ownPhase.RegisterValueChangedCallback(evt =>
             {

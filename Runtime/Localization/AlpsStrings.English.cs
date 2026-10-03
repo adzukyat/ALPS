@@ -1,0 +1,203 @@
+using System.Collections.Generic;
+
+namespace AdzukiSoft.ALPS
+{
+    public static partial class AlpsStrings
+    {
+        /// <summary>The base table. Every key the UI uses is defined here; other languages fall back to it.</summary>
+        private static Dictionary<string, string> BuildEnglish()
+        {
+            return new Dictionary<string, string>
+            {
+                // --- Units -------------------------------------------------
+                { "unit.beats", "beat" },
+                { "unit.light", "lights" },
+
+                // --- Shared labels and options ----------------------------
+                { "common.order", "Order" },
+                { "common.order.normal", "Normal" },
+                { "common.order.reverse", "Reverse" },
+                { "common.order.random", "Random" },
+                { "common.symmetric", "Symmetry" },
+                { "common.seed", "Seed" },
+                { "common.radius", "Radius" },
+                { "common.rotation", "Rotation" },
+                { "common.rotationX", "Rotation X" },
+                { "common.rotationY", "Rotation Y" },
+                { "common.rotationZ", "Rotation Z" },
+                { "common.width", "Width" },
+                { "common.height", "Height" },
+                { "common.start", "Start" },
+                { "common.end", "End" },
+                { "common.speed", "Speed" },
+                { "common.fade", "Fade" },
+                { "common.palette", "Palette" },
+                { "common.profile", "Profile" },
+                { "common.delete", "Delete" },
+                { "common.duplicate", "Duplicate" },
+                { "common.range", "Range" },
+                { "common.spread", "Spread" },
+                { "common.rise", "Rise" },
+                { "common.fall", "Fall" },
+
+                // --- Arrangement (container) -------------------------------
+                { "arrangement.shape", "Shape" },
+                { "arrangement.shape.off", "Off" },
+                { "arrangement.shape.line", "Line" },
+                { "arrangement.shape.circle", "Circle" },
+                { "arrangement.shape.polygon", "Polygon" },
+                { "arrangement.shape.rectangle", "Rectangle" },
+                { "arrangement.shape.grid", "Grid" },
+                { "arrangement.shape.tip", "The shape the child objects are laid out in. Off leaves them where they are. A circle becomes an arc when its angle is under 360°." },
+                { "arrangement.spacing", "Spacing" },
+                { "arrangement.spacing.endToEnd", "End to End" },
+                { "arrangement.spacing.even", "Even" },
+                { "arrangement.spacing.tip", "End to End: places the first and last objects at the two ends of the line. Even: divides the whole by the number of objects and places each at the middle of its share." },
+                { "arrangement.order.tip", "The order in which the S (spread) values are assigned to the objects. The order of the positions themselves does not change." },
+                { "arrangement.symmetric.tip", "Folds at the middle and assigns the same value to objects mirrored across it. Normal counts from the middle, reverse from the ends, and random shuffles the mirrored pairs. The first half's Y and Z rotation are mirrored." },
+                { "arrangement.seed.tip", "Changes the random order." },
+                { "arrangement.card.shape.title", "Shape" },
+                { "arrangement.card.shape.desc", "The size of the line or circle to lay out along. Start, end, radius, width and depth can also be dragged with handles in the scene." },
+                { "arrangement.sides", "Sides" },
+                { "arrangement.columns", "Columns" },
+                { "arrangement.angle.tip", "Rotates the whole shape. For an arc, this is the direction of the arc's middle." },
+                { "arrangement.sweep", "Angle" },
+                { "arrangement.sweep.tip", "How many degrees of the circle to lay out along. Under 360° makes an arc." },
+                { "arrangement.depth", "Depth" },
+                { "arrangement.card.facing.title", "Facing" },
+                { "arrangement.card.facing.desc", "Which way the objects face. X/Y/Z rotation turn on each object's own axes after the facing is set; varying them one by one with S makes a fan." },
+                { "arrangement.facing", "Facing" },
+                { "arrangement.facing.asIs", "As Is" },
+                { "arrangement.facing.outward", "Outward" },
+                { "arrangement.facing.inward", "Inward" },
+                { "arrangement.facing.forward", "Forward" },
+                { "arrangement.facing.target", "Target" },
+                { "arrangement.facing.tip", "As Is: the same facing as the container. Outward/Inward: the outside or inside of the shape. Forward: the direction of the row. Target: toward a chosen point. Each points forward (+Z) that way while keeping up as upward as it can." },
+                { "arrangement.target", "Target Point" },
+                { "arrangement.card.offset.title", "Offset" },
+                { "arrangement.card.offset.desc", "How far to shift from the shape. Varied one by one with S, height makes steps or a spiral, and outward with symmetry makes a V." },
+                { "arrangement.outward", "Outward" },
+                { "arrangement.outward.tip", "Shifts toward the outside of the shape. For a line, this is the forward (+Z) side." },
+                { "arrangement.spread.first", "First object" },
+                { "arrangement.spread.last", "Last object" },
+
+                // --- Clip --------------------------------------------------
+                { "clip.bpmOverride", "BPM Override" },
+                { "clip.bpmOverride.tip", "Set to a value other than the global BPM and this clip alone runs at that BPM. Return it to the global BPM to follow the global BPM again." },
+                { "clip.globalBpm", "Global BPM" },
+                { "clip.globalBpm.tip", "The tempo for the whole Timeline. Every clip counts beats from its own start as beat one." },
+                { "clip.seed.tip", "Changes the random order. Clips with the same seed get the same order, and moving a clip does not change it." },
+                { "clip.symmetric.tip", "Folds at the middle and assigns the same order to fixtures mirrored across it. Normal counts from the middle, reverse from the ends, and random shuffles the mirrored pairs. The first half's fixtures have their pan mirrored." },
+                { "clip.fade.tip", "The beats from the clip's start until it is fully in, and from when it starts fading before the end until it ends. Like blending with an empty clip, it affects every effect including move and colour." },
+                { "clip.common.title", "Common Settings" },
+                { "clip.common.desc", "Adjust how Range and palettes behave." },
+                { "clip.editorUnavailable", "This clip's editor could not be shown." },
+                { "clip.multiEdit", "Editing {0} clips at once. Items whose values differ show as \"{1}\", and only the items you change apply to all clips." },
+                { "clip.profileSync", "Follow Profile" },
+                { "clip.profileSync.tip", "While on, the profile's effects play and edits are written to the profile." },
+                { "clip.load", "Load" },
+                { "clip.load.tip.single", "Copies the profile's contents into this clip." },
+                { "clip.load.tip.multi", "Copies each profile's contents into its clip." },
+                { "clip.save", "Save" },
+                { "clip.save.tip.single", "Writes this clip's contents to the profile, creating a new one if none is set." },
+                { "clip.save.tip.multi", "Cannot save while multiple clips are selected." },
+                { "clip.save.dialogTitle", "Save Profile" },
+                { "clip.save.dialogPrompt", "Choose a location." },
+
+                // --- Add effect catalog -----------------------------------
+                { "addEffect.title", "Add Effect" },
+
+                // --- Effect names and descriptions ------------------------
+                { "effect.move.name", "Move" },
+                { "effect.cone.name", "Cone" },
+                { "effect.color.name", "Color" },
+                { "effect.brightness.name", "Brightness" },
+                { "effect.flicker.name", "Flicker" },
+                { "effect.gobo.name", "Gobo" },
+                { "effect.move.desc", "Sets the fixtures' direction. They can trace a circle or track toward a user." },
+                { "effect.cone.desc", "Adjusts the width and length of the beam." },
+                { "effect.color.desc", "Sets the fixtures' colour. Add several to build complex animations." },
+                { "effect.brightness.desc", "Changes the fixtures' brightness." },
+                { "effect.flicker.desc", "The light flickers randomly." },
+                { "effect.gobo.desc", "Projects a pattern onto the light. It can also spin." },
+                { "effect.parity.even", " (Even)" },
+                { "effect.parity.odd", " (Odd)" },
+
+                // --- Effect view ------------------------------------------
+                { "effect.move.mode.angle", "Angle" },
+                { "effect.move.mode.circle", "Circle" },
+                { "effect.move.mode.track", "Track User" },
+                { "effect.move.phaseDiff", "Phase Diff" },
+                { "effect.move.centerTilt", "Center Tilt" },
+                { "effect.move.centerPan", "Center Pan" },
+                { "effect.move.aspect", "Aspect Ratio" },
+                { "effect.move.userName", "User Name" },
+                { "effect.move.followSpeed", "Follow Speed" },
+                { "effect.cone.length", "Length" },
+                { "effect.brightness.blackoutReturn", "Blackout on Return" },
+                { "effect.flicker.strength", "Strength" },
+                { "effect.fixtureStagger", "Fixture Offset" },
+                { "effect.gobo.rotationSpeed", "Rotation Speed" },
+                { "effect.gobo.perTurn", "/ 1 turn" },
+                { "effect.phaseOffset", "Phase Offset" },
+                { "effect.phaseOffset.tip", "How much of a cycle to delay this effect's motion, as a percentage. Setting one of the even/odd halves to 50% makes them alternate." },
+
+                // --- Phase settings ---------------------------------------
+                { "phase.mode", "Mode" },
+                { "phase.mode.wave", "Wave" },
+                { "phase.mode.random", "Random" },
+                { "phase.shares", "Distribution" },
+                { "phase.easing", "Easing" },
+                { "phase.group", "Fixture Group" },
+                { "phase.delay", "Delay" },
+                { "phase.beatsFlag.letter", "B" },
+                { "phase.beatsFlag.tip", "Specify in beats" },
+                { "phase.perCycle", "/ 1 cycle" },
+                { "phase.fireChance", "Chance" },
+                { "phase.fireChance.tip", "The chance a wave fires each cycle. Decided per fixture (its order position) and per cycle; a cycle that does not fire waits at the bottom of the wave, or at the top while inverted." },
+                { "phase.inverse", "Invert" },
+                { "phase.part.rise", "Rise" },
+                { "phase.part.highHold", "Hold High" },
+                { "phase.part.fall", "Fall" },
+                { "phase.part.lowHold", "Hold Low" },
+                { "phase.corner.riseEnd", "Rise end" },
+                { "phase.corner.fallStart", "Fall start" },
+                { "phase.corner.fallEnd", "Fall end" },
+
+                // --- Animatable value -------------------------------------
+                { "animatable.spread.first", "First fixture" },
+                { "animatable.spread.last", "Last fixture" },
+                { "animatable.timing", "Timing" },
+                { "animatable.timing.within", "Within Cycle" },
+                { "animatable.timing.perCycle", "Per Cycle" },
+                { "animatable.ownPhase", "Own Motion" },
+
+                // --- Fade slider ------------------------------------------
+                { "fade.in", "Fade In" },
+                { "fade.out", "Fade Out" },
+
+                // --- Effect card actions ----------------------------------
+                { "card.paste", "Paste Parameters" },
+                { "card.copy", "Copy Parameters" },
+
+                // --- Palette strips ---------------------------------------
+                { "palette.mixed.tip", "The selected clips have different palettes. This shows the first clip's." },
+                { "palette.add", "Add item" },
+                { "palette.delete", "Delete selected item" },
+                { "palette.empty", "No items" },
+                { "palette.solid", "Solid" },
+                { "palette.gradient", "Gradient" },
+                { "palette.color.addDup", "Duplicate the selected colour" },
+                { "palette.color.addWhite", "Add a white solid" },
+                { "palette.color.kind.tip", "The kind of this palette item" },
+                { "palette.gobo.close", "Close the gobo list" },
+                { "palette.gobo.add", "Add a gobo" },
+                { "palette.gobo.addNamed", "Add {0}" },
+
+                // --- Language setting (editor preferences) ----------------
+                { "settings.language", "Language" },
+                { "settings.language.auto", "Auto" },
+            };
+        }
+    }
+}

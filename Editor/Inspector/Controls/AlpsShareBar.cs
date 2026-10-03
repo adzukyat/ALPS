@@ -31,8 +31,9 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Keeps the thumbs at 0% and 100% inside the well: half the 10px thumb and a pixel.</summary>
         private const float Inset = 6f;
 
-        private static readonly string[] PartNames = { "上り", "上で停止", "下り", "下で停止" };
-        private static readonly string[] CornerNames = { "上りの終わり", "下りの始まり", "下りの終わり" };
+        // The keys are fixed; the text is resolved per use so a language change is picked up.
+        private static readonly string[] PartKeys = { "phase.part.rise", "phase.part.highHold", "phase.part.fall", "phase.part.lowHold" };
+        private static readonly string[] CornerKeys = { "phase.corner.riseEnd", "phase.corner.fallStart", "phase.corner.fallEnd" };
 
         private static readonly Color TraceColor = new Color32(0x6E, 0xA8, 0xDC, 0xFF);
         private static readonly Color AreaColor = new Color32(0x6E, 0xA8, 0xDC, 0x2E);
@@ -75,7 +76,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             for (var i = 0; i < _thumbs.Length; i++)
             {
-                var thumb = new VisualElement { tooltip = CornerNames[i] };
+                var thumb = new VisualElement { tooltip = AlpsStrings.Tr(CornerKeys[i]) };
                 thumb.AddToClassList(ussClassName + "__thumb");
                 _well.Add(thumb);
                 _thumbs[i] = thumb;
@@ -207,7 +208,7 @@ namespace AdzukiSoft.ALPS.Editor
                 var text = showMixedValue ? AlpsMixedValues.MixedText : (share * 100f).ToString("0.#") + "%";
                 var label = _shares[i];
                 label.text = text;
-                label.tooltip = PartNames[i] + " " + text;
+                label.tooltip = AlpsStrings.Tr(PartKeys[i]) + " " + text;
                 label.style.left = Length.Percent(starts[i] * 100f);
                 label.style.width = Length.Percent(share * 100f);
 

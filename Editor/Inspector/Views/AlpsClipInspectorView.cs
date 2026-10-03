@@ -61,16 +61,16 @@ namespace AdzukiSoft.ALPS.Editor
             // the host writes it back. The override shows the show's tempo until the clip
             // gets its own. Going back to that value stores zero, so the clip follows the
             // show again when that changes.
-            var bpm = new AlpsStepper("BPMオーバーライド", "BPM", 1f)
+            var bpm = new AlpsStepper(AlpsStrings.Tr("clip.bpmOverride"), "BPM", 1f)
             {
                 Minimum = 1f,
-                tooltip = "全体BPMと違う値にすると、このクリップだけそのBPMで動きます。全体BPMと同じ値に戻すと全体BPMに追従します。",
+                tooltip = AlpsStrings.Tr("clip.bpmOverride.tip"),
             };
 
-            var global = new AlpsStepper("全体BPM", "BPM", 1f)
+            var global = new AlpsStepper(AlpsStrings.Tr("clip.globalBpm"), "BPM", 1f)
             {
                 Minimum = 1f,
-                tooltip = "Timeline全体のテンポです。全てのクリップはそれぞれの開始位置を1拍目として拍を数えます。",
+                tooltip = AlpsStrings.Tr("clip.globalBpm.tip"),
             };
             global.SetValueWithoutNotify(showBpm);
             global.SetEnabled(showBpmEditable);
@@ -97,13 +97,17 @@ namespace AdzukiSoft.ALPS.Editor
 
             // --- Order ---------------------------------------------------
             // The seed only shuffles a random order, so it shows only for one.
-            var seed = new AlpsStepper("シード", string.Empty, 1f)
+            var seed = new AlpsStepper(AlpsStrings.Tr("common.seed"), string.Empty, 1f)
             {
                 Minimum = 0f,
-                tooltip = "ランダムな並び順を変えます。同じシードのクリップは同じ並びになり、クリップを動かしても並びは変わりません。",
+                tooltip = AlpsStrings.Tr("clip.seed.tip"),
             };
 
-            var order = new AlpsSegmentedControl("並び順", "通常", "逆順", "ランダム");
+            var order = new AlpsSegmentedControl(
+                AlpsStrings.Tr("common.order"),
+                AlpsStrings.Tr("common.order.normal"),
+                AlpsStrings.Tr("common.order.reverse"),
+                AlpsStrings.Tr("common.order.random"));
             order.SetValueWithoutNotify((int)set.order);
             order.RegisterValueChangedCallback(evt =>
             {
@@ -114,9 +118,9 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(order, set, nameof(AlpsClipEffectSet.order));
             fields.Add(order);
 
-            var symmetric = new AlpsToggleSwitch("左右対称")
+            var symmetric = new AlpsToggleSwitch(AlpsStrings.Tr("common.symmetric"))
             {
-                tooltip = "真ん中で折り返し、左右で同じ位置の灯体に同じ順番を割り当てます。通常は真ん中から、逆順は両端から数え、ランダムは左右の組ごとに並べ替えます。前半の灯体はパンが反転します。",
+                tooltip = AlpsStrings.Tr("clip.symmetric.tip"),
             };
             symmetric.SetValueWithoutNotify(set.symmetric);
             symmetric.RegisterValueChangedCallback(evt =>
@@ -140,11 +144,11 @@ namespace AdzukiSoft.ALPS.Editor
             // --- Fade ----------------------------------------------------
             // The clip's own fade in beats. It scales the clip's weight, so it acts like
             // blending with an empty clip, where Timeline's ease in and out is set in seconds.
-            var fade = new AlpsFadeSlider("フェード", MaxFadeBeats, "拍", "0.##")
+            var fade = new AlpsFadeSlider(AlpsStrings.Tr("common.fade"), MaxFadeBeats, AlpsStrings.Tr("unit.beats"), "0.##")
             {
                 Snaps = new[] { 1f, 2f, 4f },
                 DefaultValue = Vector2.zero,
-                tooltip = "クリップの開始から効き切るまでと、終了前に弱まり始めてから終わるまでの拍数です。何も効果のないクリップとブレンドしたときと同じように、ムーブや色を含む全ての効果にかかります。",
+                tooltip = AlpsStrings.Tr("clip.fade.tip"),
             };
             fade.SetValueWithoutNotify(new Vector2(set.fadeInBeats, set.fadeOutBeats));
             fade.RegisterValueChangedCallback(evt =>
@@ -158,8 +162,8 @@ namespace AdzukiSoft.ALPS.Editor
 
             // --- Shared settings -----------------------------------------
             _phaseCard = new AlpsEffectCard(
-                "共通設定",
-                "Rangeとパレットの動作を調整できます。",
+                AlpsStrings.Tr("clip.common.title"),
+                AlpsStrings.Tr("clip.common.desc"),
                 showActions: true,
                 showDelete: false);
             _phaseCard.ExpandedChanged += expanded =>
@@ -217,7 +221,7 @@ namespace AdzukiSoft.ALPS.Editor
             profile.AddToClassList("alps-plainfold");
             var profileArrow = new Label(set.profileExpanded ? "▼" : "▶");
             profileArrow.AddToClassList("alps-card__arrow");
-            var profileTitle = new Label("プロファイル");
+            var profileTitle = new Label(AlpsStrings.Tr("common.profile"));
             profileTitle.AddToClassList("alps-card__title");
             profile.Add(profileArrow);
             profile.Add(profileTitle);

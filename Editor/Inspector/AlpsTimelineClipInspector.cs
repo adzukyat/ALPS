@@ -51,7 +51,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             if (!AttachTo(AlpsImguiHost.Current()))
             {
-                EditorGUILayout.HelpBox("このクリップのエディタを表示できませんでした。", MessageType.Warning);
+                EditorGUILayout.HelpBox(AlpsStrings.Tr("clip.editorUnavailable"), MessageType.Warning);
                 DrawDefaultInspector();
                 return;
             }
@@ -278,7 +278,7 @@ namespace AdzukiSoft.ALPS.Editor
                 if (clips.Length > 1)
                 {
                     var notice = new HelpBox(
-                        $"{clips.Length}個のクリップを同時に編集しています。値が異なる項目は「{AlpsMixedValues.MixedText}」で表示され、変更した項目だけが全てのクリップに反映されます。",
+                        AlpsStrings.Tr("clip.multiEdit", clips.Length, AlpsMixedValues.MixedText),
                         HelpBoxMessageType.Info);
                     notice.AddToClassList("alps-multi-notice");
                     view.Insert(0, notice);
@@ -354,7 +354,7 @@ namespace AdzukiSoft.ALPS.Editor
                 rebuild();
             }
 
-            var field = new ObjectField("プロファイル")
+            var field = new ObjectField(AlpsStrings.Tr("common.profile"))
             {
                 objectType = typeof(AlpsClipProfile),
                 allowSceneObjects = false,
@@ -365,12 +365,12 @@ namespace AdzukiSoft.ALPS.Editor
                 Edit("Change Clip Profile", clip => clip.profile = evt.newValue as AlpsClipProfile));
             root.Add(field);
 
-            var sync = new Toggle("プロファイルに追従")
+            var sync = new Toggle(AlpsStrings.Tr("clip.profileSync"))
             {
                 value = first.syncProfile,
                 showMixedValue = clips.Any(clip => clip.syncProfile != first.syncProfile),
             };
-            sync.tooltip = "オンの間はプロファイルの効果を再生し、編集もプロファイルに書き込みます。";
+            sync.tooltip = AlpsStrings.Tr("clip.profileSync.tip");
             sync.SetEnabled(allHaveProfile);
             sync.RegisterValueChangedCallback(evt =>
                 Edit("Sync Clip Profile", clip => clip.syncProfile = evt.newValue));
@@ -383,10 +383,10 @@ namespace AdzukiSoft.ALPS.Editor
                 "Load Clip Profile",
                 clip => clip.data = new AlpsClipEffectSet(clip.profile.data) { profileExpanded = true }))
             {
-                text = "読込",
+                text = AlpsStrings.Tr("clip.load"),
                 tooltip = single
-                    ? "プロファイルの内容をこのクリップに複製します。"
-                    : "それぞれのプロファイルの内容を各クリップに複製します。",
+                    ? AlpsStrings.Tr("clip.load.tip.single")
+                    : AlpsStrings.Tr("clip.load.tip.multi"),
             };
             load.AddToClassList("alps-profile__button");
             load.SetEnabled(allHaveProfile && !anySynced);
@@ -399,10 +399,10 @@ namespace AdzukiSoft.ALPS.Editor
                 if (profile == null)
                 {
                     var path = EditorUtility.SaveFilePanelInProject(
-                        "プロファイルを保存",
+                        AlpsStrings.Tr("clip.save.dialogTitle"),
                         "AlpsClipProfile",
                         "asset",
-                        "保存先を選んでください。");
+                        AlpsStrings.Tr("clip.save.dialogPrompt"));
                     if (string.IsNullOrEmpty(path))
                     {
                         return;
@@ -426,10 +426,10 @@ namespace AdzukiSoft.ALPS.Editor
                 rebuild();
             })
             {
-                text = "保存",
+                text = AlpsStrings.Tr("clip.save"),
                 tooltip = single
-                    ? "このクリップの内容をプロファイルに書き込みます。プロファイルが未設定なら新しく作ります。"
-                    : "複数のクリップを選択している間は保存できません。",
+                    ? AlpsStrings.Tr("clip.save.tip.single")
+                    : AlpsStrings.Tr("clip.save.tip.multi"),
             };
             save.AddToClassList("alps-profile__button");
             save.AddToClassList("alps-profile__button--last");

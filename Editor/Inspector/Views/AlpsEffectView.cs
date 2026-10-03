@@ -139,9 +139,9 @@ namespace AdzukiSoft.ALPS.Editor
         private void BuildMove(VisualElement body)
         {
             var tabs = new AlpsTabControl(
-                ("角度指定", AlpsIcons.Angle),
-                ("円", AlpsIcons.Rotate360),
-                ("ユーザー追跡", AlpsIcons.Compass));
+                (AlpsStrings.Tr("effect.move.mode.angle"), AlpsIcons.Angle),
+                (AlpsStrings.Tr("effect.move.mode.circle"), AlpsIcons.Rotate360),
+                (AlpsStrings.Tr("effect.move.mode.track"), AlpsIcons.Compass));
             tabs.SetValueWithoutNotify((int)_effect.moveMode);
             _mixed?.Bind(tabs, _effect, nameof(AlpsEffect.moveMode));
             body.Add(tabs);
@@ -153,7 +153,7 @@ namespace AdzukiSoft.ALPS.Editor
             anglePane.Add(tilt);
             anglePane.Add(pan);
 
-            var phaseOffset = new AlpsValueSlider("位相差", new Vector2(0f, 360f), "°", "0")
+            var phaseOffset = new AlpsValueSlider(AlpsStrings.Tr("effect.move.phaseDiff"), new Vector2(0f, 360f), "°", "0")
             {
                 DefaultValue = _defaults.panTiltPhaseOffsetDegrees,
             };
@@ -170,12 +170,12 @@ namespace AdzukiSoft.ALPS.Editor
 
             var circlePane = new VisualElement();
             circlePane.AddToClassList("alps-flow9");
-            circlePane.Add(Animatable("中心 Tilt", _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable("中心 Pan", _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable("半径", _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles));
+            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerTilt"), _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles));
+            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerPan"), _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles));
+            circlePane.Add(Animatable(AlpsStrings.Tr("common.radius"), _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles));
 
             // 1 draws a true circle.
-            var aspect = new AlpsValueSlider("縦横比", new Vector2(0.1f, 4f), string.Empty, "0.##") 
+            var aspect = new AlpsValueSlider(AlpsStrings.Tr("effect.move.aspect"), new Vector2(0.1f, 4f), string.Empty, "0.##")
             {
                 Snaps = new[] { 1f },
                 DefaultValue = _defaults.circleAspect,
@@ -193,7 +193,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             var trackPane = new VisualElement();
             trackPane.AddToClassList("alps-flow9");
-            var userName = BuildTextRow("ユーザー名", _effect.trackUserName, text =>
+            var userName = BuildTextRow(AlpsStrings.Tr("effect.move.userName"), _effect.trackUserName, text =>
             {
                 _effect.trackUserName = text;
                 _onChanged?.Invoke();
@@ -201,7 +201,7 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(userNameField, _effect, nameof(AlpsEffect.trackUserName));
             trackPane.Add(userName);
 
-            var followSpeed = new AlpsValueSlider("追従速度", new Vector2(0f, 20f), string.Empty, "0.#")
+            var followSpeed = new AlpsValueSlider(AlpsStrings.Tr("effect.move.followSpeed"), new Vector2(0f, 20f), string.Empty, "0.#")
             {
                 DefaultValue = _defaults.trackSpeed,
                 AllowAboveLimit = true,
@@ -244,9 +244,9 @@ namespace AdzukiSoft.ALPS.Editor
             // Effects saved before the cone could outgrow the fixture's mesh still carry the old limit.
             _effect.coneLength.limit = _defaults.coneLength.limit;
 
-            body.Add(Animatable("幅", _effect.coneWidth, _defaults.coneWidth, "°", "0.#", AlpsSnapPoints.Angles));
+            body.Add(Animatable(AlpsStrings.Tr("common.width"), _effect.coneWidth, _defaults.coneWidth, "°", "0.#", AlpsSnapPoints.Angles));
             // The tick marks where the cone fills the fixture's own mesh. Past it the mesh stretches.
-            body.Add(Animatable("長さ", _effect.coneLength, _defaults.coneLength, "m", "0.#",
+            body.Add(Animatable(AlpsStrings.Tr("effect.cone.length"), _effect.coneLength, _defaults.coneLength, "m", "0.#",
                 _ => new[] { AlpsShowPlayer.ModelConeLengthLimit }));
         }
 
@@ -255,14 +255,14 @@ namespace AdzukiSoft.ALPS.Editor
         private void BuildColor(VisualElement body)
         {
             var palette = new AlpsColorPalette(
-                "パレット",
+                AlpsStrings.Tr("common.palette"),
                 _effect.colorStops,
                 () => _effect.selectedColorStop,
                 index => _effect.selectedColorStop = index);
             _mixed?.BindDisplay(palette, palette.SetMixed, _effect, nameof(AlpsEffect.colorStops));
 
             var view = new AlpsAnimatableView(
-                "パレット",
+                AlpsStrings.Tr("common.palette"),
                 _effect.colorPhasing,
                 _clipPhase,
                 () =>
@@ -297,7 +297,7 @@ namespace AdzukiSoft.ALPS.Editor
             // Untitled frame for the fades, which run inside the outbound leg.
             var fadeFrame = new VisualElement();
             fadeFrame.AddToClassList("alps-sub");
-            var fade = new AlpsFadeSlider("フェード", 50f, "%", "0")
+            var fade = new AlpsFadeSlider(AlpsStrings.Tr("common.fade"), 50f, "%", "0")
             {
                 Snaps = new[] { 25f },
                 DefaultValue = new Vector2(_defaults.blackoutFadeIn, _defaults.blackoutFadeOut) * 100f,
@@ -312,7 +312,7 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(fade, _effect, nameof(AlpsEffect.blackoutFadeIn), nameof(AlpsEffect.blackoutFadeOut));
             fadeFrame.Add(fade);
 
-            var blackout = new AlpsToggleSwitch("復路で消灯");
+            var blackout = new AlpsToggleSwitch(AlpsStrings.Tr("effect.brightness.blackoutReturn"));
             blackout.SetValueWithoutNotify(_effect.blackoutOnReturn);
             blackout.RegisterValueChangedCallback(evt =>
             {
@@ -325,7 +325,7 @@ namespace AdzukiSoft.ALPS.Editor
             // The return leg belongs to whichever phase drives brightness, so switching
             // own phase or its mode inside the row has to re-evaluate the switch too.
             view = new AlpsAnimatableView(
-                "明るさ",
+                AlpsStrings.Tr("effect.brightness.name"),
                 _effect.brightness,
                 _clipPhase,
                 () =>
@@ -359,15 +359,15 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void BuildFlicker(VisualElement body)
         {
-            var speed = BuildSimpleSlider("速度", new Vector2(0f, 30f), _effect.flickerSpeed,
+            var speed = BuildSimpleSlider(AlpsStrings.Tr("common.speed"), new Vector2(0f, 30f), _effect.flickerSpeed,
                 _defaults.flickerSpeed, string.Empty, "0.#", v => _effect.flickerSpeed = v,
                 nameof(AlpsEffect.flickerSpeed));
             speed.AllowAboveLimit = true;
             body.Add(speed);
-            body.Add(BuildSimpleSlider("強さ", new Vector2(0f, 100f), _effect.flickerStrength * 100f,
+            body.Add(BuildSimpleSlider(AlpsStrings.Tr("effect.flicker.strength"), new Vector2(0f, 100f), _effect.flickerStrength * 100f,
                 _defaults.flickerStrength * 100f, "%", "0", v => _effect.flickerStrength = Mathf.Clamp01(v / 100f),
                 nameof(AlpsEffect.flickerStrength)));
-            var stagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 2f), _effect.flickerFixtureStagger,
+            var stagger = BuildSimpleSlider(AlpsStrings.Tr("effect.fixtureStagger"), new Vector2(0f, 2f), _effect.flickerFixtureStagger,
                 _defaults.flickerFixtureStagger, string.Empty, "0.##", v => _effect.flickerFixtureStagger = v,
                 nameof(AlpsEffect.flickerFixtureStagger));
             stagger.AllowAboveLimit = true;
@@ -379,7 +379,7 @@ namespace AdzukiSoft.ALPS.Editor
         private void BuildGobo(VisualElement body)
         {
             var palette = new AlpsGoboPalette(
-                "パレット",
+                AlpsStrings.Tr("common.palette"),
                 _effect.goboStops,
                 () => _effect.selectedGoboStop,
                 index => _effect.selectedGoboStop = index,
@@ -388,7 +388,7 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.BindDisplay(palette, palette.SetMixed, _effect, nameof(AlpsEffect.goboStops));
 
             var view = new AlpsAnimatableView(
-                "パレット",
+                AlpsStrings.Tr("common.palette"),
                 _effect.goboPhasing,
                 _clipPhase,
                 _onChanged,
@@ -405,7 +405,7 @@ namespace AdzukiSoft.ALPS.Editor
             _animatables.Add(view);
             body.Add(view);
 
-            var rotation = new AlpsStepper("回転速度", "拍", 1f, "/ 1回転") { Minimum = 0f, Subdivides = true };
+            var rotation = new AlpsStepper(AlpsStrings.Tr("effect.gobo.rotationSpeed"), AlpsStrings.Tr("unit.beats"), 1f, AlpsStrings.Tr("effect.gobo.perTurn")) { Minimum = 0f, Subdivides = true };
             rotation.SetValueWithoutNotify(_effect.goboRotationBeats);
             rotation.RegisterValueChangedCallback(evt =>
             {
@@ -415,7 +415,7 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(rotation, _effect, nameof(AlpsEffect.goboRotationBeats));
             body.Add(rotation);
 
-            var goboStagger = BuildSimpleSlider("灯体間ズレ", new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
+            var goboStagger = BuildSimpleSlider(AlpsStrings.Tr("effect.fixtureStagger"), new Vector2(0f, 360f), _effect.goboFixtureStaggerDegrees,
                 _defaults.goboFixtureStaggerDegrees, "°", "0", v => _effect.goboFixtureStaggerDegrees = v,
                 nameof(AlpsEffect.goboFixtureStaggerDegrees));
             goboStagger.Snaps = AlpsSnapPoints.Angles(goboStagger.Limit);
@@ -436,11 +436,11 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
-            var offset = new AlpsValueSlider("位相オフセット", new Vector2(0f, 100f), "%", "0")
+            var offset = new AlpsValueSlider(AlpsStrings.Tr("effect.phaseOffset"), new Vector2(0f, 100f), "%", "0")
             {
                 Snaps = new[] { 25f, 50f, 75f },
                 DefaultValue = _defaults.phaseOffset * 100f,
-                tooltip = "この効果の動きを周期の何%遅らせるか。偶数と奇数に分けた片方を 50% にすると交互に動きます。",
+                tooltip = AlpsStrings.Tr("effect.phaseOffset.tip"),
             };
             offset.SetValueWithoutNotify(_effect.phaseOffset * 100f);
             offset.RegisterValueChangedCallback(evt =>

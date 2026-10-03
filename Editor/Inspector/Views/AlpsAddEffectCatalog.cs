@@ -33,7 +33,7 @@ namespace AdzukiSoft.ALPS.Editor
             _button = new VisualElement();
             _button.AddToClassList("alps-add__button");
 
-            var title = new Label("効果を追加");
+            var title = new Label(AlpsStrings.Tr("addEffect.title"));
             title.AddToClassList("alps-add__title");
             _button.Add(title);
 

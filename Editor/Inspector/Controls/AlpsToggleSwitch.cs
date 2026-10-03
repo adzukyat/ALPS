@@ -68,11 +68,11 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly Label _box;
 
-        public AlpsRangeFlag(string letter = "R", string tip = "レンジ")
+        public AlpsRangeFlag(string letter = "R", string tip = null)
             : base(null, new VisualElement())
         {
             AddToClassList(ussClassName);
-            tooltip = tip;
+            tooltip = tip ?? AlpsStrings.Tr("common.range");
 
             var container = this.Q(className: BaseField<bool>.inputUssClassName);
             container.AddToClassList(ussClassName + "__input");

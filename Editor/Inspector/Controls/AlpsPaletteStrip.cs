@@ -51,7 +51,7 @@ namespace AdzukiSoft.ALPS.Editor
             header.Add(labelElement);
 
             // A swatch sized tile, so the mark sits on the first row of swatches.
-            _mixedMark = new VisualElement { tooltip = "選択中のクリップでパレットが異なります。表示は最初のクリップのものです。" };
+            _mixedMark = new VisualElement { tooltip = AlpsStrings.Tr("palette.mixed.tip") };
             _mixedMark.AddToClassList("alps-palette__mixed");
             _mixedMark.style.display = DisplayStyle.None;
             var mixedIcon = new AlpsVectorIcon { IconColor = new Color(0.769f, 0.769f, 0.769f) };
@@ -110,7 +110,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>What + adds by default.</summary>
         protected abstract TStop CreateDefaultStop();
 
-        protected virtual string AddTooltip => "要素を追加";
+        protected virtual string AddTooltip => AlpsStrings.Tr("palette.add");
 
         /// <summary>Shows + as pressed, for a palette whose + opens something.</summary>
         protected virtual bool AddActive => false;
@@ -322,7 +322,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             var tile = new VisualElement
             {
-                tooltip = CanDelete ? "選択中の要素を削除" : "要素がありません",
+                tooltip = CanDelete ? AlpsStrings.Tr("palette.delete") : AlpsStrings.Tr("palette.empty"),
             };
             tile.AddToClassList("alps-swatch");
             tile.AddToClassList("alps-swatch--action");
@@ -353,13 +353,13 @@ namespace AdzukiSoft.ALPS.Editor
             swatch.AddManipulator(new ContextualMenuManipulator(evt =>
             {
                 evt.menu.AppendAction(
-                    "複製",
+                    AlpsStrings.Tr("common.duplicate"),
                     _ =>
                     {
                         _setSelected(index);
                         DuplicateSelected();
                     });
-                evt.menu.AppendAction("削除", _ => DeleteAt(index));
+                evt.menu.AppendAction(AlpsStrings.Tr("common.delete"), _ => DeleteAt(index));
             }));
 
             swatch.RegisterCallback<PointerDownEvent>(evt =>
@@ -474,8 +474,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>Color palette, where a stop may be a solid colour or a gradient.</summary>
     public class AlpsColorPalette : AlpsPaletteStrip<AlpsColorStop>
     {
-        public const string SolidLabel = "単色";
-        public const string GradientLabel = "グラデーション";
+        public static string SolidLabel => AlpsStrings.Tr("palette.solid");
+        public static string GradientLabel => AlpsStrings.Tr("palette.gradient");
 
         /// <summary>
         /// Gradient swatches are backed by a texture built per rebuild. They are not
@@ -535,7 +535,7 @@ namespace AdzukiSoft.ALPS.Editor
             return new AlpsColorStop(Color.white);
         }
 
-        protected override string AddTooltip => SelectedIndex >= 0 ? "選択中の色を複製して追加" : "白の単色を追加";
+        protected override string AddTooltip => SelectedIndex >= 0 ? AlpsStrings.Tr("palette.color.addDup") : AlpsStrings.Tr("palette.color.addWhite");
 
         /// <summary>+ copies the selected color, so a variation starts from it. An empty palette starts from white.</summary>
         protected override void OnAddRequested()
@@ -562,7 +562,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             var type = new DropdownField(new List<string> { SolidLabel, GradientLabel }, stop.isGradient ? 1 : 0)
             {
-                tooltip = "このパレット項目の種類",
+                tooltip = AlpsStrings.Tr("palette.color.kind.tip"),
             };
             type.AddToClassList("alps-palette__type");
             type.RegisterValueChangedCallback(evt => ChangeSelectedStopType(evt.newValue == GradientLabel));
@@ -635,7 +635,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         public bool PickerOpen => _getPickerOpen != null && _getPickerOpen();
 
-        protected override string AddTooltip => PickerOpen ? "ゴボの一覧を閉じる" : "ゴボを追加";
+        protected override string AddTooltip => PickerOpen ? AlpsStrings.Tr("palette.gobo.close") : AlpsStrings.Tr("palette.gobo.add");
 
         protected override bool AddActive => PickerOpen;
 
@@ -683,7 +683,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 var tile = CreateSwatch(entry);
                 tile.AddToClassList("alps-swatch");
-                tile.tooltip = AlpsGoboLibrary.GetName(entry.goboIndex) + " を追加";
+                tile.tooltip = AlpsStrings.Tr("palette.gobo.addNamed", AlpsGoboLibrary.GetName(entry.goboIndex));
                 tile.RegisterCallback<PointerDownEvent>(evt =>
                 {
                     if (evt.button == 0)

@@ -20,15 +20,22 @@ namespace AdzukiSoft.ALPS.Tests
     /// </summary>
     public class AlpsArrangementViewUiTests
     {
+        private AlpsLanguage _language;
+
         [SetUp]
         public void OpenScene()
         {
+            // Pin the language so the labels the tests resolve match the ones the views build,
+            // whatever the machine's system language.
+            _language = AlpsStrings.Language;
+            AlpsStrings.Language = AlpsLanguage.English;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
         [TearDown]
         public void CloseScene()
         {
+            AlpsStrings.Language = _language;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
@@ -72,29 +79,34 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.Contains("S", letters);
             Assert.IsFalse(letters.Contains("R"), "Only S is offered.");
 
-            var height = view.Query<VisualElement>().ToList().Where(e => e is BaseField<float> field && field.label == "高さ");
+            var heightLabel = AlpsStrings.Tr("common.height");
+            var height = view.Query<VisualElement>().ToList().Where(e => e is BaseField<float> field && field.label == heightLabel);
             Assert.IsTrue(height.Any(IsShown), "The value slider shows while the saved range is ignored.");
-            var ranges = view.Query<AlpsRangeSlider>().ToList().Where(slider => slider.label == "高さ");
+            var ranges = view.Query<AlpsRangeSlider>().ToList().Where(slider => slider.label == heightLabel);
             Assert.IsFalse(ranges.Any(IsShown), "No range or spread slider shows.");
         }
 
-        [TestCase(AlpsArrangementShape.Off, new string[0], new[] { "始点", "半径", "辺の数", "幅", "列数", "配置", "並び順", "左右対称", "高さ", "Y回転" })]
-        [TestCase(AlpsArrangementShape.Line, new[] { "始点", "終点", "配置", "並び順", "左右対称", "高さ" }, new[] { "半径", "辺の数", "幅", "列数" })]
-        [TestCase(AlpsArrangementShape.Circle, new[] { "半径", "回転", "角度" }, new[] { "始点", "辺の数", "幅" })]
-        [TestCase(AlpsArrangementShape.Polygon, new[] { "辺の数", "半径", "回転" }, new[] { "角度", "始点", "幅" })]
-        [TestCase(AlpsArrangementShape.Rectangle, new[] { "幅", "奥行き" }, new[] { "列数", "半径", "始点" })]
-        [TestCase(AlpsArrangementShape.Grid, new[] { "列数", "幅", "奥行き" }, new[] { "辺の数", "半径", "角度" })]
+        // The rows are named by their string key, resolved to text in the body, so the cases do
+        // not depend on the active language.
+        [TestCase(AlpsArrangementShape.Off, new string[0], new[] { "common.start", "common.radius", "arrangement.sides", "common.width", "arrangement.columns", "arrangement.spacing", "common.order", "common.symmetric", "common.height", "common.rotationY" })]
+        [TestCase(AlpsArrangementShape.Line, new[] { "common.start", "common.end", "arrangement.spacing", "common.order", "common.symmetric", "common.height" }, new[] { "common.radius", "arrangement.sides", "common.width", "arrangement.columns" })]
+        [TestCase(AlpsArrangementShape.Circle, new[] { "common.radius", "common.rotation", "arrangement.sweep" }, new[] { "common.start", "arrangement.sides", "common.width" })]
+        [TestCase(AlpsArrangementShape.Polygon, new[] { "arrangement.sides", "common.radius", "common.rotation" }, new[] { "arrangement.sweep", "common.start", "common.width" })]
+        [TestCase(AlpsArrangementShape.Rectangle, new[] { "common.width", "arrangement.depth" }, new[] { "arrangement.columns", "common.radius", "common.start" })]
+        [TestCase(AlpsArrangementShape.Grid, new[] { "arrangement.columns", "common.width", "arrangement.depth" }, new[] { "arrangement.sides", "common.radius", "arrangement.sweep" })]
         public void Shapes_ShowTheirOwnRows(AlpsArrangementShape shape, string[] shown, string[] hidden)
         {
             var view = new AlpsArrangementView(new AlpsArrangementSettings { shape = shape });
 
-            foreach (var label in shown)
+            foreach (var key in shown)
             {
+                var label = AlpsStrings.Tr(key);
                 Assert.IsTrue(HasVisibleLabel(view, label), $"{shape} should show {label}.");
             }
 
-            foreach (var label in hidden)
+            foreach (var key in hidden)
             {
+                var label = AlpsStrings.Tr(key);
                 Assert.IsFalse(HasVisibleLabel(view, label), $"{shape} should hide {label}.");
             }
         }
@@ -104,14 +116,14 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var settings = new AlpsArrangementSettings { shape = AlpsArrangementShape.Line };
             var view = new AlpsArrangementView(settings);
-            Assert.IsFalse(HasVisibleLabel(view, "注視点", typeof(AlpsVectorField)));
-            Assert.IsFalse(HasVisibleLabel(view, "シード"));
+            Assert.IsFalse(HasVisibleLabel(view, AlpsStrings.Tr("arrangement.target"), typeof(AlpsVectorField)));
+            Assert.IsFalse(HasVisibleLabel(view, AlpsStrings.Tr("common.seed")));
 
             settings.facing = AlpsArrangementFacing.Target;
             settings.order = AlpsOrderMode.Random;
             view.Reload();
-            Assert.IsTrue(HasVisibleLabel(view, "注視点", typeof(AlpsVectorField)));
-            Assert.IsTrue(HasVisibleLabel(view, "シード"));
+            Assert.IsTrue(HasVisibleLabel(view, AlpsStrings.Tr("arrangement.target"), typeof(AlpsVectorField)));
+            Assert.IsTrue(HasVisibleLabel(view, AlpsStrings.Tr("common.seed")));
         }
 
         [UnityTest]
@@ -132,16 +144,16 @@ namespace AdzukiSoft.ALPS.Tests
                 yield return null;
 
                 var view = host.Q<AlpsArrangementView>();
-                var shape = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == "形状");
+                var shape = view.Query<AlpsSegmentedControl>().ToList().First(control => control.label == AlpsStrings.Tr("arrangement.shape"));
                 shape.value = (int)AlpsArrangementShape.Circle;
                 Assert.AreEqual(AlpsArrangementShape.Circle, arrangement.settings.shape);
                 AssertPosition(new Vector3(0f, 0f, 3f), children[0]);
 
-                var radius = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == "半径");
+                var radius = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("common.radius"));
                 radius.value = 5f;
                 AssertPosition(new Vector3(0f, 0f, 5f), children[0]);
 
-                var start = view.Query<AlpsVectorField>().ToList().First(field => field.label == "始点");
+                var start = view.Query<AlpsVectorField>().ToList().First(field => field.label == AlpsStrings.Tr("common.start"));
                 arrangement.settings.radius.value = 2f;
                 arrangement.settings.lineStart = new Vector3(1f, 2f, 3f);
                 view.Reload();

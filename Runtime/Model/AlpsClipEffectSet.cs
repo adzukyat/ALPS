@@ -99,7 +99,7 @@ namespace AdzukiSoft.ALPS
 
             if (existing >= 0 || even >= 0)
             {
-                return AlpsEffectCatalog.GetName(kind) + AlpsEffectCatalog.OddSuffix;
+                return AlpsEffectCatalog.GetName(kind) + AlpsEffectCatalog.GetParitySuffix(AlpsParity.Odd);
             }
 
             return AlpsEffectCatalog.GetName(kind);

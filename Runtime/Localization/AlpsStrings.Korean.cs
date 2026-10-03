@@ -1,0 +1,203 @@
+using System.Collections.Generic;
+
+namespace AdzukiSoft.ALPS
+{
+    public static partial class AlpsStrings
+    {
+        /// <summary>Korean translation. Keys match <see cref="BuildEnglish"/>.</summary>
+        private static Dictionary<string, string> BuildKorean()
+        {
+            return new Dictionary<string, string>
+            {
+                // --- Units -------------------------------------------------
+                { "unit.beats", "박" },
+                { "unit.light", "개" },
+
+                // --- Shared labels and options ----------------------------
+                { "common.order", "순서" },
+                { "common.order.normal", "통상" },
+                { "common.order.reverse", "역순" },
+                { "common.order.random", "랜덤" },
+                { "common.symmetric", "좌우 대칭" },
+                { "common.seed", "시드" },
+                { "common.radius", "반지름" },
+                { "common.rotation", "회전" },
+                { "common.rotationX", "X 회전" },
+                { "common.rotationY", "Y 회전" },
+                { "common.rotationZ", "Z 회전" },
+                { "common.width", "너비" },
+                { "common.height", "높이" },
+                { "common.start", "시작점" },
+                { "common.end", "끝점" },
+                { "common.speed", "속도" },
+                { "common.fade", "페이드" },
+                { "common.palette", "팔레트" },
+                { "common.profile", "프로파일" },
+                { "common.delete", "삭제" },
+                { "common.duplicate", "복제" },
+                { "common.range", "레인지" },
+                { "common.spread", "확산" },
+                { "common.rise", "상승" },
+                { "common.fall", "하강" },
+
+                // --- Arrangement (container) -------------------------------
+                { "arrangement.shape", "모양" },
+                { "arrangement.shape.off", "오프" },
+                { "arrangement.shape.line", "직선" },
+                { "arrangement.shape.circle", "원" },
+                { "arrangement.shape.polygon", "다각형" },
+                { "arrangement.shape.rectangle", "사각형" },
+                { "arrangement.shape.grid", "그리드" },
+                { "arrangement.shape.tip", "자식 오브젝트를 배치하는 모양입니다. 오프에서는 자식 오브젝트를 움직이지 않습니다. 원은 각도를 360° 미만으로 하면 호가 됩니다." },
+                { "arrangement.spacing", "배치" },
+                { "arrangement.spacing.endToEnd", "끝에서 끝" },
+                { "arrangement.spacing.even", "균등 분할" },
+                { "arrangement.spacing.tip", "끝에서 끝: 처음과 마지막 오브젝트를 선의 양 끝에 둡니다. 균등 분할: 전체를 오브젝트 수로 등분하여 각각의 가운데에 둡니다." },
+                { "arrangement.order.tip", "S(확산) 값을 어떤 순서로 오브젝트에 할당할지입니다. 배치 위치의 순서는 바뀌지 않습니다." },
+                { "arrangement.symmetric.tip", "가운데에서 접어, 좌우로 같은 위치의 오브젝트에 같은 값을 할당합니다. 통상은 가운데부터, 역순은 양 끝부터 세며, 랜덤은 좌우 쌍마다 뒤섞습니다. 전반부의 Y 회전과 Z 회전은 반전됩니다." },
+                { "arrangement.seed.tip", "랜덤 순서를 바꿉니다." },
+                { "arrangement.card.shape.title", "형태" },
+                { "arrangement.card.shape.desc", "배치할 선이나 원의 크기입니다. 시작점, 끝점, 반지름, 너비와 깊이는 씬의 핸들로도 움직일 수 있습니다." },
+                { "arrangement.sides", "변의 수" },
+                { "arrangement.columns", "열 수" },
+                { "arrangement.angle.tip", "모양 전체를 회전시킵니다. 호에서는 호 가운데의 방향입니다." },
+                { "arrangement.sweep", "각도" },
+                { "arrangement.sweep.tip", "원 중 몇 도만큼 배치할지입니다. 360° 미만이면 호가 됩니다." },
+                { "arrangement.depth", "깊이" },
+                { "arrangement.card.facing.title", "방향" },
+                { "arrangement.card.facing.desc", "오브젝트의 방향입니다. X/Y/Z 회전은 방향을 정한 뒤 각 오브젝트의 축으로 돌며, S로 하나씩 바꾸면 팬이 됩니다." },
+                { "arrangement.facing", "방향" },
+                { "arrangement.facing.asIs", "그대로" },
+                { "arrangement.facing.outward", "바깥 향함" },
+                { "arrangement.facing.inward", "안쪽 향함" },
+                { "arrangement.facing.forward", "진행 방향" },
+                { "arrangement.facing.target", "주시점" },
+                { "arrangement.facing.tip", "그대로: 컨테이너와 같은 방향. 바깥 향함/안쪽 향함: 모양의 바깥쪽 또는 안쪽. 진행 방향: 늘어선 방향. 주시점: 지정한 점 쪽. 모두 앞(+Z)을 그 방향으로 향하게 하고, 위는 최대한 위로 유지합니다." },
+                { "arrangement.target", "주시점" },
+                { "arrangement.card.offset.title", "위치" },
+                { "arrangement.card.offset.desc", "모양에서 어긋나게 할 양입니다. S로 하나씩 바꾸면 높이는 계단이나 나선, 바깥쪽은 좌우 대칭과 함께 V자가 됩니다." },
+                { "arrangement.outward", "바깥쪽" },
+                { "arrangement.outward.tip", "모양의 바깥쪽으로 어긋나게 합니다. 직선에서는 앞(+Z) 쪽입니다." },
+                { "arrangement.spread.first", "첫 오브젝트" },
+                { "arrangement.spread.last", "마지막 오브젝트" },
+
+                // --- Clip --------------------------------------------------
+                { "clip.bpmOverride", "BPM 오버라이드" },
+                { "clip.bpmOverride.tip", "전체 BPM과 다른 값으로 하면 이 클립만 그 BPM으로 움직입니다. 전체 BPM과 같은 값으로 되돌리면 전체 BPM을 따릅니다." },
+                { "clip.globalBpm", "전체 BPM" },
+                { "clip.globalBpm.tip", "Timeline 전체의 템포입니다. 모든 클립은 각자의 시작 위치를 1박으로 하여 박을 셉니다." },
+                { "clip.seed.tip", "랜덤 순서를 바꿉니다. 같은 시드의 클립은 같은 순서가 되며, 클립을 움직여도 순서는 바뀌지 않습니다." },
+                { "clip.symmetric.tip", "가운데에서 접어, 좌우로 같은 위치의 조명에 같은 순서를 할당합니다. 통상은 가운데부터, 역순은 양 끝부터 세며, 랜덤은 좌우 쌍마다 뒤섞습니다. 전반부 조명은 팬이 반전됩니다." },
+                { "clip.fade.tip", "클립 시작부터 완전히 적용될 때까지와, 종료 전 약해지기 시작하여 끝날 때까지의 박 수입니다. 아무 효과도 없는 클립과 블렌딩할 때와 같이, 무브나 색을 포함한 모든 효과에 적용됩니다." },
+                { "clip.common.title", "공통 설정" },
+                { "clip.common.desc", "Range와 팔레트의 동작을 조정할 수 있습니다." },
+                { "clip.editorUnavailable", "이 클립의 에디터를 표시할 수 없었습니다." },
+                { "clip.multiEdit", "{0}개의 클립을 동시에 편집하고 있습니다. 값이 다른 항목은 \"{1}\"로 표시되며, 변경한 항목만 모든 클립에 반영됩니다." },
+                { "clip.profileSync", "프로파일 추종" },
+                { "clip.profileSync.tip", "켜져 있는 동안 프로파일의 효과를 재생하고, 편집도 프로파일에 기록합니다." },
+                { "clip.load", "불러오기" },
+                { "clip.load.tip.single", "프로파일의 내용을 이 클립에 복제합니다." },
+                { "clip.load.tip.multi", "각 프로파일의 내용을 각 클립에 복제합니다." },
+                { "clip.save", "저장" },
+                { "clip.save.tip.single", "이 클립의 내용을 프로파일에 기록합니다. 프로파일이 설정되지 않았으면 새로 만듭니다." },
+                { "clip.save.tip.multi", "여러 클립을 선택한 동안에는 저장할 수 없습니다." },
+                { "clip.save.dialogTitle", "프로파일 저장" },
+                { "clip.save.dialogPrompt", "저장 위치를 선택하세요." },
+
+                // --- Add effect catalog -----------------------------------
+                { "addEffect.title", "효과 추가" },
+
+                // --- Effect names and descriptions ------------------------
+                { "effect.move.name", "무브" },
+                { "effect.cone.name", "콘" },
+                { "effect.color.name", "컬러" },
+                { "effect.brightness.name", "밝기" },
+                { "effect.flicker.name", "플리커" },
+                { "effect.gobo.name", "고보" },
+                { "effect.move.desc", "조명의 방향을 지정합니다. 원을 그리거나 유저 쪽으로 추적하게 할 수도 있습니다." },
+                { "effect.cone.desc", "광선의 너비와 길이를 조정합니다." },
+                { "effect.color.desc", "조명의 색을 설정합니다. 여러 개 추가하면 복잡한 애니메이션도 만들 수 있습니다." },
+                { "effect.brightness.desc", "조명의 밝기를 변경합니다." },
+                { "effect.flicker.desc", "빛이 랜덤하게 깜빡입니다." },
+                { "effect.gobo.desc", "빛에 무늬를 투영합니다. 회전시킬 수도 있습니다." },
+                { "effect.parity.even", " (짝수)" },
+                { "effect.parity.odd", " (홀수)" },
+
+                // --- Effect view ------------------------------------------
+                { "effect.move.mode.angle", "각도 지정" },
+                { "effect.move.mode.circle", "원" },
+                { "effect.move.mode.track", "유저 추적" },
+                { "effect.move.phaseDiff", "위상차" },
+                { "effect.move.centerTilt", "중심 Tilt" },
+                { "effect.move.centerPan", "중심 Pan" },
+                { "effect.move.aspect", "종횡비" },
+                { "effect.move.userName", "유저 이름" },
+                { "effect.move.followSpeed", "추적 속도" },
+                { "effect.cone.length", "길이" },
+                { "effect.brightness.blackoutReturn", "복귀 시 소등" },
+                { "effect.flicker.strength", "강도" },
+                { "effect.fixtureStagger", "조명 간 지연" },
+                { "effect.gobo.rotationSpeed", "회전 속도" },
+                { "effect.gobo.perTurn", "/ 1회전" },
+                { "effect.phaseOffset", "위상 오프셋" },
+                { "effect.phaseOffset.tip", "이 효과의 움직임을 주기의 몇 % 지연시킬지입니다. 짝수와 홀수로 나눈 한쪽을 50%로 하면 번갈아 움직입니다." },
+
+                // --- Phase settings ---------------------------------------
+                { "phase.mode", "모드" },
+                { "phase.mode.wave", "파형" },
+                { "phase.mode.random", "랜덤" },
+                { "phase.shares", "배분" },
+                { "phase.easing", "이징" },
+                { "phase.group", "조명 단위" },
+                { "phase.delay", "딜레이" },
+                { "phase.beatsFlag.letter", "박" },
+                { "phase.beatsFlag.tip", "박 단위로 지정" },
+                { "phase.perCycle", "/ 1주기" },
+                { "phase.fireChance", "확률" },
+                { "phase.fireChance.tip", "주기마다 파형이 일어날 확률입니다. 조명(순서 위치)마다, 주기마다 정해지며, 일어나지 않은 주기는 파형의 맨 아래에서 대기합니다. 반전 중에는 맨 위에서 대기합니다." },
+                { "phase.inverse", "반전" },
+                { "phase.part.rise", "상승" },
+                { "phase.part.highHold", "상단 정지" },
+                { "phase.part.fall", "하강" },
+                { "phase.part.lowHold", "하단 정지" },
+                { "phase.corner.riseEnd", "상승 끝" },
+                { "phase.corner.fallStart", "하강 시작" },
+                { "phase.corner.fallEnd", "하강 끝" },
+
+                // --- Animatable value -------------------------------------
+                { "animatable.spread.first", "첫 조명" },
+                { "animatable.spread.last", "마지막 조명" },
+                { "animatable.timing", "타이밍" },
+                { "animatable.timing.within", "주기 내" },
+                { "animatable.timing.perCycle", "주기마다" },
+                { "animatable.ownPhase", "독자 움직임" },
+
+                // --- Fade slider ------------------------------------------
+                { "fade.in", "페이드 인" },
+                { "fade.out", "페이드 아웃" },
+
+                // --- Effect card actions ----------------------------------
+                { "card.paste", "매개변수 붙여넣기" },
+                { "card.copy", "매개변수 복사" },
+
+                // --- Palette strips ---------------------------------------
+                { "palette.mixed.tip", "선택한 클립들의 팔레트가 다릅니다. 표시는 첫 클립의 것입니다." },
+                { "palette.add", "요소 추가" },
+                { "palette.delete", "선택한 요소 삭제" },
+                { "palette.empty", "요소 없음" },
+                { "palette.solid", "단색" },
+                { "palette.gradient", "그라데이션" },
+                { "palette.color.addDup", "선택한 색을 복제하여 추가" },
+                { "palette.color.addWhite", "흰색 단색 추가" },
+                { "palette.color.kind.tip", "이 팔레트 항목의 종류" },
+                { "palette.gobo.close", "고보 목록 닫기" },
+                { "palette.gobo.add", "고보 추가" },
+                { "palette.gobo.addNamed", "{0} 추가" },
+
+                // --- Language setting (editor preferences) ----------------
+                { "settings.language", "언어" },
+                { "settings.language.auto", "자동" },
+            };
+        }
+    }
+}
