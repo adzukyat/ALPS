@@ -13,8 +13,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// (<c>Hidden/ALPS/Clip Strip</c>), so the strip shows the same maths as the preview.
     /// Fixtures differ by order position, so each lane follows one representative fixture,
     /// the one at order position 0.
-    /// When the clip's color or brightness is split by parity, odd and even fixtures get a
-    /// lane each, odd on top.
+    /// When the clip's color or brightness is split by parity, odd and even order positions
+    /// get a lane each, odd on top.
     /// </summary>
     public sealed class AlpsClipStrip
     {
@@ -202,8 +202,8 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// Fixtures to sample, one per lane. The evaluator counts odd fixtures from 1, so
-        /// list index 0 is odd. Each lane takes its fixture with the lowest order position,
+        /// Fixtures to sample, one per lane. The evaluator counts odd order positions from 1,
+        /// so position 0 is odd. Each lane takes its fixture with the lowest order position,
         /// read from the positions table the compiler wrote.
         /// </summary>
         private static List<int> Representatives(AlpsClipEffectSet set, AlpsCompiledShow show, int fixtureCount)
@@ -216,12 +216,12 @@ namespace AdzukiSoft.ALPS.Editor
                 var bestK = int.MaxValue;
                 for (var i = 0; i < fixtureCount; i++)
                 {
-                    if (parity >= 0 && i % 2 != parity)
+                    var k = show.positions[positionStart + i * 2];
+                    if (parity >= 0 && k % 2 != parity)
                     {
                         continue;
                     }
 
-                    var k = show.positions[positionStart + i * 2];
                     if (k < bestK)
                     {
                         best = i;
@@ -232,18 +232,10 @@ namespace AdzukiSoft.ALPS.Editor
                 return best;
             }
 
-            var result = new List<int>();
-            if (fixtureCount > 1 && SplitsByParity(set))
-            {
-                result.Add(Lowest(0));
-                result.Add(Lowest(1));
-            }
-            else
-            {
-                result.Add(Lowest(-1));
-            }
-
-            return result;
+            // Every fixture can share position 0, as two symmetric ones or one group do, and
+            // then nothing is even.
+            var even = SplitsByParity(set) ? Lowest(1) : -1;
+            return even >= 0 ? new List<int> { Lowest(0), even } : new List<int> { Lowest(-1) };
         }
 
         private static bool SplitsByParity(AlpsClipEffectSet set)

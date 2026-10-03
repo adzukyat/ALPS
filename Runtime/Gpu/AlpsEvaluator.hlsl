@@ -574,7 +574,8 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
     int positionRow = show.positions + AlpsReadInt(c.row + ClipPositionStart) + fixtureIndex * 2;
     c.k = AlpsReadInt(positionRow);
     bool mirrored = AlpsRead(positionRow + 1) > 0.5;
-    bool isOdd = fixtureIndex % 2 == 0;
+    // Odd and even count order positions from 1, so a symmetric order splits both halves alike.
+    bool isOdd = c.k % 2 == 0;
     c.sharedCycles = AlpsFixtureCycles(c.beats, AlpsRead(phaseRow + PhaseBeatsPerCycle), AlpsRead(phaseRow + PhaseDelay), c.k, 0.0);
     c.sharedPhase = AlpsPhaseAt(phaseRow, c.sharedCycles, c.k, c.seed);
 

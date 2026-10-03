@@ -763,6 +763,31 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Parity_CountsOrderPositions()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 20f;
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
+            float[] Brightness(int fixtures)
+            {
+                var show = Compile(fixtures, set);
+                return Enumerable.Range(0, fixtures).Select(i => Evaluate(show, i, 0.1f)[AlpsShowLayout.FrameBrightness]).ToArray();
+            }
+
+            set.symmetric = true;
+            CollectionAssert.AreEqual(new[] { 20f, 80f, 80f, 20f }, Brightness(4), "Symmetric splits both halves alike from the middle.");
+            CollectionAssert.AreEqual(new[] { 80f, 20f, 80f, 20f, 80f }, Brightness(5));
+
+            set.symmetric = false;
+            set.order = AlpsOrderMode.Reverse;
+            CollectionAssert.AreEqual(new[] { 20f, 80f, 20f, 80f }, Brightness(4), "Reverse counts from the last fixture.");
+
+            set.order = AlpsOrderMode.Normal;
+            set.phase.fixtureGroupSize = 2;
+            CollectionAssert.AreEqual(new[] { 80f, 80f, 20f, 20f }, Brightness(4), "A pair shares its position.");
+        }
+
+        [Test]
         public void BlackoutOnReturn_MutesBrightnessOnTheReturnLeg()
         {
             var set = Set(0.5f, 0f, 0.5f);

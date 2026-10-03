@@ -162,6 +162,11 @@ namespace AdzukiSoft.ALPS.Tests
             AssertColor(Color.red, At(strip, 0, 1f, 0f, 2f), "Odd fixtures are on top.");
             AssertColor(Color.blue, At(strip, 1, 1f, 0f, 2f));
             Assert.AreEqual(1, AlpsClipStrip.Build(set, 1, Bpm, 0f, 2f, 0).lanes, "A single fixture is always odd.");
+
+            set.symmetric = true;
+            var pair = AlpsClipStrip.Build(set, 2, Bpm, 0f, 2f, 0);
+            Assert.AreEqual(1, pair.lanes, "Two symmetric fixtures share position 1, so both are odd.");
+            AssertColor(Color.red, At(pair, 0, 1f, 0f, 2f));
         }
     }
 }
