@@ -1031,6 +1031,32 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Circle_NegativeCenterTiltHoldsTheCenterNotItsMirror()
+        {
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.moveMode = AlpsMoveMode.Circle;
+            move.circleCenterTilt.value = -25f;
+            move.circleCenterPan.value = 40f;
+            move.circleRadius.value = 0f;
+
+            // Radius zero reads back the center the user set, not its folded mirror across pan.
+            var still = Evaluate(Compile(1, set), 0, 0.3f);
+            Assert.AreEqual(-25f, still[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(40f, still[AlpsShowLayout.FramePan], 0.01f);
+
+            // The whole ring stays on the center's side of the room rather than swinging to
+            // the opposite pan, so the motion reads as a ring around where the user aimed.
+            move.circleRadius.value = 12f;
+            var show = Compile(1, set);
+            for (var i = 0; i < 12; i++)
+            {
+                var pan = Evaluate(show, 0, i / 12f)[AlpsShowLayout.FramePan];
+                Assert.That(Mathf.Abs(Mathf.DeltaAngle(pan, 40f)), Is.LessThan(90f), $"step {i} flipped pan to the far side.");
+            }
+        }
+
+        [Test]
         public void Circle_SpreadWalksTheFixturesRoundTheRing()
         {
             var set = Set();

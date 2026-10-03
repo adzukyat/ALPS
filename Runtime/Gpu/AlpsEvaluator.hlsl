@@ -545,7 +545,20 @@ float2 AlpsCircle(float centerTilt, float centerPan, float radius, float aspect,
         dir = cos(radians(opening)) * center + sin(radians(opening)) * step;
     }
 
-    return float2(degrees(atan2(-dir.x, -dir.z)), degrees(acos(clamp(-dir.y, -1.0, 1.0))));
+    // acos folds tilt into [0, 180] and flips pan by 180 for a center below the horizon,
+    // so a negative center tilt would read as its mirror on the opposite pan. Keep the
+    // branch whose pan stays nearest the center's, which lets tilt go negative around the
+    // center the user set, as the angle move's own tilt does. cos is negative exactly when
+    // the raw pan sits more than a quarter turn from the center's.
+    float pan = atan2(-dir.x, -dir.z);
+    float tilt = acos(clamp(-dir.y, -1.0, 1.0));
+    if (cos(pan - centerPan) < 0.0)
+    {
+        pan += pan > 0.0 ? -ALPS_PI : ALPS_PI;
+        tilt = -tilt;
+    }
+
+    return float2(degrees(pan), degrees(tilt));
 }
 
 // --- One clip, one fixture ---------------------------------------------------------------
