@@ -134,7 +134,7 @@ namespace AdzukiSoft.ALPS
                 { "effect.move.userName", "User Name" },
                 { "effect.move.followSpeed", "Follow Speed" },
                 { "effect.cone.length", "Length" },
-                { "effect.brightness.blackoutReturn", "Blackout on Return" },
+                { "effect.brightness.blackoutReturn", "Dark on Return" },
                 { "effect.flicker.strength", "Strength" },
                 { "effect.fixtureStagger", "Fixture Offset" },
                 { "effect.gobo.rotationSpeed", "Rotation Speed" },
