@@ -229,20 +229,77 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(0f, Wave(0f, 0.5f, 0f, 0.5f), 0.001f, "A fall of zero drops straight down.");
         }
 
+        private static bool IsReturnLeg(int mode, float rise, float holdHigh, float fall, float cycles)
+        {
+            return AlpsPhaseCurve.IsReturnLeg(mode, rise, holdHigh, fall, 1f, cycles, 0, 0);
+        }
+
         [Test]
         public void Phase_ReturnLegIsTheFallAndTheLowHold()
         {
-            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.45f), "Still at the top.");
-            Assert.IsTrue(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.55f), "Falling.");
-            Assert.IsTrue(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.9f), "Waiting at the bottom.");
-            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseRandom, 0.25f, 0.25f, 0.9f), "Only a wave has a return leg.");
+            Assert.IsFalse(IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.25f, 0.45f), "Still at the top.");
+            Assert.IsTrue(IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.25f, 0.55f), "Falling.");
+            Assert.IsTrue(IsReturnLeg(AlpsShowLayout.PhaseWave, 0.25f, 0.25f, 0.25f, 0.9f), "Waiting at the bottom.");
+            Assert.IsFalse(IsReturnLeg(AlpsShowLayout.PhaseRandom, 0.25f, 0.25f, 0.25f, 0.9f), "Only a wave has a return leg.");
         }
 
         [Test]
         public void Phase_AWaveThatNeverFallsNeverReturns()
         {
-            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 1f, 0f, 0.99f), "A sawtooth drops but does not return.");
-            Assert.IsFalse(AlpsPhaseCurve.IsReturnLeg(AlpsShowLayout.PhaseWave, 0.5f, 0.5f, 0.99f));
+            Assert.IsFalse(IsReturnLeg(AlpsShowLayout.PhaseWave, 1f, 0f, 0f, 0.99f), "A sawtooth drops but does not return.");
+            Assert.IsFalse(IsReturnLeg(AlpsShowLayout.PhaseWave, 0.5f, 0.5f, 0f, 0.99f));
+            Assert.IsFalse(IsReturnLeg(AlpsShowLayout.PhaseWave, 0f, 1.5f, 0f, 1.7f), "A hold past its cycle that just ends does not return either.");
+            Assert.IsFalse(AlpsPhaseCurve.Returns(0f, 2f, 0f));
+            Assert.IsTrue(AlpsPhaseCurve.Returns(0f, 1.5f, 0.5f));
+        }
+
+        [Test]
+        public void Phase_ALongWaveRunsOnIntoTheNextCycles()
+        {
+            // No rise, falling over two cycles: the wave of cycle 0 is still half way down at 1.0.
+            Assert.AreEqual(0.5f, AlpsPhaseCurve.Wave(0, 0, 0f, 0f, 2f, 1f), 0.0001f);
+            Assert.AreEqual(0f, AlpsPhaseCurve.Wave(0, 0, 0f, 0f, 2f, 2f), 0.0001f, "It ends after two cycles.");
+            Assert.AreEqual(3f, AlpsPhaseCurve.Span(2f, 2f, 2f), 0.0001f, "A wave lasts three cycles at most.");
+            Assert.AreEqual(1f, AlpsPhaseCurve.Span(0.25f, 0f, 0.25f), 0.0001f, "A wave that leaves a low hold lasts its cycle.");
+        }
+
+        [Test]
+        public void Phase_OverlappingWavesTakeTheHighest()
+        {
+            // A fall over two cycles, firing every cycle: at 0.5 the new wave is at 0.75 and
+            // the one before it at 0.25.
+            var phase = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, 0, 0, 0f, 0f, 2f, false, 1f, 3.5f, 0, 0, out var source);
+            Assert.AreEqual(0.75f, phase, 0.0001f);
+            Assert.AreEqual(3f, source, "The phase comes from the cycle that is highest.");
+
+            // A slow rise that the wave before still beats: 0.2 up against 1 - 0.6 / 1.5 down.
+            phase = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, 0, 0, 0.5f, 0f, 1.5f, false, 1f, 3.1f, 0, 0, out source);
+            Assert.AreEqual(1f - 0.6f / 1.5f, phase, 0.0001f);
+            Assert.AreEqual(2f, source);
+
+            // Held at the top over a cycle and a half, every cycle firing: always lit, and a
+            // tie goes to the latest wave.
+            phase = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, 0, 0, 0f, 1.5f, 0f, false, 1f, 5.25f, 0, 0, out source);
+            Assert.AreEqual(1f, phase, 0.0001f);
+            Assert.AreEqual(5f, source);
+        }
+
+        [Test]
+        public void Phase_ACycleThatDoesNotFireLetsTheWaveBeforeRunOn()
+        {
+            const int seed = 5;
+            var checkedOverlap = false;
+            for (var n = 1; n < 60; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n, 0, seed);
+                var before = AlpsPhaseCurve.Fires(0.5f, n - 1, 0, seed);
+                var phase = AlpsPhaseCurve.Phase(AlpsShowLayout.PhaseWave, 0, 0, 0f, 1.5f, 0f, false, 0.5f, n + 0.25f, 0, seed, out var source);
+                Assert.AreEqual(fires || before ? 1f : 0f, phase, 0.0001f, $"Cycle {n}.");
+                Assert.AreEqual(fires || !before ? n : n - 1, source, $"Cycle {n} comes from the wave that lights it.");
+                checkedOverlap |= !fires && before;
+            }
+
+            Assert.IsTrue(checkedOverlap, "Some cycle rests while the one before still lights.");
         }
 
         // ------------------------------------------------------------------ values
@@ -1546,6 +1603,78 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void FireChance_ALongWaveLightsOnThroughACycleThatRests()
+        {
+            // Held at the top for a cycle and a half: each wave that fires lights the first
+            // half of the next cycle too, whether that one fires or not.
+            const int seed = 7;
+            const int cycleCount = 40;
+            var set = Set(0f, 1.5f, 0f);
+            set.phase.fireChance = 0.5f;
+            var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            var show = AlpsShowCompiler.CompileStandalone(
+                1, Bpm, new AlpsStandaloneClip { set = set, end = cycleCount, seed = seed });
+
+            var ranOn = false;
+            for (var n = 0; n < cycleCount; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n, 0, seed);
+                var before = AlpsPhaseCurve.Fires(0.5f, n - 1, 0, seed);
+                Assert.AreEqual(fires || before ? 100f : 0f, Evaluate(show, 0, n + 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f, $"First half of cycle {n}.");
+                Assert.AreEqual(fires ? 100f : 0f, Evaluate(show, 0, n + 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Second half of cycle {n}.");
+                ranOn |= before && !fires;
+            }
+
+            Assert.IsTrue(ranOn, "Some wave runs on into a cycle that rests.");
+        }
+
+        [Test]
+        public void FireChance_PerCyclePaletteKeepsTheColourOfTheWaveThatLights()
+        {
+            const int seed = 9;
+            const int cycleCount = 40;
+            var set = Set(0f, 1.5f, 0f);
+            set.phase.fireChance = 0.5f;
+            var color = set.Add(AlpsEffectKind.Color);
+            color.colorStops.Add(new AlpsColorStop(Color.red));
+            color.colorStops.Add(new AlpsColorStop(Color.blue));
+            color.colorPhasing.timing = AlpsTimingMode.PerCycle;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1, Bpm, new AlpsStandaloneClip { set = set, end = cycleCount, seed = seed });
+
+            for (var n = 1; n < cycleCount; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n, 0, seed);
+                var before = AlpsPhaseCurve.Fires(0.5f, n - 1, 0, seed);
+                var source = fires || !before ? n : n - 1;
+                Assert.AreEqual(source % 2 == 0 ? Color.red : Color.blue, ColorOf(Evaluate(show, 0, n + 0.25f)), $"Cycle {n}.");
+            }
+        }
+
+        [Test]
+        public void BlackoutOnReturn_ALongWaveStaysLitIntoTheNextCycle()
+        {
+            // Out for a cycle and a quarter, then down over half a cycle.
+            const int seed = 13;
+            var set = Set(0f, 1.25f, 0.5f);
+            set.phase.fireChance = 0.5f;
+            var effect = set.Add(AlpsEffectKind.Brightness);
+            effect.brightness.value = 100f;
+            effect.blackoutOnReturn = true;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 30f, seed = seed });
+
+            for (var n = 0; n < 30; n++)
+            {
+                var fires = AlpsPhaseCurve.Fires(0.5f, n, 0, seed);
+                var before = AlpsPhaseCurve.Fires(0.5f, n - 1, 0, seed);
+                Assert.AreEqual(fires || before ? 100f : 0f, Evaluate(show, 0, n + 0.2f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Early in cycle {n}.");
+                Assert.AreEqual(fires ? 100f : 0f, Evaluate(show, 0, n + 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Cycle {n}, once the wave before has returned.");
+            }
+        }
+
+        [Test]
         public void OrderSeed_AloneDecidesTheRandomOrder()
         {
             const int fixtures = 8;
@@ -1594,6 +1723,14 @@ namespace AdzukiSoft.ALPS.Tests
                     p.beatsPerCycle = 0.5f;
                     p.fireChance = 0.5f;
                     p.inverse = true;
+                }),
+                ("long sparse", p =>
+                {
+                    p.SetShares(0.25f, 0.75f, 1.25f);
+                    p.ease = AlpsEaseType.InOutCubic;
+                    p.fallEase = AlpsEaseType.OutBounce;
+                    p.beatsPerCycle = 0.5f;
+                    p.fireChance = 0.6f;
                 }),
                 ("random", p => p.mode = AlpsPhaseMode.Random),
             };

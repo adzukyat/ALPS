@@ -6,8 +6,8 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Shared settings: graph preview, mode, distribution, easing, fixture group size,
-    /// spread, speed, fire chance, invert.
+    /// Shared settings: graph preview, mode, distribution and its length, easing, fixture
+    /// group size, spread, speed, fire chance, invert.
     ///
     /// The same view is reused verbatim under a parameter that turns own phase on,
     /// which is why it takes a plain <see cref="AlpsPhaseSettings"/> rather than reaching
@@ -30,6 +30,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsPhaseGraph _graph;
         private readonly AlpsEasingPicker _easing;
         private readonly AlpsShareBar _shares;
+        private readonly AlpsSegmentedControl _length;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
         private readonly AlpsRangeFlag _beatsFlag;
@@ -102,6 +103,26 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsPhaseSettings.holdHigh),
                 nameof(AlpsPhaseSettings.fall));
             Add(_shares);
+
+            // How many cycles the distribution covers. A wave longer than its cycle runs on
+            // into the next ones, so a cycle can fire on every beat and still light longer.
+            _length = new AlpsSegmentedControl(
+                AlpsStrings.Tr("phase.length"),
+                AlpsStrings.Tr("phase.length.one"),
+                AlpsStrings.Tr("phase.length.two"),
+                AlpsStrings.Tr("phase.length.three"))
+            {
+                tooltip = AlpsStrings.Tr("phase.length.tip"),
+            };
+            if (compact)
+            {
+                _length.AddToClassList("alps-seg--compact");
+            }
+
+            _length.SetValueWithoutNotify(_shares.Cycles - 1);
+            _length.RegisterValueChangedCallback(evt => _shares.SetCycles(evt.newValue + 1));
+            _shares.CyclesChanged += () => _length.SetValueWithoutNotify(_shares.Cycles - 1);
+            Add(_length);
 
             _easing = new AlpsEasingPicker(AlpsStrings.Tr("phase.easing"), compact);
             _easing.Rise.SetValueWithoutNotify((int)settings.ease);
@@ -242,6 +263,7 @@ namespace AdzukiSoft.ALPS.Editor
             Show(_inverse, !isRandom);
             Show(_fireChance, !isRandom);
             Show(_shares, !isRandom);
+            Show(_length, !isRandom);
             RefreshSpread();
             _graph.SetSettings(_settings);
         }

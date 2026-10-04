@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -5,13 +6,15 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// The distribution row: label | one wave cycle with three draggable corners, and the
-    /// share of each part under it.
+    /// The distribution row: label | one wave over <see cref="Cycles"/> cycles with three
+    /// draggable corners, and the share of each part under it.
     ///
-    /// The cycle is drawn as its plain envelope (rise, high hold, fall, low hold) without the
+    /// The wave is drawn as its plain envelope (rise, high hold, fall, low hold) without the
     /// ease, since this row only decides how long each part lasts. The graph above it shows
     /// the eased result. <see cref="BaseField{T}.value"/> is (rise, high hold, fall), each a
-    /// share of the cycle. The low hold is what they leave over.
+    /// share of the cycle, and together up to <see cref="AlpsShowLayout.WaveMaxCycles"/>
+    /// cycles. The low hold is what they leave over of the first cycle. Past the end of the
+    /// wave the well is shaded, since the cycles there start waves of their own.
     /// </summary>
     public class AlpsShareBar : BaseField<Vector3>
     {
@@ -22,7 +25,7 @@ namespace AdzukiSoft.ALPS.Editor
         public const int HighEnd = 1;
         public const int FallEnd = 2;
 
-        /// <summary>Corners stick to every eighth of the cycle, which is where beats land.</summary>
+        /// <summary>Corners stick to every eighth of a cycle, which is where beats land.</summary>
         public const int SnapDivisions = 8;
 
         /// <summary>How close, in pixels, the pointer has to come to a corner to pick it up.</summary>
@@ -37,16 +40,20 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static readonly Color TraceColor = new Color32(0x6E, 0xA8, 0xDC, 0xFF);
         private static readonly Color AreaColor = new Color32(0x6E, 0xA8, 0xDC, 0x2E);
+        private static readonly Color CycleColor = new Color32(0x5A, 0x5A, 0x5A, 0xFF);
         private static readonly Color QuarterColor = new Color32(0x3A, 0x3A, 0x3A, 0xFF);
         private static readonly Color EighthColor = new Color32(0x2C, 0x2C, 0x2C, 0xFF);
+        private static readonly Color PastWaveColor = new Color32(0x00, 0x00, 0x00, 0x40);
 
         private readonly VisualElement _well;
         private readonly VisualElement[] _thumbs = new VisualElement[3];
         private readonly VisualElement _legend;
         private readonly Label[] _shares = new Label[4];
 
-        /// <summary>Corner positions in 0..1, cumulative: end of rise, end of high hold, end of fall.</summary>
+        /// <summary>Corner positions in cycles, cumulative: end of rise, end of high hold, end of fall.</summary>
         private readonly float[] _corners = new float[3];
+
+        private int _cycles = 1;
 
         private int _dragging = -1;
 
@@ -116,14 +123,57 @@ namespace AdzukiSoft.ALPS.Editor
 
         public override void SetValueWithoutNotify(Vector3 newValue)
         {
-            var rise = Mathf.Clamp01(newValue.x);
-            var high = Mathf.Clamp(newValue.y, 0f, 1f - rise);
-            var fall = Mathf.Clamp(newValue.z, 0f, 1f - rise - high);
+            const float max = AlpsShowLayout.WaveMaxCycles;
+            var rise = Mathf.Clamp(newValue.x, 0f, max);
+            var high = Mathf.Clamp(newValue.y, 0f, max - rise);
+            var fall = Mathf.Clamp(newValue.z, 0f, max - rise - high);
             base.SetValueWithoutNotify(new Vector3(rise, high, fall));
 
             _corners[RiseEnd] = rise;
             _corners[HighEnd] = rise + high;
             _corners[FallEnd] = rise + high + fall;
+
+            // A wave longer than the well widens it. Only the length picker narrows it again.
+            var needed = CyclesFor(rise + high + fall);
+            if (needed > _cycles)
+            {
+                _cycles = needed;
+                CyclesChanged?.Invoke();
+            }
+
+            Refresh();
+        }
+
+        /// <summary>How many cycles the well covers, 1 to <see cref="AlpsShowLayout.WaveMaxCycles"/>.</summary>
+        public int Cycles => _cycles;
+
+        /// <summary>Called when <see cref="Cycles"/> changes, so a length picker can follow.</summary>
+        public event Action CyclesChanged;
+
+        /// <summary>The fewest cycles a well needs for a wave whose shares add up to <paramref name="total"/>.</summary>
+        public static int CyclesFor(float total)
+        {
+            // A wave that ends a hair past a whole cycle is that cycle, not the next one.
+            return Mathf.Clamp(Mathf.CeilToInt(total - 0.0001f), 1, AlpsShowLayout.WaveMaxCycles);
+        }
+
+        /// <summary>
+        /// Makes the well <paramref name="cycles"/> cycles long and stretches the wave with it,
+        /// so it keeps its shape against the well and lasts that many times longer. Commits
+        /// the new shares.
+        /// </summary>
+        public void SetCycles(int cycles)
+        {
+            cycles = Mathf.Clamp(cycles, 1, AlpsShowLayout.WaveMaxCycles);
+            if (cycles == _cycles)
+            {
+                return;
+            }
+
+            var scale = cycles / (float)_cycles;
+            _cycles = cycles;
+            CyclesChanged?.Invoke();
+            value = base.value * scale;
             Refresh();
         }
 
@@ -141,7 +191,7 @@ namespace AdzukiSoft.ALPS.Editor
         public void MoveCorner(int corner, float position)
         {
             var low = corner == RiseEnd ? 0f : _corners[corner - 1];
-            var high = corner == FallEnd ? 1f : _corners[corner + 1];
+            var high = corner == FallEnd ? _cycles : _corners[corner + 1];
             var corners = (float[])_corners.Clone();
             corners[corner] = Mathf.Clamp(position, low, high);
             value = FromCorners(corners);
@@ -161,13 +211,16 @@ namespace AdzukiSoft.ALPS.Editor
 
         private float XOf(float position)
         {
-            return Inset + position * Width;
+            return Inset + position / _cycles * Width;
         }
 
         private float PositionAt(float x)
         {
-            return (x - Inset) / Width;
+            return (x - Inset) / Width * _cycles;
         }
+
+        /// <summary>Where the wave ends: the fall, or the end of the first cycle when a low hold is left.</summary>
+        private float WaveEnd => Mathf.Max(1f, _corners[FallEnd]);
 
         /// <summary>The high corners sit on the top line and the fall's end on the bottom one.</summary>
         private float YOf(int corner)
@@ -200,7 +253,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             var width = _legend.contentRect.width;
             var starts = new[] { 0f, _corners[RiseEnd], _corners[HighEnd], _corners[FallEnd] };
-            var ends = new[] { _corners[RiseEnd], _corners[HighEnd], _corners[FallEnd], 1f };
+            var ends = new[] { _corners[RiseEnd], _corners[HighEnd], _corners[FallEnd], WaveEnd };
 
             for (var i = 0; i < _shares.Length; i++)
             {
@@ -209,13 +262,13 @@ namespace AdzukiSoft.ALPS.Editor
                 var label = _shares[i];
                 label.text = text;
                 label.tooltip = AlpsStrings.Tr(PartKeys[i]) + " " + text;
-                label.style.left = Length.Percent(starts[i] * 100f);
-                label.style.width = Length.Percent(share * 100f);
+                label.style.left = Length.Percent(starts[i] / _cycles * 100f);
+                label.style.width = Length.Percent(share / _cycles * 100f);
 
                 var needed = width <= 0f
                     ? 0f
                     : label.MeasureTextSize(text, 0f, MeasureMode.Undefined, 0f, MeasureMode.Undefined).x;
-                var fits = share > 0f && width > 0f && needed <= share * width;
+                var fits = share > 0f && width > 0f && needed <= share / _cycles * width;
                 label.style.display = fits ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
@@ -232,10 +285,22 @@ namespace AdzukiSoft.ALPS.Editor
             var top = Inset;
             var bottom = rect.height - Inset;
 
-            for (var i = 1; i < SnapDivisions; i++)
+            if (WaveEnd < _cycles)
+            {
+                painter.fillColor = PastWaveColor;
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(XOf(WaveEnd), 1f));
+                painter.LineTo(new Vector2(rect.width - 1f, 1f));
+                painter.LineTo(new Vector2(rect.width - 1f, rect.height - 1f));
+                painter.LineTo(new Vector2(XOf(WaveEnd), rect.height - 1f));
+                painter.ClosePath();
+                painter.Fill();
+            }
+
+            for (var i = 1; i < SnapDivisions * _cycles; i++)
             {
                 var x = XOf(i / (float)SnapDivisions);
-                painter.strokeColor = i % 2 == 0 ? QuarterColor : EighthColor;
+                painter.strokeColor = i % SnapDivisions == 0 ? CycleColor : (i % 2 == 0 ? QuarterColor : EighthColor);
                 painter.lineWidth = 1f;
                 painter.BeginPath();
                 painter.MoveTo(new Vector2(x, 1f));
@@ -249,7 +314,7 @@ namespace AdzukiSoft.ALPS.Editor
                 new Vector2(XOf(_corners[RiseEnd]), top),
                 new Vector2(XOf(_corners[HighEnd]), top),
                 new Vector2(XOf(_corners[FallEnd]), bottom),
-                new Vector2(XOf(1f), bottom),
+                new Vector2(XOf(WaveEnd), bottom),
             };
 
             painter.fillColor = AreaColor;
@@ -389,13 +454,13 @@ namespace AdzukiSoft.ALPS.Editor
 
         private float Snap(float position)
         {
-            var snaps = new float[SnapDivisions + 1];
-            for (var i = 0; i <= SnapDivisions; i++)
+            var snaps = new float[SnapDivisions * _cycles + 1];
+            for (var i = 0; i < snaps.Length; i++)
             {
                 snaps[i] = i / (float)SnapDivisions;
             }
 
-            return AlpsSliderTrack.Snap(position, snaps, AlpsSliderTrack.SnapDistance / Width);
+            return AlpsSliderTrack.Snap(position, snaps, AlpsSliderTrack.SnapDistance / Width * _cycles);
         }
 
         /// <summary>Double click: the picked corners go back toward where the defaults put them.</summary>
@@ -415,7 +480,7 @@ namespace AdzukiSoft.ALPS.Editor
             var first = corners[0];
             var last = corners[corners.Count - 1];
             var low = first == RiseEnd ? 0f : moved[first - 1];
-            var high = last == FallEnd ? 1f : moved[last + 1];
+            var high = last == FallEnd ? _cycles : moved[last + 1];
             for (var i = first; i <= last; i++)
             {
                 moved[i] = Mathf.Clamp(targets[i], low, high);

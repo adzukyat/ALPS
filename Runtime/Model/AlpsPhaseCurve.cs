@@ -61,21 +61,56 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Phase φ in 0..1 from unwrapped cycles. A wave walks one cycle of
-        /// <see cref="Wave"/>, random is a smooth seeded wander. Invert, the eases and the fire
-        /// chance apply to the wave only. A cycle that does not fire rests at the bottom of the
-        /// wave all the way through, and invert flips the eased wave upside down.
+        /// Phase φ in 0..1 from unwrapped cycles. A wave walks <see cref="Wave"/>, random is a
+        /// smooth seeded wander. Invert, the eases and the fire chance apply to the wave only.
         /// </summary>
         public static float Phase(int mode, int riseEase, int fallEase, float rise, float holdHigh, float fall, bool inverse, float fireChance, float cycles, int k, int seed)
         {
+            return Phase(mode, riseEase, fallEase, rise, holdHigh, fall, inverse, fireChance, cycles, k, seed, out _);
+        }
+
+        /// <summary>
+        /// <see cref="Phase(int,int,int,float,float,float,bool,float,float,int,int)"/>, and in
+        /// <paramref name="source"/> the cycle the phase comes from, which per cycle timing and
+        /// per cycle palettes step on.
+        ///
+        /// Every cycle that fires starts a wave of its own, and shares adding up to more than
+        /// one cycle carry it on into the cycles after it. Where waves overlap the highest one
+        /// wins, the latest on a tie, the way DMX merges highest takes precedence. A cycle that
+        /// does not fire starts none, so with no wave under way the phase rests at the bottom
+        /// of the current cycle. Invert flips the result upside down.
+        /// </summary>
+        public static float Phase(int mode, int riseEase, int fallEase, float rise, float holdHigh, float fall, bool inverse, float fireChance, float cycles, int k, int seed, out float source)
+        {
+            var current = Mathf.Floor(cycles);
+            source = current;
             if (mode == AlpsShowLayout.PhaseRandom)
             {
                 return Mathf.Clamp01(Noise(cycles * 2f, (k + 1) * 7.31f + seed * 0.137f));
             }
 
-            var u = Fires(fireChance, cycles, k, seed)
-                ? Wave(riseEase, fallEase, rise, holdHigh, fall, cycles - Mathf.Floor(cycles))
-                : 0f;
+            var span = Span(rise, holdHigh, fall);
+            var reach = Mathf.CeilToInt(span);
+            var u = 0f;
+            var found = false;
+            for (var j = 0; j < reach; j++)
+            {
+                var start = current - j;
+                var position = cycles - start;
+                if (position >= span || !Fires(fireChance, start, k, seed))
+                {
+                    continue;
+                }
+
+                var wave = Wave(riseEase, fallEase, rise, holdHigh, fall, position);
+                if (!found || wave > u)
+                {
+                    u = wave;
+                    source = start;
+                    found = true;
+                }
+            }
+
             return inverse ? 1f - u : u;
         }
 
@@ -106,17 +141,19 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// One wave cycle at <paramref name="u"/> in 0..1: a rise from 0 to 1, a hold at 1, a
-        /// fall back to 0, and a hold at 0 for whatever the three leave over. A share of zero
-        /// skips its part, so a rise of 0 jumps straight up and a rise of 1 is a sawtooth.
-        /// The rise follows its ease forwards. The fall follows its own ease forwards in time
-        /// on the way down, so an OutBounce fall bounces at the bottom.
+        /// One wave at <paramref name="u"/> cycles after it starts: a rise from 0 to 1, a hold
+        /// at 1, a fall back to 0, and a hold at 0 for whatever the three leave over of the
+        /// cycle. A share of zero skips its part, so a rise of 0 jumps straight up and a rise
+        /// of 1 is a sawtooth. The shares may add up to <see cref="AlpsShowLayout.WaveMaxCycles"/>
+        /// cycles. The rise follows its ease forwards. The fall follows its own ease forwards
+        /// in time on the way down, so an OutBounce fall bounces at the bottom.
         /// </summary>
         public static float Wave(int riseEase, int fallEase, float rise, float holdHigh, float fall, float u)
         {
-            var riseEnd = Mathf.Clamp01(rise);
-            var highEnd = riseEnd + Mathf.Clamp(holdHigh, 0f, 1f - riseEnd);
-            var fallEnd = highEnd + Mathf.Clamp(fall, 0f, 1f - highEnd);
+            const float max = AlpsShowLayout.WaveMaxCycles;
+            var riseEnd = Mathf.Clamp(rise, 0f, max);
+            var highEnd = riseEnd + Mathf.Clamp(holdHigh, 0f, max - riseEnd);
+            var fallEnd = highEnd + Mathf.Clamp(fall, 0f, max - highEnd);
             if (u < riseEnd)
             {
                 return Ease(riseEase, u / riseEnd);
@@ -136,26 +173,54 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// True while a wave is on its return leg: the fall and the low hold after it. A wave
-        /// whose rise and high hold fill the whole cycle never returns.
+        /// True while no wave that fired is on its way out, which is where blackout on return
+        /// is dark: every wave under way is on its return leg, the fall and the low hold after
+        /// it, or none is under way at all. A wave whose rise and high hold fill all of it
+        /// never returns.
         /// </summary>
-        public static bool IsReturnLeg(int mode, float rise, float holdHigh, float cycles)
+        public static bool IsReturnLeg(int mode, float rise, float holdHigh, float fall, float fireChance, float cycles, int k, int seed)
         {
-            if (mode != AlpsShowLayout.PhaseWave)
+            if (mode != AlpsShowLayout.PhaseWave || !Returns(rise, holdHigh, fall))
             {
                 return false;
             }
 
             var outbound = OutboundLeg(rise, holdHigh);
-            var u = cycles - Mathf.Floor(cycles);
-            return outbound < 1f && u >= outbound;
+            var current = Mathf.Floor(cycles);
+            var reach = Mathf.CeilToInt(Span(rise, holdHigh, fall));
+            for (var j = 0; j < reach; j++)
+            {
+                if (cycles - (current - j) < outbound && Fires(fireChance, current - j, k, seed))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
-        /// <summary>The share of a wave cycle before the return leg: the rise and the high hold.</summary>
+        /// <summary>The cycles of a wave before its return leg: the rise and the high hold.</summary>
         public static float OutboundLeg(float rise, float holdHigh)
         {
-            var riseEnd = Mathf.Clamp01(rise);
-            return riseEnd + Mathf.Clamp(holdHigh, 0f, 1f - riseEnd);
+            const float max = AlpsShowLayout.WaveMaxCycles;
+            var riseEnd = Mathf.Clamp(rise, 0f, max);
+            return riseEnd + Mathf.Clamp(holdHigh, 0f, max - riseEnd);
+        }
+
+        /// <summary>
+        /// How many cycles one wave lasts: its shares, or the whole cycle when they leave a low
+        /// hold, and at most <see cref="AlpsShowLayout.WaveMaxCycles"/>.
+        /// </summary>
+        public static float Span(float rise, float holdHigh, float fall)
+        {
+            var total = Mathf.Max(0f, rise) + Mathf.Max(0f, holdHigh) + Mathf.Max(0f, fall);
+            return Mathf.Clamp(total, 1f, AlpsShowLayout.WaveMaxCycles);
+        }
+
+        /// <summary>True when a wave has a return leg, that is, does not stay out until it ends.</summary>
+        public static bool Returns(float rise, float holdHigh, float fall)
+        {
+            return OutboundLeg(rise, holdHigh) < Span(rise, holdHigh, fall);
         }
 
         /// <summary>Smooth 2D value noise in 0..1, the one the GPU evaluator wanders a random phase with.</summary>

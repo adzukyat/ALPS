@@ -57,7 +57,10 @@ namespace AdzukiSoft.ALPS
         public const int PhaseRise = 2;
         /// <summary>Share of a wave cycle held at 1 after the rise.</summary>
         public const int PhaseHoldHigh = 3;
-        /// <summary>Share of a wave cycle spent falling back to 0. The rest is held at 0.</summary>
+        /// <summary>
+        /// Share of a wave cycle spent falling back to 0. The rest is held at 0. The three may
+        /// add up to <see cref="WaveMaxCycles"/> cycles.
+        /// </summary>
         public const int PhaseFall = 4;
         public const int PhaseGroupSize = 5;
         /// <summary>
@@ -75,6 +78,13 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public const int PhaseFireChance = 10;
         public const int PhaseStride = 11;
+
+        /// <summary>
+        /// Most cycles one wave lasts. Shares adding up to more than one cycle run on into the
+        /// cycles after it, so the evaluator looks back this many cycles, the current one
+        /// included, for waves still under way.
+        /// </summary>
+        public const int WaveMaxCycles = 3;
 
         // --- Clip rows ---------------------------------------------------------------------
 

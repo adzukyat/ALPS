@@ -346,7 +346,7 @@ namespace AdzukiSoft.ALPS.Editor
             void ApplyBlackout()
             {
                 var phase = view.GoverningPhase;
-                var returns = phase.mode == AlpsPhaseMode.Wave && AlpsPhaseCurve.OutboundLeg(phase.rise, phase.holdHigh) < 1f;
+                var returns = phase.mode == AlpsPhaseMode.Wave && AlpsPhaseCurve.Returns(phase.rise, phase.holdHigh, phase.fall);
                 AlpsPhaseSettingsView.Show(blackout, returns);
                 AlpsPhaseSettingsView.Show(fadeFrame, returns && _effect.blackoutOnReturn);
             }

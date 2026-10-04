@@ -40,19 +40,24 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Distribution: the share of the cycle spent rising from 0 to 1. The four shares
         /// (<see cref="rise"/>, <see cref="holdHigh"/>, <see cref="fall"/> and
-        /// <see cref="HoldLow"/>) always add up to one cycle. Wave only.
+        /// <see cref="HoldLow"/>) add up to at least one cycle. The first three may add up to
+        /// <see cref="AlpsShowLayout.WaveMaxCycles"/> cycles, and the wave then runs on into
+        /// the cycles after the one it started in. Wave only.
         /// </summary>
         [FormerlySerializedAs("pingPongRatio")]
-        [Range(0f, 1f)] public float rise = 0.5f;
+        [Range(0f, AlpsShowLayout.WaveMaxCycles)] public float rise = 0.5f;
 
         /// <summary>The share of the cycle held at 1 after the rise. Wave only.</summary>
         [FormerlySerializedAs("pingPongHold")]
-        [Range(0f, 1f)] public float holdHigh;
+        [Range(0f, AlpsShowLayout.WaveMaxCycles)] public float holdHigh;
 
         /// <summary>The share of the cycle spent falling back to 0 after the high hold. Wave only.</summary>
-        [Range(0f, 1f)] public float fall = 0.5f;
+        [Range(0f, AlpsShowLayout.WaveMaxCycles)] public float fall = 0.5f;
 
-        /// <summary>The share of the cycle held at 0 until the next one: what the other three leave over.</summary>
+        /// <summary>
+        /// The share of the cycle held at 0 until the next one: what the other three leave
+        /// over, none once they fill the cycle.
+        /// </summary>
         public float HoldLow => Mathf.Max(0f, 1f - rise - holdHigh - fall);
 
         /// <summary>
@@ -126,14 +131,16 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
-        /// Sets the three edited shares, keeping them inside one cycle: the rise first, then
-        /// the high hold and the fall in what is left. The low hold takes the rest.
+        /// Sets the three edited shares, keeping them inside
+        /// <see cref="AlpsShowLayout.WaveMaxCycles"/> cycles: the rise first, then the high
+        /// hold and the fall in what is left. The low hold takes the rest of the first cycle.
         /// </summary>
         public void SetShares(float riseShare, float holdHighShare, float fallShare)
         {
-            rise = Mathf.Clamp01(riseShare);
-            holdHigh = Mathf.Clamp(holdHighShare, 0f, 1f - rise);
-            fall = Mathf.Clamp(fallShare, 0f, 1f - rise - holdHigh);
+            const float max = AlpsShowLayout.WaveMaxCycles;
+            rise = Mathf.Clamp(riseShare, 0f, max);
+            holdHigh = Mathf.Clamp(holdHighShare, 0f, max - rise);
+            fall = Mathf.Clamp(fallShare, 0f, max - rise - holdHigh);
         }
 
         public void OnBeforeSerialize()

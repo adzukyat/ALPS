@@ -410,7 +410,7 @@ namespace AdzukiSoft.ALPS.Tests
             var set = new AlpsClipEffectSet();
             var view = new AlpsClipInspectorView(set);
 
-            foreach (var key in new[] { "phase.mode", "phase.shares", "phase.easing", "phase.group", "phase.delay", "common.speed", "phase.inverse" })
+            foreach (var key in new[] { "phase.mode", "phase.shares", "phase.length", "phase.easing", "phase.group", "phase.delay", "common.speed", "phase.inverse" })
             {
                 var row = AlpsStrings.Tr(key);
                 Assert.IsTrue(HasVisibleText(view, row), $"The common settings are missing the {row} row.");
@@ -1818,6 +1818,76 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(0f, set.phase.holdHigh, 0.0001f);
                 Assert.AreEqual(0.25f, set.phase.fall, 0.0001f);
                 Assert.AreEqual(0.25f, set.phase.HoldLow, 0.0001f, "The last quarter now waits at the bottom.");
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void ShareBar_AWaveLongerThanItsCycleWidensTheWell()
+        {
+            var shares = new AlpsShareBar(AlpsStrings.Tr("phase.shares"));
+            shares.SetValueWithoutNotify(new Vector3(0.5f, 1f, 0.5f));
+
+            Assert.AreEqual(2, shares.Cycles);
+            Assert.AreEqual(2f, shares.Corner(AlpsShareBar.FallEnd), 0.0001f);
+            CollectionAssert.AreEqual(
+                new[] { "50%", "100%", "50%", "0%" },
+                shares.Query<Label>(className: "alps-shares__share").ToList().Select(l => l.text).ToArray(),
+                "A wave that fills its cycle leaves no low hold.");
+
+            shares.MoveCorner(AlpsShareBar.FallEnd, 2.5f);
+            Assert.AreEqual(0.5f, shares.value.z, 0.0001f, "The fall cannot run past the end of the well.");
+
+            shares.SetValueWithoutNotify(new Vector3(0.25f, 0f, 0.25f));
+            Assert.AreEqual(2, shares.Cycles, "A shorter wave leaves the well as wide as it was.");
+            Assert.AreEqual(1, AlpsShareBar.CyclesFor(1f), "A wave of exactly one cycle needs one.");
+        }
+
+        [Test]
+        public void ShareBar_ChangingTheLengthStretchesTheWave()
+        {
+            var shares = new AlpsShareBar(AlpsStrings.Tr("phase.shares"));
+            shares.SetValueWithoutNotify(new Vector3(0.25f, 0.25f, 0.25f));
+
+            shares.SetCycles(3);
+            Assert.AreEqual(3, shares.Cycles);
+            Assert.AreEqual(new Vector3(0.75f, 0.75f, 0.75f), shares.value);
+
+            shares.SetCycles(1);
+            Assert.AreEqual(1, shares.Cycles);
+            Assert.AreEqual(0.25f, shares.value.x, 0.0001f);
+            Assert.AreEqual(0.75f, shares.Corner(AlpsShareBar.FallEnd), 0.0001f, "Shrinking keeps the shape inside the well.");
+        }
+
+        [UnityTest]
+        public IEnumerator LengthPicker_StretchesTheSharesInTheSettings()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            set.phase.SetShares(0f, 0.25f, 0.25f);
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var length = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+                Assert.AreEqual(0, length.value, "Shares inside one cycle show a length of one cycle.");
+
+                length.value = 2;
+                Assert.AreEqual(0.75f, set.phase.holdHigh, 0.0001f);
+                Assert.AreEqual(0.75f, set.phase.fall, 0.0001f);
+                Assert.AreEqual(0f, set.phase.HoldLow, 0.0001f, "The wave now runs past its cycle.");
+
+                var rebuilt = new AlpsClipInspectorView(set).Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+                Assert.AreEqual(1, rebuilt.value, "A rebuild shows as many cycles as the wave needs.");
             }
             finally
             {

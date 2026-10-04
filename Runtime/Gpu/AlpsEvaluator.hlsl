@@ -70,6 +70,7 @@ float _AlpsTime;
 #define PhaseFallEase 9
 #define PhaseFireChance 10
 #define PhaseStride 11
+#define WaveMaxCycles 3
 
 #define ClipStart 0
 #define ClipEnd 1
@@ -312,12 +313,13 @@ float AlpsFixtureCycles(float beats, float beatsPerCycle, float delay, int k, fl
     return cycles - delay * k + extraCycles;
 }
 
-// AlpsPhaseCurve.Wave, with the rise and the fall sharing one ease.
+// AlpsPhaseCurve.Wave, <u> cycles after the wave starts, with the rise and the fall sharing
+// one ease.
 float AlpsWave(int riseEase, int fallEase, float rise, float holdHigh, float fall, float u)
 {
-    float riseEnd = saturate(rise);
-    float highEnd = riseEnd + clamp(holdHigh, 0.0, 1.0 - riseEnd);
-    float fallEnd = highEnd + clamp(fall, 0.0, 1.0 - highEnd);
+    float riseEnd = clamp(rise, 0.0, WaveMaxCycles);
+    float highEnd = riseEnd + clamp(holdHigh, 0.0, WaveMaxCycles - riseEnd);
+    float fallEnd = highEnd + clamp(fall, 0.0, WaveMaxCycles - highEnd);
     if (u >= riseEnd && u < highEnd) return 1.0;
     if (u >= fallEnd) return 0.0;
 
@@ -342,30 +344,59 @@ bool AlpsFires(float chance, float cycles, int k, int seed)
     return (h >> 8u) * (1.0 / 16777216.0) < chance;
 }
 
-// Phase from the phase block starting at data index <row>.
-float AlpsPhaseAt(int row, float cycles, int k, int seed)
+// How many cycles one wave lasts, AlpsPhaseCurve.Span.
+float AlpsWaveSpan(float rise, float holdHigh, float fall)
 {
+    return clamp(max(0.0, rise) + max(0.0, holdHigh) + max(0.0, fall), 1.0, WaveMaxCycles);
+}
+
+// Phase from the phase block starting at data index <row>, and in <source> the cycle it
+// comes from, AlpsPhaseCurve.Phase. Every cycle that fires starts a wave that may run on
+// into the cycles after it, and where waves overlap the highest wins, the latest on a tie.
+// With no wave under way the phase rests at the bottom of the current cycle.
+float AlpsPhaseAt(int row, float cycles, int k, int seed, out float source)
+{
+    float current = floor(cycles);
+    source = current;
     if (AlpsReadInt(row + PhaseMode) == PhaseRandom)
     {
         return saturate(AlpsNoise(cycles * 2.0, (k + 1) * 7.31 + seed * 0.137));
     }
 
-    // A cycle that does not fire rests at the bottom of the wave all the way through.
-    float u = AlpsWave(
-        AlpsReadInt(row + PhaseEase),
-        AlpsReadInt(row + PhaseFallEase),
-        AlpsRead(row + PhaseRise),
-        AlpsRead(row + PhaseHoldHigh),
-        AlpsRead(row + PhaseFall),
-        cycles - floor(cycles));
-    u = AlpsFires(AlpsRead(row + PhaseFireChance), cycles, k, seed) ? u : 0.0;
+    int riseEase = AlpsReadInt(row + PhaseEase);
+    int fallEase = AlpsReadInt(row + PhaseFallEase);
+    float rise = AlpsRead(row + PhaseRise);
+    float holdHigh = AlpsRead(row + PhaseHoldHigh);
+    float fall = AlpsRead(row + PhaseFall);
+    float chance = AlpsRead(row + PhaseFireChance);
+    float span = AlpsWaveSpan(rise, holdHigh, fall);
+    int reach = (int)ceil(span);
+
+    float u = 0.0;
+    bool found = false;
+    [loop]
+    for (int j = 0; j < reach; j++)
+    {
+        float start = current - j;
+        float position = cycles - start;
+        if (position >= span || !AlpsFires(chance, start, k, seed)) continue;
+
+        float wave = AlpsWave(riseEase, fallEase, rise, holdHigh, fall, position);
+        if (!found || wave > u)
+        {
+            u = wave;
+            source = start;
+            found = true;
+        }
+    }
+
     return AlpsRead(row + PhaseInverse) > 0.5 ? 1.0 - u : u;
 }
 
 float AlpsOutboundLeg(float rise, float holdHigh)
 {
-    float riseEnd = saturate(rise);
-    return riseEnd + clamp(holdHigh, 0.0, 1.0 - riseEnd);
+    float riseEnd = clamp(rise, 0.0, WaveMaxCycles);
+    return riseEnd + clamp(holdHigh, 0.0, WaveMaxCycles - riseEnd);
 }
 
 // --- Clip weight -------------------------------------------------------------------------
@@ -422,16 +453,19 @@ struct AlpsClipContext
     float beats;
     int k;
     float sharedCycles;
+    float sharedSource;
     float sharedPhase;
 };
 
 // One value an effect reads: the parameter at data index <paramRow> run late by <extra>
-// cycles, spread and range included. Also gives the cycles and the phase it followed, which
-// palettes and blackout read. A <paramRow> below 0 reads only the clip's shared phase.
+// cycles, spread and range included. Also gives the cycles, the cycle the phase comes from
+// and the phase it followed, which palettes and blackout read. A <paramRow> below 0 reads
+// only the clip's shared phase.
 //
 // A value follows its own phase if it has one, otherwise the clip's shared phase, which is
-// already worked out unless the value runs late.
-float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles, out float phase)
+// already worked out unless the value runs late. Per cycle timing steps on the cycle the
+// phase comes from, so a wave running on past its cycle keeps the value it started with.
+float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles, out float source, out float phase)
 {
     bool own = paramRow >= 0 && AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
     int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
@@ -442,10 +476,11 @@ float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles
     [branch]
     if (own || extra != 0.0)
     {
-        phase = AlpsPhaseAt(phaseRow, cycles, c.k, c.seed);
+        phase = AlpsPhaseAt(phaseRow, cycles, c.k, c.seed, source);
     }
     else
     {
+        source = c.sharedSource;
         phase = c.sharedPhase;
     }
 
@@ -457,7 +492,7 @@ float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles
     {
         if (AlpsReadInt(paramRow + ParamTiming) == TimingPerCycle)
         {
-            bool atMin = ((int)floor(cycles) & 1) == 0;
+            bool atMin = ((int)source & 1) == 0;
             value = AlpsRead(paramRow + (atMin ? ParamRangeMin : ParamRangeMax));
             step = AlpsRead(paramRow + (atMin ? ParamSpreadMin : ParamSpreadMax));
         }
@@ -478,8 +513,9 @@ float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles
     return AlpsRead(paramRow + ParamHasSpread) > 0.5 ? value + step * c.k : value;
 }
 
-// Palette entry and the local 0..1 position inside it.
-int AlpsPaletteStop(int paramRow, int count, float cycles, float phase, out float local)
+// Palette entry and the local 0..1 position inside it. Per cycle palettes step on <source>,
+// the cycle the phase comes from.
+int AlpsPaletteStop(int paramRow, int count, float source, float phase, out float local)
 {
     if (count <= 1)
     {
@@ -490,7 +526,7 @@ int AlpsPaletteStop(int paramRow, int count, float cycles, float phase, out floa
     if (AlpsReadInt(paramRow + ParamTiming) == TimingPerCycle)
     {
         local = phase;
-        int index = (int)floor(cycles) % count;
+        int index = (int)source % count;
         return index < 0 ? index + count : index;
     }
 
@@ -500,25 +536,39 @@ int AlpsPaletteStop(int paramRow, int count, float cycles, float phase, out floa
     return stop;
 }
 
-// Brightness multiplier for blackout on return, 0 on the return leg of the wave the value
-// follows and faded at both ends of the outbound leg. A cycle that does not fire has no
-// outbound leg, so it stays dark.
+// Brightness multiplier for blackout on return, AlpsPhaseCurve.IsReturnLeg: lit while a
+// wave of the phase the value follows is on its outbound leg, faded at both ends of it,
+// and dark otherwise. Waves running on past their cycle overlap, and the brightest of
+// their fades wins. A cycle that does not fire has no outbound leg.
 float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float cycles, float fadeIn, float fadeOut)
 {
     bool own = AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
     int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
-    float outbound = AlpsOutboundLeg(AlpsRead(phaseRow + PhaseRise), AlpsRead(phaseRow + PhaseHoldHigh));
-    if (AlpsReadInt(phaseRow + PhaseMode) != PhaseWave || outbound >= 1.0) return 1.0;
-    if (!AlpsFires(AlpsRead(phaseRow + PhaseFireChance), cycles, c.k, c.seed)) return 0.0;
+    float rise = AlpsRead(phaseRow + PhaseRise);
+    float holdHigh = AlpsRead(phaseRow + PhaseHoldHigh);
+    float span = AlpsWaveSpan(rise, holdHigh, AlpsRead(phaseRow + PhaseFall));
+    float outbound = AlpsOutboundLeg(rise, holdHigh);
+    if (AlpsReadInt(phaseRow + PhaseMode) != PhaseWave || outbound >= span) return 1.0;
 
-    float u = cycles - floor(cycles);
-    if (u >= outbound) return 0.0;
+    float chance = AlpsRead(phaseRow + PhaseFireChance);
+    float current = floor(cycles);
+    int reach = (int)ceil(span);
+    float scale = 0.0;
+    [loop]
+    for (int j = 0; j < reach; j++)
+    {
+        float start = current - j;
+        float position = cycles - start;
+        if (position >= outbound || !AlpsFires(chance, start, c.k, c.seed)) continue;
 
-    u /= max(0.001, outbound);
-    float scale = 1.0;
-    if (fadeIn > 0.0) scale = min(scale, u / fadeIn);
-    if (fadeOut > 0.0) scale = min(scale, (1.0 - u) / fadeOut);
-    return saturate(scale);
+        float u = position / max(0.001, outbound);
+        float lit = 1.0;
+        if (fadeIn > 0.0) lit = min(lit, u / fadeIn);
+        if (fadeOut > 0.0) lit = min(lit, (1.0 - u) / fadeOut);
+        scale = max(scale, saturate(lit));
+    }
+
+    return scale;
 }
 
 // Pan and tilt of a beam on a ring around a center direction, <turn> radians round. The
@@ -590,7 +640,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
     // Odd and even count order positions from 1, so a symmetric order splits both halves alike.
     bool isOdd = c.k % 2 == 0;
     c.sharedCycles = AlpsFixtureCycles(c.beats, AlpsRead(phaseRow + PhaseBeatsPerCycle), AlpsRead(phaseRow + PhaseDelay), c.k, 0.0);
-    c.sharedPhase = AlpsPhaseAt(phaseRow, c.sharedCycles, c.k, c.seed);
+    c.sharedPhase = AlpsPhaseAt(phaseRow, c.sharedCycles, c.k, c.seed, c.sharedSource);
 
     int effectStart = AlpsReadInt(c.row + ClipEffectStart);
     int effectEnd = effectStart + AlpsReadInt(c.row + ClipEffectCount);
@@ -650,12 +700,14 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
 
         float value[ALPS_MAX_SLOTS];
         float cycles[ALPS_MAX_SLOTS];
+        float source[ALPS_MAX_SLOTS];
         float phase[ALPS_MAX_SLOTS];
         [unroll]
         for (int z = 0; z < ALPS_MAX_SLOTS; z++)
         {
             value[z] = 0.0;
             cycles[z] = 0.0;
+            source[z] = 0.0;
             phase[z] = 0.0;
         }
 
@@ -663,10 +715,12 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
         for (int v = 0; v < slots; v++)
         {
             float slotCycles;
+            float slotSource;
             float slotPhase;
-            float resolved = AlpsResolve(c, slotParam[v], slotExtra[v], slotCycles, slotPhase);
+            float resolved = AlpsResolve(c, slotParam[v], slotExtra[v], slotCycles, slotSource, slotPhase);
             value[v] = resolved;
             cycles[v] = slotCycles;
+            source[v] = slotSource;
             phase[v] = slotPhase;
         }
 
@@ -708,7 +762,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             if (paletteCount <= 0) continue;
 
             float t;
-            int colorRow = show.colors + (AlpsReadInt(effectRow + EffectPaletteStart) + AlpsPaletteStop(paramRow, paletteCount, cycles[0], phase[0], t)) * ColorStride;
+            int colorRow = show.colors + (AlpsReadInt(effectRow + EffectPaletteStart) + AlpsPaletteStop(paramRow, paletteCount, source[0], phase[0], t)) * ColorStride;
             float3 rgb;
             if (AlpsRead(colorRow + ColorIsGradient) > 0.5)
             {
@@ -744,7 +798,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             if (paletteCount <= 0) continue;
 
             float local;
-            int stop = AlpsPaletteStop(paramRow, paletteCount, cycles[0], phase[0], local);
+            int stop = AlpsPaletteStop(paramRow, paletteCount, source[0], phase[0], local);
             AlpsWrite(frame, FrameGobo, AlpsRead(show.gobos + AlpsReadInt(effectRow + EffectPaletteStart) + stop));
         }
     }
