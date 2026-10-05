@@ -62,6 +62,12 @@ namespace AdzukiSoft.ALPS.Editor
                 return null;
             }
 
+            // A timeline whose length follows its clips would end where the last other clip
+            // ends once the ALPS tracks are gone, at 0 with none left, and its director's time
+            // would never move. The build copy keeps the authored length instead.
+            copy.durationMode = TimelineAsset.DurationMode.FixedLength;
+            copy.fixedDuration = source.duration;
+
             foreach (var root in new List<TrackAsset>(copy.GetRootTracks()))
             {
                 RemoveAlpsTracks(copy, root);
