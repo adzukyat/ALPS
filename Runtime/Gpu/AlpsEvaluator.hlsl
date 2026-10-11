@@ -137,6 +137,7 @@ float _AlpsTime;
 #define FrameConeMeshLength 12
 #define FrameStride 13
 #define FrameAimed 13
+#define FrameShowToken 14
 
 // Most values one effect reads: a circle's turn, its center tilt and pan, and its radius.
 #define ALPS_MAX_SLOTS 4
@@ -814,10 +815,11 @@ bool AlpsIsDiscrete(int channel)
 
 // Channels a clip's own fade leaves alone. The fade dims the light, so the gobo, its turn and
 // the track effect hold what the clip gives them until the clip ends instead of falling back to
-// the default halfway through the fade.
+// the default halfway through the fade. Pan and tilt stop where the light was when nothing
+// moves them, so a fade blending them toward that would chase it frame by frame.
 bool AlpsIgnoresFade(int channel)
 {
-    return AlpsIsDiscrete(channel) || channel == FrameGoboRotation;
+    return AlpsIsDiscrete(channel) || channel == FrameGoboRotation || channel == FramePan || channel == FrameTilt;
 }
 
 // Channels of how the light looks, its colour and its cone, which mix as light.
@@ -834,7 +836,9 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
     return AlpsReadInt(show.groupIndex + group * show.groupColumns + fixture);
 }
 
-// The final frame of one fixture at <time>.
+// The final frame of one fixture at <time>. <held> is the pan and tilt of the previous frame
+// when <hasHeld>, which pan and tilt start from instead of the default, so a head nothing
+// moves stops where it was.
 //
 // Clips are listed by layer. Inside a layer, overlapping clips blend by their weights. A
 // layer then covers the layers below it by its total weight, per channel, so a later track
@@ -843,13 +847,19 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 // own fade scales its weight, so fading behaves like blending with an empty clip, except on
 // the channels the fade leaves alone (AlpsIgnoresFade). Colour and cone cover by brightness
 // as well (AlpsMixesAsLight), so they only blend with layers below that are lit.
-void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride], AlpsShow show)
+void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out float result[FrameStride], AlpsShow show)
 {
     int defaultRow = show.defaults + fixture * FrameStride;
     [unroll]
     for (int ch = 0; ch < FrameStride; ch++)
     {
         result[ch] = AlpsRead(defaultRow + ch);
+    }
+
+    if (hasHeld)
+    {
+        result[FramePan] = held.x;
+        result[FrameTilt] = held.y;
     }
 
     result[FrameBrightness] = 0.0;

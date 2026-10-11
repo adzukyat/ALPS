@@ -157,6 +157,7 @@ namespace AdzukiSoft.ALPS.Tests
             var context = OpenFreshScene();
             var authored = context.Fixtures.Select(FixtureState.Capture).ToArray();
             context.Sample(BaseTime);
+            var before = context.Frames();
 
             // Move the base clip away and rebuild, like a clip drag in the Timeline window.
             var baseClip = context.Timeline.GetRootTracks().OfType<AlpsTimelineTrack>().First().GetClips().First();
@@ -174,9 +175,10 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     float Channel(int channel) => frames[i * AlpsShowLayout.FrameStride + channel];
                     var diagnostics = $"authored: {authored[i]}";
-                    Assert.AreEqual(-authored[i].Pan, Channel(AlpsShowLayout.FramePan), Tolerance, "Undriven channels fall back to the authored state.\n" + diagnostics);
-                    Assert.AreEqual(authored[i].Tilt - AlpsShowPlayer.VrslDefaultTiltOffset, Channel(AlpsShowLayout.FrameTilt), Tolerance, diagnostics);
-                    Assert.AreEqual(authored[i].Color.r, Channel(AlpsShowLayout.FrameRed), Tolerance, "Not the white the preview gave VRSL.\n" + diagnostics);
+                    var stride = AlpsShowLayout.FrameStride;
+                    Assert.AreEqual(before[i * stride + AlpsShowLayout.FramePan], Channel(AlpsShowLayout.FramePan), Tolerance, "The head stops where it was, through the rebuild.\n" + diagnostics);
+                    Assert.AreEqual(before[i * stride + AlpsShowLayout.FrameTilt], Channel(AlpsShowLayout.FrameTilt), Tolerance, diagnostics);
+                    Assert.AreEqual(authored[i].Color.r, Channel(AlpsShowLayout.FrameRed), Tolerance, "Undriven channels fall back to the authored state, not the white the preview gave VRSL.\n" + diagnostics);
                     Assert.AreEqual(authored[i].Gobo, Channel(AlpsShowLayout.FrameGobo), Tolerance, diagnostics);
                 }
             }

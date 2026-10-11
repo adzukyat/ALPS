@@ -398,7 +398,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ClipFade_BlendsEveryChannelLikeAnEmptyClip()
+        public void ClipFade_LeavesTheMoveAlone()
         {
             var set = Set();
             var move = set.Add(AlpsEffectKind.Move);
@@ -408,11 +408,12 @@ namespace AdzukiSoft.ALPS.Tests
             set.fadeOutBeats = 1f;
             var show = Compile(1, set, end: 4f);
 
-            var entering = Evaluate(show, 0, 0.5f);
-            Assert.AreEqual(30f, entering[AlpsShowLayout.FrameTilt], 0.01f, "Half way from the default tilt of 0.");
-            Assert.AreEqual(45f, entering[AlpsShowLayout.FramePan], 0.01f, "Half way from the default pan of 0.");
-            Assert.AreEqual(60f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameTilt], 0.01f);
-            Assert.AreEqual(15f, Evaluate(show, 0, 3.75f)[AlpsShowLayout.FrameTilt], 0.01f, "A quarter of the fade out left.");
+            foreach (var time in new[] { 0.5f, 2f, 3.75f })
+            {
+                var frame = Evaluate(show, 0, time);
+                Assert.AreEqual(60f, frame[AlpsShowLayout.FrameTilt], 0.01f, "Pan and tilt stop where they are once nothing moves them, so a fade does not blend them.");
+                Assert.AreEqual(90f, frame[AlpsShowLayout.FramePan], 0.01f);
+            }
         }
 
         [Test]

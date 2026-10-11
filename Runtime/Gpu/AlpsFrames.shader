@@ -1,6 +1,10 @@
 // Evaluates the show. Each row of the target is one fixture, four RGBA texels wide, holding
-// the 13 frame channels of AlpsShowLayout in order and then whether the head is aimed at a
-// tracked user.
+// the 13 frame channels of AlpsShowLayout in order, whether the head is aimed at a tracked
+// user, and the token of the show that drew it.
+//
+// Pan and tilt start from the previous frame, so a head nothing moves stops where it was. The
+// frames targets are shared by every show of a scene, so only a previous frame the same show
+// drew counts, and a show without a token starts from the defaults.
 //
 // A head tracking a user turns toward the user's hips, found from the fixture's aim space
 // in the show data. It follows at the effect's speed from where the previous frames left it,
@@ -14,6 +18,7 @@ Shader "Hidden/ALPS/Frames"
         _AlpsTime ("Time", Float) = 0
         _AlpsDeltaTime ("Delta Time", Float) = 0
         _AlpsFrameRows ("Frame Rows", Float) = 1
+        _AlpsShowToken ("Show Token", Float) = 0
     }
 
     SubShader
@@ -34,6 +39,7 @@ Shader "Hidden/ALPS/Frames"
             Texture2D<float4> _AlpsPrevFrames;
             float _AlpsFrameRows;
             float _AlpsDeltaTime;
+            float _AlpsShowToken;
 
             // Hips positions of the tracked users, in the order of the show's user names.
             // w is 1 while the user is in the instance.
@@ -105,8 +111,12 @@ Shader "Hidden/ALPS/Frames"
                     return 0;
                 }
 
+                float4 previous = _AlpsPrevFrames.Load(int3(0, fixture, 0));
+                float token = _AlpsPrevFrames.Load(int3(FrameShowToken / 4, fixture, 0))[FrameShowToken % 4];
+                bool hasHeld = _AlpsShowToken > 0.5 && abs(token - _AlpsShowToken) < 0.5;
+
                 float frame[FrameStride];
-                AlpsEvaluateFixture(fixture, _AlpsTime, frame, show);
+                AlpsEvaluateFixture(fixture, _AlpsTime, hasHeld, float2(previous[FramePan], previous[FrameTilt]), frame, show);
                 float aimed = AlpsTrack(fixture, frame, show);
 
                 int first = (int)floor(i.uv.x * 4.0) * 4;
@@ -115,7 +125,7 @@ Shader "Hidden/ALPS/Frames"
                 for (int c = 0; c < 4; c++)
                 {
                     int ch = first + c;
-                    result[c] = ch < FrameStride ? frame[min(ch, FrameStride - 1)] : (ch == FrameAimed ? aimed : 0.0);
+                    result[c] = ch < FrameStride ? frame[min(ch, FrameStride - 1)] : (ch == FrameAimed ? aimed : (ch == FrameShowToken ? _AlpsShowToken : 0.0));
                 }
 
                 return result;

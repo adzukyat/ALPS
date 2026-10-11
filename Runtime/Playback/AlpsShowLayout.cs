@@ -197,6 +197,12 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public const int FrameAimed = 13;
 
+        /// <summary>
+        /// The token of the show that drew the frame, which only the GPU frames hold. Pan and
+        /// tilt start from the previous frame only when the same show drew it.
+        /// </summary>
+        public const int FrameShowToken = 14;
+
         // ==================================================================================
         // Helpers the compiler runs once
         // ==================================================================================

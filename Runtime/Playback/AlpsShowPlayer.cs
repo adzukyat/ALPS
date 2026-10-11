@@ -73,7 +73,7 @@ namespace AdzukiSoft.ALPS
         /// <summary>Most fixtures VRSL's 26 x 240 grid holds, one 13 channel row each within three universes.</summary>
         public const int GpuMaxFixtures = 118;
 
-        /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels and the aim flag.</summary>
+        /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels, the aim flag and the show token.</summary>
         public const int GpuFrameTexels = 4;
 
         /// <summary>Size of VRSL's horizontal DMX grid, which its shaders' texel maths expects.</summary>
@@ -109,10 +109,16 @@ namespace AdzukiSoft.ALPS
         /// <summary>Whether the VRSL the world was built with is older than 2.7 (<see cref="AlpsVrslVersion"/>).</summary>
         public bool vrslLegacy;
 
+        /// <summary>
+        /// Tells this show's frames from the other shows' in the shared frames targets, so pan
+        /// and tilt only carry on from a frame this show drew. Above 0, one per show of the scene.
+        /// </summary>
+        public int showToken;
+
         public Material framesMaterial;
         public Material gridMaterial;
 
-        /// <summary>Two frames targets taken in turn, so a tracking head can follow on from the last frame.</summary>
+        /// <summary>Two frames targets taken in turn, so a head can carry on from the last frame.</summary>
         public RenderTexture frames;
         public RenderTexture framesPrevious;
         public RenderTexture grid;
@@ -133,6 +139,7 @@ namespace AdzukiSoft.ALPS
         private int _idTime;
         private int _idDeltaTime;
         private int _idFrameRows;
+        private int _idShowToken;
 
         private void Start()
         {
@@ -190,6 +197,7 @@ namespace AdzukiSoft.ALPS
             _idTime = VRCShader.PropertyToID("_AlpsTime");
             _idDeltaTime = VRCShader.PropertyToID("_AlpsDeltaTime");
             _idFrameRows = VRCShader.PropertyToID("_AlpsFrameRows");
+            _idShowToken = VRCShader.PropertyToID("_AlpsShowToken");
             _idTargets = new int[GpuMaxTrackedUsers];
             for (var u = 0; u < GpuMaxTrackedUsers; u++)
             {
@@ -233,6 +241,7 @@ namespace AdzukiSoft.ALPS
             framesMaterial.SetFloat(_idTime, time);
             framesMaterial.SetFloat(_idDeltaTime, deltaTime);
             framesMaterial.SetFloat(_idFrameRows, target.height);
+            framesMaterial.SetFloat(_idShowToken, showToken);
             gridMaterial.SetTexture(_idData, _data);
             RenderPasses(_data, framesMaterial, gridMaterial, target, grid, spin);
         }

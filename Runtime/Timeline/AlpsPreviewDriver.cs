@@ -31,6 +31,7 @@ namespace AdzukiSoft.ALPS
             public Material gpuFramesMaterial;
             public Material gpuGridMaterial;
             public RenderTexture gpuFrames;
+            public RenderTexture gpuFramesPrevious;
             public RenderTexture gpuGrid;
             public RenderTexture gpuSpin;
         }
@@ -157,6 +158,9 @@ namespace AdzukiSoft.ALPS
             state.gpuFramesMaterial.SetFloat("_AlpsTime", time);
             AlpsShowPlayer.BindGrid(state.gpuGrid, state.gpuSpin);
             AlpsShowPlayer.RenderPasses(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+
+            // The next frame carries pan and tilt on from this one.
+            Graphics.CopyTexture(state.gpuFrames, state.gpuFramesPrevious);
         }
 
         /// <summary>The frames target a director's preview last drew, for tests and debugging.</summary>
@@ -223,8 +227,18 @@ namespace AdzukiSoft.ALPS
                 System.Array.Copy(captured, 0, state.defaults, i * stride, stride);
             }
 
+            // An edit compiles the show again, and the heads stay where they were if the
+            // fixtures did not change.
+            var previous = state.gpuFramesPrevious;
+            state.gpuFramesPrevious = null;
             ReleaseGpu(state);
             SetUpGpu(state);
+            if (previous != null && state.gpuFramesPrevious != null && previous.height == state.gpuFramesPrevious.height)
+            {
+                Graphics.CopyTexture(previous, state.gpuFramesPrevious);
+            }
+
+            DestroyGpuObject(previous);
             return state.show;
         }
 
@@ -278,10 +292,13 @@ namespace AdzukiSoft.ALPS
             state.gpuGridMaterial = new Material(gridShader) { hideFlags = HideFlags.HideAndDontSave };
             AlpsVrslVersion.Apply(state.gpuGridMaterial);
             state.gpuFrames = CreateGpuTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, count);
+            state.gpuFramesPrevious = CreateGpuTarget("ALPS Frames Previous", AlpsShowPlayer.GpuFrameTexels, count);
             state.gpuGrid = CreateGpuTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
             state.gpuSpin = CreateGpuTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight);
             state.gpuFramesMaterial.SetTexture("_AlpsData", state.gpuData);
+            state.gpuFramesMaterial.SetTexture("_AlpsPrevFrames", state.gpuFramesPrevious);
             state.gpuFramesMaterial.SetFloat("_AlpsFrameRows", state.gpuFrames.height);
+            state.gpuFramesMaterial.SetFloat("_AlpsShowToken", 1f);
             state.gpuGridMaterial.SetTexture("_AlpsData", state.gpuData);
         }
 
@@ -307,12 +324,14 @@ namespace AdzukiSoft.ALPS
             DestroyGpuObject(state.gpuFramesMaterial);
             DestroyGpuObject(state.gpuGridMaterial);
             DestroyGpuObject(state.gpuFrames);
+            DestroyGpuObject(state.gpuFramesPrevious);
             DestroyGpuObject(state.gpuGrid);
             DestroyGpuObject(state.gpuSpin);
             state.gpuData = null;
             state.gpuFramesMaterial = null;
             state.gpuGridMaterial = null;
             state.gpuFrames = null;
+            state.gpuFramesPrevious = null;
             state.gpuGrid = null;
             state.gpuSpin = null;
         }

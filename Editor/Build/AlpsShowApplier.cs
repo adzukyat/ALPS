@@ -63,9 +63,9 @@ namespace AdzukiSoft.ALPS.Editor
             var rows = AssignDmxRows(directors, errors);
             if (errors.Count == startErrors)
             {
-                foreach (var director in directors)
+                for (var i = 0; i < directors.Count; i++)
                 {
-                    ApplyDirector(director, generateTimelines, builds, rows, errors);
+                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, errors);
                 }
             }
 
@@ -100,7 +100,7 @@ namespace AdzukiSoft.ALPS.Editor
             return rows;
         }
 
-        private static void ApplyDirector(PlayableDirector director, bool generateTimelines,
+        private static void ApplyDirector(PlayableDirector director, int showToken, bool generateTimelines,
             Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
@@ -144,6 +144,7 @@ namespace AdzukiSoft.ALPS.Editor
             CopyShowToPlayer(show, player, director);
             player.dmxRows = new int[show.fixtures.Count];
             player.vrslLegacy = AlpsVrslVersion.IsLegacy;
+            player.showToken = showToken;
             for (var i = 0; i < show.fixtures.Count; i++)
             {
                 var fixture = show.fixtures[i];

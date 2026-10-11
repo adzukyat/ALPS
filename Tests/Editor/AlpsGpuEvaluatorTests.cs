@@ -58,6 +58,7 @@ namespace AdzukiSoft.ALPS.Tests
             var gpu = Keep(new AlpsGpuShow(show, 1, aim: aim));
             var previous = Keep(AlpsPreviewDriver.CreateGpuTarget("Previous", AlpsShowPlayer.GpuFrameTexels, 1));
             gpu.FramesMaterial.SetTexture("_AlpsPrevFrames", previous);
+            gpu.FramesMaterial.SetFloat("_AlpsShowToken", 1f);
 
             float[] Render(Vector3 head, float deltaTime)
             {
@@ -89,12 +90,48 @@ namespace AdzukiSoft.ALPS.Tests
             var expectedPan = aimed[AlpsShowLayout.FramePan] + Mathf.DeltaAngle(aimed[AlpsShowLayout.FramePan], Pan(second)) * share;
             Assert.AreEqual(expectedPan, followed[AlpsShowLayout.FramePan], 0.01f, "Pan follows the short way round.");
 
-            // Once the user leaves, the head keeps what the layers give it and is no longer aimed.
+            // Once the user leaves, nothing else moves the head, so it stops where it was.
             gpu.FramesMaterial.SetVector("_AlpsTrackTarget0", Vector4.zero);
             gpu.Render(1f);
             var gone = AlpsGpuShow.ReadFrames(gpu.Frames, 1, AlpsShowLayout.FrameAimed + 1);
             Assert.AreEqual(0f, gone[AlpsShowLayout.FrameAimed]);
-            Assert.AreEqual(0f, gone[AlpsShowLayout.FramePan], 0.001f, "The neutral default pan.");
+            Assert.AreEqual(followed[AlpsShowLayout.FramePan], gone[AlpsShowLayout.FramePan], 0.001f, "The pan the head was following with.");
+            Assert.AreEqual(followed[AlpsShowLayout.FrameTilt], gone[AlpsShowLayout.FrameTilt], 0.001f);
+        }
+
+        [Test]
+        public void Hold_StopsTheHeadWhereTheMoveEnded()
+        {
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.pan.value = 40f;
+            move.tilt.value = 20f;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 2f });
+            var gpu = Keep(new AlpsGpuShow(show, 1));
+            var previous = Keep(AlpsPreviewDriver.CreateGpuTarget("Previous", AlpsShowPlayer.GpuFrameTexels, 1));
+            gpu.FramesMaterial.SetTexture("_AlpsPrevFrames", previous);
+
+            float[] Render(float time, float token)
+            {
+                gpu.FramesMaterial.SetFloat("_AlpsShowToken", token);
+                gpu.Render(time);
+                var frame = AlpsGpuShow.ReadFrames(gpu.Frames, 1, AlpsShowLayout.FrameShowToken + 1);
+                Graphics.Blit(gpu.Frames, previous);
+                return frame;
+            }
+
+            var moving = Render(1f, 1f);
+            Assert.AreEqual(40f, moving[AlpsShowLayout.FramePan], 0.01f);
+            Assert.AreEqual(1f, moving[AlpsShowLayout.FrameShowToken], "The frame carries its show's token.");
+
+            var held = Render(3f, 1f);
+            Assert.AreEqual(40f, held[AlpsShowLayout.FramePan], 0.01f, "Past the clip the head stops where it was.");
+            Assert.AreEqual(20f, held[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(0f, held[AlpsShowLayout.FrameBrightness], 0.01f, "Only pan and tilt hold.");
+
+            var other = Render(3f, 2f);
+            Assert.AreEqual(0f, other[AlpsShowLayout.FramePan], 0.01f, "Another show's frame does not count, so the default pan.");
+            Assert.AreEqual(0f, other[AlpsShowLayout.FrameTilt], 0.01f);
         }
 
         /// <summary>Pan that points the head at a point in its aim space. VRSL pans around the mesh's local Z axis.</summary>
