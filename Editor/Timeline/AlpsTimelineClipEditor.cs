@@ -33,6 +33,7 @@ namespace AdzukiSoft.ALPS.Editor
             public AlpsClipEffectSet set;
             public float start;
             public float end;
+            public float clipIn;
             public float bpm;
             public int fixtureCount;
             public int seed;
@@ -178,7 +179,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             entry.key = key;
-            entry.strip = AlpsClipStrip.Build(key.set, key.fixtureCount, key.bpm, key.start, key.end, key.seed);
+            entry.strip = AlpsClipStrip.Build(key.set, key.fixtureCount, key.bpm, key.start, key.end, key.clipIn, key.seed);
             SetTexture(entry);
             return entry;
         }
@@ -198,6 +199,7 @@ namespace AdzukiSoft.ALPS.Editor
                 set = asset.EffectiveData,
                 start = (float)clip.start,
                 end = (float)clip.end,
+                clipIn = (float)clip.clipIn,
                 bpm = AlpsTimelineTrack.ShowBpm(track != null ? track.timelineAsset : null),
                 fixtureCount = Mathf.Max(1, fixtureCount),
                 seed = AlpsShowCompiler.SeedFor(clip, Mathf.Max(0, layer)),
@@ -209,6 +211,7 @@ namespace AdzukiSoft.ALPS.Editor
             return ReferenceEquals(a.set, b.set)
                 && a.start == b.start
                 && a.end == b.end
+                && a.clipIn == b.clipIn
                 && a.bpm == b.bpm
                 && a.fixtureCount == b.fixtureCount
                 && a.seed == b.seed;

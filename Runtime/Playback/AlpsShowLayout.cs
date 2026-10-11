@@ -108,7 +108,12 @@ namespace AdzukiSoft.ALPS
         /// two entries, its order position k and 1 when its pan is mirrored.
         /// </summary>
         public const int ClipPositionStart = 13;
-        public const int ClipPhase = 14;
+        /// <summary>
+        /// Seconds of the clip Timeline's Clip In skips at its start, which the beats count on
+        /// from, so the second half of a split clip plays on from where the first half stopped.
+        /// </summary>
+        public const int ClipIn = 14;
+        public const int ClipPhase = 15;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;

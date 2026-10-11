@@ -11,6 +11,8 @@ namespace AdzukiSoft.ALPS
         public AlpsClipEffectSet set;
         public float start;
         public float end = 1f;
+        /// <summary>Seconds skipped at the clip's start, as Timeline's Clip In.</summary>
+        public float clipIn;
         public float mixIn;
         public float mixOut;
         public int layer;
@@ -60,7 +62,7 @@ namespace AdzukiSoft.ALPS
             builder.AddStandaloneGroup(fixtureCount);
             foreach (var clip in clips)
             {
-                builder.AddClipRow(clip.set, clip.start, clip.end, clip.mixIn, clip.mixOut, null, null, clip.layer, 0, clip.seed);
+                builder.AddClipRow(clip.set, clip.start, clip.end, clip.clipIn, clip.mixIn, clip.mixOut, null, null, clip.layer, 0, clip.seed);
             }
 
             builder.Finish();
@@ -153,10 +155,14 @@ namespace AdzukiSoft.ALPS
             return -2;
         }
 
-        /// <summary>A stable seed for a clip, so its noise and fire chance match between runs.</summary>
+        /// <summary>
+        /// A stable seed for a clip, so its noise and fire chance match between runs. It counts
+        /// from where the clip would start without its Clip In, so both halves of a split clip
+        /// share it.
+        /// </summary>
         public static int SeedFor(TimelineClip clip, int layer)
         {
-            return (Mathf.RoundToInt((float)(clip.start * 1000.0)) % 65536) + layer * 7919;
+            return (Mathf.RoundToInt((float)((clip.start - clip.clipIn) * 1000.0)) % 65536) + layer * 7919;
         }
 
         private sealed class Builder
@@ -277,6 +283,7 @@ namespace AdzukiSoft.ALPS
                     asset.EffectiveData,
                     (float)clip.start,
                     (float)clip.end,
+                    (float)clip.clipIn,
                     (float)clip.mixInDuration,
                     (float)clip.mixOutDuration,
                     clip.mixInCurve,
@@ -300,6 +307,7 @@ namespace AdzukiSoft.ALPS
                 AlpsClipEffectSet set,
                 float start,
                 float end,
+                float clipIn,
                 float mixInDuration,
                 float mixOutDuration,
                 AnimationCurve mixInCurve,
@@ -313,8 +321,8 @@ namespace AdzukiSoft.ALPS
                     return;
                 }
 
-                // A clip's own tempo replaces the show's. Beats always count from the clip's
-                // start, which the evaluator reads from the start column.
+                // A clip's own tempo replaces the show's. Beats count from the clip's start, which
+                // the evaluator reads from the start column, plus the seconds its Clip In skips.
                 var bpm = set.bpm > 0f ? set.bpm : _showBpm;
 
                 _clipOrder = (int)set.order;
@@ -338,6 +346,7 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowLayout.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
                 row[AlpsShowLayout.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
                 row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex);
+                row[AlpsShowLayout.ClipIn] = Mathf.Max(0f, clipIn);
                 WritePhase(row, AlpsShowLayout.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowLayout.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowLayout.ClipMixOutCurve, mixOutCurve, 1f, 0f);

@@ -85,7 +85,8 @@ float _AlpsTime;
 #define ClipFadeIn 11
 #define ClipFadeOut 12
 #define ClipPositionStart 13
-#define ClipPhase 14
+#define ClipIn 14
+#define ClipPhase 15
 #define CurveSamples 16
 #define ClipMixInCurve (ClipPhase + PhaseStride)
 #define ClipMixOutCurve (ClipMixInCurve + CurveSamples)
@@ -634,7 +635,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
     c.row = show.clips + clip * ClipStride;
     int phaseRow = c.row + ClipPhase;
     c.seed = AlpsReadInt(c.row + ClipSeed);
-    c.beats = AlpsBeats(time, AlpsRead(c.row + ClipBpm), AlpsRead(c.row + ClipStart));
+    c.beats = AlpsBeats(time + AlpsRead(c.row + ClipIn), AlpsRead(c.row + ClipBpm), AlpsRead(c.row + ClipStart));
     int positionRow = show.positions + AlpsReadInt(c.row + ClipPositionStart) + fixtureIndex * 2;
     c.k = AlpsReadInt(positionRow);
     bool mirrored = AlpsRead(positionRow + 1) > 0.5;

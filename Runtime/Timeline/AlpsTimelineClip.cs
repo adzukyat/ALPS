@@ -18,7 +18,8 @@ namespace AdzukiSoft.ALPS
         [Tooltip("Play the profile's effects instead of the clip's own.")]
         public bool syncProfile;
 
-        public ClipCaps clipCaps => ClipCaps.Blending;
+        // Clip In lets a split clip's second half play on from where the first half stopped.
+        public ClipCaps clipCaps => ClipCaps.Blending | ClipCaps.ClipIn;
 
         /// <summary>The effect set that plays, which is the profile's while synced.</summary>
         public AlpsClipEffectSet EffectiveData => syncProfile && profile != null && profile.data != null ? profile.data : data;

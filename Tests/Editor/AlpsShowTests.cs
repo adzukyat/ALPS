@@ -331,6 +331,61 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void ClipIn_SkipsThatMuchOfTheClip()
+        {
+            var set = Set();
+            var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            var show = AlpsShowCompiler.CompileStandalone(
+                1, Bpm, new AlpsStandaloneClip { set = set, start = 0.5f, end = 2f, clipIn = 0.25f });
+
+            Assert.AreEqual(25f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "The clip starts a quarter beat in.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
+        }
+
+        [Test]
+        public void ClipIn_TheSecondHalfOfASplitPlaysOn()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            set.Add(AlpsEffectKind.Gobo).goboRotationBeats = 4f;
+            var whole = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 4f });
+            var split = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = set, start = 0f, end = 1.5f },
+                new AlpsStandaloneClip { set = set, start = 2.5f, end = 4f, clipIn = 2.5f });
+
+            Assert.AreEqual(
+                Evaluate(whole, 0, 3f)[AlpsShowLayout.FrameGoboRotation],
+                Evaluate(split, 0, 3f)[AlpsShowLayout.FrameGoboRotation],
+                0.01f,
+                "After the gap the gobo turns on as if the clip had never been split.");
+        }
+
+        [Test]
+        public void ClipIn_BothHalvesOfASplitShareTheSeed()
+        {
+            var timeline = ScriptableObject.CreateInstance<UnityEngine.Timeline.TimelineAsset>();
+            try
+            {
+                var track = timeline.CreateTrack<AlpsTimelineTrack>(null, "Track");
+                var first = track.CreateClip<AlpsTimelineClip>();
+                first.start = 2.0;
+                var second = track.CreateClip<AlpsTimelineClip>();
+                second.start = 3.0;
+                second.clipIn = 1.0;
+
+                Assert.AreEqual(AlpsShowCompiler.SeedFor(first, 0), AlpsShowCompiler.SeedFor(second, 0), "Noise and fire chance play on across the split.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(timeline);
+            }
+        }
+
+        [Test]
         public void Tempo_BeatsCountFromTheClipStart()
         {
             var set = Set();
