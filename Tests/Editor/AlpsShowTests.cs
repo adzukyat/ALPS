@@ -439,6 +439,68 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void ClipFade_KeepsTheColourOverNothingLit()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
+            set.fadeInBeats = 2f;
+            set.fadeOutBeats = 2f;
+            var show = Compile(1, set, end: 8f);
+
+            foreach (var time in new[] { 0.5f, 7.5f })
+            {
+                var frame = Evaluate(show, 0, time);
+                Assert.AreEqual(25f, frame[AlpsShowLayout.FrameBrightness], 0.01f, "The fade still dims the light.");
+                Assert.AreEqual(1f, frame[AlpsShowLayout.FrameRed], 0.001f);
+                Assert.AreEqual(0f, frame[AlpsShowLayout.FrameGreen], 0.001f, "Not washed toward the white default.");
+                Assert.AreEqual(0f, frame[AlpsShowLayout.FrameBlue], 0.001f);
+            }
+        }
+
+        [Test]
+        public void ClipFade_KeepsTheConeOverNothingLit()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var cone = set.Add(AlpsEffectKind.Cone);
+            cone.coneWidth.value = 10f;
+            cone.coneLength.value = 7f;
+            set.fadeInBeats = 2f;
+            set.fadeOutBeats = 2f;
+            var show = Compile(1, set, end: 8f);
+
+            foreach (var time in new[] { 0.5f, 7.5f })
+            {
+                var frame = Evaluate(show, 0, time);
+                Assert.AreEqual(25f, frame[AlpsShowLayout.FrameBrightness], 0.01f, "The fade still dims the light.");
+                Assert.AreEqual(10f, frame[AlpsShowLayout.FrameConeWidth], 0.001f, "Not pulled toward the default width.");
+                Assert.AreEqual(7f, frame[AlpsShowLayout.FrameConeLength], 0.001f, "Not pulled toward the default length.");
+            }
+        }
+
+        [Test]
+        public void ClipFade_MixesTheColourWithALitLayerBelow()
+        {
+            var below = Set();
+            below.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            below.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
+            var above = Set();
+            above.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            above.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.blue));
+            above.fadeInBeats = 2f;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = below, start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1 });
+
+            var frame = Evaluate(show, 0, 1f);
+            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameRed], 0.001f, "Half way from the red below to blue.");
+            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameBlue], 0.001f);
+        }
+
+        [Test]
         public void ClipFade_BlendsTowardTheLayerBelow()
         {
             var below = Set();

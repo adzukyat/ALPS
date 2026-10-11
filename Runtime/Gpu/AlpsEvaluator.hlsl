@@ -820,6 +820,13 @@ bool AlpsIgnoresFade(int channel)
     return AlpsIsDiscrete(channel) || channel == FrameGoboRotation;
 }
 
+// Channels of how the light looks, its colour and its cone, which mix as light.
+bool AlpsMixesAsLight(int channel)
+{
+    return channel == FrameRed || channel == FrameGreen || channel == FrameBlue
+        || channel == FrameConeWidth || channel == FrameConeLength;
+}
+
 // Position of a fixture inside a group, or -1 when it is not a member.
 int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 {
@@ -834,7 +841,8 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 // only overrides the channels its effects drive. Channels nobody drives keep the fixture
 // default, except brightness, which is dark until a brightness effect lights it. A clip's
 // own fade scales its weight, so fading behaves like blending with an empty clip, except on
-// the channels the fade leaves alone (AlpsIgnoresFade).
+// the channels the fade leaves alone (AlpsIgnoresFade). Colour and cone cover by brightness
+// as well (AlpsMixesAsLight), so they only blend with layers below that are lit.
 void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride], AlpsShow show)
 {
     int defaultRow = show.defaults + fixture * FrameStride;
@@ -871,15 +879,29 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
         float clipLayer = last ? -2.0 : AlpsRead(row + ClipLayer);
         if (clipLayer != layer)
         {
+            // Colour and cone mix as light: each side counts by how bright it is, so a dark
+            // layer below, or the empty clip a fade blends with, does not pull them toward the
+            // default.
+            float below = result[FrameBrightness];
+            float above = weightSum[FrameBrightness] > 0.0 ? sum[FrameBrightness] / weightSum[FrameBrightness] : below;
+
             [unroll]
             for (int ch = 0; ch < FrameStride; ch++)
             {
                 float coverage = weightSum[ch];
                 if (coverage > 0.0)
                 {
+                    float share = saturate(coverage);
+                    if (AlpsMixesAsLight(ch))
+                    {
+                        float lit = share * above;
+                        float mixed = lit + (1.0 - share) * below;
+                        share = mixed > 0.0 ? lit / mixed : 1.0;
+                    }
+
                     result[ch] = AlpsIsDiscrete(ch)
                         ? (coverage >= 0.5 ? sum[ch] : result[ch])
-                        : lerp(result[ch], sum[ch] / coverage, saturate(coverage));
+                        : lerp(result[ch], sum[ch] / coverage, share);
                 }
 
                 sum[ch] = 0.0;
