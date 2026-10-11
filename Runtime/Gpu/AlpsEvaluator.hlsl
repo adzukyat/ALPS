@@ -812,6 +812,14 @@ bool AlpsIsDiscrete(int channel)
     return channel == FrameGobo || channel == FrameTrackEffect;
 }
 
+// Channels a clip's own fade leaves alone. The fade dims the light, so the gobo, its turn and
+// the track effect hold what the clip gives them until the clip ends instead of falling back to
+// the default halfway through the fade.
+bool AlpsIgnoresFade(int channel)
+{
+    return AlpsIsDiscrete(channel) || channel == FrameGoboRotation;
+}
+
 // Position of a fixture inside a group, or -1 when it is not a member.
 int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 {
@@ -825,7 +833,8 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 // layer then covers the layers below it by its total weight, per channel, so a later track
 // only overrides the channels its effects drive. Channels nobody drives keep the fixture
 // default, except brightness, which is dark until a brightness effect lights it. A clip's
-// own fade scales its weight, so fading behaves like blending with an empty clip.
+// own fade scales its weight, so fading behaves like blending with an empty clip, except on
+// the channels the fade leaves alone (AlpsIgnoresFade).
 void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride], AlpsShow show)
 {
     int defaultRow = show.defaults + fixture * FrameStride;
@@ -882,10 +891,9 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
 
         if (last) break;
 
-        float weight = AlpsClipWeight(row, time);
-        if (weight <= 0.0) continue;
-        weight *= AlpsClipFade(row, time);
-        if (weight <= 0.0) continue;
+        float mixWeight = AlpsClipWeight(row, time);
+        if (mixWeight <= 0.0) continue;
+        float fadedWeight = mixWeight * AlpsClipFade(row, time);
 
         int index = AlpsIndexInGroup(show, AlpsReadInt(row + ClipGroup), fixture);
         if (index < 0) continue;
@@ -904,6 +912,8 @@ void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride],
         for (int ch = 0; ch < FrameStride; ch++)
         {
             if (!frame.written[ch]) continue;
+            float weight = AlpsIgnoresFade(ch) ? mixWeight : fadedWeight;
+            if (weight <= 0.0) continue;
             if (AlpsIsDiscrete(ch))
             {
                 if (weight > weightSum[ch])

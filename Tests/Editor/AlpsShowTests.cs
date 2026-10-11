@@ -416,6 +416,29 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void ClipFade_LeavesTheGoboAndItsTurnAlone()
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var gobo = set.Add(AlpsEffectKind.Gobo);
+            gobo.goboStops.Add(new AlpsGoboStop(5));
+            gobo.goboRotationBeats = 4f;
+            set.fadeInBeats = 2f;
+            set.fadeOutBeats = 2f;
+            var show = Compile(1, set, end: 8f);
+
+            var entering = Evaluate(show, 0, 0.5f);
+            Assert.AreEqual(25f, entering[AlpsShowLayout.FrameBrightness], 0.01f, "The fade still dims the light.");
+            Assert.AreEqual(5f, entering[AlpsShowLayout.FrameGobo], 0.001f, "The gobo is in from the first quarter of the fade.");
+            Assert.AreEqual(45f, entering[AlpsShowLayout.FrameGoboRotation], 0.01f, "The turn is not pulled toward the default.");
+
+            var leaving = Evaluate(show, 0, 7.5f);
+            Assert.AreEqual(25f, leaving[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(5f, leaving[AlpsShowLayout.FrameGobo], 0.001f, "The gobo stays until the clip ends.");
+            Assert.AreEqual(315f, leaving[AlpsShowLayout.FrameGoboRotation], 0.01f);
+        }
+
+        [Test]
         public void ClipFade_BlendsTowardTheLayerBelow()
         {
             var below = Set();
