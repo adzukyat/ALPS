@@ -59,6 +59,22 @@ namespace AdzukiSoft.ALPS
             AlpsShowPlayer.WriteNeutralDmxInfo(info, infoOffset);
         }
 
+        /// <summary>
+        /// Adds the renderers that draw the light's projection onto surfaces, which the gobo's
+        /// projection switch hides (<see cref="AlpsProjection"/>).
+        /// </summary>
+        public virtual void CollectProjectionRenderers(List<Renderer> into)
+        {
+        }
+
+        /// <summary>
+        /// Shows or hides the projection while previewing. A renderer the scene has turned
+        /// off stays off. <see cref="RestoreAuthored"/> puts it back.
+        /// </summary>
+        public virtual void SetPreviewProjection(bool visible)
+        {
+        }
+
         public override void CollectFixtures(List<AlpsFixture> into)
         {
             into.Add(this);

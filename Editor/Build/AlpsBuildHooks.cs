@@ -47,7 +47,7 @@ namespace AdzukiSoft.ALPS.Editor
                 foreach (var director in AlpsShowApplier.FindShowDirectors(scene))
                 {
                     hasShow = true;
-                    AlpsBuildTimeline.Generate((UnityEngine.Timeline.TimelineAsset)director.playableAsset, errors);
+                    AlpsBuildTimeline.Generate((UnityEngine.Timeline.TimelineAsset)director.playableAsset, AlpsShowCompiler.Compile(director), errors);
                 }
             }
 

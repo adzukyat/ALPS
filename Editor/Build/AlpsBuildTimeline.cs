@@ -9,7 +9,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// The timeline a built world plays: a copy of the authoring timeline with the ALPS
     /// tracks removed, since the Udon player takes their place. Every other track stays
-    /// exactly as authored and keeps its director binding.
+    /// exactly as authored and keeps its director binding. Animation Tracks that switch the
+    /// gobo projection (<see cref="AlpsProjectionTracks"/>) are added after them.
     /// </summary>
     public static class AlpsBuildTimeline
     {
@@ -28,8 +29,11 @@ namespace AdzukiSoft.ALPS.Editor
             return $"{Folder}/{Sanitize(source.name)}_{shortGuid}_Build.playable";
         }
 
-        /// <summary>Rewrites the build copy of <paramref name="source"/> from its saved state.</summary>
-        public static TimelineAsset Generate(TimelineAsset source, List<string> errors)
+        /// <summary>
+        /// Rewrites the build copy of <paramref name="source"/> from its saved state, with the
+        /// projection tracks of <paramref name="show"/>, the show it compiles to.
+        /// </summary>
+        public static TimelineAsset Generate(TimelineAsset source, AlpsCompiledShow show, List<string> errors)
         {
             var sourcePath = AssetDatabase.GetAssetPath(source);
             if (string.IsNullOrEmpty(sourcePath))
@@ -72,6 +76,9 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 RemoveAlpsTracks(copy, root);
             }
+
+            // Added last, so the other tracks keep the positions their bindings are matched by.
+            AlpsProjectionTracks.Write(copy, show);
 
             EditorUtility.SetDirty(copy);
             AssetDatabase.SaveAssetIfDirty(copy);

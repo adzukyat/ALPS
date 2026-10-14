@@ -139,6 +139,7 @@ namespace AdzukiSoft.ALPS
                 { "effect.fixtureStagger", "조명 간 지연" },
                 { "effect.gobo.rotationSpeed", "회전 속도" },
                 { "effect.gobo.perTurn", "/ 1회전" },
+                { "effect.gobo.projection", "프로젝션" },
                 { "effect.phaseOffset", "위상 오프셋" },
                 { "effect.phaseOffset.tip", "이 효과의 움직임을 주기의 몇 % 지연시킬지입니다. 짝수와 홀수로 나눈 한쪽을 50%로 하면 번갈아 움직입니다." },
 

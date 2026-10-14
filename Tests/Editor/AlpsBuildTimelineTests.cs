@@ -70,7 +70,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             _buildPath = AlpsBuildTimeline.PathFor(source);
             var errors = new List<string>();
-            var build = AlpsBuildTimeline.Generate(source, errors);
+            var build = AlpsBuildTimeline.Generate(source, new AlpsCompiledShow(), errors);
             Assert.IsEmpty(errors, string.Join("\n", errors));
             Assert.NotNull(build);
             Assert.IsFalse(AlpsBuildTimeline.HasAlpsTracks(build));

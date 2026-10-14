@@ -405,6 +405,17 @@ namespace AdzukiSoft.ALPS.Editor
             _animatables.Add(view);
             body.Add(view);
 
+            // On shows the projection, which the model stores as off so effects saved before it load on.
+            var projection = new AlpsToggleSwitch(AlpsStrings.Tr("effect.gobo.projection"));
+            projection.SetValueWithoutNotify(!_effect.goboProjectionOff);
+            projection.RegisterValueChangedCallback(evt =>
+            {
+                _effect.goboProjectionOff = !evt.newValue;
+                _onChanged?.Invoke();
+            });
+            _mixed?.Bind(projection, _effect, nameof(AlpsEffect.goboProjectionOff));
+            body.Add(projection);
+
             var rotation = new AlpsStepper(AlpsStrings.Tr("effect.gobo.rotationSpeed"), AlpsStrings.Tr("unit.beats"), 1f, AlpsStrings.Tr("effect.gobo.perTurn")) { Minimum = 0f, Subdivides = true };
             rotation.SetValueWithoutNotify(_effect.goboRotationBeats);
             rotation.RegisterValueChangedCallback(evt =>

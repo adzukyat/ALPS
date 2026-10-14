@@ -442,6 +442,7 @@ namespace AdzukiSoft.ALPS
 
                         row[AlpsShowLayout.EffectScalarA] = effect.goboRotationBeats;
                         row[AlpsShowLayout.EffectScalarB] = effect.goboFixtureStaggerDegrees;
+                        row[AlpsShowLayout.EffectScalarC] = effect.goboProjectionOff ? 1f : 0f;
                         break;
                 }
 

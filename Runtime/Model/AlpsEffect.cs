@@ -91,6 +91,12 @@ namespace AdzukiSoft.ALPS
         /// <summary>Rotation speed in beats per full turn. 0 does not rotate.</summary>
         public float goboRotationBeats;
         public float goboFixtureStaggerDegrees;
+        /// <summary>
+        /// Hides the pattern the light projects onto surfaces, while the beam keeps its gobo.
+        /// VRSL has no DMX channel for it, so a build switches the projection renderers with an
+        /// Animation Track instead (<see cref="AlpsProjection"/>), as a discrete channel like the gobo.
+        /// </summary>
+        public bool goboProjectionOff;
 
         public AlpsEffect() { }
 
@@ -144,6 +150,7 @@ namespace AdzukiSoft.ALPS
             goboPhasing = new AlpsAnimatableValue(other.goboPhasing);
             goboRotationBeats = other.goboRotationBeats;
             goboFixtureStaggerDegrees = other.goboFixtureStaggerDegrees;
+            goboProjectionOff = other.goboProjectionOff;
         }
 
         /// <summary>Both Tilt and Pan ranged, the condition for showing phase offset.</summary>

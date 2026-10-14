@@ -139,6 +139,7 @@ namespace AdzukiSoft.ALPS
                 { "effect.fixtureStagger", "Fixture Offset" },
                 { "effect.gobo.rotationSpeed", "Rotation Speed" },
                 { "effect.gobo.perTurn", "/ 1 turn" },
+                { "effect.gobo.projection", "Projection" },
                 { "effect.phaseOffset", "Phase Offset" },
                 { "effect.phaseOffset.tip", "How much of a cycle to delay this effect's motion, as a percentage. Setting one of the even/odd halves to 50% makes them alternate." },
 

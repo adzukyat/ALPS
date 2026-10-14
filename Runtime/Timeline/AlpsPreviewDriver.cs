@@ -25,6 +25,8 @@ namespace AdzukiSoft.ALPS
             public float lastTime = float.NaN;
             public AlpsCompiledShow show;
             public float[] defaults = new float[0];
+            /// <summary>Whether the last frame hid a projection, so an edit that clears every switch shows them again.</summary>
+            public bool projectionSwitched;
             public readonly Dictionary<AlpsFixture, float[]> captured = new Dictionary<AlpsFixture, float[]>();
 
             public Texture2D gpuData;
@@ -161,6 +163,32 @@ namespace AdzukiSoft.ALPS
 
             // The next frame carries pan and tilt on from this one.
             Graphics.CopyTexture(state.gpuFrames, state.gpuFramesPrevious);
+
+            ApplyProjection(state, time);
+        }
+
+        /// <summary>
+        /// Shows or hides each fixture's projection, which VRSL cannot take from the grid. A
+        /// show without a gobo that hides it leaves the renderers alone.
+        /// </summary>
+        private static void ApplyProjection(State state, float time)
+        {
+            var show = state.show;
+            var switches = AlpsProjection.AnyOff(show);
+            if (!switches && !state.projectionSwitched)
+            {
+                return;
+            }
+
+            state.projectionSwitched = switches;
+            for (var i = 0; i < show.fixtures.Count; i++)
+            {
+                var fixture = show.fixtures[i];
+                if (fixture != null)
+                {
+                    fixture.SetPreviewProjection(!switches || AlpsProjection.IsLit(show, i, time));
+                }
+            }
         }
 
         /// <summary>The frames target a director's preview last drew, for tests and debugging.</summary>

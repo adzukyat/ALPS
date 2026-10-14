@@ -11,8 +11,9 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Turns an authoring scene into the scene VRChat runs: the show is compiled into an
     /// Udon player created under the director, the director switches to the build timeline,
-    /// the fixtures' volumetric materials switch to copies with cone length via DMX on, and
-    /// the authoring only components are removed. Only ever run on a scene copy that is not
+    /// whose projection tracks are bound to Animators above the fixtures, the fixtures'
+    /// volumetric materials switch to copies with cone length via DMX on, and the authoring
+    /// only components are removed. Only ever run on a scene copy that is not
     /// saved back.
     /// </summary>
     public static class AlpsShowApplier
@@ -130,7 +131,7 @@ namespace AdzukiSoft.ALPS.Editor
             if (!builds.TryGetValue(source, out var build))
             {
                 build = generateTimelines
-                    ? AlpsBuildTimeline.Generate(source, errors)
+                    ? AlpsBuildTimeline.Generate(source, show, errors)
                     : UnityEditor.AssetDatabase.LoadAssetAtPath<TimelineAsset>(AlpsBuildTimeline.PathFor(source));
                 if (build == null)
                 {
@@ -164,6 +165,7 @@ namespace AdzukiSoft.ALPS.Editor
             player.gameObject.SetActive(true);
             UdonSharpEditorUtility.CopyProxyToUdon(player);
             AlpsBuildTimeline.SwapAndRebind(director, source, build);
+            AlpsProjectionTracks.Bind(director, build, show, errors);
         }
 
         public static void CopyShowToPlayer(AlpsCompiledShow show, AlpsShowPlayer player, PlayableDirector director)

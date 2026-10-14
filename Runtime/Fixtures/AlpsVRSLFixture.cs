@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Timeline;
 using VRSL;
@@ -53,6 +54,8 @@ namespace AdzukiSoft.ALPS
         private Color _authoredTint;
         private float _authoredConeLength;
         private float _authoredMaxConeLength;
+        private readonly List<Renderer> _projection = new List<Renderer>();
+        private readonly List<bool> _authoredProjection = new List<bool>();
 
         public override int AdapterKind => AlpsShowPlayer.AdapterVRSLDmxStatic;
 
@@ -96,6 +99,14 @@ namespace AdzukiSoft.ALPS
             _authoredTint = fixture.lightColorTint;
             _authoredConeLength = fixture.coneLength;
             _authoredMaxConeLength = fixture.maxConeLength;
+
+            _projection.Clear();
+            _authoredProjection.Clear();
+            CollectProjectionRenderers(_projection);
+            foreach (var renderer in _projection)
+            {
+                _authoredProjection.Add(renderer.enabled);
+            }
         }
 
         public override void RestoreAuthored(float[] frame, int offset)
@@ -124,6 +135,7 @@ namespace AdzukiSoft.ALPS
             fixture.coneLength = _authoredConeLength;
             fixture.maxConeLength = _authoredMaxConeLength;
             fixture._UpdateInstancedProperties();
+            SetPreviewProjection(true);
         }
 
         public override void GatherPreviewProperties(IPropertyCollector driver)
@@ -142,6 +154,50 @@ namespace AdzukiSoft.ALPS
             if (HasFineChannels)
             {
                 driver.AddFromName(fixture, AlpsShowPlayer.VrslFineChannelsField);
+            }
+
+            var projection = new List<Renderer>();
+            CollectProjectionRenderers(projection);
+            foreach (var renderer in projection)
+            {
+                driver.AddFromName(renderer, "m_Enabled");
+            }
+        }
+
+        /// <summary>The fixture's renderers drawn with one of VRSL's projection shaders.</summary>
+        public override void CollectProjectionRenderers(List<Renderer> into)
+        {
+            var fixture = ResolveTarget();
+            if (fixture == null || fixture.objRenderers == null)
+            {
+                return;
+            }
+
+            foreach (var renderer in fixture.objRenderers)
+            {
+                var material = renderer != null ? renderer.sharedMaterial : null;
+                if (material != null && material.shader != null && material.shader.name.EndsWith("/Projection") && !into.Contains(renderer))
+                {
+                    into.Add(renderer);
+                }
+            }
+        }
+
+        public override void SetPreviewProjection(bool visible)
+        {
+            if (!_hasAuthored)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _projection.Count; i++)
+            {
+                var renderer = _projection[i];
+                var enabled = visible && _authoredProjection[i];
+                if (renderer != null && renderer.enabled != enabled)
+                {
+                    renderer.enabled = enabled;
+                }
             }
         }
 

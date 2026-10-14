@@ -139,6 +139,7 @@ namespace AdzukiSoft.ALPS
                 { "effect.fixtureStagger", "灯体間ズレ" },
                 { "effect.gobo.rotationSpeed", "回転速度" },
                 { "effect.gobo.perTurn", "/ 1回転" },
+                { "effect.gobo.projection", "プロジェクション" },
                 { "effect.phaseOffset", "位相オフセット" },
                 { "effect.phaseOffset.tip", "この効果の動きを周期の何%遅らせるか。偶数と奇数に分けた片方を 50% にすると交互に動きます。" },
 

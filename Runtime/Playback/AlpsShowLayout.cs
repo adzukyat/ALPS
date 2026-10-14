@@ -130,7 +130,7 @@ namespace AdzukiSoft.ALPS
         public const int EffectScalarA = 5;
         /// <summary>Pan/tilt phase offset, brightness blackout fade in, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
-        /// <summary>Track speed, brightness blackout fade out, flicker stagger.</summary>
+        /// <summary>Track speed, brightness blackout fade out, flicker stagger, gobo projection off (read on the CPU only).</summary>
         public const int EffectScalarC = 7;
         /// <summary>Tracked user name index.</summary>
         public const int EffectScalarD = 8;
