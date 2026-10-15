@@ -347,6 +347,7 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowLayout.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
                 row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex);
                 row[AlpsShowLayout.ClipIn] = Mathf.Max(0f, clipIn);
+                row[AlpsShowLayout.ClipMoves] = MovedParities(set);
                 WritePhase(row, AlpsShowLayout.ClipPhase, set.phase);
                 WriteCurve(row, AlpsShowLayout.ClipMixInCurve, mixInCurve, 0f, 1f);
                 WriteCurve(row, AlpsShowLayout.ClipMixOutCurve, mixOutCurve, 1f, 0f);
@@ -356,6 +357,27 @@ namespace AdzukiSoft.ALPS
                 {
                     AddEffect(effect ?? new AlpsEffect());
                 }
+            }
+
+            /// <summary>
+            /// Which order positions the set turns with an angle or circle move, as
+            /// <see cref="AlpsShowLayout.ClipMoves"/> holds them. Tracking moves do not count,
+            /// since where they leave a head is only known while the show plays.
+            /// </summary>
+            private static int MovedParities(AlpsClipEffectSet set)
+            {
+                var moves = 0;
+                foreach (var effect in set.effects)
+                {
+                    if (effect == null || effect.kind != AlpsEffectKind.Move || effect.moveMode == AlpsMoveMode.TrackUser)
+                    {
+                        continue;
+                    }
+
+                    moves |= effect.parity == AlpsParity.Even ? 1 : effect.parity == AlpsParity.Odd ? 2 : 3;
+                }
+
+                return moves;
             }
 
             /// <summary>
@@ -607,6 +629,10 @@ namespace AdzukiSoft.ALPS
             /// playback only weighs the clips near the current time. A clip from start to end
             /// is listed in every bucket from the one its start falls in to the one its end
             /// falls in, found with <see cref="AlpsShowLayout.TimeBucket"/> as the GPU does.
+            ///
+            /// A bucket also lists, for every fixture, the clip that last turned its head before
+            /// the bucket, so the evaluator finds where a head nothing moves stopped from the
+            /// time alone. Those clips weigh nothing there, since they are over.
             /// </summary>
             private void BuildTimeIndex()
             {
@@ -624,37 +650,109 @@ namespace AdzukiSoft.ALPS
                 var buckets = Mathf.Clamp(Mathf.CeilToInt(span / seconds), 1, MaxBuckets);
                 var bucketStart = new int[buckets + 1];
 
-                // Count first, then fill, so every bucket's clips stay in clip order.
-                for (var clip = 0; clip < clipCount; clip++)
-                {
-                    var first = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipStart]);
-                    var last = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipEnd]);
-                    for (var bucket = first; bucket <= last; bucket++)
-                    {
-                        bucketStart[bucket + 1]++;
-                    }
-                }
-
+                var lists = new List<int>[buckets];
+                var endingIn = new List<int>[buckets];
                 for (var bucket = 0; bucket < buckets; bucket++)
                 {
-                    bucketStart[bucket + 1] += bucketStart[bucket];
+                    lists[bucket] = new List<int>();
+                    endingIn[bucket] = new List<int>();
                 }
 
-                var bucketClips = new int[bucketStart[buckets]];
-                var filled = new int[buckets];
                 for (var clip = 0; clip < clipCount; clip++)
                 {
                     var first = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipStart]);
                     var last = AlpsShowLayout.TimeBucket(bucketStart, seconds, _clips[clip * stride + AlpsShowLayout.ClipEnd]);
                     for (var bucket = first; bucket <= last; bucket++)
                     {
-                        bucketClips[bucketStart[bucket] + filled[bucket]++] = clip;
+                        lists[bucket].Add(clip);
                     }
+
+                    if (_clips[clip * stride + AlpsShowLayout.ClipMoves] > 0f)
+                    {
+                        endingIn[last].Add(clip);
+                    }
+                }
+
+                AddLastMoves(lists, endingIn);
+
+                var bucketClips = new List<int>();
+                for (var bucket = 0; bucket < buckets; bucket++)
+                {
+                    lists[bucket].Sort();
+                    bucketClips.AddRange(lists[bucket]);
+                    bucketStart[bucket + 1] = bucketClips.Count;
                 }
 
                 _show.bucketStart = bucketStart;
-                _show.bucketClips = bucketClips;
+                _show.bucketClips = bucketClips.ToArray();
                 _show.bucketSeconds = seconds;
+            }
+
+            /// <summary>
+            /// Adds to every bucket the clips that last turned a fixture's head in an earlier
+            /// bucket. The clips ending inside a bucket are listed there already.
+            /// </summary>
+            private void AddLastMoves(List<int>[] lists, List<int>[] endingIn)
+            {
+                var stride = AlpsShowLayout.ClipStride;
+                var fixtureCount = 0;
+                foreach (var fixture in _groupFixtures)
+                {
+                    fixtureCount = Mathf.Max(fixtureCount, fixture + 1);
+                }
+
+                var lastClip = new int[fixtureCount];
+                var lastEnd = new float[fixtureCount];
+                for (var fixture = 0; fixture < fixtureCount; fixture++)
+                {
+                    lastClip[fixture] = -1;
+                }
+
+                var held = new List<int>();
+                for (var bucket = 0; bucket < lists.Length; bucket++)
+                {
+                    lists[bucket].AddRange(held);
+                    if (endingIn[bucket].Count == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var clip in endingIn[bucket])
+                    {
+                        var row = clip * stride;
+                        var group = (int)_clips[row + AlpsShowLayout.ClipGroup];
+                        if (group < 0 || group >= _groupCount.Count)
+                        {
+                            continue;
+                        }
+
+                        var moves = (int)_clips[row + AlpsShowLayout.ClipMoves];
+                        var positions = (int)_clips[row + AlpsShowLayout.ClipPositionStart];
+                        var end = _clips[row + AlpsShowLayout.ClipEnd];
+                        for (var i = 0; i < _groupCount[group]; i++)
+                        {
+                            // Odd and even count order positions from 1, as the evaluator does.
+                            var odd = _positions[positions + i * 2] % 2 == 0;
+                            var fixture = _groupFixtures[_groupStart[group] + i];
+                            if ((moves & (odd ? 2 : 1)) == 0 || lastClip[fixture] >= 0 && end < lastEnd[fixture])
+                            {
+                                continue;
+                            }
+
+                            lastClip[fixture] = clip;
+                            lastEnd[fixture] = end;
+                        }
+                    }
+
+                    held.Clear();
+                    foreach (var clip in lastClip)
+                    {
+                        if (clip >= 0 && !held.Contains(clip))
+                        {
+                            held.Add(clip);
+                        }
+                    }
+                }
             }
         }
     }

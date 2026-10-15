@@ -86,7 +86,8 @@ float _AlpsTime;
 #define ClipFadeOut 12
 #define ClipPositionStart 13
 #define ClipIn 14
-#define ClipPhase 15
+#define ClipMoves 15
+#define ClipPhase 16
 #define CurveSamples 16
 #define ClipMixInCurve (ClipPhase + PhaseStride)
 #define ClipMixOutCurve (ClipMixInCurve + CurveSamples)
@@ -139,6 +140,11 @@ float _AlpsTime;
 #define FrameStride 13
 #define FrameAimed 13
 #define FrameShowToken 14
+#define FrameTrackHeld 15
+
+// How long before the end of the clip that last turned a head its stopping pose is taken,
+// inside the clip, where it still weighs something.
+#define ALPS_HOLD_LEAD 0.001
 
 // Most values one effect reads: a circle's turn, its center tilt and pan, and its radius.
 #define ALPS_MAX_SLOTS 4
@@ -410,6 +416,14 @@ float AlpsSampleCurve(int offset, float t)
     return lerp(AlpsRead(offset + i), AlpsRead(offset + i + 1), x - i);
 }
 
+// The mix in part of a clip's Timeline weight, 1 once the mix in is over.
+float AlpsClipMixIn(int row, float time)
+{
+    float start = AlpsRead(row + ClipStart);
+    float mixIn = AlpsRead(row + ClipMixInDuration);
+    return mixIn > 0.0 && time < start + mixIn ? saturate(AlpsSampleCurve(row + ClipMixInCurve, (time - start) / mixIn)) : 1.0;
+}
+
 // Timeline style weight from the sampled mix in and mix out curves, 0 outside the clip.
 float AlpsClipWeight(int row, float time)
 {
@@ -417,12 +431,7 @@ float AlpsClipWeight(int row, float time)
     float end = AlpsRead(row + ClipEnd);
     if (time < start || time > end) return 0.0;
 
-    float weight = 1.0;
-    float mixIn = AlpsRead(row + ClipMixInDuration);
-    if (mixIn > 0.0 && time < start + mixIn)
-    {
-        weight *= AlpsSampleCurve(row + ClipMixInCurve, (time - start) / mixIn);
-    }
+    float weight = AlpsClipMixIn(row, time);
 
     float mixOut = AlpsRead(row + ClipMixOutDuration);
     if (mixOut > 0.0 && time > end - mixOut)
@@ -816,8 +825,8 @@ bool AlpsIsDiscrete(int channel)
 
 // Channels a clip's own fade leaves alone. The fade dims the light, so the gobo, its turn and
 // the track effect hold what the clip gives them until the clip ends instead of falling back to
-// the default halfway through the fade. Pan and tilt stop where the light was when nothing
-// moves them, so a fade blending them toward that would chase it frame by frame.
+// the default halfway through the fade. Pan and tilt only blend between the clips that move
+// the head, see AlpsComposeFixture.
 bool AlpsIgnoresFade(int channel)
 {
     return AlpsIsDiscrete(channel) || channel == FrameGoboRotation || channel == FramePan || channel == FrameTilt;
@@ -837,9 +846,27 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
     return AlpsReadInt(show.groupIndex + group * show.groupColumns + fixture);
 }
 
-// The final frame of one fixture at <time>. <held> is the pan and tilt of the previous frame
-// when <hasHeld>, which pan and tilt start from instead of the default, so a head nothing
-// moves stops where it was.
+// The end of <clip> when it is over at <time> and was the last to turn the head of <fixture>
+// there, otherwise -1.
+float AlpsMoveEnd(int clip, int fixture, float time, AlpsShow show)
+{
+    int row = show.clips + clip * ClipStride;
+    float end = AlpsRead(row + ClipEnd);
+    int moves = AlpsReadInt(row + ClipMoves);
+    if (moves <= 0 || end > time) return -1.0;
+
+    int index = AlpsIndexInGroup(show, AlpsReadInt(row + ClipGroup), fixture);
+    if (index < 0) return -1.0;
+
+    // Odd and even count order positions from 1, as AlpsEvaluateClip does.
+    int k = AlpsReadInt(show.positions + AlpsReadInt(row + ClipPositionStart) + index * 2);
+    int parity = k % 2 == 0 ? 2 : 1;
+    return (moves & parity) != 0 ? end : -1.0;
+}
+
+// The frame of one fixture at <time>, composed from the clips alone. <moved> tells whether a
+// clip turns the head, and <heldUntil> the end of the last clip that turned it before, -1
+// when none did.
 //
 // Clips are listed by layer. Inside a layer, overlapping clips blend by their weights. A
 // layer then covers the layers below it by its total weight, per channel, so a later track
@@ -848,19 +875,22 @@ int AlpsIndexInGroup(AlpsShow show, int group, int fixture)
 // own fade scales its weight, so fading behaves like blending with an empty clip, except on
 // the channels the fade leaves alone (AlpsIgnoresFade). Colour and cone cover by brightness
 // as well (AlpsMixesAsLight), so they only blend with layers below that are lit.
-void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out float result[FrameStride], AlpsShow show)
+//
+// Pan and tilt start from the default, and the lowest layer moving the head covers it by its
+// mix in alone: a clip mixing in turns the head from where it stopped, and one mixing out
+// keeps its own pose to the end, where the head then stops. <baseShows> is how much of the
+// pan and tilt it started from still shows, which AlpsEvaluateFixture swaps for where the head
+// stopped.
+void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], out bool moved, out float heldUntil, out float baseShows, AlpsShow show)
 {
+    moved = false;
+    heldUntil = -1.0;
+    baseShows = 1.0;
     int defaultRow = show.defaults + fixture * FrameStride;
     [unroll]
     for (int ch = 0; ch < FrameStride; ch++)
     {
         result[ch] = AlpsRead(defaultRow + ch);
-    }
-
-    if (hasHeld)
-    {
-        result[FramePan] = held.x;
-        result[FrameTilt] = held.y;
     }
 
     result[FrameBrightness] = 0.0;
@@ -880,6 +910,7 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
     }
 
     float layer = -1.0;
+    float mixInSum = 0.0;
     [loop]
     for (int i = first; i <= end; i++)
     {
@@ -895,6 +926,8 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
             // default.
             float below = result[FrameBrightness];
             float above = weightSum[FrameBrightness] > 0.0 ? sum[FrameBrightness] / weightSum[FrameBrightness] : below;
+            bool layerMoves = weightSum[FramePan] > 0.0 || weightSum[FrameTilt] > 0.0;
+            float poseShare = moved ? saturate(weightSum[FramePan]) : saturate(mixInSum);
 
             [unroll]
             for (int ch = 0; ch < FrameStride; ch++)
@@ -910,6 +943,11 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
                         share = mixed > 0.0 ? lit / mixed : 1.0;
                     }
 
+                    if (ch == FramePan || ch == FrameTilt)
+                    {
+                        share = poseShare;
+                    }
+
                     result[ch] = AlpsIsDiscrete(ch)
                         ? (coverage >= 0.5 ? sum[ch] : result[ch])
                         : lerp(result[ch], sum[ch] / coverage, share);
@@ -919,10 +957,20 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
                 weightSum[ch] = 0.0;
             }
 
+            if (layerMoves)
+            {
+                baseShows *= 1.0 - poseShare;
+            }
+
+            moved = moved || layerMoves;
+            mixInSum = 0.0;
             layer = clipLayer;
         }
 
         if (last) break;
+
+        // The bucket also lists the clips that last turned a head before it.
+        heldUntil = max(heldUntil, AlpsMoveEnd(clip, fixture, time, show));
 
         float mixWeight = AlpsClipWeight(row, time);
         if (mixWeight <= 0.0) continue;
@@ -940,6 +988,10 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
         }
 
         AlpsEvaluateClip(clip, index, time, frame, show);
+        if (frame.written[FramePan])
+        {
+            mixInSum += AlpsClipMixIn(row, time);
+        }
 
         [unroll]
         for (int ch = 0; ch < FrameStride; ch++)
@@ -960,6 +1012,60 @@ void AlpsEvaluateFixture(int fixture, float time, bool hasHeld, float2 held, out
                 sum[ch] += frame.value[ch] * weight;
                 weightSum[ch] += weight;
             }
+        }
+    }
+}
+
+// The final frame of one fixture at <time>. A head no clip moves stops where the last clip
+// that turned it left it, taken from that clip's end, so it depends on the time alone and a
+// late joiner sees the same pose, and a clip mixing in turns it from there. <moved> tells
+// whether a clip turns the head at <time>.
+void AlpsEvaluateFixture(int fixture, float time, out float result[FrameStride], out bool moved, AlpsShow show)
+{
+    moved = false;
+    float heldUntil = -1.0;
+    float baseShows = 0.0;
+    [unroll]
+    for (int r = 0; r < FrameStride; r++)
+    {
+        result[r] = 0.0;
+    }
+
+    // One loop composes the time and then, if the pan and tilt it started from still show,
+    // the moment the last move ended, so the composition is compiled once. Pan and tilt are
+    // linear in what they started from, so the pose the head stopped in replaces the default
+    // by the share that shows. That pose is taken with the default below it, so a clip that
+    // ended while still mixing in counts from the default.
+    int defaultRow = show.defaults + fixture * FrameStride;
+    [loop]
+    for (int step = 0; step < 2; step++)
+    {
+        if (step == 1 && (baseShows <= 0.0 || heldUntil < 0.0)) break;
+
+        float frame[FrameStride];
+        bool passMoved;
+        float passHeld;
+        float passShows;
+        AlpsComposeFixture(fixture, step == 0 ? time : heldUntil - ALPS_HOLD_LEAD, frame, passMoved, passHeld, passShows, show);
+
+        [unroll]
+        for (int ch = 0; ch < FrameStride; ch++)
+        {
+            if (step == 0)
+            {
+                result[ch] = frame[ch];
+            }
+            else if (passMoved && (ch == FramePan || ch == FrameTilt))
+            {
+                result[ch] += baseShows * (frame[ch] - AlpsRead(defaultRow + ch));
+            }
+        }
+
+        if (step == 0)
+        {
+            moved = passMoved;
+            heldUntil = passHeld;
+            baseShows = passShows;
         }
     }
 }

@@ -113,7 +113,13 @@ namespace AdzukiSoft.ALPS
         /// from, so the second half of a split clip plays on from where the first half stopped.
         /// </summary>
         public const int ClipIn = 14;
-        public const int ClipPhase = 15;
+        /// <summary>
+        /// Which members the clip turns with an angle or circle move: 1 for the even order
+        /// positions, 2 for the odd ones, 3 for both. A head stops where the last clip that
+        /// turned it left it.
+        /// </summary>
+        public const int ClipMoves = 15;
+        public const int ClipPhase = 16;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -207,6 +213,12 @@ namespace AdzukiSoft.ALPS
         /// tilt start from the previous frame only when the same show drew it.
         /// </summary>
         public const int FrameShowToken = 14;
+
+        /// <summary>
+        /// 1 while a head stays where a tracked user left it, which only the GPU frames hold,
+        /// so it keeps doing so until something moves it again.
+        /// </summary>
+        public const int FrameTrackHeld = 15;
 
         // ==================================================================================
         // Helpers the compiler runs once

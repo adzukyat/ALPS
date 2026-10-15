@@ -1,10 +1,13 @@
 // Evaluates the show. Each row of the target is one fixture, four RGBA texels wide, holding
 // the 13 frame channels of AlpsShowLayout in order, whether the head is aimed at a tracked
-// user, and the token of the show that drew it.
+// user, the token of the show that drew it, and whether the head stays where a tracked user
+// left it.
 //
-// Pan and tilt start from the previous frame, so a head nothing moves stops where it was. The
-// frames targets are shared by every show of a scene, so only a previous frame the same show
-// drew counts, and a show without a token starts from the defaults.
+// A head the clips stop moving stops where their last move left it, which the evaluator finds
+// from the time. Where a tracked user leaves a head is only known while the show plays, so a
+// head nothing moves after tracking keeps the previous frame's pan and tilt. The frames
+// targets are shared by every show of a scene, so only a previous frame the same show drew
+// counts.
 //
 // A head tracking a user turns toward the user's hips, found from the fixture's aim space
 // in the show data. It follows at the effect's speed from where the previous frames left it,
@@ -111,13 +114,22 @@ Shader "Hidden/ALPS/Frames"
                     return 0;
                 }
 
-                float4 previous = _AlpsPrevFrames.Load(int3(0, fixture, 0));
-                float token = _AlpsPrevFrames.Load(int3(FrameShowToken / 4, fixture, 0))[FrameShowToken % 4];
-                bool hasHeld = _AlpsShowToken > 0.5 && abs(token - _AlpsShowToken) < 0.5;
-
                 float frame[FrameStride];
-                AlpsEvaluateFixture(fixture, _AlpsTime, hasHeld, float2(previous[FramePan], previous[FrameTilt]), frame, show);
+                bool moved;
+                AlpsEvaluateFixture(fixture, _AlpsTime, frame, moved, show);
                 float aimed = AlpsTrack(fixture, frame, show);
+
+                // The aim flag, the token and the held flag share the last texel.
+                float4 previous = _AlpsPrevFrames.Load(int3(0, fixture, 0));
+                float4 tail = _AlpsPrevFrames.Load(int3(FrameAimed / 4, fixture, 0));
+                bool sameShow = _AlpsShowToken > 0.5 && abs(tail[FrameShowToken % 4] - _AlpsShowToken) < 0.5;
+                float trackHeld = 0.0;
+                if (aimed < 0.5 && !moved && sameShow && (tail[FrameAimed % 4] > 0.5 || tail[FrameTrackHeld % 4] > 0.5))
+                {
+                    frame[FramePan] = previous[FramePan];
+                    frame[FrameTilt] = previous[FrameTilt];
+                    trackHeld = 1.0;
+                }
 
                 int first = (int)floor(i.uv.x * 4.0) * 4;
                 float4 result = 0;
@@ -125,7 +137,7 @@ Shader "Hidden/ALPS/Frames"
                 for (int c = 0; c < 4; c++)
                 {
                     int ch = first + c;
-                    result[c] = ch < FrameStride ? frame[min(ch, FrameStride - 1)] : (ch == FrameAimed ? aimed : (ch == FrameShowToken ? _AlpsShowToken : 0.0));
+                    result[c] = ch < FrameStride ? frame[min(ch, FrameStride - 1)] : (ch == FrameAimed ? aimed : (ch == FrameShowToken ? _AlpsShowToken : trackHeld));
                 }
 
                 return result;

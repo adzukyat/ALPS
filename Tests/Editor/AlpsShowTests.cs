@@ -494,6 +494,111 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(315f, leaving[AlpsShowLayout.FrameGoboRotation], 0.01f);
         }
 
+        // A head no clip moves stops where the last clip that turned it left it. These evaluate
+        // without a previous frame, as a late joiner does.
+
+        private static AlpsClipEffectSet MoveTo(float pan, float tilt = 20f, AlpsParity parity = AlpsParity.All)
+        {
+            var set = Set();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.parity = parity;
+            move.pan.value = pan;
+            move.tilt.value = tilt;
+            return set;
+        }
+
+        [Test]
+        public void Hold_StopsTheHeadWhereTheLastMoveLeftIt()
+        {
+            var lit = Set();
+            lit.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = MoveTo(40f), start = 0f, end = 2f },
+                new AlpsStandaloneClip { set = lit, start = 29f, end = 30f, layer = 1 });
+
+            foreach (var time in new[] { 3f, 29.5f })
+            {
+                var frame = Evaluate(show, 0, time);
+                Assert.AreEqual(40f, frame[AlpsShowLayout.FramePan], 0.01f, $"Still where the move left it at {time}s.");
+                Assert.AreEqual(20f, frame[AlpsShowLayout.FrameTilt], 0.01f);
+            }
+
+            Assert.AreEqual(0f, Evaluate(show, 0, 3f)[AlpsShowLayout.FrameBrightness], 0.01f, "Only pan and tilt hold.");
+        }
+
+        [Test]
+        public void Hold_TakesTheMovingClipsLastPose()
+        {
+            var set = MoveTo(0f);
+            var pan = set.effects[0].pan;
+            pan.isRange = true;
+            pan.range = new Vector2(0f, 100f);
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, start = 0f, end = 1.5f });
+
+            Assert.AreEqual(Evaluate(show, 0, 1.499f)[AlpsShowLayout.FramePan], Evaluate(show, 0, 3f)[AlpsShowLayout.FramePan], 0.2f);
+        }
+
+        [Test]
+        public void Hold_MixingInTurnsFromWhereTheHeadStoppedAndMixingOutKeepsThePose()
+        {
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = MoveTo(10f), start = 0f, end = 2f },
+                new AlpsStandaloneClip { set = MoveTo(40f, 60f), start = 3f, end = 6f, mixIn = 1f, mixOut = 1f });
+
+            Assert.AreEqual(10f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FramePan], 0.01f, "Stopped through the gap.");
+            var turning = Evaluate(show, 0, 3.5f);
+            Assert.AreEqual(25f, turning[AlpsShowLayout.FramePan], 0.01f, "Half way through the mix in, half way from where the head stopped.");
+            Assert.AreEqual(40f, turning[AlpsShowLayout.FrameTilt], 0.01f);
+            Assert.AreEqual(40f, Evaluate(show, 0, 5.5f)[AlpsShowLayout.FramePan], 0.01f, "Mixing out does not turn the head back.");
+            Assert.AreEqual(40f, Evaluate(show, 0, 7f)[AlpsShowLayout.FramePan], 0.01f, "So the head stops where the clip ended, without a jump.");
+        }
+
+        [Test]
+        public void Hold_ACrossfadeBlendsTheTwoClipsAlone()
+        {
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = MoveTo(0f), start = 0f, end = 1f },
+                new AlpsStandaloneClip { set = MoveTo(10f), start = 1f, end = 3f, mixOut = 1f },
+                new AlpsStandaloneClip { set = MoveTo(40f), start = 2f, end = 5f, mixIn = 1f });
+
+            Assert.AreEqual(25f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FramePan], 0.01f, "Where the first clip stopped does not show through the crossfade.");
+        }
+
+        [Test]
+        public void Hold_TheMoveEndingLastWinsAcrossLayers()
+        {
+            AlpsCompiledShow Layered(float lowerEnd, float upperEnd) => AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = MoveTo(10f), start = 0f, end = lowerEnd, layer = 0 },
+                new AlpsStandaloneClip { set = MoveTo(40f), start = 1f, end = upperEnd, layer = 1 });
+
+            var lowerLast = Layered(4f, 2f);
+            Assert.AreEqual(10f, Evaluate(lowerLast, 0, 3f)[AlpsShowLayout.FramePan], 0.01f, "The lower layer still moves the head.");
+            Assert.AreEqual(10f, Evaluate(lowerLast, 0, 5f)[AlpsShowLayout.FramePan], 0.01f);
+            Assert.AreEqual(40f, Evaluate(Layered(2f, 3f), 0, 4f)[AlpsShowLayout.FramePan], 0.01f);
+        }
+
+        [Test]
+        public void Hold_EachFixtureKeepsItsOwnLastMove()
+        {
+            var show = AlpsShowCompiler.CompileStandalone(
+                2,
+                Bpm,
+                new AlpsStandaloneClip { set = MoveTo(10f), start = 0f, end = 1f },
+                new AlpsStandaloneClip { set = MoveTo(40f, parity: AlpsParity.Odd), start = 2f, end = 3f });
+
+            // Order positions count from 1, so the first fixture is odd.
+            Assert.AreEqual(40f, Evaluate(show, 0, 4f)[AlpsShowLayout.FramePan], 0.01f, "The odd move turned the first fixture last.");
+            Assert.AreEqual(10f, Evaluate(show, 1, 4f)[AlpsShowLayout.FramePan], 0.01f, "The second kept the move before.");
+        }
+
         [Test]
         public void ClipFade_KeepsTheColourOverNothingLit()
         {
