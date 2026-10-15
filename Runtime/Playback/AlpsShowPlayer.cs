@@ -83,6 +83,19 @@ namespace AdzukiSoft.ALPS
         /// <summary>Most users one show can track, one shader vector each.</summary>
         public const int GpuMaxTrackedUsers = 8;
 
+        /// <summary>
+        /// How long the director's time may stand still while the show's clock runs on. A video
+        /// player's time steps once per video frame, 42 ms at 24 fps, and a director that stands
+        /// still longer than this has paused.
+        /// </summary>
+        public const float ClockStallSeconds = 0.1f;
+
+        /// <summary>How far the director's time may jump before the show's clock jumps with it.</summary>
+        public const float ClockSnapSeconds = 0.25f;
+
+        /// <summary>Share of the gap to the director's time the show's clock closes per second.</summary>
+        public const float ClockFollowRate = 5f;
+
         public PlayableDirector director;
 
         public float[] clips = new float[0];
@@ -129,6 +142,9 @@ namespace AdzukiSoft.ALPS
         private bool _flip;
         private float _lastTime = -1f;
         private float _lastRenderTime = -1f;
+        private float _clockTime = -1f;
+        private float _directorTime = -1f;
+        private float _directorMovedAt;
         private bool _tracks;
         private bool _playersDirty = true;
         private VRCPlayerApi[] _trackedPlayers;
@@ -150,8 +166,35 @@ namespace AdzukiSoft.ALPS
         {
             if (director != null)
             {
-                EvaluateAt((float)director.time);
+                EvaluateAt(FollowDirector((float)director.time, Time.time, Time.deltaTime));
             }
+        }
+
+        /// <summary>
+        /// The time to draw for a director at <paramref name="directorTime"/>. While the director's
+        /// time moves, the show runs on its own clock and leans toward the director's time, so a
+        /// sync system that writes a video player's time into the director every frame, which only
+        /// steps once per video frame, still moves the lights every frame. A seek or a loop jumps
+        /// to the director's time, and once it stops moving the show stops on it exactly.
+        /// </summary>
+        public float FollowDirector(float directorTime, float now, float deltaTime)
+        {
+            if (directorTime != _directorTime || _clockTime < 0f)
+            {
+                _directorTime = directorTime;
+                _directorMovedAt = now;
+            }
+
+            var ahead = _clockTime + deltaTime;
+            var error = directorTime - ahead;
+            if (_clockTime < 0f || now - _directorMovedAt > ClockStallSeconds || Mathf.Abs(error) > ClockSnapSeconds)
+            {
+                _clockTime = directorTime;
+                return _clockTime;
+            }
+
+            _clockTime = ahead + error * Mathf.Min(1f, deltaTime * ClockFollowRate);
+            return _clockTime;
         }
 
         /// <summary>
