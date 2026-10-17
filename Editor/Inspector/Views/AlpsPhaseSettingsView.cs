@@ -52,7 +52,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsStepper _speed;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
-        private readonly AlpsRangeFlag _beatsFlag;
+        private readonly AlpsRangeFlag _percentFlag;
         private readonly AlpsValueSlider _fireChance;
         private readonly AlpsToggleSwitch _inverse;
 
@@ -208,11 +208,12 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
             Add(_speed);
 
-            // The delay is read over the whole group, so 100% walks the wave over every
-            // fixture in exactly one cycle however many there are. Negative runs the order
-            // backwards, for example from the edges in. The 拍 flag reads the same trip in
-            // beats instead, which then holds when the speed changes. Beats are counted, not
-            // dragged, so that unit gets the same stepper as the speed above.
+            // The delay is counted in beats by default, like the in / out's, and holds when
+            // the speed changes. Beats are counted, not dragged, so that unit gets the same
+            // stepper as the speed above. The % flag reads the same trip as a share of the
+            // cycle instead, over the whole group, so 100% walks the wave over every fixture in
+            // exactly one cycle however many there are. Negative runs the order backwards, for
+            // example from the edges in.
             _spread = new AlpsValueSlider(AlpsStrings.Tr("phase.delay"), new Vector2(-SpreadLimit, SpreadLimit), "%", "0.##") { DefaultValue = 0f };
             _spread.AddToClassList("alps-animatable__field");
             _spread.RegisterValueChangedCallback(evt =>
@@ -242,12 +243,13 @@ namespace AdzukiSoft.ALPS.Editor
                 Changed();
             });
 
-            _beatsFlag = new AlpsRangeFlag(AlpsStrings.Tr("phase.beatsFlag.letter"), AlpsStrings.Tr("phase.beatsFlag.tip"));
-            _beatsFlag.RegisterValueChangedCallback(evt =>
+            _percentFlag = new AlpsRangeFlag(AlpsStrings.Tr("phase.percentFlag.letter"), AlpsStrings.Tr("phase.percentFlag.tip"));
+            _percentFlag.RegisterValueChangedCallback(evt =>
             {
                 // Seed the unit being switched to from the current look, so the switch alone
                 // never moves the fixtures.
-                if (evt.newValue)
+                var inBeats = !evt.newValue;
+                if (inBeats)
                 {
                     settings.spreadBeats = settings.spread * settings.beatsPerCycle;
                 }
@@ -256,19 +258,19 @@ namespace AdzukiSoft.ALPS.Editor
                     settings.spread = settings.spreadBeats / settings.beatsPerCycle;
                 }
 
-                settings.spreadInBeats = evt.newValue;
+                settings.spreadInBeats = inBeats;
                 Changed();
             });
 
             mixed?.Bind(_spread, settings, nameof(AlpsPhaseSettings.spread));
             mixed?.Bind(_spreadBeats, settings, nameof(AlpsPhaseSettings.spreadBeats));
-            mixed?.Bind(_beatsFlag, settings, nameof(AlpsPhaseSettings.spreadInBeats));
+            mixed?.Bind(_percentFlag, settings, nameof(AlpsPhaseSettings.spreadInBeats));
 
             var spreadRow = new VisualElement();
             spreadRow.AddToClassList("alps-animatable__row");
             spreadRow.Add(_spread);
             spreadRow.Add(_spreadBeats);
-            spreadRow.Add(_beatsFlag);
+            spreadRow.Add(_percentFlag);
             Add(spreadRow);
 
             // Every cycle at every order position rolls its own dice, so a chance below 100%
@@ -433,9 +435,10 @@ namespace AdzukiSoft.ALPS.Editor
             // In / out has no cycle to take a share of, so its delay is always in beats.
             var isInOut = _settings.mode == AlpsPhaseMode.InOut;
             var inBeats = isInOut || _settings.UsesSpreadBeats;
-            _beatsFlag.SetEnabled(_settings.beatsPerCycle > 0f);
-            _beatsFlag.SetValueWithoutNotify(inBeats);
-            Show(_beatsFlag, !isInOut);
+            // Without a speed there are no beats to count, so the share is all there is.
+            _percentFlag.SetEnabled(_settings.beatsPerCycle > 0f);
+            _percentFlag.SetValueWithoutNotify(!inBeats);
+            Show(_percentFlag, !isInOut);
             Show(_spread, !inBeats);
             Show(_spreadBeats, inBeats);
             _spreadBeats.tooltip = isInOut ? AlpsStrings.Tr("phase.delay.inOut.tip") : string.Empty;

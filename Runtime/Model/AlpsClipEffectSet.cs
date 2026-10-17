@@ -65,8 +65,8 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// What a clip or profile made in the editor starts from. Its phase is in / out with
-        /// linear eases, where the model's own defaults stay the wave and the sine everything
-        /// older was saved against.
+        /// linear eases and a delay in beats, where the model's own defaults stay the wave,
+        /// the sine and the share of the cycle everything older was saved against.
         /// </summary>
         public static AlpsClipEffectSet CreateNew()
         {
@@ -74,6 +74,7 @@ namespace AdzukiSoft.ALPS
             set.phase.mode = AlpsPhaseMode.InOut;
             set.phase.ease = AlpsEaseType.Linear;
             set.phase.fallEase = AlpsEaseType.Linear;
+            set.phase.spreadInBeats = true;
             return set;
         }
 

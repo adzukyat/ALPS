@@ -445,7 +445,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator DelayBeatsFlag_SwitchesTheUnitWithoutMovingTheLook()
+        public IEnumerator DelayPercentFlag_SwitchesTheUnitWithoutMovingTheLook()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
@@ -463,16 +463,17 @@ namespace AdzukiSoft.ALPS.Tests
 
                 var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
                 var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
-                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.beatsFlag.letter"));
+                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.percentFlag.letter"));
                 var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
                 Assert.AreEqual(50f, percent.value, 0.001f);
                 Assert.AreEqual(DisplayStyle.Flex, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.None, beats.style.display.value);
-                Assert.AreSame(flag.parent.Children().Last(), flag, "拍 stays on the right edge of the row.");
+                Assert.IsTrue(flag.value, "A share of the cycle shows with % on.");
+                Assert.AreSame(flag.parent.Children().Last(), flag, "% stays on the right edge of the row.");
                 Assert.AreEqual(-16f, beats.Minimum, 0.001f);
                 Assert.AreEqual(16f, beats.Maximum, 0.001f, "Beats stop at four bars either way.");
 
-                flag.value = true;
+                flag.value = false;
                 Assert.IsTrue(set.phase.spreadInBeats);
                 Assert.AreEqual(DisplayStyle.None, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, beats.style.display.value, "Beats are counted like the speed, not dragged.");
@@ -484,7 +485,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(0.25f, set.phase.SpreadCycles, 0.0001f);
 
                 beats.value = 2f;
-                flag.value = false;
+                flag.value = true;
                 Assert.AreEqual(50f, percent.value, 0.001f, "Two beats of a four beat cycle is half the trip.");
                 Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f);
 
@@ -534,6 +535,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(AlpsPhaseMode.InOut, created.phase.mode);
             Assert.AreEqual(AlpsEaseType.Linear, created.phase.ease, "New clips rise and fall in a straight line.");
             Assert.AreEqual(AlpsEaseType.Linear, created.phase.fallEase);
+            Assert.IsTrue(created.phase.spreadInBeats, "New clips count the delay in beats, like the in / out.");
             Assert.AreEqual(AlpsPhaseMode.Wave, new AlpsPhaseSettings().mode, "The model keeps the wave older data was saved against.");
 
             var clip = ScriptableObject.CreateInstance<AlpsTimelineClip>();
@@ -718,7 +720,7 @@ namespace AdzukiSoft.ALPS.Tests
             var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
             var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
             var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
-            var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.beatsFlag.letter"));
+            var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.percentFlag.letter"));
             var easing = view.Query<AlpsEasingPicker>().First();
 
             Assert.AreEqual(DisplayStyle.Flex, Display(inOut));
