@@ -1238,6 +1238,137 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(100f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
         }
 
+        /// <summary>A tilt sweep out and back, half a cycle each way, that goes dark on the way back.</summary>
+        private static AlpsClipEffectSet ReturningMove(AlpsMoveMode mode = AlpsMoveMode.Angle, AlpsParity parity = AlpsParity.All)
+        {
+            var set = Set(0.5f, 0f, 0.5f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.parity = parity;
+            move.moveMode = mode;
+            move.tilt.isRange = true;
+            move.tilt.range = new Vector2(-40f, 40f);
+            move.blackoutOnReturn = true;
+            return set;
+        }
+
+        private static AlpsClipEffectSet Lit(float brightness = 100f)
+        {
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness).brightness.value = brightness;
+            return set;
+        }
+
+        [Test]
+        public void MoveBlackout_DarkensTheBrightnessOfAnyLayer()
+        {
+            foreach (var moveLayer in new[] { 0, 1 })
+            {
+                // The compiler takes clips in layer order.
+                var move = new AlpsStandaloneClip { set = ReturningMove(), start = 0f, end = 4f, layer = moveLayer };
+                var lit = new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 1 - moveLayer };
+                var show = moveLayer == 0
+                    ? AlpsShowCompiler.CompileStandalone(1, Bpm, move, lit)
+                    : AlpsShowCompiler.CompileStandalone(1, Bpm, lit, move);
+
+                Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f, $"Lit on the way out, move on layer {moveLayer}.");
+                Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f, $"Dark on the way back, move on layer {moveLayer}.");
+            }
+        }
+
+        [Test]
+        public void MoveBlackout_FadesInsideTheOutboundLeg()
+        {
+            var move = ReturningMove();
+            move.effects[0].blackoutFadeIn = 0.25f;
+            move.effects[0].blackoutFadeOut = 0.5f;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = move, start = 0f, end = 4f, layer = 1 });
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.0625f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade in.");
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(50f, Evaluate(show, 0, 0.375f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade out.");
+        }
+
+        [Test]
+        public void MoveBlackout_FollowsWhatTurnsTheHead()
+        {
+            // Pan alone sweeps, on a sawtooth of its own that never comes back.
+            var pan = Set(0.5f, 0f, 0.5f);
+            pan.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var move = pan.Add(AlpsEffectKind.Move);
+            move.pan.isRange = true;
+            move.pan.useOwnPhase = true;
+            move.pan.ownPhase.SetShares(1f, 0f, 0f);
+            move.pan.ownPhase.beatsPerCycle = 1f;
+            move.blackoutOnReturn = true;
+            Assert.AreEqual(100f, Evaluate(Compile(1, pan), 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f, "Pan's own phase has no return leg.");
+
+            move.tilt.isRange = true;
+            Assert.AreEqual(0f, Evaluate(Compile(1, pan), 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f, "Tilt sweeps on the clip's wave, which comes back.");
+
+            var circle = ReturningMove(AlpsMoveMode.Circle);
+            circle.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            Assert.AreEqual(0f, Evaluate(Compile(1, circle), 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f, "A circle turns back on the clip's wave.");
+        }
+
+        [Test]
+        public void MoveBlackout_IsCoveredByAMoveAbove()
+        {
+            AlpsCompiledShow Covered(float mixIn) => AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = ReturningMove(), start = 0f, end = 4f, layer = 1 },
+                new AlpsStandaloneClip { set = MoveTo(30f), start = 0f, end = 4f, layer = 2, mixIn = mixIn });
+
+            Assert.AreEqual(100f, Evaluate(Covered(0f), 0, 1.75f)[AlpsShowLayout.FrameBrightness], 0.01f, "The head turns with the move above, which does not go dark.");
+            Assert.AreEqual(50f, Evaluate(Covered(3.5f), 0, 1.75f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through its mix in, half the blackout shows.");
+        }
+
+        [Test]
+        public void MoveBlackout_IsLiftedWhileTrackingAUser()
+        {
+            var tracking = Set();
+            tracking.Add(AlpsEffectKind.Move).moveMode = AlpsMoveMode.TrackUser;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = ReturningMove(), start = 0f, end = 4f, layer = 1 },
+                new AlpsStandaloneClip { set = tracking, start = 0f, end = 4f, layer = 2 });
+
+            Assert.AreEqual(100f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f);
+        }
+
+        [Test]
+        public void MoveBlackout_LeavesAHeldHeadLit()
+        {
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = ReturningMove(), start = 0f, end = 1f, layer = 1 });
+
+            Assert.AreEqual(100f, Evaluate(show, 0, 1.75f)[AlpsShowLayout.FrameBrightness], 0.01f, "The head stopped where the move left it and comes back from nothing.");
+        }
+
+        [Test]
+        public void MoveBlackout_DarkensOnlyTheFixturesItTurns()
+        {
+            var show = AlpsShowCompiler.CompileStandalone(
+                2,
+                Bpm,
+                new AlpsStandaloneClip { set = Lit(), start = 0f, end = 4f, layer = 0 },
+                new AlpsStandaloneClip { set = ReturningMove(parity: AlpsParity.Odd), start = 0f, end = 4f, layer = 1 });
+
+            // Order positions count from 1, so the first fixture is odd.
+            Assert.AreEqual(0f, Evaluate(show, 0, 0.75f)[AlpsShowLayout.FrameBrightness], 0.001f, "The odd move turns the first fixture.");
+            Assert.AreEqual(100f, Evaluate(show, 1, 0.75f)[AlpsShowLayout.FrameBrightness], 0.01f, "The second has no move.");
+        }
+
         [Test]
         public void Move_PhaseOffsetShiftsPanAgainstTilt()
         {

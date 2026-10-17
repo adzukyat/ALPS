@@ -420,6 +420,15 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowLayout.EffectPhaseOffset] = Mathf.Clamp01(effect.phaseOffset);
                 row[AlpsShowLayout.EffectParamStart] = _parameters.Count / AlpsShowLayout.ParamStride;
 
+                // A move darkens the light while the head comes back. A brightness effect keeps
+                // a blackout only where loading could not hand it to a move unchanged.
+                var blackout = effect.blackoutOnReturn
+                               && ((effect.kind == AlpsEffectKind.Move && effect.moveMode != AlpsMoveMode.TrackUser)
+                                   || effect.kind == AlpsEffectKind.Brightness);
+                row[AlpsShowLayout.EffectBlackout] = blackout ? 1f : 0f;
+                row[AlpsShowLayout.EffectBlackoutFadeIn] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
+                row[AlpsShowLayout.EffectBlackoutFadeOut] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
+
                 switch (effect.kind)
                 {
                     case AlpsEffectKind.Move:
@@ -450,9 +459,6 @@ namespace AdzukiSoft.ALPS
                         break;
                     case AlpsEffectKind.Brightness:
                         AddParameter(effect.brightness);
-                        row[AlpsShowLayout.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
-                        row[AlpsShowLayout.EffectScalarB] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
-                        row[AlpsShowLayout.EffectScalarC] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
                         row[AlpsShowLayout.EffectScalarD] = Mathf.Max(0f, effect.fadeInBeats);
                         row[AlpsShowLayout.EffectScalarE] = Mathf.Max(0f, effect.fadeOutBeats);
                         break;

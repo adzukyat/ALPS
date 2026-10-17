@@ -106,7 +106,10 @@ float _AlpsTime;
 #define EffectScalarD 8
 #define EffectScalarE 9
 #define EffectPhaseOffset 10
-#define EffectStride 11
+#define EffectBlackout 11
+#define EffectBlackoutFadeIn 12
+#define EffectBlackoutFadeOut 13
+#define EffectStride 14
 
 #define ParamValue 0
 #define ParamRangeMin 1
@@ -577,13 +580,11 @@ int AlpsPaletteStop(int paramRow, int count, float source, float phase, out floa
 }
 
 // Brightness multiplier for blackout on return, AlpsPhaseCurve.IsReturnLeg: lit while a
-// wave of the phase the value follows is on its outbound leg, faded at both ends of it,
-// and dark otherwise. Waves running on past their cycle overlap, and the brightest of
-// their fades wins. A cycle that does not fire has no outbound leg.
-float AlpsBlackoutScale(AlpsClipContext c, int paramRow, float cycles, float fadeIn, float fadeOut)
+// wave of the phase at <phaseRow> is on its outbound leg, faded at both ends of it, and
+// dark otherwise. Waves running on past their cycle overlap, and the brightest of their
+// fades wins. A cycle that does not fire has no outbound leg.
+float AlpsBlackoutScale(AlpsClipContext c, int phaseRow, float cycles, float fadeIn, float fadeOut)
 {
-    bool own = AlpsRead(paramRow + ParamUseOwnPhase) > 0.5;
-    int phaseRow = own ? paramRow + ParamOwnPhase : c.row + ClipPhase;
     float rise = AlpsRead(phaseRow + PhaseRise);
     float holdHigh = AlpsRead(phaseRow + PhaseHoldHigh);
     float span = AlpsWaveSpan(rise, holdHigh, AlpsRead(phaseRow + PhaseFall));
@@ -653,12 +654,30 @@ float2 AlpsCircle(float centerTilt, float centerPan, float radius, float aspect,
 
 // --- One clip, one fixture ---------------------------------------------------------------
 
-// A fixture frame and which of its channels a clip drove.
+// A fixture frame and which of its channels a clip drove. <returnMask> is the move's
+// blackout on return, which darkens the composed brightness rather than a channel of its
+// own, so it travels beside the channels and covers the layers below with the pose.
 struct AlpsFrame
 {
     float value[FrameStride];
     bool written[FrameStride];
+    float returnMask;
 };
+
+// A frame no clip has written yet.
+AlpsFrame AlpsEmptyFrame()
+{
+    AlpsFrame frame;
+    [unroll]
+    for (int f = 0; f < FrameStride; f++)
+    {
+        frame.value[f] = 0.0;
+        frame.written[f] = false;
+    }
+
+    frame.returnMask = 1.0;
+    return frame;
+}
 
 void AlpsWrite(inout AlpsFrame frame, int channel, float value)
 {
@@ -768,6 +787,21 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             phase[v] = slotPhase;
         }
 
+        // Blackout on return, worked out here once for either kind so it compiles once. A
+        // move follows the phase of what turns the head: the circle's shared phase, tilt
+        // while tilt sweeps, else pan. A brightness effect follows its own value.
+        float blackout = 1.0;
+        if (AlpsRead(effectRow + EffectBlackout) > 0.5 && !(kind == KindMove && mode == MoveTrackUser))
+        {
+            bool usesPan = kind == KindMove && mode != MoveCircle
+                && AlpsRead(paramRow + ParamIsRange) < 0.5 && AlpsRead(paramRow + ParamStride + ParamIsRange) > 0.5;
+            int blackoutParam = kind == KindMove && mode == MoveCircle ? -1 : (usesPan ? paramRow + ParamStride : paramRow);
+            bool own = blackoutParam >= 0 && AlpsRead(blackoutParam + ParamUseOwnPhase) > 0.5;
+            int blackoutPhase = own ? blackoutParam + ParamOwnPhase : c.row + ClipPhase;
+            blackout = AlpsBlackoutScale(c, blackoutPhase, usesPan ? cycles[1] : cycles[0],
+                AlpsRead(effectRow + EffectBlackoutFadeIn), AlpsRead(effectRow + EffectBlackoutFadeOut));
+        }
+
         if (kind == KindMove)
         {
             if (mode == MoveTrackUser)
@@ -784,6 +818,7 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
                 : float2(value[1], value[0]);
             AlpsWrite(frame, FrameTilt, panTilt.y);
             AlpsWrite(frame, FramePan, mirrored ? -panTilt.x : panTilt.x);
+            frame.returnMask = blackout;
         }
         else if (kind == KindCone)
         {
@@ -792,12 +827,9 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
         }
         else if (kind == KindBrightness)
         {
-            float brightness = value[0];
-            if (mode > 0)
-            {
-                // Blackout on return: dark on the return leg, still covering lower layers.
-                brightness *= AlpsBlackoutScale(c, paramRow, cycles[0], AlpsRead(effectRow + EffectScalarB), AlpsRead(effectRow + EffectScalarC));
-            }
+            // A blackout carried over on brightness is dark on the return leg and still
+            // covers lower layers.
+            float brightness = value[0] * blackout;
 
             // The fade scales the value alone, so the clip still covers the layers below.
             brightness *= AlpsBrightnessFade(c.row, time, AlpsRead(effectRow + EffectScalarD), AlpsRead(effectRow + EffectScalarE));
@@ -934,6 +966,11 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
         weightSum[w] = 0.0;
     }
 
+    // A move's blackout on return covers the layers below with its pose, and darkens the
+    // brightness once every layer is composed, whichever layer lights it.
+    float returnMask = 1.0;
+    float maskSum = 0.0;
+
     float layer = -1.0;
     float mixInSum = 0.0;
     [loop]
@@ -953,6 +990,18 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
             float above = weightSum[FrameBrightness] > 0.0 ? sum[FrameBrightness] / weightSum[FrameBrightness] : below;
             bool layerMoves = weightSum[FramePan] > 0.0 || weightSum[FrameTilt] > 0.0;
             float poseShare = moved ? saturate(weightSum[FramePan]) : saturate(mixInSum);
+
+            // A head tracking a user is no longer coming back from anything.
+            if (weightSum[FrameTrackEffect] >= 0.5 && sum[FrameTrackEffect] > 0.0)
+            {
+                returnMask = 1.0;
+            }
+            else if (weightSum[FramePan] > 0.0)
+            {
+                returnMask = lerp(returnMask, maskSum / weightSum[FramePan], poseShare);
+            }
+
+            maskSum = 0.0;
 
             [unroll]
             for (int ch = 0; ch < FrameStride; ch++)
@@ -992,7 +1041,11 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
             layer = clipLayer;
         }
 
-        if (last) break;
+        if (last)
+        {
+            result[FrameBrightness] *= returnMask;
+            break;
+        }
 
         // The bucket also lists the clips that last turned a head before it.
         heldUntil = max(heldUntil, AlpsMoveEnd(clip, fixture, time, show));
@@ -1003,18 +1056,12 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
         int index = AlpsIndexInGroup(show, AlpsReadInt(row + ClipGroup), fixture);
         if (index < 0) continue;
 
-        AlpsFrame frame;
-        [unroll]
-        for (int f = 0; f < FrameStride; f++)
-        {
-            frame.value[f] = 0.0;
-            frame.written[f] = false;
-        }
-
+        AlpsFrame frame = AlpsEmptyFrame();
         AlpsEvaluateClip(clip, index, time, frame, show);
         if (frame.written[FramePan])
         {
             mixInSum += AlpsClipMixIn(row, time);
+            maskSum += frame.returnMask * weight;
         }
 
         [unroll]

@@ -15,9 +15,10 @@ namespace AdzukiSoft.ALPS
         /// The layout <see cref="version"/> marks. Sets saved before version 1 had symmetric
         /// as an order of its own, between reverse and random. Before version 2 the fade
         /// belonged to the clip and scaled its weight, and it now belongs to the brightness
-        /// effect. <see cref="OnAfterDeserialize"/> converts both.
+        /// effect. Before version 3 blackout on return belonged to the brightness effect, and
+        /// it now belongs to the move. <see cref="OnAfterDeserialize"/> converts all three.
         /// </summary>
-        private const int CurrentVersion = 2;
+        private const int CurrentVersion = 3;
 
         /// <summary>
         /// The clip's own tempo, for songs that change tempo part way. Zero follows the
@@ -240,8 +241,95 @@ namespace AdzukiSoft.ALPS
                 MoveFadeToBrightness();
             }
 
+            if (version < 3)
+            {
+                MoveBlackoutToMove();
+            }
+
             version = CurrentVersion;
             SortEffects();
+        }
+
+        /// <summary>
+        /// Hands every brightness effect's blackout on return to the moves that turn the same
+        /// fixtures, where the move goes back on the same phase, so the clip looks the same on
+        /// its own. The move now darkens the composed brightness, so a layer above that lights
+        /// the same fixtures goes dark with it. A blackout no move can take unchanged stays on
+        /// the brightness effect, which still plays it.
+        /// </summary>
+        private void MoveBlackoutToMove()
+        {
+            if (effects == null)
+            {
+                return;
+            }
+
+            foreach (var brightness in effects)
+            {
+                if (brightness == null || brightness.kind != AlpsEffectKind.Brightness || !brightness.blackoutOnReturn
+                    || brightness.brightness.useOwnPhase)
+                {
+                    continue;
+                }
+
+                var takers = new List<AlpsEffect>();
+                var covered = 0;
+                foreach (var move in effects)
+                {
+                    if (move == null || move.kind != AlpsEffectKind.Move || !Overlaps(move.parity, brightness.parity))
+                    {
+                        continue;
+                    }
+
+                    if (!ReturnsOnClipPhase(move) || !Mathf.Approximately(move.phaseOffset, brightness.phaseOffset))
+                    {
+                        covered = -1;
+                        break;
+                    }
+
+                    takers.Add(move);
+                    covered |= Positions(move.parity);
+                }
+
+                if (covered < 0 || (covered & Positions(brightness.parity)) != Positions(brightness.parity))
+                {
+                    continue;
+                }
+
+                foreach (var move in takers)
+                {
+                    move.blackoutOnReturn = true;
+                    move.blackoutFadeIn = brightness.blackoutFadeIn;
+                    move.blackoutFadeOut = brightness.blackoutFadeOut;
+                }
+
+                brightness.blackoutOnReturn = false;
+            }
+        }
+
+        /// <summary>
+        /// True when the move's blackout on return follows the clip's shared phase: a circle
+        /// always, an angle move through tilt while tilt sweeps, else through pan.
+        /// </summary>
+        private static bool ReturnsOnClipPhase(AlpsEffect move)
+        {
+            if (move.moveMode == AlpsMoveMode.TrackUser)
+            {
+                return false;
+            }
+
+            return move.moveMode == AlpsMoveMode.Circle || !AlpsEffect.ReturnValue(move).useOwnPhase;
+        }
+
+        /// <summary>Order positions a parity reaches: 1 for even, 2 for odd.</summary>
+        private static int Positions(AlpsParity parity)
+        {
+            return parity == AlpsParity.Even ? 1 : parity == AlpsParity.Odd ? 2 : 3;
+        }
+
+        private static bool Overlaps(AlpsParity a, AlpsParity b)
+        {
+            return (Positions(a) & Positions(b)) != 0;
         }
 
         /// <summary>

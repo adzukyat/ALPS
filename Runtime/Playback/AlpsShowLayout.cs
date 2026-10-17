@@ -139,11 +139,11 @@ namespace AdzukiSoft.ALPS
         public const int EffectParamStart = 2;
         public const int EffectPaletteStart = 3;
         public const int EffectPaletteCount = 4;
-        /// <summary>Move mode, brightness blackout on return, flicker speed, gobo beats per turn.</summary>
+        /// <summary>Move mode, flicker speed, gobo beats per turn.</summary>
         public const int EffectScalarA = 5;
-        /// <summary>Pan/tilt phase offset, brightness blackout fade in, flicker strength, gobo stagger degrees.</summary>
+        /// <summary>Pan/tilt phase offset, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
-        /// <summary>Track speed, brightness blackout fade out, flicker stagger, gobo projection off (read on the CPU only).</summary>
+        /// <summary>Track speed, flicker stagger, gobo projection off (read on the CPU only).</summary>
         public const int EffectScalarC = 7;
         /// <summary>Tracked user name index, brightness fade in beats.</summary>
         public const int EffectScalarD = 8;
@@ -154,7 +154,16 @@ namespace AdzukiSoft.ALPS
         /// pair at 0.5 takes turns with the other.
         /// </summary>
         public const int EffectPhaseOffset = 10;
-        public const int EffectStride = 11;
+        /// <summary>
+        /// 1 for blackout on return. On a move it darkens the composed brightness while the
+        /// head comes back, whichever layer lights it. On a brightness effect, which only sets
+        /// carried over from before the move took it have, it darkens that effect's value.
+        /// </summary>
+        public const int EffectBlackout = 11;
+        /// <summary>Blackout fade in and out, each a share of the outbound leg (0 to 0.5).</summary>
+        public const int EffectBlackoutFadeIn = 12;
+        public const int EffectBlackoutFadeOut = 13;
+        public const int EffectStride = 14;
 
         // --- Parameter rows ----------------------------------------------------------------
 

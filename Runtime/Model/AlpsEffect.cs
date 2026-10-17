@@ -67,8 +67,12 @@ namespace AdzukiSoft.ALPS
         /// <summary>Stored on the 0–200 scale the inspector shows. 100 is white at a tint of 1.</summary>
         public AlpsAnimatableValue brightness = new AlpsAnimatableValue(100f, new Vector2(0f, 200f)) { range = new Vector2(0f, 100f) };
         /// <summary>
-        /// Blackout on return: brightness drops to 0 while the wave driving it is on its
-        /// return leg, the fall and the low hold, so the beams fly out one way only.
+        /// Blackout on return, a move's: the light goes dark while the wave turning the head
+        /// is on its return leg, the fall and the low hold, so the beams fly out one way only.
+        /// It darkens the composed brightness, so the brightness can sit on a layer of its
+        /// own (<see cref="ReturnValue"/>). Sets saved before the move took it may still carry
+        /// it on a brightness effect, where it darkens that effect's value on the return of
+        /// the brightness' own phase.
         /// </summary>
         public bool blackoutOnReturn;
         /// <summary>Fade in at the start of the outbound leg, as a fraction of that leg (0 to 0.5).</summary>
@@ -167,6 +171,15 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>Both Tilt and Pan ranged, the condition for showing phase offset.</summary>
         public bool ShowPanTiltPhaseOffset => tilt.isRange && pan.isRange;
+
+        /// <summary>
+        /// The value of an angle move whose phase its blackout on return follows: tilt while
+        /// tilt sweeps, else pan when pan does, else tilt. A circle follows the clip's phase.
+        /// </summary>
+        public static AlpsAnimatableValue ReturnValue(AlpsEffect move)
+        {
+            return !move.tilt.isRange && move.pan.isRange ? move.pan : move.tilt;
+        }
 
         public static AlpsEffect Create(AlpsEffectKind kind)
         {
