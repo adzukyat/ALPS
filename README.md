@@ -20,13 +20,13 @@ Stock VRSL is enough, gobo rotation included. ALPS is tested with VRSL 2.4.5 and
 
 ### 1. Fixtures
 
-Add `ALPS VRSL Fixture` (`Adzuki Live Performance System > ALPS VRSL Fixture`) to each VRSL DMX Static fixture, for example `VRSL-DMX-Mover-Spotlight-H-13CH`. Its `Target` is found in children when left empty.
+Add `ALPS VRSL Fixture` (`ALPS > ALPS VRSL Fixture`) to each VRSL DMX Static fixture, for example `VRSL-DMX-Mover-Spotlight-H-13CH`. Its `Target` is found in children when left empty.
 
 New fixtures can also come from the Hierarchy: right click (or the + button, or the GameObject menu) and pick `ALPS > Mover Spotlight`, `Mover Wash Light`, `Par Light`, `Blinder`, `Light Bar`, `Multi Light Bar` or `Laser`. Each is the VRSL horizontal mode prefab with `ALPS VRSL Fixture` already on it. It goes under the object you clicked, or next to it when that object is a fixture, so repeating the menu on the last fixture keeps filling the same container.
 
 ### 2. Containers
 
-Put fixtures under an object with `ALPS Container` (`Adzuki Live Performance System > ALPS Container`), or create one from the Hierarchy with `ALPS > Container`. A container holds every fixture below it, inactive ones and ones nested deeper included, and their order in the Hierarchy is the fixture number used by the order, the odd and even split, and every per fixture offset. Reorder them in the Hierarchy to change it. Containers can be nested, so one for the whole rig can hold one per truss.
+Put fixtures under an object with `ALPS Container` (`ALPS > ALPS Container`), or create one from the Hierarchy with `ALPS > Container`. A container holds every fixture below it, inactive ones and ones nested deeper included, and their order in the Hierarchy is the fixture number used by the order, the odd and even split, and every per fixture offset. Reorder them in the Hierarchy to change it. Containers can be nested, so one for the whole rig can hold one per truss.
 
 A container that was an `ALPS Fixture Group` in an older version keeps its Timeline bindings. When its scene opens, the children are reordered to follow the group's old fixture list. Fixtures the list held from outside the container are reported in the console, since only fixtures below it are driven now.
 
