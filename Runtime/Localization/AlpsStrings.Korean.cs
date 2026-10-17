@@ -146,9 +146,13 @@ namespace AdzukiSoft.ALPS
 
                 // --- Phase settings ---------------------------------------
                 { "phase.mode", "모드" },
-                { "phase.mode.wave", "파형" },
+                { "phase.mode.wave", "반복" },
                 { "phase.mode.random", "랜덤" },
-                { "phase.mode.inOut", "인/아웃" },
+                { "phase.mode.inOut", "인아웃" },
+                { "phase.shape.sweep", "스윕" },
+                { "phase.shape.pulse", "펄스" },
+                { "phase.shape.pingPong", "핑퐁" },
+                { "phase.shape.tip", "스윕은 끝까지 올라간 뒤 바로 맨 아래로 돌아가고, 펄스는 단숨에 올라간 뒤 내려가며, 핑퐁은 올라갔다가 내려갑니다. 선택하면 배분의 상승과 하강이 그 모양에 맞게 다시 배치됩니다." },
                 { "phase.inOut", "인 / 아웃" },
                 { "phase.inOut.tip", "클립 시작부터 움직임이 위쪽 끝에 도달할 때까지와, 종료 전 돌아오기 시작하여 클립이 끝날 때까지의 박 수입니다. 그 사이에는 위쪽 끝에 머무르므로, 범위는 클립 안에서 첫 값에서 마지막 값으로 한 번 갔다가 다시 돌아옵니다." },
                 { "phase.shares", "배분" },

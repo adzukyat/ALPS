@@ -63,6 +63,17 @@ namespace AdzukiSoft.ALPS
 
         public AlpsClipEffectSet() { }
 
+        /// <summary>
+        /// What a clip or profile made in the editor starts from. Its phase is in / out, where
+        /// the model's own default stays the wave everything older was saved against.
+        /// </summary>
+        public static AlpsClipEffectSet CreateNew()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.mode = AlpsPhaseMode.InOut;
+            return set;
+        }
+
         /// <summary>Deep copy, used to load a clip from a profile and to save it back.</summary>
         public AlpsClipEffectSet(AlpsClipEffectSet other)
         {

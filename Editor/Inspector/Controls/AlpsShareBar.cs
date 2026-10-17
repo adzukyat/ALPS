@@ -108,6 +108,47 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>What a double click on a corner restores it toward. Null leaves the corners as they are.</summary>
         public Vector3? DefaultValue { get; set; }
 
+        /// <summary>
+        /// Keeps the rise at zero and hides its corner, for a wave that jumps to the top. The
+        /// shown value is not changed by setting it.
+        /// </summary>
+        public bool LockRise
+        {
+            get => _lockRise;
+            set
+            {
+                if (_lockRise == value)
+                {
+                    return;
+                }
+
+                _lockRise = value;
+                Refresh();
+            }
+        }
+
+        /// <summary>
+        /// Keeps the fall at zero and hides its corner, for a wave that drops back at the end of
+        /// the high hold. The end of the high hold then carries the fall with it.
+        /// </summary>
+        public bool LockFall
+        {
+            get => _lockFall;
+            set
+            {
+                if (_lockFall == value)
+                {
+                    return;
+                }
+
+                _lockFall = value;
+                Refresh();
+            }
+        }
+
+        private bool _lockRise;
+        private bool _lockFall;
+
         /// <summary>The corner positions, for tests: end of rise, end of high hold, end of fall.</summary>
         public float Corner(int corner)
         {
@@ -190,11 +231,38 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         public void MoveCorner(int corner, float position)
         {
+            if (IsLocked(corner))
+            {
+                return;
+            }
+
             var low = corner == RiseEnd ? 0f : _corners[corner - 1];
-            var high = corner == FallEnd ? _cycles : _corners[corner + 1];
+            var high = corner == FallEnd || (_lockFall && corner == HighEnd) ? _cycles : _corners[corner + 1];
             var corners = (float[])_corners.Clone();
             corners[corner] = Mathf.Clamp(position, low, high);
-            value = FromCorners(corners);
+            value = FromCorners(Constrain(corners));
+        }
+
+        /// <summary>True when <paramref name="corner"/> is held in place by a lock and has no thumb.</summary>
+        private bool IsLocked(int corner)
+        {
+            return (_lockRise && corner == RiseEnd) || (_lockFall && corner == FallEnd);
+        }
+
+        /// <summary>Puts the locked corners back where their locks hold them.</summary>
+        private float[] Constrain(float[] corners)
+        {
+            if (_lockRise)
+            {
+                corners[RiseEnd] = 0f;
+            }
+
+            if (_lockFall)
+            {
+                corners[FallEnd] = corners[HighEnd];
+            }
+
+            return corners;
         }
 
         private static Vector3 FromCorners(float[] corners)
@@ -239,6 +307,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 _thumbs[i].style.left = XOf(_corners[i]);
                 _thumbs[i].style.top = YOf(i);
+                _thumbs[i].style.display = IsLocked(i) ? DisplayStyle.None : DisplayStyle.Flex;
             }
 
             RefreshLegend();
@@ -353,6 +422,11 @@ namespace AdzukiSoft.ALPS.Editor
             var best = PickRadius;
             for (var i = 0; i < _corners.Length; i++)
             {
+                if (IsLocked(i))
+                {
+                    continue;
+                }
+
                 var distance = Vector2.Distance(local, new Vector2(XOf(_corners[i]), YOf(i)));
                 if (distance > best + 0.5f)
                 {
@@ -480,14 +554,14 @@ namespace AdzukiSoft.ALPS.Editor
             var first = corners[0];
             var last = corners[corners.Count - 1];
             var low = first == RiseEnd ? 0f : moved[first - 1];
-            var high = last == FallEnd ? _cycles : moved[last + 1];
+            var high = last == FallEnd || (_lockFall && last == HighEnd) ? _cycles : moved[last + 1];
             for (var i = first; i <= last; i++)
             {
                 moved[i] = Mathf.Clamp(targets[i], low, high);
                 low = moved[i];
             }
 
-            value = FromCorners(moved);
+            value = FromCorners(Constrain(moved));
         }
     }
 }

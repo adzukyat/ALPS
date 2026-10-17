@@ -6,13 +6,13 @@ namespace AdzukiSoft.ALPS
     [CreateAssetMenu(fileName = "AlpsClipProfile", menuName = "Adzuki Live Performance System/Clip Profile", order = 400)]
     public class AlpsClipProfile : ScriptableObject
     {
-        public AlpsClipEffectSet data = new AlpsClipEffectSet();
+        public AlpsClipEffectSet data = AlpsClipEffectSet.CreateNew();
 
         private void OnValidate()
         {
             if (data == null)
             {
-                data = new AlpsClipEffectSet();
+                data = AlpsClipEffectSet.CreateNew();
             }
 
             AlpsPreviewDriver.MarkDirty();

@@ -146,9 +146,13 @@ namespace AdzukiSoft.ALPS
 
                 // --- Phase settings ---------------------------------------
                 { "phase.mode", "Mode" },
-                { "phase.mode.wave", "Wave" },
+                { "phase.mode.wave", "Repeat" },
                 { "phase.mode.random", "Random" },
-                { "phase.mode.inOut", "In/Out" },
+                { "phase.mode.inOut", "In / Out" },
+                { "phase.shape.sweep", "Sweep" },
+                { "phase.shape.pulse", "Pulse" },
+                { "phase.shape.pingPong", "Ping-pong" },
+                { "phase.shape.tip", "Sweep rises and drops straight back to the bottom, pulse jumps to the top and falls, and ping-pong rises and falls. Picking one rearranges the rise and the fall of the distribution to fit." },
                 { "phase.inOut", "In / Out" },
                 { "phase.inOut.tip", "The beats from the clip's start until the motion reaches the top, and from when it starts back down before the end until the clip ends. In between it holds at the top, so a range goes from its first value to its last once and back again over the clip." },
                 { "phase.shares", "Distribution" },

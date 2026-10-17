@@ -206,7 +206,7 @@ namespace AdzukiSoft.ALPS.Editor
 
                 foreach (var clip in clips)
                 {
-                    clip.data ??= new AlpsClipEffectSet();
+                    clip.data ??= AlpsClipEffectSet.CreateNew();
                 }
 
                 // Clips following the same profile share one effect set, so it is edited once.

@@ -280,6 +280,16 @@
     margin-right: 7px;
 }
 
+/* Inside a parameter's own phase the tabs drop their icons and keep the text, at the
+   height of a segmented control. */
+.alps-tabs--compact .alps-tabs__item {
+    padding: 1px 0 1px 0;
+}
+
+.alps-tabs--compact .alps-tabs__icon {
+    display: none;
+}
+
 /* -------------------------------------------------------- toggle switch */
 
 .alps-root .alps-switch__input {
@@ -661,6 +671,11 @@
    switch closer than the flow's own spacing. */
 .alps-root .alps-easepicker__tiles {
     margin-top: 4px;
+}
+
+/* A wave with one side has no switch above the grid to follow. */
+.alps-root .alps-easepicker--single .alps-easepicker__tiles {
+    margin-top: 0;
 }
 
 .alps-root .alps-easepicker__grid {

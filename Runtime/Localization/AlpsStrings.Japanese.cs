@@ -146,9 +146,13 @@ namespace AdzukiSoft.ALPS
 
                 // --- Phase settings ---------------------------------------
                 { "phase.mode", "モード" },
-                { "phase.mode.wave", "波形" },
+                { "phase.mode.wave", "繰り返し" },
                 { "phase.mode.random", "ランダム" },
-                { "phase.mode.inOut", "イン/アウト" },
+                { "phase.mode.inOut", "インアウト" },
+                { "phase.shape.sweep", "スイープ" },
+                { "phase.shape.pulse", "パルス" },
+                { "phase.shape.pingPong", "ピンポン" },
+                { "phase.shape.tip", "スイープは上がりきるとすぐ一番下へ戻り、パルスは一気に上がってから下がり、ピンポンは上がってから下がります。選ぶと、配分の上りと下りがその形に合わせて並べ替わります。" },
                 { "phase.inOut", "イン / アウト" },
                 { "phase.inOut.tip", "クリップの開始から動きが上端に達するまでと、終了前に戻り始めてからクリップが終わるまでの拍数です。その間は上端で止まるので、範囲はクリップの中で最初の値から最後の値へ一度だけ進み、また戻ります。" },
                 { "phase.shares", "配分" },
