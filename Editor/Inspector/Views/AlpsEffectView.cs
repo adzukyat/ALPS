@@ -8,10 +8,14 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// One effect card. The body is built per <see cref="AlpsEffectKind"/>. Everything the
     /// kinds share (header, description, copy / delete, collapse) lives in
-    /// <see cref="AlpsEffectCard"/>.
+    /// <see cref="AlpsEffectCard"/>. Under it hang the own motion cards of its parameters,
+    /// which fold away with it.
     /// </summary>
     public class AlpsEffectView : VisualElement
     {
+        /// <summary>Longest brightness fade either side of a clip, in beats.</summary>
+        public const float MaxFadeBeats = 8f;
+
         private readonly AlpsEffect _effect;
 
         /// <summary>A fresh effect of the same kind. Double clicking a slider thumb restores its value.</summary>
@@ -21,6 +25,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly List<AlpsAnimatableView> _animatables = new List<AlpsAnimatableView>();
         private readonly AlpsMixedValues _mixed;
         private Action _refreshPhaseOffset;
+        private Action _refreshBlackout;
 
         public AlpsEffectView(
             AlpsEffect effect,
@@ -36,9 +41,10 @@ namespace AdzukiSoft.ALPS.Editor
             _clipPhase = clipPhase;
 
             // Any edit on the card can start or stop something following a phase, which is
-            // what the phase offset row waits for.
+            // what the phase offset and blackout rows wait for.
             _onChanged = () =>
             {
+                _refreshBlackout?.Invoke();
                 _refreshPhaseOffset?.Invoke();
                 onChanged?.Invoke();
             };
@@ -70,10 +76,19 @@ namespace AdzukiSoft.ALPS.Editor
             BuildBody(Card.Body);
             BuildPhaseOffset(Card.Body);
             Card.SetChips(BuildChips());
+
+            var motions = new VisualElement();
+            foreach (var animatable in _animatables)
+            {
+                motions.Add(animatable.MotionCard);
+            }
+
+            Card.ExpandedChanged += expanded => AlpsPhaseSettingsView.Show(motions, expanded);
             Card.Expanded = effect.expanded;
             RefreshPasteAvailability();
 
             Add(Card);
+            Add(motions);
         }
 
         private void RefreshPasteAvailability()
@@ -170,9 +185,17 @@ namespace AdzukiSoft.ALPS.Editor
 
             var circlePane = new VisualElement();
             circlePane.AddToClassList("alps-flow9");
-            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerTilt"), _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerPan"), _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable(AlpsStrings.Tr("common.radius"), _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles));
+            var circleValues = new[]
+            {
+                Animatable(AlpsStrings.Tr("effect.move.centerTilt"), _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles),
+                Animatable(AlpsStrings.Tr("effect.move.centerPan"), _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles),
+                Animatable(AlpsStrings.Tr("common.radius"), _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles),
+            };
+            foreach (var value in circleValues)
+            {
+                circlePane.Add(value);
+            }
+
 
             // 1 draws a true circle.
             var aspect = new AlpsValueSlider(AlpsStrings.Tr("effect.move.aspect"), new Vector2(0.1f, 4f), string.Empty, "0.##")
@@ -216,14 +239,44 @@ namespace AdzukiSoft.ALPS.Editor
             trackPane.Add(followSpeed);
             body.Add(trackPane);
 
+            // The return leg belongs to what turns the head: the circle's clip phase, tilt
+            // while tilt sweeps, else pan. A tracking head never comes back.
+            BuildBlackout(
+                body,
+                AlpsStrings.Tr("effect.move.blackoutReturn"),
+                AlpsStrings.Tr("effect.move.blackoutReturn.tip"),
+                () =>
+                {
+                    if (_effect.moveMode == AlpsMoveMode.TrackUser)
+                    {
+                        return null;
+                    }
+
+                    if (_effect.moveMode == AlpsMoveMode.Circle)
+                    {
+                        return _clipPhase;
+                    }
+
+                    return AlpsEffect.ReturnValue(_effect) == _effect.pan ? pan.GoverningPhase : tilt.GoverningPhase;
+                });
+
             void ApplyTab()
             {
                 var angle = _effect.moveMode == AlpsMoveMode.Angle;
                 AlpsPhaseSettingsView.Show(anglePane, angle);
                 AlpsPhaseSettingsView.Show(circlePane, _effect.moveMode == AlpsMoveMode.Circle);
                 AlpsPhaseSettingsView.Show(trackPane, _effect.moveMode == AlpsMoveMode.TrackUser);
-                // Phase offset only means something once both axes sweep a range.
-                AlpsPhaseSettingsView.Show(phaseOffset, angle && _effect.ShowPanTiltPhaseOffset);
+
+                // A motion card under the card follows its row in and out with the tab.
+                tilt.RowShown = angle;
+                pan.RowShown = angle;
+                foreach (var value in circleValues)
+                {
+                    value.RowShown = _effect.moveMode == AlpsMoveMode.Circle;
+                }
+
+                // Phase offset only means something once both axes sweep a range, over a cycle.
+                AlpsPhaseSettingsView.Show(phaseOffset, angle && _effect.ShowPanTiltPhaseOffset && _clipPhase.mode != AlpsPhaseMode.InOut);
             }
 
             tabs.RegisterValueChangedCallback(evt =>
@@ -272,7 +325,8 @@ namespace AdzukiSoft.ALPS.Editor
                 },
                 paletteRow: palette,
                 paletteCount: () => _effect.colorStops.Count,
-                mixed: _mixed);
+                mixed: _mixed,
+                motionName: AlpsStrings.Tr("effect.color.palette"));
 
             palette.Changed += () =>
             {
@@ -289,11 +343,62 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void BuildBrightness(VisualElement body)
         {
-            AlpsAnimatableView view = null;
-
             // Effects saved before brightness reached 200% still carry the old limit.
             _effect.brightness.limit = _defaults.brightness.limit;
 
+            var view = new AlpsAnimatableView(
+                AlpsStrings.Tr("effect.brightness.name"),
+                _effect.brightness,
+                _clipPhase,
+                _onChanged,
+                "%",
+                "0",
+                snaps: limit => AlpsSnapPoints.Multiples(limit, 100f),
+                defaults: _defaults.brightness,
+                mixed: _mixed);
+            _animatables.Add(view);
+            body.Add(view);
+
+            // The fade over the clip in beats, separate from Timeline's ease in and out, which
+            // is set in seconds and blends with the layers below.
+            var clipFade = new AlpsFadeSlider(AlpsStrings.Tr("effect.brightness.fade"), MaxFadeBeats, AlpsStrings.Tr("unit.beats"), "0.##")
+            {
+                Snaps = new[] { 1f, 2f, 4f },
+                DefaultValue = new Vector2(_defaults.fadeInBeats, _defaults.fadeOutBeats),
+                tooltip = AlpsStrings.Tr("effect.brightness.fade.tip"),
+            };
+            clipFade.SetValueWithoutNotify(new Vector2(_effect.fadeInBeats, _effect.fadeOutBeats));
+            clipFade.RegisterValueChangedCallback(evt =>
+            {
+                _effect.fadeInBeats = evt.newValue.x;
+                _effect.fadeOutBeats = evt.newValue.y;
+                _onChanged?.Invoke();
+            });
+            _mixed?.Bind(clipFade, _effect, nameof(AlpsEffect.fadeInBeats), nameof(AlpsEffect.fadeOutBeats));
+            body.Add(clipFade);
+
+            // Blackout on return belongs to the move now. Only a set saved before that, which
+            // loading could not hand to a move unchanged, still shows it here, so it can be
+            // turned off. It follows the phase driving brightness.
+            if (_effect.blackoutOnReturn)
+            {
+                BuildBlackout(
+                    body,
+                    AlpsStrings.Tr("effect.brightness.blackoutReturn"),
+                    AlpsStrings.Tr("effect.brightness.blackoutReturn.tip"),
+                    () => view.GoverningPhase);
+            }
+        }
+
+        // ---------------------------------------------------- Blackout on return
+
+        /// <summary>
+        /// The blackout on return switch and, under it, its fades inside the outbound leg. Both
+        /// show only while <paramref name="governing"/> gives a wave that comes back, and null
+        /// hides them.
+        /// </summary>
+        private void BuildBlackout(VisualElement body, string label, string tooltip, Func<AlpsPhaseSettings> governing)
+        {
             // Untitled frame for the fades, which run inside the outbound leg.
             var fadeFrame = new VisualElement();
             fadeFrame.AddToClassList("alps-sub");
@@ -312,47 +417,31 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(fade, _effect, nameof(AlpsEffect.blackoutFadeIn), nameof(AlpsEffect.blackoutFadeOut));
             fadeFrame.Add(fade);
 
-            var blackout = new AlpsToggleSwitch(AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            var blackout = new AlpsToggleSwitch(label) { tooltip = tooltip };
             blackout.SetValueWithoutNotify(_effect.blackoutOnReturn);
             blackout.RegisterValueChangedCallback(evt =>
             {
                 _effect.blackoutOnReturn = evt.newValue;
-                ApplyBlackout();
                 _onChanged?.Invoke();
             });
             _mixed?.Bind(blackout, _effect, nameof(AlpsEffect.blackoutOnReturn));
 
-            // The return leg belongs to whichever phase drives brightness, so switching
-            // own phase or its mode inside the row has to re-evaluate the switch too.
-            view = new AlpsAnimatableView(
-                AlpsStrings.Tr("effect.brightness.name"),
-                _effect.brightness,
-                _clipPhase,
-                () =>
-                {
-                    ApplyBlackout();
-                    _onChanged?.Invoke();
-                },
-                "%",
-                "0",
-                snaps: limit => AlpsSnapPoints.Multiples(limit, 100f),
-                defaults: _defaults.brightness,
-                mixed: _mixed);
-            _animatables.Add(view);
-            body.Add(view);
             body.Add(blackout);
             body.Add(fadeFrame);
 
-            void ApplyBlackout()
+            // Switching own phase or its mode inside a row changes which leg is the return,
+            // which reaches here through the card's change callback.
+            void Apply()
             {
-                var phase = view.GoverningPhase;
-                var returns = phase.mode == AlpsPhaseMode.Wave && AlpsPhaseCurve.Returns(phase.rise, phase.holdHigh, phase.fall);
+                var phase = governing();
+                var returns = phase != null && phase.mode == AlpsPhaseMode.Wave && AlpsPhaseCurve.Returns(phase.rise, phase.holdHigh, phase.fall);
                 AlpsPhaseSettingsView.Show(blackout, returns);
                 AlpsPhaseSettingsView.Show(fadeFrame, returns && _effect.blackoutOnReturn);
             }
 
-            RefreshHooks += ApplyBlackout;
-            ApplyBlackout();
+            _refreshBlackout = Apply;
+            RefreshHooks += Apply;
+            Apply();
         }
 
         // ---------------------------------------------------------- Flicker
@@ -394,7 +483,8 @@ namespace AdzukiSoft.ALPS.Editor
                 _onChanged,
                 paletteRow: palette,
                 paletteCount: () => _effect.goboStops.Count,
-                mixed: _mixed);
+                mixed: _mixed,
+                motionName: AlpsStrings.Tr("effect.gobo.palette"));
 
             palette.Changed += () =>
             {
@@ -462,7 +552,8 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(offset, _effect, nameof(AlpsEffect.phaseOffset));
             body.Add(offset);
 
-            _refreshPhaseOffset = () => AlpsPhaseSettingsView.Show(offset, FollowsPhase());
+            // An in / out phase has no cycle to run late by.
+            _refreshPhaseOffset = () => AlpsPhaseSettingsView.Show(offset, FollowsPhase() && _clipPhase.mode != AlpsPhaseMode.InOut);
             RefreshHooks += _refreshPhaseOffset;
             _refreshPhaseOffset();
         }
@@ -479,7 +570,7 @@ namespace AdzukiSoft.ALPS.Editor
                     }
 
                     return _effect.moveMode == AlpsMoveMode.Angle
-                           && (_effect.tilt.HasMultipleStops || _effect.pan.HasMultipleStops);
+                           && (_effect.tilt.HasMultipleStops || _effect.pan.HasMultipleStops || _effect.blackoutOnReturn);
                 case AlpsEffectKind.Cone:
                     return _effect.coneWidth.HasMultipleStops || _effect.coneLength.HasMultipleStops;
                 case AlpsEffectKind.Color:
@@ -490,6 +581,43 @@ namespace AdzukiSoft.ALPS.Editor
                     return _effect.brightness.HasMultipleStops || _effect.blackoutOnReturn;
                 case AlpsEffectKind.Gobo:
                     return _effect.goboStops.Count >= 2;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// True when something on <paramref name="effect"/> moves with the clip's shared phase:
+        /// a range or a palette that does not run on its own phase, a circle, or a blackout on
+        /// the return of a move or brightness that follows the clip.
+        /// </summary>
+        public static bool FollowsClipPhase(AlpsEffect effect)
+        {
+            bool Shared(AlpsAnimatableValue value) => value.HasMultipleStops && !value.useOwnPhase;
+
+            switch (effect.kind)
+            {
+                case AlpsEffectKind.Move:
+                    if (effect.moveMode == AlpsMoveMode.Circle)
+                    {
+                        return true;
+                    }
+
+                    return effect.moveMode == AlpsMoveMode.Angle
+                           && (Shared(effect.tilt) || Shared(effect.pan)
+                               || (effect.blackoutOnReturn && !AlpsEffect.ReturnValue(effect).useOwnPhase));
+                case AlpsEffectKind.Cone:
+                    return Shared(effect.coneWidth) || Shared(effect.coneLength);
+                case AlpsEffectKind.Color:
+                    // A single gradient stop is walked by the phase as well.
+                    return !effect.colorPhasing.useOwnPhase
+                           && (effect.colorStops.Count >= 2
+                               || (effect.colorStops.Count == 1 && effect.colorStops[0].isGradient));
+                case AlpsEffectKind.Brightness:
+                    return !effect.brightness.useOwnPhase
+                           && (effect.brightness.HasMultipleStops || effect.blackoutOnReturn);
+                case AlpsEffectKind.Gobo:
+                    return !effect.goboPhasing.useOwnPhase && effect.goboStops.Count >= 2;
                 default:
                     return false;
             }

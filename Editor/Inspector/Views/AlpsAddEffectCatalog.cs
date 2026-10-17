@@ -5,9 +5,9 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Add effect: a centred button like the inspector's Add Component, below a divider
-    /// once the clip has effects, and
-    /// the thumbnail grid it reveals. The button shows as checked while the grid is open.
+    /// Add effect: the thumbnail grid of the effects the clip can still take, under a header,
+    /// below a divider once the clip has effects. It is always open, so what can be added is
+    /// in view without a click.
     ///
     /// An effect already on the clip stays in the list, retitled with an odd suffix. Picking it
     /// is what splits the existing card into even / odd. A kind disappears from the list
@@ -17,7 +17,6 @@ namespace AdzukiSoft.ALPS.Editor
     {
         private readonly AlpsClipEffectSet _set;
         private readonly VisualElement _divider;
-        private readonly VisualElement _button;
         private readonly VisualElement _list;
 
         public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd)
@@ -30,25 +29,7 @@ namespace AdzukiSoft.ALPS.Editor
             _divider.AddToClassList("alps-divider");
             Add(_divider);
 
-            _button = new VisualElement();
-            _button.AddToClassList("alps-add__button");
-
-            var title = new Label(AlpsStrings.Tr("addEffect.title"));
-            title.AddToClassList("alps-add__title");
-            _button.Add(title);
-
-            _button.RegisterCallback<PointerDownEvent>(_ =>
-            {
-                _set.addCatalogExpanded = !_set.addCatalogExpanded;
-                Rebuild();
-            });
-
-            Add(_button);
-
-            _list = new VisualElement();
-            _list.AddToClassList("alps-add__list");
-            Add(_list);
-
+            _list = AlpsCatalogPanel.Build(this, AlpsStrings.Tr("addEffect.title"));
             Rebuild();
         }
 
@@ -66,16 +47,9 @@ namespace AdzukiSoft.ALPS.Editor
         public void Rebuild()
         {
             // With no effects the divider under the shared settings already separates the
-            // button, so a second one would sit right below it.
+            // list, so a second one would sit right below it.
             _divider.style.display = _set.effects.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
-            _button.EnableInClassList("alps-add__button--open", _set.addCatalogExpanded);
-            _list.style.display = _set.addCatalogExpanded ? DisplayStyle.Flex : DisplayStyle.None;
             _list.Clear();
-
-            if (!_set.addCatalogExpanded)
-            {
-                return;
-            }
 
             foreach (var kind in AlpsEffectCatalog.Order)
             {
@@ -86,17 +60,50 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 var captured = kind;
-                var item = new VisualElement { tooltip = AlpsEffectCatalog.GetDescription(kind) };
-                item.AddToClassList("alps-add__item");
-                item.Add(AlpsEffectThumbnail.Build(kind));
-
-                var caption = new Label(label);
-                caption.AddToClassList("alps-add__label");
-                item.Add(caption);
-
+                var item = AlpsCatalogPanel.Item(AlpsEffectThumbnail.Build(kind), label, AlpsEffectCatalog.GetDescription(kind));
                 item.RegisterCallback<PointerDownEvent>(_ => RequestAdd(captured));
                 _list.Add(item);
             }
+        }
+    }
+
+    /// <summary>
+    /// The panel both add catalogs share: a header naming what the grid adds, in the colour
+    /// of the thumbnail wells, over the grid of tiles.
+    /// </summary>
+    internal static class AlpsCatalogPanel
+    {
+        /// <summary>Adds the panel to <paramref name="parent"/> and returns the grid the tiles go in.</summary>
+        public static VisualElement Build(VisualElement parent, string title)
+        {
+            var panel = new VisualElement();
+            panel.AddToClassList("alps-add__panel");
+
+            var header = new VisualElement();
+            header.AddToClassList("alps-add__header");
+            var heading = new Label(title);
+            heading.AddToClassList("alps-add__heading");
+            header.Add(heading);
+            panel.Add(header);
+
+            var list = new VisualElement();
+            list.AddToClassList("alps-add__list");
+            panel.Add(list);
+
+            parent.Add(panel);
+            return list;
+        }
+
+        public static VisualElement Item(VisualElement thumbnail, string label, string tooltip)
+        {
+            var item = new VisualElement { tooltip = tooltip };
+            item.AddToClassList("alps-add__item");
+            item.Add(thumbnail);
+
+            var caption = new Label(label);
+            caption.AddToClassList("alps-add__label");
+            item.Add(caption);
+            return item;
         }
     }
 
@@ -106,7 +113,7 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     internal static class AlpsEffectThumbnail
     {
-        private static readonly Color Art = new Color(0.851f, 0.643f, 0.255f);
+        internal static readonly Color Art = new Color(0.851f, 0.643f, 0.255f);
 
         public static VisualElement Build(AlpsEffectKind kind)
         {
@@ -268,7 +275,7 @@ namespace AdzukiSoft.ALPS.Editor
             return disc;
         }
 
-        private static void SetRadius(VisualElement element, float radius)
+        internal static void SetRadius(VisualElement element, float radius)
         {
             element.style.borderTopLeftRadius = radius;
             element.style.borderTopRightRadius = radius;

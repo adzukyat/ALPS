@@ -126,6 +126,76 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsTrue(HasVisibleLabel(view, AlpsStrings.Tr("common.seed")));
         }
 
+        [Test]
+        public void CustomEditor_OffersFixturesThenTheTimeline()
+        {
+            var container = AlpsCreateMenu.CreateContainer(null).GetComponent<AlpsContainer>();
+            var hadFolders = AssetDatabase.IsValidFolder(AlpsTimelineSetup.ShowsFolder);
+            string timelinePath = null;
+            UnityEditor.Editor inspector = null;
+            try
+            {
+                inspector = UnityEditor.Editor.CreateEditor(container);
+                var host = inspector.CreateInspectorGUI();
+                var catalog = host.Q<AlpsAddFixtureCatalog>();
+                var setup = host.Q<AlpsContainerSetupRow>();
+                Assert.NotNull(catalog);
+                Assert.IsTrue(host.Q<AlpsArrangementView>().ClassListContains("alps-root--component"), "Unity pads a component's inspector already.");
+                Assert.AreEqual(AlpsStrings.Tr("addFixture.title"), catalog.Q<Label>(className: "alps-add__heading").text);
+                CollectionAssert.AreEqual(
+                    new[] { AlpsStrings.Tr("addFixture.container") }.Concat(AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey))),
+                    catalog.Query<Label>(className: "alps-add__label").ToList().Select(l => l.text),
+                    "A container leads, to show that containers nest.");
+                Assert.AreEqual(DisplayStyle.None, setup.style.display.value, "Nothing to set up without a fixture.");
+
+                Selection.activeGameObject = container.gameObject;
+                var added = catalog.RequestAdd(AlpsCreateMenu.ParLight);
+                Assert.AreSame(container.transform, added.transform.parent, "The fixture goes under the container.");
+                Assert.AreSame(container.gameObject, Selection.activeGameObject, "The container stays selected, so another can be added.");
+                Assert.AreEqual(AlpsContainerSetupStep.SetUp, setup.Step);
+                Assert.AreEqual(DisplayStyle.Flex, setup.style.display.value);
+                Assert.AreEqual(AlpsStrings.Tr("setup.timeline"), setup.Title);
+
+                var nested = catalog.RequestAddContainer();
+                Assert.AreSame(container.transform, nested.transform.parent);
+                Assert.NotNull(nested.GetComponent<AlpsContainer>());
+                Assert.AreSame(container.gameObject, Selection.activeGameObject);
+
+                var director = AlpsTimelineSetup.SetUp(container);
+                timelinePath = AssetDatabase.GetAssetPath(director.playableAsset);
+                setup.Refresh();
+                Assert.AreEqual(AlpsContainerSetupStep.Open, setup.Step);
+                Assert.AreEqual(AlpsStrings.Tr("setup.openTimeline"), setup.Title);
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                if (timelinePath != null)
+                {
+                    AssetDatabase.DeleteAsset(timelinePath);
+                }
+
+                AlpsTimelineSetup.DeleteFoldersCreatedSince(hadFolders);
+            }
+        }
+
+        [Test]
+        public void SetupRow_StaysHiddenOnANestedContainer()
+        {
+            var top = AlpsCreateMenu.CreateContainer(null);
+            var nested = AlpsCreateMenu.CreateContainer(top).GetComponent<AlpsContainer>();
+            AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, nested.gameObject);
+
+            var setup = new AlpsContainerSetupRow(nested);
+            Assert.AreEqual(AlpsContainerSetupStep.None, setup.Step, "The container above is the one to set up.");
+            Assert.AreEqual(DisplayStyle.None, setup.style.display.value);
+            Assert.AreEqual(AlpsContainerSetupStep.SetUp, new AlpsContainerSetupRow(top.GetComponent<AlpsContainer>()).Step);
+        }
+
         [UnityTest]
         public IEnumerator Editing_MovesTheChildren()
         {

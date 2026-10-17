@@ -42,21 +42,15 @@ Shader "Hidden/ALPS/Clip Strip"
                 int fixture = (int)round(lane == 0 ? _AlpsStripFixture0 : _AlpsStripFixture1);
                 float time = lerp(_AlpsStripStart, _AlpsStripEnd, i.uv.x);
 
-                AlpsFrame frame;
-                [unroll]
-                for (int f = 0; f < FrameStride; f++)
-                {
-                    frame.value[f] = 0.0;
-                    frame.written[f] = false;
-                }
-
+                AlpsFrame frame = AlpsEmptyFrame();
                 AlpsEvaluateClip(0, fixture, time, frame, show);
                 if (!frame.written[FrameRed])
                 {
                     return float4(0, 0, 0, -1);
                 }
 
-                float brightness = frame.written[FrameBrightness] ? frame.value[FrameBrightness] / 100.0 : 0.0;
+                // The move's blackout on return darkens the clip's own light as it does on stage.
+                float brightness = frame.written[FrameBrightness] ? frame.value[FrameBrightness] * frame.returnMask / 100.0 : 0.0;
                 return float4(frame.value[FrameRed], frame.value[FrameGreen], frame.value[FrameBlue], brightness);
             }
             ENDCG

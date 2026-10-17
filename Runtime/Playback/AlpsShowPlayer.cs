@@ -21,10 +21,10 @@ namespace AdzukiSoft.ALPS
     /// </summary>
 #if UDONSHARP
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    [AddComponentMenu("Adzuki Live Performance System/ALPS Show Player")]
+    [AddComponentMenu("ALPS/ALPS Show Player")]
     public class AlpsShowPlayer : UdonSharpBehaviour
 #else
-    [AddComponentMenu("Adzuki Live Performance System/ALPS Show Player")]
+    [AddComponentMenu("ALPS/ALPS Show Player")]
     public class AlpsShowPlayer : MonoBehaviour
 #endif
     {

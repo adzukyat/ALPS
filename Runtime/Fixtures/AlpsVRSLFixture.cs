@@ -6,7 +6,7 @@ using VRSL;
 namespace AdzukiSoft.ALPS
 {
     /// <summary>Drives a VR Stage Lighting DMX Static fixture.</summary>
-    [AddComponentMenu("Adzuki Live Performance System/ALPS VRSL Fixture")]
+    [AddComponentMenu("ALPS/ALPS VRSL Fixture")]
     public class AlpsVRSLFixture : AlpsFixture
     {
         [Tooltip("The VRSL fixture to drive. Found in children when left empty.")]

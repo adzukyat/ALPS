@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -10,10 +11,11 @@ namespace AdzukiSoft.ALPS
     /// to a single fixture. Tracks lower in the timeline act as layers above the ones before
     /// them, and override tracks nest the same way.
     /// </summary>
+    [DisplayName("ALPS/Lighting Track")]
     [TrackColor(0.82f, 0.92f, 0.33f)]
-    [TrackClipType(typeof(AlpsTimelineClip))]
+    [TrackClipType(typeof(AlpsLightingClip))]
     [TrackBindingType(typeof(AlpsTarget))]
-    public class AlpsTimelineTrack : TrackAsset, ILayerable
+    public class AlpsLightingTrack : TrackAsset, ILayerable
     {
         public const float DefaultBpm = 120f;
 
@@ -36,12 +38,12 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>The top level ALPS track this one belongs to, itself for a top level track.</summary>
-        public AlpsTimelineTrack RootTrack
+        public AlpsLightingTrack RootTrack
         {
             get
             {
                 var root = this;
-                while (root.parent is AlpsTimelineTrack parentTrack)
+                while (root.parent is AlpsLightingTrack parentTrack)
                 {
                     root = parentTrack;
                 }
@@ -67,7 +69,7 @@ namespace AdzukiSoft.ALPS
             // A rebuilt graph means clips may have moved, so the compiled show is rebuilt too.
             AlpsPreviewDriver.Invalidate(director);
 
-            var playable = ScriptPlayable<AlpsTimelineMixer>.Create(graph, inputCount);
+            var playable = ScriptPlayable<AlpsLightingMixer>.Create(graph, inputCount);
             playable.GetBehaviour().director = director;
             return playable;
         }
@@ -90,7 +92,7 @@ namespace AdzukiSoft.ALPS
         {
             foreach (var clip in GetClips())
             {
-                if (clip.asset is AlpsTimelineClip)
+                if (clip.asset is AlpsLightingClip)
                 {
                     yield return clip;
                 }

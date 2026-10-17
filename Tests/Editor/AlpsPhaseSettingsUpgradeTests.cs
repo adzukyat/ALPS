@@ -137,7 +137,7 @@ namespace AdzukiSoft.ALPS.Tests
             var sets = timeline.GetOutputTracks()
                 .SelectMany(track => track.GetClips())
                 .Select(clip => clip.asset)
-                .OfType<AlpsTimelineClip>()
+                .OfType<AlpsLightingClip>()
                 .Select(asset => asset.data)
                 .ToList();
             Assert.IsNotEmpty(sets);

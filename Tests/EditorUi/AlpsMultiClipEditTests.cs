@@ -170,8 +170,8 @@ namespace AdzukiSoft.ALPS.Tests
         [UnityTest]
         public IEnumerator Inspector_ShowsMixedValuesAndUnifiesThemOnCommit()
         {
-            var a = ScriptableObject.CreateInstance<AlpsTimelineClip>();
-            var b = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var a = ScriptableObject.CreateInstance<AlpsLightingClip>();
+            var b = ScriptableObject.CreateInstance<AlpsLightingClip>();
             a.hideFlags = HideFlags.HideAndDontSave;
             b.hideFlags = HideFlags.HideAndDontSave;
             a.data = WithBrightness(100f);
@@ -229,8 +229,8 @@ namespace AdzukiSoft.ALPS.Tests
         [UnityTest]
         public IEnumerator Inspector_CarriesEditsAndDeletesToEverySelectedClip()
         {
-            var a = ScriptableObject.CreateInstance<AlpsTimelineClip>();
-            var b = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var a = ScriptableObject.CreateInstance<AlpsLightingClip>();
+            var b = ScriptableObject.CreateInstance<AlpsLightingClip>();
             a.hideFlags = HideFlags.HideAndDontSave;
             b.hideFlags = HideFlags.HideAndDontSave;
             a.data = WithBrightness(100f);
@@ -238,7 +238,7 @@ namespace AdzukiSoft.ALPS.Tests
             b.data = WithBrightness(30f);
             b.data.Add(AlpsEffectKind.Cone);
             b.data.Add(AlpsEffectKind.Move);
-            var c = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var c = ScriptableObject.CreateInstance<AlpsLightingClip>();
             c.hideFlags = HideFlags.HideAndDontSave;
             c.data = WithBrightness(100f);
 
@@ -249,7 +249,7 @@ namespace AdzukiSoft.ALPS.Tests
             try
             {
                 inspector = UnityEditor.Editor.CreateEditor(new Object[] { a, b, c });
-                Assert.IsInstanceOf<AlpsTimelineClipInspector>(inspector);
+                Assert.IsInstanceOf<AlpsLightingClipInspector>(inspector);
 
                 var host = inspector.CreateInspectorGUI();
                 window.rootVisualElement.Add(host);

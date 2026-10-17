@@ -60,5 +60,33 @@ namespace AdzukiSoft.ALPS.Editor
             "M3 12l2 0",
             "M19 12l2 0",
         };
+
+        /// <summary>In / out phase tab.</summary>
+        public static readonly string[] CircuitCapacitor =
+        {
+            "M22 12h-8",
+            "M2 12h8",
+            "M10 7v10",
+            "M14 7v10",
+        };
+
+        /// <summary>Repeating phase tab.</summary>
+        public static readonly string[] ArrowBounce =
+        {
+            "M10 18h4",
+            "M3 8a9 9 0 0 1 9 9v1l1.428 -4.285a12 12 0 0 1 6.018 -6.938l.554 -.277",
+            "M15 6h5v5",
+        };
+
+        /// <summary>Random phase tab.</summary>
+        public static readonly string[] CircuitBattery =
+        {
+            "M2 12h4",
+            "M18 12h4",
+            "M18 5v14",
+            "M14 9v6",
+            "M10 5v14",
+            "M6 9v6",
+        };
     }
 }

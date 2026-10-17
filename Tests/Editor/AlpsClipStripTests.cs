@@ -105,10 +105,11 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var set = NewSet();
             set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
-            Light(set);
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.value = 100f;
+            brightness.fadeInBeats = 2f;
+            brightness.fadeOutBeats = 4f;
             set.bpm = 120f;
-            set.fadeInBeats = 2f;
-            set.fadeOutBeats = 4f;
 
             var strip = AlpsClipStrip.Build(set, 1, Bpm, 1f, 5f, 0f, 0);
 
@@ -132,6 +133,19 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsFalse(strip.HasColor, "A palette without stops plays no color.");
             Assert.AreEqual(2f, strip.secondsPerCycle, 0.0001f);
             CollectionAssert.AreEqual(new[] { 2f, 4f }, strip.cycleTimes, "Beats count from the clip start at 1 s, so cycles start at 3 and 5 seconds.");
+        }
+
+        [Test]
+        public void Strip_InOutMarksNoCycles()
+        {
+            var set = NewSet();
+            set.Add(AlpsEffectKind.Color);
+            set.phase.mode = AlpsPhaseMode.InOut;
+
+            var strip = AlpsClipStrip.Build(set, 4, Bpm, 1f, 7f, 0f, 0);
+
+            Assert.AreEqual(0f, strip.secondsPerCycle);
+            Assert.IsEmpty(strip.cycleTimes);
         }
 
         [Test]

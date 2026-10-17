@@ -18,7 +18,7 @@ namespace AdzukiSoft.ALPS
     /// keep the transforms it left.
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Adzuki Live Performance System/ALPS Container")]
+    [AddComponentMenu("ALPS/ALPS Container")]
     public class AlpsContainer : AlpsTarget
     {
         public AlpsArrangementSettings settings = new AlpsArrangementSettings();

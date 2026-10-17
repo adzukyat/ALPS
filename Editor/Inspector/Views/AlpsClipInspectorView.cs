@@ -17,9 +17,6 @@ namespace AdzukiSoft.ALPS.Editor
     {
         public const string StyleSheetName = "AlpsInspector";
 
-        /// <summary>Longest fade either side of a clip, in beats.</summary>
-        public const float MaxFadeBeats = 8f;
-
         private readonly AlpsClipEffectSet _set;
         private readonly AlpsMixedValues _mixed;
         private readonly VisualElement _effectContainer;
@@ -36,7 +33,7 @@ namespace AdzukiSoft.ALPS.Editor
         public AlpsClipInspectorView(
             AlpsClipEffectSet set,
             AlpsMixedValues mixed = null,
-            float showBpm = AlpsTimelineTrack.DefaultBpm,
+            float showBpm = AlpsLightingTrack.DefaultBpm,
             bool showBpmEditable = true)
         {
             _set = set;
@@ -141,25 +138,6 @@ namespace AdzukiSoft.ALPS.Editor
             AlpsPhaseSettingsView.Show(seed, set.order == AlpsOrderMode.Random);
             fields.Add(seed);
 
-            // --- Fade ----------------------------------------------------
-            // The clip's own fade in beats. It scales the clip's weight, so it acts like
-            // blending with an empty clip, where Timeline's ease in and out is set in seconds.
-            var fade = new AlpsFadeSlider(AlpsStrings.Tr("common.fade"), MaxFadeBeats, AlpsStrings.Tr("unit.beats"), "0.##")
-            {
-                Snaps = new[] { 1f, 2f, 4f },
-                DefaultValue = Vector2.zero,
-                tooltip = AlpsStrings.Tr("clip.fade.tip"),
-            };
-            fade.SetValueWithoutNotify(new Vector2(set.fadeInBeats, set.fadeOutBeats));
-            fade.RegisterValueChangedCallback(evt =>
-            {
-                set.fadeInBeats = evt.newValue.x;
-                set.fadeOutBeats = evt.newValue.y;
-                RaiseChanged();
-            });
-            mixed?.Bind(fade, set, nameof(AlpsClipEffectSet.fadeInBeats), nameof(AlpsClipEffectSet.fadeOutBeats));
-            fields.Add(fade);
-
             // --- Shared settings -----------------------------------------
             _phaseCard = new AlpsEffectCard(
                 AlpsStrings.Tr("clip.common.title"),
@@ -263,7 +241,30 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void RaiseChanged()
         {
+            RefreshPhaseInUse();
             Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// Greys the shared settings out while nothing on the clip follows them, so a first
+        /// look does not offer settings that change nothing yet. They stay open, keep their
+        /// place and can still be set ahead, and the header says what brings them in.
+        /// </summary>
+        private void RefreshPhaseInUse()
+        {
+            if (_phaseView == null)
+            {
+                return;
+            }
+
+            var inUse = false;
+            foreach (var effect in _set.effects)
+            {
+                inUse |= AlpsEffectView.FollowsClipPhase(effect);
+            }
+
+            _phaseView.EnableInClassList("alps-phase--unused", !inUse);
+            _phaseCard.Description = AlpsStrings.Tr(inUse ? "clip.common.desc" : "clip.common.unused");
         }
 
         private void RaiseStructureEdited(Action<AlpsClipEffectSet> edit)
@@ -280,6 +281,7 @@ namespace AdzukiSoft.ALPS.Editor
                 RaiseChanged();
             }, mixed: _mixed);
             _phaseCard.Body.Add(_phaseView);
+            RefreshPhaseInUse();
         }
 
         private void RefreshPhasePasteAvailability()
@@ -354,6 +356,8 @@ namespace AdzukiSoft.ALPS.Editor
                 _effectContainer.Add(view);
                 _effectViews.Add(view);
             }
+
+            RefreshPhaseInUse();
         }
 
         private void RefreshEffects()

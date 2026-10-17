@@ -140,8 +140,8 @@ namespace AdzukiSoft.ALPS.Tests
                 instance.AddComponent<AlpsVRSLFixture>().target = instance.GetComponentInChildren<VRStageLighting_DMX_Static>();
             }
 
-            var track = timeline.CreateTrack<AlpsTimelineTrack>(null, "Track");
-            var clip = track.CreateClip<AlpsTimelineClip>();
+            var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Track");
+            var clip = track.CreateClip<AlpsLightingClip>();
             clip.start = 0.0;
             clip.duration = 60.0;
             var set = MovingSet(0);
@@ -152,7 +152,7 @@ namespace AdzukiSoft.ALPS.Tests
             cone.hasSpread = true;
             cone.spreadRange = new Vector2(10f, 100f);
             cone.spreadRangeEnd = cone.spreadRange;
-            ((AlpsTimelineClip)clip.asset).data = set;
+            ((AlpsLightingClip)clip.asset).data = set;
             director.SetGenericBinding(track, container);
 
             EditorUtility.SetDirty(timeline);
@@ -255,18 +255,18 @@ namespace AdzukiSoft.ALPS.Tests
                     alps.target = vrslFixture;
                 }
 
-                var track = timeline.CreateTrack<AlpsTimelineTrack>(null, "Track " + c);
-                var clip = track.CreateClip<AlpsTimelineClip>();
+                var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Track " + c);
+                var clip = track.CreateClip<AlpsLightingClip>();
                 clip.start = 0.0;
                 clip.duration = 120.0;
-                ((AlpsTimelineClip)clip.asset).data = MovingSet(c);
+                ((AlpsLightingClip)clip.asset).data = MovingSet(c);
                 director.SetGenericBinding(track, container);
             }
 
-            var accentTrack = timeline.CreateTrack<AlpsTimelineTrack>(null, "Accent");
+            var accentTrack = timeline.CreateTrack<AlpsLightingTrack>(null, "Accent");
             for (var i = 0; i < 12; i++)
             {
-                var accent = accentTrack.CreateClip<AlpsTimelineClip>();
+                var accent = accentTrack.CreateClip<AlpsLightingClip>();
                 accent.start = i * 10.0;
                 accent.duration = 8.0;
                 var set = new AlpsClipEffectSet();
@@ -276,7 +276,7 @@ namespace AdzukiSoft.ALPS.Tests
                 brightness.isRange = true;
                 brightness.range = new Vector2(0f, 100f);
                 set.Add(AlpsEffectKind.Flicker);
-                ((AlpsTimelineClip)accent.asset).data = set;
+                ((AlpsLightingClip)accent.asset).data = set;
             }
 
             director.SetGenericBinding(accentTrack, all);

@@ -38,12 +38,15 @@ namespace AdzukiSoft.ALPS
 
     /// <summary>
     /// Mode: what the shared phase generator produces. A wave splits each cycle into a rise,
-    /// a high hold, a fall and a low hold. Random is a smooth seeded wander.
+    /// a high hold, a fall and a low hold. Random is a smooth seeded wander. In / out does not
+    /// cycle: it rises once after the clip's start, holds at the top and falls once before
+    /// its end.
     /// </summary>
     public enum AlpsPhaseMode
     {
         Wave,
         Random,
+        InOut,
     }
 
     /// <summary>Timing: whether a range/palette is swept inside one cycle or stepped per cycle.</summary>

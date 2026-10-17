@@ -69,6 +69,16 @@
     min-width: 476px;
 }
 
+/* In a component's inspector, Unity's inspector element already pads the content, 15px on
+   the left for the foldout arrows of IMGUI fields and 6px on the right. The view adds the
+   9px that makes the right side match, so centred content sits in the middle, and its
+   minimum keeps the card's 452px content width with that padding. */
+.alps-root--component {
+    padding-left: 0;
+    padding-right: 9px;
+    min-width: 461px;
+}
+
 /* ------------------------------------------------------------ vertical flow
  *
  * UI Toolkit 2022.3 has no `gap`, so every flow container states the spacing its
@@ -106,11 +116,6 @@
 
 .alps-root .alps-sub > * {
     margin-bottom: 7px;
-    flex-shrink: 0;
-}
-
-.alps-root .alps-nested > * {
-    margin-bottom: 3px;
     flex-shrink: 0;
 }
 
@@ -647,25 +652,95 @@
     height: 18px;
 }
 
-.alps-easegrid--compact .alps-easegrid__tile {
-    width: 32px;
-    height: 26px;
-}
-
-.alps-easegrid--compact .alps-easegrid__curve {
-    width: 20px;
-    height: 15px;
-}
-
-/* The 上り / 下り switch and the grid it picks read as one pair, so the grid follows the
-   switch closer than the flow's own spacing. */
-.alps-root .alps-easepicker__tiles {
-    margin-top: 4px;
-}
-
-.alps-root .alps-easepicker__grid {
-    flex-basis: 0;
+/* Each side holds a cluster of its heading over its tiles, the heading centred on them.
+   Folded, the cluster leans against the dotted line between the sides, which runs up
+   between the two headings, and keeps its few tiles on one row, shrinking them in a
+   narrow inspector rather than wrapping. Opened, it fills its side and wraps there.
+   The tiles split a 2px gap evenly here so a heading centres on what it heads, and the
+   line between the sides stays thin, so four tiles a side fit the narrowest card. */
+.alps-easepicker__body {
     flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.alps-easepicker__sides {
+    flex-direction: row;
+}
+
+.alps-easepicker__side {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+}
+
+.alps-easepicker__side--rise {
+    align-items: flex-end;
+}
+
+.alps-easepicker__side--fall {
+    align-items: flex-start;
+}
+
+.alps-easepicker__side--unused {
+    opacity: 0.35;
+}
+
+.alps-easepicker__cluster {
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.alps-root .alps-easepicker__heading {
+    padding: 3px 0 0 0;
+    margin: 0 0 4px 0;
+    -unity-text-align: middle-center;
+}
+
+.alps-easepicker__divider {
+    width: 5px;
+    flex-shrink: 0;
+    color: #5a5a5a;
+}
+
+.alps-root .alps-easepicker .alps-easegrid__tile {
+    margin: 0 1px 2px 1px;
+}
+
+.alps-root .alps-easepicker--collapsed .alps-easepicker__grid {
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.alps-root .alps-easepicker--collapsed .alps-easegrid__input {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+}
+
+.alps-root .alps-easepicker--collapsed .alps-easegrid__tile {
+    flex-shrink: 1;
+    min-width: 26px;
+}
+
+.alps-root .alps-easepicker--expanded .alps-easepicker__cluster,
+.alps-root .alps-easepicker--expanded .alps-easepicker__grid {
+    align-self: stretch;
+}
+
+.alps-root .alps-easepicker--expanded .alps-easegrid__input {
+    justify-content: center;
+}
+
+.alps-root .alps-easepicker__more {
+    align-self: center;
+    color: var(--alps-text-hint);
+    padding: 0 4px 0 4px;
+    margin: 1px 0 0 0;
 }
 
 /* -------------------------------------------------------- graph preview */
@@ -676,10 +751,6 @@
     border-width: 1px;
     border-color: var(--alps-line-tile);
     border-radius: 2px;
-}
-
-.alps-graph--compact {
-    height: 32px;
 }
 
 /* ------------------------------------------------------ distribution bar
@@ -869,6 +940,16 @@
     margin-top: 18px;
 }
 
+/* Shared settings nothing on the clip follows yet. */
+.alps-phase--unused {
+    opacity: 0.4;
+}
+
+/* A parameter's own motion hangs right under its effect's card. */
+.alps-root .alps-card--motion {
+    margin-top: 2px;
+}
+
 .alps-card__header {
     background-color: var(--alps-header-bg);
     padding: 6px 8px 5px 8px;
@@ -1013,14 +1094,6 @@
     -unity-font-style: normal;
 }
 
-.alps-nested {
-    background-color: var(--alps-nested-bg);
-    border-width: 1px;
-    border-color: var(--alps-line-soft);
-    border-radius: 3px;
-    padding: 5px 6px 2px 6px;
-}
-
 /* ------------------------------------------------------ add effect list */
 
 /* The divider inside brings its own space above it. */
@@ -1029,15 +1102,16 @@
 }
 
 /* Spaces like the divider under the shared settings, 18px on each side. Above, the last
-   card and the stack carry 2px each and the list 2px more. Below, the button brings 14px.
-   With no effects this divider hides and the button's 14px completes the 18px under the
-   other one, so the button keeps its margin and the divider makes up the difference. */
+   card and the stack carry 2px each and the list 2px more. Below, the panel brings 14px.
+   With no effects this divider hides and the panel's 14px completes the 18px under the
+   other one, so the panel keeps its margin and the divider makes up the difference. */
 .alps-root .alps-add > .alps-divider {
     margin-top: 12px;
     margin-bottom: 4px;
 }
 
-/* Sized and placed like the inspector's Add Component button. */
+/* Sized and placed like the inspector's Add Component button. The container's setup step
+   still uses it. */
 .alps-add__button {
     align-self: center;
     width: 230px;
@@ -1053,30 +1127,45 @@
     border-radius: 3px;
 }
 
-.alps-add__button--open {
-    background-color: var(--alps-accent);
-}
-
 .alps-add__title {
     color: var(--alps-button-text);
 }
 
-.alps-add__button--open .alps-add__title {
-    color: #ffffff;
+/* The always open catalog: a centred heading over the tiles, on the thumbnail wells' colour. */
+.alps-add__panel {
+    margin-top: 14px;
+    background-color: var(--alps-well-bg);
+    border-width: 1px;
+    border-color: var(--alps-line);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* 11px on every side, the same as around the tiles. */
+.alps-add__header {
+    padding: 11px;
+}
+
+.alps-add__heading {
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--alps-text-strong);
+    -unity-text-align: middle-center;
+    padding: 0;
+    margin: 0;
 }
 
 .alps-add__list {
     flex-direction: row;
     flex-wrap: wrap;
-    margin-top: 8px;
-    background-color: var(--alps-panel-bg);
-    border-width: 1px;
-    border-color: var(--alps-line);
-    border-radius: 5px;
+    justify-content: center;
     /* Three 137.33px tiles + two 8px gutters = 428px, the card's content width.
        Each tile carries its own trailing gutter, so the right padding gives that
-       8px back (11 - 8 = 3) and the row still breaks after the third tile. */
-    padding: 10px 3px 4px 11px;
+       8px back (11 - 8 = 3) and the row still breaks after the third tile. The
+       trailing gutter and the 3px make 11px on the right too, so a short last row
+       centres between equal sides, and below the tiles' 8px the same 3px makes 11px. */
+    padding: 0 3px 3px 11px;
 }
 
 .alps-add__item {
@@ -1110,6 +1199,11 @@
     font-size: 11px;
     color: var(--alps-button-text);
     -unity-text-align: middle-center;
+}
+
+/* The container's setup step under its fixture list, spaced like the add button. */
+.alps-setup {
+    margin-top: 2px;
 }
 
 /* ------------------------------------------------------------- foldout */
@@ -1207,10 +1301,6 @@
     background-color: var(--alps-button-bg-hover);
 }
 
-.alps-root .alps-add__button--open:hover {
-    background-color: var(--alps-accent);
-}
-
 .alps-iconbutton:hover {
     opacity: 1;
 }
@@ -1246,6 +1336,10 @@
 .alps-numberbox:hover,
 .alps-textbox:hover {
     border-color: var(--alps-hover-line);
+}
+
+.alps-root .alps-easepicker__more:hover {
+    color: var(--alps-text-label);
 }
 
 .alps-easegrid__tile:hover {

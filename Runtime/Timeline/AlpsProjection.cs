@@ -10,8 +10,7 @@ namespace AdzukiSoft.ALPS
     /// switch. The preview sets the projection renderers from <see cref="IsLit"/>, and a build
     /// keys the same switches into Animation Tracks (<see cref="Switches"/>). Composition
     /// mirrors the gobo channel of the evaluator: a gobo effect writes the switch, the
-    /// heaviest clip of a layer wins by its Timeline weight (the clip's own fade is ignored),
-    /// a layer covers the ones below it from a weight of 0.5, and nothing covering it leaves
+    /// heaviest clip of a layer wins by its Timeline weight, a layer covers the ones below it from a weight of 0.5, and nothing covering it leaves
     /// the projection showing.
     /// </summary>
     public static class AlpsProjection

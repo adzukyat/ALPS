@@ -83,7 +83,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var context = OpenFreshScene();
             var single = context.Fixtures[1].GetComponent<AlpsFixture>();
-            foreach (var track in context.Timeline.GetRootTracks().OfType<AlpsTimelineTrack>())
+            foreach (var track in context.Timeline.GetRootTracks().OfType<AlpsLightingTrack>())
             {
                 context.Director.SetGenericBinding(track, single);
             }
@@ -107,7 +107,7 @@ namespace AdzukiSoft.ALPS.Tests
             var context = OpenFreshScene();
             context.Sample(BaseTime);
 
-            var clip = (AlpsTimelineClip)context.Timeline.GetRootTracks().OfType<AlpsTimelineTrack>().First().GetClips().First().asset;
+            var clip = (AlpsLightingClip)context.Timeline.GetRootTracks().OfType<AlpsLightingTrack>().First().GetClips().First().asset;
             var brightness = clip.data.effects.First(e => e.kind == AlpsEffectKind.Brightness);
             brightness.brightness.value = 12f;
             AlpsPreviewDriver.MarkDirty();
@@ -128,7 +128,7 @@ namespace AdzukiSoft.ALPS.Tests
             AnimationMode.StartAnimationMode(driver);
             try
             {
-                foreach (var track in context.Timeline.GetOutputTracks().OfType<AlpsTimelineTrack>())
+                foreach (var track in context.Timeline.GetOutputTracks().OfType<AlpsLightingTrack>())
                 {
                     track.GatherProperties(context.Director, collector);
                 }
@@ -159,7 +159,7 @@ namespace AdzukiSoft.ALPS.Tests
             context.Sample(BaseTime);
 
             // Move the base clip away and rebuild, like a clip drag in the Timeline window.
-            var baseClip = context.Timeline.GetRootTracks().OfType<AlpsTimelineTrack>().First().GetClips().First();
+            var baseClip = context.Timeline.GetRootTracks().OfType<AlpsLightingTrack>().First().GetClips().First();
             var start = baseClip.start;
             var duration = baseClip.duration;
             try

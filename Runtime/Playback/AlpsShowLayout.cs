@@ -24,6 +24,7 @@ namespace AdzukiSoft.ALPS
 
         public const int PhaseWave = 0;
         public const int PhaseRandom = 1;
+        public const int PhaseInOut = 2;
 
         public const int OrderNormal = 0;
         public const int OrderReverse = 1;
@@ -64,8 +65,9 @@ namespace AdzukiSoft.ALPS
         public const int PhaseFall = 4;
         public const int PhaseGroupSize = 5;
         /// <summary>
-        /// Delay per order position, in cycles. The model stores the spread over the whole
-        /// group and the compiler divides it once, so the evaluator only sees the step.
+        /// Delay per order position, in cycles, or in beats for in / out. The model stores the
+        /// spread over the whole group and the compiler divides it once, so the evaluator only
+        /// sees the step.
         /// </summary>
         public const int PhaseDelay = 6;
         public const int PhaseBeatsPerCycle = 7;
@@ -77,7 +79,16 @@ namespace AdzukiSoft.ALPS
         /// rests at the bottom of the wave all the way through.
         /// </summary>
         public const int PhaseFireChance = 10;
-        public const int PhaseStride = 11;
+        /// <summary>Beats an in / out phase takes to rise after the clip's start.</summary>
+        public const int PhaseInBeats = 11;
+        /// <summary>Beats an in / out phase takes to fall before the clip's end.</summary>
+        public const int PhaseOutBeats = 12;
+        /// <summary>
+        /// The in / out delay of the last order position, in beats, which the others are
+        /// counted against so the last one still ends with the clip.
+        /// </summary>
+        public const int PhaseLastDelay = 13;
+        public const int PhaseStride = 14;
 
         /// <summary>
         /// Most cycles one wave lasts. Shares adding up to more than one cycle run on into the
@@ -99,27 +110,23 @@ namespace AdzukiSoft.ALPS
         public const int ClipOrder = 8;
         public const int ClipSeed = 9;
         public const int ClipBpm = 10;
-        /// <summary>Beats the clip's own fade takes to bring its weight in after its start.</summary>
-        public const int ClipFadeIn = 11;
-        /// <summary>Beats the clip's own fade takes to take its weight out before its end.</summary>
-        public const int ClipFadeOut = 12;
         /// <summary>
         /// Row in the positions table where this clip's group members start. Each member takes
         /// two entries, its order position k and 1 when its pan is mirrored.
         /// </summary>
-        public const int ClipPositionStart = 13;
+        public const int ClipPositionStart = 11;
         /// <summary>
         /// Seconds of the clip Timeline's Clip In skips at its start, which the beats count on
         /// from, so the second half of a split clip plays on from where the first half stopped.
         /// </summary>
-        public const int ClipIn = 14;
+        public const int ClipIn = 12;
         /// <summary>
         /// Which members the clip turns with an angle or circle move: 1 for the even order
         /// positions, 2 for the odd ones, 3 for both. A head stops where the last clip that
         /// turned it left it.
         /// </summary>
-        public const int ClipMoves = 15;
-        public const int ClipPhase = 16;
+        public const int ClipMoves = 13;
+        public const int ClipPhase = 14;
         public const int CurveSamples = 16;
         public const int ClipMixInCurve = ClipPhase + PhaseStride;
         public const int ClipMixOutCurve = ClipMixInCurve + CurveSamples;
@@ -132,22 +139,31 @@ namespace AdzukiSoft.ALPS
         public const int EffectParamStart = 2;
         public const int EffectPaletteStart = 3;
         public const int EffectPaletteCount = 4;
-        /// <summary>Move mode, brightness blackout on return, flicker speed, gobo beats per turn.</summary>
+        /// <summary>Move mode, flicker speed, gobo beats per turn.</summary>
         public const int EffectScalarA = 5;
-        /// <summary>Pan/tilt phase offset, brightness blackout fade in, flicker strength, gobo stagger degrees.</summary>
+        /// <summary>Pan/tilt phase offset, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
-        /// <summary>Track speed, brightness blackout fade out, flicker stagger, gobo projection off (read on the CPU only).</summary>
+        /// <summary>Track speed, flicker stagger, gobo projection off (read on the CPU only).</summary>
         public const int EffectScalarC = 7;
-        /// <summary>Tracked user name index.</summary>
+        /// <summary>Tracked user name index, brightness fade in beats.</summary>
         public const int EffectScalarD = 8;
-        /// <summary>Circle width over height.</summary>
+        /// <summary>Circle width over height, brightness fade out beats.</summary>
         public const int EffectScalarE = 9;
         /// <summary>
         /// Share of a cycle every value on the effect runs late by. One side of an even / odd
         /// pair at 0.5 takes turns with the other.
         /// </summary>
         public const int EffectPhaseOffset = 10;
-        public const int EffectStride = 11;
+        /// <summary>
+        /// 1 for blackout on return. On a move it darkens the composed brightness while the
+        /// head comes back, whichever layer lights it. On a brightness effect, which only sets
+        /// carried over from before the move took it have, it darkens that effect's value.
+        /// </summary>
+        public const int EffectBlackout = 11;
+        /// <summary>Blackout fade in and out, each a share of the outbound leg (0 to 0.5).</summary>
+        public const int EffectBlackoutFadeIn = 12;
+        public const int EffectBlackoutFadeOut = 13;
+        public const int EffectStride = 14;
 
         // --- Parameter rows ----------------------------------------------------------------
 

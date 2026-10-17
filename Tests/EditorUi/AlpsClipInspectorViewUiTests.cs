@@ -81,7 +81,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void CustomEditor_BuildsTheInspectorAndResolvesTheStyleSheet()
         {
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -89,9 +89,9 @@ namespace AdzukiSoft.ALPS.Tests
             try
             {
                 inspector = UnityEditor.Editor.CreateEditor(asset);
-                Assert.IsInstanceOf<AlpsTimelineClipInspector>(
+                Assert.IsInstanceOf<AlpsLightingClipInspector>(
                     inspector,
-                    "AlpsTimelineClip must use AlpsTimelineClipInspector.");
+                    "AlpsLightingClip must use AlpsLightingClipInspector.");
 
                 var host = inspector.CreateInspectorGUI();
                 Assert.NotNull(host);
@@ -123,12 +123,12 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // The timeline clip inspector only calls OnInspectorGUI on the clip asset editor.
             // Without an override, Unity falls back to the default fields and the ALPS UI is lost.
-            var method = typeof(AlpsTimelineClipInspector).GetMethod(
+            var method = typeof(AlpsLightingClipInspector).GetMethod(
                 "OnInspectorGUI",
                 BindingFlags.Instance | BindingFlags.Public);
             Assert.NotNull(method);
             Assert.AreEqual(
-                typeof(AlpsTimelineClipInspector),
+                typeof(AlpsLightingClipInspector),
                 method.DeclaringType,
                 "The editor must override OnInspectorGUI for the timeline clip inspector.");
 
@@ -140,7 +140,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void CustomEditor_HangsTheViewAfterTheImguiContainer()
         {
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -150,10 +150,10 @@ namespace AdzukiSoft.ALPS.Tests
             inspectorElement.Add(container);
             window.rootVisualElement.Add(inspectorElement);
 
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
 
                 Assert.IsTrue(inspector.AttachTo(container));
                 Assert.AreEqual(2, inspectorElement.childCount, "The view is a sibling of the IMGUI block.");
@@ -188,7 +188,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // Unity throws when the hierarchy changes while the panel measures itself, and the
             // clip inspector runs its IMGUI block inside that pass.
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -196,10 +196,10 @@ namespace AdzukiSoft.ALPS.Tests
             var container = new IMGUIContainer(() => { });
             parent.Add(container);
 
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
 
                 Assert.IsTrue(inspector.AttachTo(container, false));
                 Assert.AreEqual(1, parent.childCount, "Nothing moves while the panel is laying out.");
@@ -223,12 +223,12 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // Timeline stops calling OnInspectorGUI while its asset title bar is collapsed. The
             // view sits outside IMGUI, so it has to hide itself when a repaint skips the draw.
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
             var expanded = true;
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             System.Action original = null;
             var parent = new VisualElement();
             var container = new IMGUIContainer();
@@ -236,7 +236,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
                 var target = inspector;
                 original = () =>
                 {
@@ -292,7 +292,7 @@ namespace AdzukiSoft.ALPS.Tests
                 AssetDatabase.CreateFolder("Assets", "AlpsUndoTest");
             }
 
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.data = new AlpsClipEffectSet();
             asset.data.Add(AlpsEffectKind.Brightness);
             AssetDatabase.CreateAsset(asset, path);
@@ -405,12 +405,39 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void SharedSettings_GreyOutUntilSomethingFollowsThem()
+        {
+            var set = new AlpsClipEffectSet();
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            var view = new AlpsClipInspectorView(set);
+            var phase = view.Query<AlpsPhaseSettingsView>().First();
+            var card = phase.GetFirstAncestorOfType<AlpsEffectCard>();
+
+            Assert.IsTrue(phase.ClassListContains("alps-phase--unused"), "A fixed brightness follows no phase.");
+            Assert.AreEqual(AlpsStrings.Tr("clip.common.unused"), card.Description);
+            Assert.AreEqual(DisplayStyle.Flex, card.Body.style.display.value, "The settings stay open.");
+
+            brightness.brightness.isRange = true;
+            brightness.brightness.range = new Vector2(0f, 100f);
+            view = new AlpsClipInspectorView(set);
+            phase = view.Query<AlpsPhaseSettingsView>().First();
+            Assert.IsFalse(phase.ClassListContains("alps-phase--unused"));
+            Assert.AreEqual(AlpsStrings.Tr("clip.common.desc"), phase.GetFirstAncestorOfType<AlpsEffectCard>().Description);
+
+            brightness.brightness.useOwnPhase = true;
+            view = new AlpsClipInspectorView(set);
+            Assert.IsTrue(
+                view.Query<AlpsPhaseSettingsView>().First().ClassListContains("alps-phase--unused"),
+                "A range on its own phase leaves the shared one unused.");
+        }
+
+        [Test]
         public void SharedSettings_RendersEveryPlannedRow()
         {
             var set = new AlpsClipEffectSet();
             var view = new AlpsClipInspectorView(set);
 
-            foreach (var key in new[] { "phase.mode", "phase.shares", "phase.length", "phase.easing", "phase.group", "phase.delay", "common.speed", "phase.inverse" })
+            foreach (var key in new[] { "phase.mode", "phase.shares", "phase.easing", "phase.group", "phase.delay", "common.speed", "phase.inverse" })
             {
                 var row = AlpsStrings.Tr(key);
                 Assert.IsTrue(HasVisibleText(view, row), $"The common settings are missing the {row} row.");
@@ -445,7 +472,7 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator DelayBeatsFlag_SwitchesTheUnitWithoutMovingTheLook()
+        public IEnumerator DelayPercentFlag_SwitchesTheUnitWithoutMovingTheLook()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
@@ -463,16 +490,17 @@ namespace AdzukiSoft.ALPS.Tests
 
                 var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
                 var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
-                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.beatsFlag.letter"));
+                var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.percentFlag.letter"));
                 var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
                 Assert.AreEqual(50f, percent.value, 0.001f);
                 Assert.AreEqual(DisplayStyle.Flex, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.None, beats.style.display.value);
-                Assert.AreSame(flag.parent.Children().Last(), flag, "拍 stays on the right edge of the row.");
+                Assert.IsTrue(flag.value, "A share of the cycle shows with % on.");
+                Assert.AreSame(flag.parent.Children().Last(), flag, "% stays on the right edge of the row.");
                 Assert.AreEqual(-16f, beats.Minimum, 0.001f);
                 Assert.AreEqual(16f, beats.Maximum, 0.001f, "Beats stop at four bars either way.");
 
-                flag.value = true;
+                flag.value = false;
                 Assert.IsTrue(set.phase.spreadInBeats);
                 Assert.AreEqual(DisplayStyle.None, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, beats.style.display.value, "Beats are counted like the speed, not dragged.");
@@ -484,7 +512,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(0.25f, set.phase.SpreadCycles, 0.0001f);
 
                 beats.value = 2f;
-                flag.value = false;
+                flag.value = true;
                 Assert.AreEqual(50f, percent.value, 0.001f, "Two beats of a four beat cycle is half the trip.");
                 Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f);
 
@@ -514,14 +542,243 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ModeControl_OffersWaveAndRandom()
+        public void ModeTabs_HeadTheGraphWithInOutFirst()
         {
-            var view = new AlpsClipInspectorView(new AlpsClipEffectSet());
-            var mode = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.mode"));
+            var view = new AlpsClipInspectorView(new AlpsClipEffectSet()).Query<AlpsPhaseSettingsView>().First();
+            var tabs = view.Q<AlpsTabControl>();
 
+            Assert.AreSame(view[0], tabs, "The tabs head the shared settings.");
+            Assert.IsInstanceOf<AlpsPhaseGraph>(view[1], "The graph the mode draws sits right under the tabs.");
             CollectionAssert.AreEqual(
-                new[] { AlpsStrings.Tr("phase.mode.wave"), AlpsStrings.Tr("phase.mode.random") },
-                mode.Query<Label>(className: "alps-seg__item").ToList().Select(l => l.text).ToArray());
+                new[] { AlpsStrings.Tr("phase.mode.inOut"), AlpsStrings.Tr("phase.mode.wave"), AlpsStrings.Tr("phase.mode.random") },
+                tabs.Query<Label>().ToList().Select(l => l.text).ToArray());
+            Assert.AreEqual(1, tabs.value, "The model's wave is the second tab.");
+        }
+
+        [Test]
+        public void NewClips_StartInOut()
+        {
+            var created = AlpsClipEffectSet.CreateNew();
+            Assert.AreEqual(AlpsPhaseMode.InOut, created.phase.mode);
+            Assert.AreEqual(AlpsEaseType.Linear, created.phase.ease, "New clips rise and fall in a straight line.");
+            Assert.AreEqual(AlpsEaseType.Linear, created.phase.fallEase);
+            Assert.IsTrue(created.phase.spreadInBeats, "New clips count the delay in beats, like the in / out.");
+            Assert.AreEqual(AlpsPhaseMode.Wave, new AlpsPhaseSettings().mode, "The model keeps the wave older data was saved against.");
+
+            var clip = ScriptableObject.CreateInstance<AlpsLightingClip>();
+            var profile = ScriptableObject.CreateInstance<AlpsClipProfile>();
+            try
+            {
+                Assert.AreEqual(AlpsPhaseMode.InOut, clip.data.phase.mode);
+                Assert.AreEqual(AlpsPhaseMode.InOut, profile.data.phase.mode);
+            }
+            finally
+            {
+                Object.DestroyImmediate(clip);
+                Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void OwnPhase_HangsUnderTheEffectAsACardOfItsOwn()
+        {
+            var set = new AlpsClipEffectSet();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.pan.isRange = true;
+            move.pan.range = new Vector2(-45f, 45f);
+            move.pan.useOwnPhase = true;
+            set.Add(AlpsEffectKind.Color);
+            var view = new AlpsClipInspectorView(set);
+
+            var effect = view.Query<AlpsEffectView>().First();
+            AlpsEffectCard Motion(VisualElement root, string name) =>
+                root.Query<AlpsEffectCard>().ToList().Single(card => card.Title == AlpsStrings.Tr("animatable.motion", name));
+
+            var pan = Motion(effect, "Pan");
+            Assert.AreEqual(DisplayStyle.Flex, pan.style.display.value);
+            Assert.IsNull(pan.GetFirstAncestorOfType<AlpsAnimatableView>(), "The motion sits under the effect, not inside its row.");
+            Assert.AreSame(effect, pan.GetFirstAncestorOfType<AlpsEffectView>());
+            Assert.IsNull(pan.Q<Label>(className: "alps-card__desc"), "A motion card has no description.");
+            Assert.IsNotNull(pan.Body.Q<AlpsPhaseSettingsView>(), "The motion lays its phase out like the shared settings.");
+            Assert.AreEqual(DisplayStyle.None, Motion(effect, "Tilt").style.display.value, "Tilt has no own phase on.");
+            Assert.IsNotNull(Motion(view, AlpsStrings.Tr("effect.color.palette")), "A palette's motion is named after its effect's palette.");
+
+            move.moveMode = AlpsMoveMode.Circle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, pan.style.display.value, "The motion leaves with its row's tab.");
+            move.moveMode = AlpsMoveMode.Angle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, pan.style.display.value);
+
+            effect.Card.Expanded = false;
+            Assert.AreEqual(DisplayStyle.None, pan.parent.style.display.value, "The motion folds away with its effect.");
+        }
+
+        [Test]
+        public void Shape_IsReadOffTheShares()
+        {
+            Assert.AreEqual(AlpsPhaseSettingsView.ShapeSweep, AlpsPhaseSettingsView.ShapeOf(Shares(1f, 0f, 0f)));
+            Assert.AreEqual(AlpsPhaseSettingsView.ShapePulse, AlpsPhaseSettingsView.ShapeOf(Shares(0f, 0.25f, 0.5f)));
+            Assert.AreEqual(AlpsPhaseSettingsView.ShapePulse, AlpsPhaseSettingsView.ShapeOf(Shares(0f, 0.5f, 0f)), "A square wave jumps to the top.");
+            Assert.AreEqual(AlpsPhaseSettingsView.ShapePingPong, AlpsPhaseSettingsView.ShapeOf(new AlpsPhaseSettings()));
+        }
+
+        private static AlpsPhaseSettings Shares(float rise, float holdHigh, float fall)
+        {
+            var settings = new AlpsPhaseSettings();
+            settings.SetShares(rise, holdHigh, fall);
+            return settings;
+        }
+
+        [UnityTest]
+        public IEnumerator Shape_RearrangesTheSharesAndTheEasing()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            set.phase.SetShares(0.25f, 0.25f, 0.25f);
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var shape = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.mode"));
+                var easing = view.Query<AlpsEasingPicker>().First();
+                Assert.AreEqual(AlpsPhaseSettingsView.ShapePingPong, shape.value);
+                Assert.IsTrue(easing.Rise.parent.parent.enabledSelf && easing.Fall.parent.parent.enabledSelf, "A ping-pong eases both ways.");
+
+                shape.value = AlpsPhaseSettingsView.ShapeSweep;
+                Assert.AreEqual(new Vector3(0.5f, 0.25f, 0f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
+                Assert.IsFalse(easing.Fall.parent.parent.enabledSelf, "A sweep has no fall to ease.");
+                Assert.IsTrue(easing.Fall.parent.parent.ClassListContains("alps-easepicker__side--unused"), "The unused side stays in place, greyed out.");
+                Assert.IsTrue(easing.Rise.parent.parent.enabledSelf);
+
+                shape.value = AlpsPhaseSettingsView.ShapePulse;
+                Assert.AreEqual(new Vector3(0f, 0.25f, 0.5f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
+                Assert.IsFalse(easing.Rise.parent.parent.enabledSelf, "A pulse has no rise to ease.");
+                Assert.IsTrue(easing.Fall.parent.parent.enabledSelf);
+
+                shape.value = AlpsPhaseSettingsView.ShapePingPong;
+                Assert.AreEqual(new Vector3(0.25f, 0.25f, 0.25f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
+
+                // A ping-pong takes any shares, but a pulse with a rise is a sweep again, after
+                // an undo for example.
+                shape.value = AlpsPhaseSettingsView.ShapePulse;
+                set.phase.SetShares(0.5f, 0.25f, 0f);
+                view.Query<AlpsPhaseSettingsView>().First().Refresh();
+                Assert.AreEqual(AlpsPhaseSettingsView.ShapeSweep, shape.value, "Shares that no longer fit take their shape again.");
+
+                set.phase.SetShares(0f, 0.5f, 0f);
+                shape.value = AlpsPhaseSettingsView.ShapePingPong;
+                Assert.AreEqual(0.125f, set.phase.rise, 0.0001f, "A square wave borrows half its low hold.");
+                Assert.AreEqual(0.5f, set.phase.holdHigh, 0.0001f);
+                Assert.AreEqual(0.125f, set.phase.fall, 0.0001f);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void ShareBar_LockedSideStaysAtZero()
+        {
+            var sweep = new AlpsShareBar(AlpsStrings.Tr("phase.shares"));
+            sweep.SetValueWithoutNotify(new Vector3(0.5f, 0f, 0f));
+            sweep.LockFall = true;
+            sweep.MoveCorner(AlpsShareBar.HighEnd, 0.75f);
+            Assert.AreEqual(0.75f, sweep.Corner(AlpsShareBar.FallEnd), 0.0001f, "The end of the high hold carries the fall with it.");
+            sweep.MoveCorner(AlpsShareBar.FallEnd, 1f);
+            Assert.AreEqual(0.75f, sweep.Corner(AlpsShareBar.FallEnd), 0.0001f, "A locked corner does not move.");
+
+            var pulse = new AlpsShareBar(AlpsStrings.Tr("phase.shares"));
+            pulse.SetValueWithoutNotify(new Vector3(0f, 0f, 0.5f));
+            pulse.LockRise = true;
+            pulse.MoveCorner(AlpsShareBar.RiseEnd, 0.25f);
+            Assert.AreEqual(0f, pulse.Corner(AlpsShareBar.RiseEnd), 0.0001f);
+        }
+
+        [Test]
+        public void Length_ShowsOnceSomeCyclesDoNotFire()
+        {
+            var set = new AlpsClipEffectSet();
+            var view = new AlpsClipInspectorView(set);
+            var phase = view.Query<AlpsPhaseSettingsView>().First();
+            var length = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+            Assert.AreEqual(DisplayStyle.None, length.style.display.value, "Every cycle fires, so a slower speed does the same.");
+
+            set.phase.fireChance = 0.5f;
+            phase.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, length.style.display.value);
+
+            set.phase.fireChance = 1f;
+            set.phase.SetShares(1f, 0.5f, 0.5f);
+            var longer = new AlpsClipInspectorView(set).Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+            Assert.AreEqual(DisplayStyle.Flex, longer.style.display.value, "A wave past its cycle never hides the length it was given.");
+        }
+
+        [Test]
+        public void FixtureGroup_IsCountedWithAStepper()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.fixtureGroupSize = 3;
+            var view = new AlpsClipInspectorView(set);
+
+            var group = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.group"));
+            Assert.AreEqual(3f, group.value);
+            Assert.AreEqual(1f, group.Minimum, "A group holds at least one fixture.");
+        }
+
+        [Test]
+        public void InOutMode_ShowsItsBeatsInPlaceOfTheCycle()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.mode = AlpsPhaseMode.InOut;
+            var view = new AlpsClipInspectorView(set);
+
+            DisplayStyle Display(VisualElement element) => element.style.display.value;
+            var inOut = view.Query<AlpsFadeSlider>().ToList().First(f => f.label == AlpsStrings.Tr("phase.inOut"));
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == AlpsStrings.Tr("phase.shares"));
+            var length = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+            var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
+            var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
+            var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
+            var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.percentFlag.letter"));
+            var easing = view.Query<AlpsEasingPicker>().First();
+
+            Assert.AreEqual(DisplayStyle.Flex, Display(inOut));
+            Assert.AreEqual(new Vector2(set.phase.inBeats, set.phase.outBeats), inOut.value);
+            Assert.AreEqual(DisplayStyle.Flex, Display(easing), "The in and the out keep their eases.");
+            Assert.AreEqual(AlpsStrings.Tr("phase.easing.in"), easing.Heading(AlpsEasingPicker.RiseSide));
+            Assert.AreEqual(AlpsStrings.Tr("phase.easing.out"), easing.Heading(AlpsEasingPicker.FallSide));
+            Assert.AreEqual(DisplayStyle.Flex, Display(beats), "The delay is counted in beats.");
+            foreach (var hidden in new VisualElement[] { shares, length, speed, percent, flag, FireChance(view) })
+            {
+                Assert.AreEqual(DisplayStyle.None, Display(hidden), $"{hidden.GetType().Name} belongs to a cycle.");
+            }
+
+            set.phase.mode = AlpsPhaseMode.Wave;
+            view.Query<AlpsPhaseSettingsView>().First().Refresh();
+            Assert.AreEqual(DisplayStyle.None, Display(inOut));
+            Assert.AreEqual(DisplayStyle.Flex, Display(speed));
+        }
+
+        [Test]
+        public void Brightness_CarriesTheClipFade()
+        {
+            var set = new AlpsClipEffectSet();
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.fadeInBeats = 2f;
+            brightness.fadeOutBeats = 1f;
+            var view = new AlpsClipInspectorView(set);
+
+            var fade = view.Query<AlpsFadeSlider>().ToList().Single(f => f.label == AlpsStrings.Tr("effect.brightness.fade"));
+            Assert.AreEqual(new Vector2(2f, 1f), fade.value);
+            Assert.IsNotNull(fade.GetFirstAncestorOfType<AlpsEffectView>(), "The fade sits on the brightness card, not the clip.");
         }
 
         [Test]
@@ -631,17 +888,16 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void BlackoutOnReturn_ShowsWhileThePhaseDrivingBrightnessComesBack()
+        public void BlackoutOnReturn_ShowsWhileThePhaseTurningTheHeadComesBack()
         {
             var set = new AlpsClipEffectSet();
             set.phase.SetShares(1f, 0f, 0f);
-            var brightness = set.Add(AlpsEffectKind.Brightness);
-            brightness.brightness.isRange = true;
-            brightness.brightness.range = new Vector2(0f, 100f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.isRange = true;
 
             var view = new AlpsClipInspectorView(set);
             var effect = view.Query<AlpsEffectView>().First();
-            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == AlpsStrings.Tr("effect.move.blackoutReturn"));
             var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == AlpsStrings.Tr("common.fade")).parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "A sawtooth has no return leg.");
 
@@ -650,7 +906,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value, "Fades wait for the switch.");
 
-            brightness.blackoutOnReturn = true;
+            move.blackoutOnReturn = true;
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.Flex, fadeFrame.style.display.value);
             Assert.IsNull(fadeFrame.Q<Label>(className: "alps-sub__title"), "The fade frame is untitled.");
@@ -660,13 +916,44 @@ namespace AdzukiSoft.ALPS.Tests
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
 
-            // Own phase takes over which leg is the return.
+            // Pan alone sweeping on its own sawtooth takes over which leg is the return.
             set.phase.SetShares(0.5f, 0f, 0.5f);
-            brightness.brightness.useOwnPhase = true;
-            brightness.brightness.ownPhase.SetShares(1f, 0f, 0f);
+            move.tilt.isRange = false;
+            move.pan.isRange = true;
+            move.pan.useOwnPhase = true;
+            move.pan.ownPhase.SetShares(1f, 0f, 0f);
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value);
+
+            // A circle turns on the clip's phase, and a tracking head never comes back.
+            move.moveMode = AlpsMoveMode.Circle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
+            move.moveMode = AlpsMoveMode.TrackUser;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
+        }
+
+        [Test]
+        public void BlackoutOnReturn_ShowsOnBrightnessOnlyWhereALoadedSetStillCarriesIt()
+        {
+            AlpsToggleSwitch Switch(AlpsEffect brightness)
+            {
+                var set = new AlpsClipEffectSet();
+                set.phase.SetShares(0.5f, 0f, 0.5f);
+                set.effects.Add(brightness);
+                var view = new AlpsClipInspectorView(set);
+                return view.Query<AlpsToggleSwitch>().ToList().SingleOrDefault(t => t.label == AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            }
+
+            Assert.IsNull(Switch(AlpsEffect.Create(AlpsEffectKind.Brightness)), "The move has it now.");
+
+            var carried = AlpsEffect.Create(AlpsEffectKind.Brightness);
+            carried.blackoutOnReturn = true;
+            var blackout = Switch(carried);
+            Assert.IsNotNull(blackout, "Shown so it can be turned off.");
+            Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
         }
 
         [Test]
@@ -1175,7 +1462,6 @@ namespace AdzukiSoft.ALPS.Tests
         public void AddCatalog_ListsOnlyAddableKinds()
         {
             var set = new AlpsClipEffectSet();
-            set.addCatalogExpanded = true;
             set.Add(AlpsEffectKind.Color);
             set.Add(AlpsEffectKind.Color);
 
@@ -1907,51 +2193,59 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator EasingPicker_SwitchesBetweenTheRiseAndTheFall()
+        public IEnumerator EasingPicker_ShowsTheRiseLeftOfTheFall()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
             set.phase.ease = AlpsEaseType.InQuad;
             set.phase.fallEase = AlpsEaseType.OutBounce;
 
+            AlpsEasingPicker.Expanded = false;
             var window = ScriptableObject.CreateInstance<PanelHostWindow>();
             window.hideFlags = HideFlags.HideAndDontSave;
             window.ShowUtility();
-            var view = new AlpsClipInspectorView(set);
-            var picker = view.Query<AlpsEasingPicker>().First();
             try
             {
+                var view = new AlpsClipInspectorView(set);
+                var picker = view.Query<AlpsEasingPicker>().First();
                 window.rootVisualElement.Add(view);
-                picker.Side.value = AlpsEasingPicker.RiseSide;
                 yield return null;
 
-                Assert.AreEqual(AlpsStrings.Tr("phase.easing"), picker.Side.label, "The switch carries the row label.");
-                Assert.AreEqual(DisplayStyle.Flex, picker.Rise.style.display.value);
-                Assert.AreEqual(DisplayStyle.None, picker.Fall.style.display.value);
-                Assert.AreEqual((int)AlpsEaseType.InQuad, picker.Rise.value);
-                Assert.AreEqual((int)AlpsEaseType.OutBounce, picker.Fall.value);
-                Assert.AreEqual(
-                    picker.Side.Q(className: "alps-seg__input").worldBound.x,
-                    picker.Rise.worldBound.x,
-                    0.6f,
-                    "The tiles start in the input column, under the switch.");
+                Assert.AreEqual(AlpsStrings.Tr("common.rise"), picker.Heading(AlpsEasingPicker.RiseSide));
+                Assert.AreEqual(AlpsStrings.Tr("common.fall"), picker.Heading(AlpsEasingPicker.FallSide));
+                Assert.Less(picker.Rise.worldBound.xMax, picker.Fall.worldBound.xMin, "The rise sits left of the fall.");
 
-                picker.Side.value = AlpsEasingPicker.FallSide;
-                Assert.AreEqual(DisplayStyle.None, picker.Rise.style.display.value);
-                Assert.AreEqual(DisplayStyle.Flex, picker.Fall.style.display.value);
-                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Switching sides edits nothing.");
-                Assert.AreEqual(AlpsEaseType.OutBounce, set.phase.fallEase);
+                var featured = AlpsEasingGrid.Featured;
+                CollectionAssert.AreEqual(
+                    featured.Append(AlpsEaseType.InQuad).ToArray(),
+                    picker.Rise.ShownTypes().ToArray(),
+                    "Folded, the picked curve shows after the featured ones.");
+                CollectionAssert.AreEqual(featured.Append(AlpsEaseType.OutBounce).ToArray(), picker.Fall.ShownTypes().ToArray());
+
+                var tiles = picker.Rise.Q(className: "alps-easegrid__input").Children()
+                    .Where(tile => tile.style.display.value != DisplayStyle.None)
+                    .ToList();
+                Assert.AreEqual(tiles[0].worldBound.y, tiles[tiles.Count - 1].worldBound.y, 0.6f, "Folded, the tiles keep to one row.");
+
+                picker.Rise.value = (int)AlpsEaseType.InCubic;
+                Assert.AreEqual(AlpsEaseType.InCubic, set.phase.ease);
+                Assert.AreEqual(AlpsEaseType.OutBounce, set.phase.fallEase, "Picking a rise leaves the fall alone.");
+                CollectionAssert.AreEqual(featured, picker.Rise.ShownTypes().ToArray(), "A featured pick needs no extra tile.");
 
                 picker.Fall.value = (int)AlpsEaseType.InBack;
                 Assert.AreEqual(AlpsEaseType.InBack, set.phase.fallEase);
-                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Picking a fall leaves the rise alone.");
+                Assert.AreEqual(AlpsEaseType.InCubic, set.phase.ease, "Picking a fall leaves the rise alone.");
 
+                AlpsEasingPicker.Expanded = true;
                 var rebuilt = new AlpsClipInspectorView(set).Query<AlpsEasingPicker>().First();
-                Assert.AreEqual(AlpsEasingPicker.FallSide, rebuilt.Side.value, "A rebuild keeps the side being edited.");
+                var all = rebuilt.Rise.ShownTypes().ToArray();
+                Assert.AreEqual(18, all.Length, "Opened, every curve shows, and a rebuild keeps it open.");
+                Assert.AreEqual(AlpsEaseType.InSine, all[1], "Opened, the curves keep the list's order.");
+                Assert.AreEqual(AlpsStrings.Tr("phase.easing.showLess"), rebuilt.More.text);
             }
             finally
             {
-                picker.Side.value = AlpsEasingPicker.RiseSide;
+                AlpsEasingPicker.Expanded = false;
                 window.Close();
                 Object.DestroyImmediate(window);
             }

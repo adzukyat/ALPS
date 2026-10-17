@@ -9,4 +9,4 @@ To inspect the same fixture manually:
 3. Open `Assets/AlpsTestFixtures/PreviewSmoke.unity`.
 4. Scrub the `PreviewSmoke.playable` Timeline on the `PreviewSmoke Director` object.
 
-To rebuild the fixture, run `ALPS > Tests > Regenerate Preview Smoke Fixture`.
+To rebuild the fixture, run `ALPS > Debug > Tests > Regenerate Preview Smoke Fixture`.

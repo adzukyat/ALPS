@@ -9,10 +9,25 @@ namespace AdzukiSoft.ALPS.Editor
     /// Easing picker tile grid listing every curve. Each thumbnail plots the actual
     /// <see cref="AlpsEase"/> curve, so a tile can never drift from what plays back. A grid
     /// for the fall draws each curve on its way down, the way the fall plays it.
+    ///
+    /// Collapsed, it lists only the <see cref="Featured"/> curves on one row, and a picked
+    /// curve that is not one of them after them, so what plays is always on show.
     /// </summary>
     public class AlpsEasingGrid : BaseField<int>
     {
         public new static readonly string ussClassName = "alps-easegrid";
+
+        /// <summary>The curves a collapsed grid lists, in the order they show.</summary>
+        public static readonly AlpsEaseType[] Featured =
+        {
+            AlpsEaseType.Linear,
+            AlpsEaseType.InOutSine,
+            AlpsEaseType.InCubic,
+            AlpsEaseType.OutCubic,
+        };
+
+        private readonly VisualElement _container;
+        private bool _collapsed;
 
         private readonly List<VisualElement> _tiles = new List<VisualElement>();
         private readonly List<AlpsEaseType> _types = new List<AlpsEaseType>();
@@ -26,6 +41,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             var container = this.Q(className: BaseField<int>.inputUssClassName);
             container.AddToClassList(ussClassName + "__input");
+            _container = container;
 
             foreach (AlpsEaseType type in Enum.GetValues(typeof(AlpsEaseType)))
             {
@@ -45,6 +61,30 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>True when the tiles draw the fall, from the top down.</summary>
         public bool Falling { get; }
+
+        /// <summary>Lists only the featured curves and the picked one. See <see cref="Featured"/>.</summary>
+        public bool Collapsed
+        {
+            get => _collapsed;
+            set
+            {
+                _collapsed = value;
+                EnableInClassList(ussClassName + "--collapsed", value);
+                RefreshTiles();
+            }
+        }
+
+        /// <summary>The curves the grid shows, in the order it shows them. For tests.</summary>
+        public IEnumerable<AlpsEaseType> ShownTypes()
+        {
+            foreach (var tile in _container.Children())
+            {
+                if (tile.style.display.value != DisplayStyle.None)
+                {
+                    yield return _types[_tiles.IndexOf(tile)];
+                }
+            }
+        }
 
         /// <summary>
         /// The curve a tile draws, in 0..1 over the part it shapes: the ease itself for the
@@ -86,12 +126,46 @@ namespace AdzukiSoft.ALPS.Editor
         {
             base.SetValueWithoutNotify(newValue);
             RefreshSelection();
+            RefreshTiles();
         }
 
         /// <summary>Mixed selects no tile, since no single curve holds for every clip.</summary>
         protected override void UpdateMixedValueContent()
         {
             RefreshSelection();
+            RefreshTiles();
+        }
+
+        /// <summary>
+        /// Shows every tile in the list's order, or collapsed the featured ones in theirs and
+        /// the picked curve after them when it is not one of them.
+        /// </summary>
+        private void RefreshTiles()
+        {
+            if (_container == null)
+            {
+                return;
+            }
+
+            var picked = showMixedValue ? -1 : value;
+            _container.Sort((a, b) => Rank(_types[_tiles.IndexOf(a)]).CompareTo(Rank(_types[_tiles.IndexOf(b)])));
+            for (var i = 0; i < _tiles.Count; i++)
+            {
+                var shown = !_collapsed || Array.IndexOf(Featured, _types[i]) >= 0 || (int)_types[i] == picked;
+                _tiles[i].style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        /// <summary>Where a curve sorts: in list order expanded, and the featured ones first collapsed.</summary>
+        private int Rank(AlpsEaseType type)
+        {
+            if (!_collapsed)
+            {
+                return (int)type;
+            }
+
+            var featured = Array.IndexOf(Featured, type);
+            return featured >= 0 ? featured : Featured.Length + (int)type;
         }
 
         private void RefreshSelection()

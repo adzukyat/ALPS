@@ -20,7 +20,7 @@ public static class AlpsDemoBuilder
     private const float Bpm = 120f;
     private const double Duration = 26.0;
 
-    [MenuItem("ALPS/Demo/Rebuild Example")]
+    [MenuItem(AlpsMainMenu.DebugRoot + "Demo/Rebuild Example", false, AlpsMainMenu.DebugPriority)]
     public static void Rebuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -38,7 +38,7 @@ public static class AlpsDemoBuilder
         director.playableAsset = timeline;
         foreach (var track in timeline.GetRootTracks())
         {
-            if (track is AlpsTimelineTrack && groups.TryGetValue(track.name, out var group))
+            if (track is AlpsLightingTrack && groups.TryGetValue(track.name, out var group))
             {
                 director.SetGenericBinding(track, group);
             }
@@ -146,20 +146,20 @@ public static class AlpsDemoBuilder
         return AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
     }
 
-    private static AlpsTimelineTrack Track(TimelineAsset timeline, string name)
+    private static AlpsLightingTrack Track(TimelineAsset timeline, string name)
     {
-        var track = timeline.CreateTrack<AlpsTimelineTrack>(null, name);
+        var track = timeline.CreateTrack<AlpsLightingTrack>(null, name);
         track.bpm = Bpm;
         return track;
     }
 
-    private static void Clip(AlpsTimelineTrack track, string name, double start, double duration, AlpsClipEffectSet set)
+    private static void Clip(AlpsLightingTrack track, string name, double start, double duration, AlpsClipEffectSet set)
     {
-        var clip = track.CreateClip<AlpsTimelineClip>();
+        var clip = track.CreateClip<AlpsLightingClip>();
         clip.displayName = name;
         clip.start = start;
         clip.duration = duration;
-        ((AlpsTimelineClip)clip.asset).data = set;
+        ((AlpsLightingClip)clip.asset).data = set;
     }
 
     // ------------------------------------------------------------------ cues

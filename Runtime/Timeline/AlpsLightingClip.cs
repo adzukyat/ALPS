@@ -8,9 +8,9 @@ namespace AdzukiSoft.ALPS
     /// A lighting cue: the order, shared settings and effect stack the clip inspector edits.
     /// Evaluation happens in the track mixer, so the clip playable itself carries nothing.
     /// </summary>
-    public class AlpsTimelineClip : PlayableAsset, ITimelineClipAsset
+    public class AlpsLightingClip : PlayableAsset, ITimelineClipAsset
     {
-        public AlpsClipEffectSet data = new AlpsClipEffectSet();
+        public AlpsClipEffectSet data = AlpsClipEffectSet.CreateNew();
 
         [Tooltip("A saved clip setup this clip can load from, save to, or follow.")]
         public AlpsClipProfile profile;
@@ -33,7 +33,7 @@ namespace AdzukiSoft.ALPS
         {
             if (data == null)
             {
-                data = new AlpsClipEffectSet();
+                data = AlpsClipEffectSet.CreateNew();
             }
 
             AlpsPreviewDriver.MarkDirty();

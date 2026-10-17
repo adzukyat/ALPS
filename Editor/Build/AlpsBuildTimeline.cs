@@ -87,7 +87,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static void RemoveAlpsTracks(TimelineAsset timeline, TrackAsset track)
         {
-            if (track is AlpsTimelineTrack)
+            if (track is AlpsLightingTrack)
             {
                 timeline.DeleteTrack(track);
                 return;
@@ -159,7 +159,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static void Flatten(TrackAsset track, List<TrackAsset> result)
         {
-            if (track is AlpsTimelineTrack)
+            if (track is AlpsLightingTrack)
             {
                 return;
             }

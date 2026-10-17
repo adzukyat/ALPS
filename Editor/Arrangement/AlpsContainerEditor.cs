@@ -42,14 +42,32 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 _view = new AlpsArrangementView(container.settings);
+                _view.AddToClassList("alps-root--component");
                 _view.RegisterCallback<PointerDownEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
                 _view.RegisterCallback<FocusInEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
                 _view.Changed += () => AlpsArrangementLayout.CommitEdit(container);
+
+                // The next steps below the arrangement, inside its root so they take its styles.
+                var setup = new AlpsContainerSetupRow(container);
+                _view.Add(new AlpsAddFixtureCatalog(container, _ => setup.Refresh()));
+                _view.Add(setup);
                 host.Add(_view);
             }
 
-            host.RegisterCallback<AttachToPanelEvent>(_ => Undo.undoRedoPerformed += Rebuild);
-            host.RegisterCallback<DetachFromPanelEvent>(_ => Undo.undoRedoPerformed -= Rebuild);
+            // A fixture added or removed elsewhere, or a director set up or deleted, changes
+            // which step comes next.
+            void HierarchyChanged() => host.Q<AlpsContainerSetupRow>()?.Refresh();
+
+            host.RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                Undo.undoRedoPerformed += Rebuild;
+                EditorApplication.hierarchyChanged += HierarchyChanged;
+            });
+            host.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                Undo.undoRedoPerformed -= Rebuild;
+                EditorApplication.hierarchyChanged -= HierarchyChanged;
+            });
             Rebuild();
             return host;
         }

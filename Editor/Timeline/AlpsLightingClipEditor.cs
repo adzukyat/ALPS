@@ -9,16 +9,16 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Draws an <see cref="AlpsClipStrip"/> on every ALPS clip in the Timeline window: a
     /// color band along the bottom edge, a thin line wherever the clip's phase starts a
-    /// new cycle, the way StageLightManeuver showed its clips, and the slopes of the clip's
-    /// own fade in and fade out with the faded part shaded like Timeline's blends.
+    /// new cycle, the way StageLightManeuver showed its clips, and the slopes of its
+    /// brightness fade in and fade out with the faded part shaded like Timeline's blends.
     ///
     /// Strips are cached per clip and rebuilt when the clip's timing, the show tempo, its
     /// fixture count or its effects change. Any ALPS edit bumps <see cref="AlpsPreviewDriver.Revision"/>
     /// without saying which clip it touched, so after one the effects are compared as JSON
     /// and only clips that really changed are sampled again.
     /// </summary>
-    [CustomTimelineEditor(typeof(AlpsTimelineClip))]
-    public class AlpsTimelineClipEditor : ClipEditor
+    [CustomTimelineEditor(typeof(AlpsLightingClip))]
+    public class AlpsLightingClipEditor : ClipEditor
     {
         private static readonly Color CycleLineColor = new Color(0f, 1f, 0.71f, 0.2f);
         private static readonly Color BandBacking = new Color(0f, 0f, 0f, 0.5f);
@@ -48,7 +48,7 @@ namespace AdzukiSoft.ALPS.Editor
             public Texture2D texture;
         }
 
-        private static readonly Dictionary<AlpsTimelineClip, Entry> Cache = new Dictionary<AlpsTimelineClip, Entry>();
+        private static readonly Dictionary<AlpsLightingClip, Entry> Cache = new Dictionary<AlpsLightingClip, Entry>();
 
         [InitializeOnLoadMethod]
         private static void RegisterCleanup()
@@ -60,7 +60,7 @@ namespace AdzukiSoft.ALPS.Editor
         {
             base.DrawBackground(clip, region);
 
-            var asset = clip.asset as AlpsTimelineClip;
+            var asset = clip.asset as AlpsLightingClip;
             var visible = region.endTime - region.startTime;
             if (asset == null || visible <= 0.0 || clip.duration <= 0.0 || Event.current == null || Event.current.type != EventType.Repaint)
             {
@@ -144,7 +144,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        private static Entry GetEntry(TimelineClip clip, AlpsTimelineClip asset)
+        private static Entry GetEntry(TimelineClip clip, AlpsLightingClip asset)
         {
             var key = MakeKey(clip, asset);
             var revision = AlpsPreviewDriver.Revision;
@@ -184,9 +184,9 @@ namespace AdzukiSoft.ALPS.Editor
             return entry;
         }
 
-        private static Key MakeKey(TimelineClip clip, AlpsTimelineClip asset)
+        private static Key MakeKey(TimelineClip clip, AlpsLightingClip asset)
         {
-            var track = clip.GetParentTrack() as AlpsTimelineTrack;
+            var track = clip.GetParentTrack() as AlpsLightingTrack;
             var root = track != null ? track.RootTrack : null;
             var director = TimelineEditor.inspectedDirector;
             var target = director != null && root != null ? director.GetGenericBinding(root) as AlpsTarget : null;
@@ -200,7 +200,7 @@ namespace AdzukiSoft.ALPS.Editor
                 start = (float)clip.start,
                 end = (float)clip.end,
                 clipIn = (float)clip.clipIn,
-                bpm = AlpsTimelineTrack.ShowBpm(track != null ? track.timelineAsset : null),
+                bpm = AlpsLightingTrack.ShowBpm(track != null ? track.timelineAsset : null),
                 fixtureCount = Mathf.Max(1, fixtureCount),
                 seed = AlpsShowCompiler.SeedFor(clip, Mathf.Max(0, layer)),
             };
@@ -260,7 +260,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static void PurgeDestroyedClips()
         {
-            var dead = new List<AlpsTimelineClip>();
+            var dead = new List<AlpsLightingClip>();
             foreach (var pair in Cache)
             {
                 if (pair.Key == null)
