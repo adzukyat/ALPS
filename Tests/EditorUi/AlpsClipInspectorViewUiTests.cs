@@ -888,17 +888,16 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void BlackoutOnReturn_ShowsWhileThePhaseDrivingBrightnessComesBack()
+        public void BlackoutOnReturn_ShowsWhileThePhaseTurningTheHeadComesBack()
         {
             var set = new AlpsClipEffectSet();
             set.phase.SetShares(1f, 0f, 0f);
-            var brightness = set.Add(AlpsEffectKind.Brightness);
-            brightness.brightness.isRange = true;
-            brightness.brightness.range = new Vector2(0f, 100f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.isRange = true;
 
             var view = new AlpsClipInspectorView(set);
             var effect = view.Query<AlpsEffectView>().First();
-            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            var blackout = view.Query<AlpsToggleSwitch>().ToList().Single(t => t.label == AlpsStrings.Tr("effect.move.blackoutReturn"));
             var fadeFrame = effect.Query<AlpsFadeSlider>().ToList().Single(f => f.label == AlpsStrings.Tr("common.fade")).parent;
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value, "A sawtooth has no return leg.");
 
@@ -907,7 +906,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value, "Fades wait for the switch.");
 
-            brightness.blackoutOnReturn = true;
+            move.blackoutOnReturn = true;
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.Flex, fadeFrame.style.display.value);
             Assert.IsNull(fadeFrame.Q<Label>(className: "alps-sub__title"), "The fade frame is untitled.");
@@ -917,13 +916,44 @@ namespace AdzukiSoft.ALPS.Tests
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
 
-            // Own phase takes over which leg is the return.
+            // Pan alone sweeping on its own sawtooth takes over which leg is the return.
             set.phase.SetShares(0.5f, 0f, 0.5f);
-            brightness.brightness.useOwnPhase = true;
-            brightness.brightness.ownPhase.SetShares(1f, 0f, 0f);
+            move.tilt.isRange = false;
+            move.pan.isRange = true;
+            move.pan.useOwnPhase = true;
+            move.pan.ownPhase.SetShares(1f, 0f, 0f);
             effect.Refresh();
             Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
             Assert.AreEqual(DisplayStyle.None, fadeFrame.style.display.value);
+
+            // A circle turns on the clip's phase, and a tracking head never comes back.
+            move.moveMode = AlpsMoveMode.Circle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
+            move.moveMode = AlpsMoveMode.TrackUser;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, blackout.style.display.value);
+        }
+
+        [Test]
+        public void BlackoutOnReturn_ShowsOnBrightnessOnlyWhereALoadedSetStillCarriesIt()
+        {
+            AlpsToggleSwitch Switch(AlpsEffect brightness)
+            {
+                var set = new AlpsClipEffectSet();
+                set.phase.SetShares(0.5f, 0f, 0.5f);
+                set.effects.Add(brightness);
+                var view = new AlpsClipInspectorView(set);
+                return view.Query<AlpsToggleSwitch>().ToList().SingleOrDefault(t => t.label == AlpsStrings.Tr("effect.brightness.blackoutReturn"));
+            }
+
+            Assert.IsNull(Switch(AlpsEffect.Create(AlpsEffectKind.Brightness)), "The move has it now.");
+
+            var carried = AlpsEffect.Create(AlpsEffectKind.Brightness);
+            carried.blackoutOnReturn = true;
+            var blackout = Switch(carried);
+            Assert.IsNotNull(blackout, "Shown so it can be turned off.");
+            Assert.AreEqual(DisplayStyle.Flex, blackout.style.display.value);
         }
 
         [Test]

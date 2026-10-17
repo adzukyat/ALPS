@@ -48,6 +48,10 @@ namespace AdzukiSoft.ALPS.Tests
             move.pan.ownPhase.beatsPerCycle = 4f;
             move.pan.ownPhase.inverse = true;
             move.panTiltPhaseOffsetDegrees = 90f;
+            // Set before the odd copy below, so both the angle and the circle card measure it.
+            move.blackoutOnReturn = true;
+            move.blackoutFadeIn = 0.1f;
+            move.blackoutFadeOut = 0.35f;
 
             // Move again: the odd copy turns in a circle, so those rows get measured too.
             var circle = set.Add(AlpsEffectKind.Move);
@@ -81,7 +85,7 @@ namespace AdzukiSoft.ALPS.Tests
             set.Add(AlpsEffectKind.Color);
             set.effects[set.IndexOf(AlpsEffectKind.Color, AlpsParity.Odd)].expanded = false;
 
-            // Brightness
+            // Brightness, still carrying a blackout from before the move took it.
             var brightness = set.Add(AlpsEffectKind.Brightness);
             brightness.brightness.value = 100f;
             brightness.blackoutOnReturn = true;
