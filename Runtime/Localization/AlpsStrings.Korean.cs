@@ -150,7 +150,7 @@ namespace AdzukiSoft.ALPS
                 { "phase.mode", "모드" },
                 { "phase.mode.wave", "반복" },
                 { "phase.mode.random", "랜덤" },
-                { "phase.mode.inOut", "인아웃" },
+                { "phase.mode.inOut", "트랜지션" },
                 { "phase.shape.sweep", "스윕" },
                 { "phase.shape.pulse", "펄스" },
                 { "phase.shape.pingPong", "핑퐁" },
