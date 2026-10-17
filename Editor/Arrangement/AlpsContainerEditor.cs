@@ -42,6 +42,7 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 _view = new AlpsArrangementView(container.settings);
+                _view.AddToClassList("alps-root--component");
                 _view.RegisterCallback<PointerDownEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
                 _view.RegisterCallback<FocusInEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
                 _view.Changed += () => AlpsArrangementLayout.CommitEdit(container);

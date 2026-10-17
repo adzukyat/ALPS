@@ -69,6 +69,15 @@
     min-width: 476px;
 }
 
+/* In a component's inspector, Unity's inspector element already pads the content like the
+   IMGUI fields around it, so the view adds nothing at the sides, and its minimum keeps the
+   card's content width without those 24px. */
+.alps-root--component {
+    padding-left: 0;
+    padding-right: 0;
+    min-width: 452px;
+}
+
 /* ------------------------------------------------------------ vertical flow
  *
  * UI Toolkit 2022.3 has no `gap`, so every flow container states the spacing its
