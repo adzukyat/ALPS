@@ -46,6 +46,35 @@ jobs:
         if: steps.version.outputs.exists == 'false'
         run: python3 .github/scripts/build-unitypackage.py --output "dist/ALPS-${{ steps.version.outputs.version }}.unitypackage"
 
+      # The notes are the CHANGELOG.md section headed "## [<version>]" (or
+      # "## <version>"), up to the next "## " heading. Without one they are empty.
+      - name: Read release notes
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 - <<'EOF'
+          import os, re
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          heading = re.compile(rf"^##\s+\[?v?{re.escape(version)}\]?(\s|$)")
+          lines, inside = [], False
+          changelog = Path("CHANGELOG.md")
+          if changelog.is_file():
+              for line in changelog.read_text(encoding="utf-8").splitlines():
+                  if line.startswith("## "):
+                      if inside:
+                          break
+                      inside = bool(heading.match(line))
+                  elif inside:
+                      lines.append(line)
+          notes = "\n".join(lines).strip()
+          if not notes:
+              print(f"::warning::CHANGELOG.md has no section for {version}, the release notes are empty.")
+          Path("dist/notes.md").write_text(notes + "\n", encoding="utf-8")
+          EOF
+
       - name: Publish release
         if: steps.version.outputs.exists == 'false'
         env:
@@ -55,4 +84,4 @@ jobs:
           gh release create "v${VERSION}" "dist/ALPS-${VERSION}.unitypackage" \
             --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
-            --notes ""
+            --notes-file dist/notes.md
