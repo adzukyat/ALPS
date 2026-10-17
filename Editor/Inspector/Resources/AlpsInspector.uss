@@ -1149,9 +1149,9 @@
     overflow: hidden;
 }
 
-/* Brings the space above the tiles the list used to. */
+/* 11px on every side, the same as around the tiles. */
 .alps-add__header {
-    padding: 10px 11px 10px 11px;
+    padding: 11px;
 }
 
 .alps-add__heading {
@@ -1172,8 +1172,8 @@
        Each tile carries its own trailing gutter, so the right padding gives that
        8px back (11 - 8 = 3) and the row still breaks after the third tile. The
        trailing gutter and the 3px make 11px on the right too, so a short last row
-       centres between equal sides. */
-    padding: 0 3px 4px 11px;
+       centres between equal sides, and below the tiles' 8px the same 3px makes 11px. */
+    padding: 0 3px 3px 11px;
 }
 
 .alps-add__item {
