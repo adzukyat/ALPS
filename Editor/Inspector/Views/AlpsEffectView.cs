@@ -547,6 +547,41 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
+        /// <summary>
+        /// True when something on <paramref name="effect"/> moves with the clip's shared phase:
+        /// a range or a palette that does not run on its own phase, a circle, or a blackout on
+        /// the return of a brightness that follows the clip.
+        /// </summary>
+        public static bool FollowsClipPhase(AlpsEffect effect)
+        {
+            bool Shared(AlpsAnimatableValue value) => value.HasMultipleStops && !value.useOwnPhase;
+
+            switch (effect.kind)
+            {
+                case AlpsEffectKind.Move:
+                    if (effect.moveMode == AlpsMoveMode.Circle)
+                    {
+                        return true;
+                    }
+
+                    return effect.moveMode == AlpsMoveMode.Angle && (Shared(effect.tilt) || Shared(effect.pan));
+                case AlpsEffectKind.Cone:
+                    return Shared(effect.coneWidth) || Shared(effect.coneLength);
+                case AlpsEffectKind.Color:
+                    // A single gradient stop is walked by the phase as well.
+                    return !effect.colorPhasing.useOwnPhase
+                           && (effect.colorStops.Count >= 2
+                               || (effect.colorStops.Count == 1 && effect.colorStops[0].isGradient));
+                case AlpsEffectKind.Brightness:
+                    return !effect.brightness.useOwnPhase
+                           && (effect.brightness.HasMultipleStops || effect.blackoutOnReturn);
+                case AlpsEffectKind.Gobo:
+                    return !effect.goboPhasing.useOwnPhase && effect.goboStops.Count >= 2;
+                default:
+                    return false;
+            }
+        }
+
         // ------------------------------------------------------------ helpers
 
         private event Action RefreshHooks;

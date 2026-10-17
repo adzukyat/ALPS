@@ -405,6 +405,33 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void SharedSettings_GreyOutUntilSomethingFollowsThem()
+        {
+            var set = new AlpsClipEffectSet();
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            var view = new AlpsClipInspectorView(set);
+            var phase = view.Query<AlpsPhaseSettingsView>().First();
+            var card = phase.GetFirstAncestorOfType<AlpsEffectCard>();
+
+            Assert.IsTrue(phase.ClassListContains("alps-phase--unused"), "A fixed brightness follows no phase.");
+            Assert.AreEqual(AlpsStrings.Tr("clip.common.unused"), card.Description);
+            Assert.AreEqual(DisplayStyle.Flex, card.Body.style.display.value, "The settings stay open.");
+
+            brightness.brightness.isRange = true;
+            brightness.brightness.range = new Vector2(0f, 100f);
+            view = new AlpsClipInspectorView(set);
+            phase = view.Query<AlpsPhaseSettingsView>().First();
+            Assert.IsFalse(phase.ClassListContains("alps-phase--unused"));
+            Assert.AreEqual(AlpsStrings.Tr("clip.common.desc"), phase.GetFirstAncestorOfType<AlpsEffectCard>().Description);
+
+            brightness.brightness.useOwnPhase = true;
+            view = new AlpsClipInspectorView(set);
+            Assert.IsTrue(
+                view.Query<AlpsPhaseSettingsView>().First().ClassListContains("alps-phase--unused"),
+                "A range on its own phase leaves the shared one unused.");
+        }
+
+        [Test]
         public void SharedSettings_RendersEveryPlannedRow()
         {
             var set = new AlpsClipEffectSet();

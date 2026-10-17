@@ -90,6 +90,7 @@ namespace AdzukiSoft.ALPS
                 { "clip.symmetric.tip", "真ん中で折り返し、左右で同じ位置の灯体に同じ順番を割り当てます。通常は真ん中から、逆順は両端から数え、ランダムは左右の組ごとに並べ替えます。前半の灯体はパンが反転します。" },
                 { "clip.common.title", "共通設定" },
                 { "clip.common.desc", "Rangeとパレットの動作を調整できます。" },
+                { "clip.common.unused", "レンジやパレットを使うと有効になります。" },
                 { "clip.editorUnavailable", "このクリップのエディタを表示できませんでした。" },
                 { "clip.multiEdit", "{0}個のクリップを同時に編集しています。値が異なる項目は「{1}」で表示され、変更した項目だけが全てのクリップに反映されます。" },
                 { "clip.profileSync", "プロファイルに追従" },

@@ -241,7 +241,30 @@ namespace AdzukiSoft.ALPS.Editor
 
         private void RaiseChanged()
         {
+            RefreshPhaseInUse();
             Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// Greys the shared settings out while nothing on the clip follows them, so a first
+        /// look does not offer settings that change nothing yet. They stay open, keep their
+        /// place and can still be set ahead, and the header says what brings them in.
+        /// </summary>
+        private void RefreshPhaseInUse()
+        {
+            if (_phaseView == null)
+            {
+                return;
+            }
+
+            var inUse = false;
+            foreach (var effect in _set.effects)
+            {
+                inUse |= AlpsEffectView.FollowsClipPhase(effect);
+            }
+
+            _phaseView.EnableInClassList("alps-phase--unused", !inUse);
+            _phaseCard.Description = AlpsStrings.Tr(inUse ? "clip.common.desc" : "clip.common.unused");
         }
 
         private void RaiseStructureEdited(Action<AlpsClipEffectSet> edit)
@@ -258,6 +281,7 @@ namespace AdzukiSoft.ALPS.Editor
                 RaiseChanged();
             }, mixed: _mixed);
             _phaseCard.Body.Add(_phaseView);
+            RefreshPhaseInUse();
         }
 
         private void RefreshPhasePasteAvailability()
@@ -332,6 +356,8 @@ namespace AdzukiSoft.ALPS.Editor
                 _effectContainer.Add(view);
                 _effectViews.Add(view);
             }
+
+            RefreshPhaseInUse();
         }
 
         private void RefreshEffects()

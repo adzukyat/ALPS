@@ -90,6 +90,7 @@ namespace AdzukiSoft.ALPS
                 { "clip.symmetric.tip", "가운데에서 접어, 좌우로 같은 위치의 조명에 같은 순서를 할당합니다. 통상은 가운데부터, 역순은 양 끝부터 세며, 랜덤은 좌우 쌍마다 뒤섞습니다. 전반부 조명은 팬이 반전됩니다." },
                 { "clip.common.title", "공통 설정" },
                 { "clip.common.desc", "Range와 팔레트의 동작을 조정할 수 있습니다." },
+                { "clip.common.unused", "레인지나 팔레트를 사용하면 활성화됩니다." },
                 { "clip.editorUnavailable", "이 클립의 에디터를 표시할 수 없었습니다." },
                 { "clip.multiEdit", "{0}개의 클립을 동시에 편집하고 있습니다. 값이 다른 항목은 \"{1}\"로 표시되며, 변경한 항목만 모든 클립에 반영됩니다." },
                 { "clip.profileSync", "프로파일 추종" },

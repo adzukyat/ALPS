@@ -117,6 +117,24 @@ namespace AdzukiSoft.ALPS.Editor
             set => _title.text = value;
         }
 
+        /// <summary>The line under the title. Empty leaves it out.</summary>
+        public string Description
+        {
+            get => _description.text;
+            set
+            {
+                _description.text = value;
+                if (string.IsNullOrEmpty(value))
+                {
+                    _description.RemoveFromHierarchy();
+                }
+                else if (_description.parent == null)
+                {
+                    _header.Add(_description);
+                }
+            }
+        }
+
         public event Action CopyRequested;
         public event Action PasteRequested;
         public event Action DeleteRequested;

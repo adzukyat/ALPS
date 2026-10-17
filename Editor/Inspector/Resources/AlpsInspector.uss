@@ -930,6 +930,11 @@
     margin-top: 18px;
 }
 
+/* Shared settings nothing on the clip follows yet. */
+.alps-phase--unused {
+    opacity: 0.4;
+}
+
 /* A parameter's own motion hangs right under its effect's card. */
 .alps-root .alps-card--motion {
     margin-top: 2px;

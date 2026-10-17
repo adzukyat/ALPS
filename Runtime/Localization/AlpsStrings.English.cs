@@ -90,6 +90,7 @@ namespace AdzukiSoft.ALPS
                 { "clip.symmetric.tip", "Folds at the middle and assigns the same order to fixtures mirrored across it. Normal counts from the middle, reverse from the ends, and random shuffles the mirrored pairs. The first half's fixtures have their pan mirrored." },
                 { "clip.common.title", "Common Settings" },
                 { "clip.common.desc", "Adjust how Range and palettes behave." },
+                { "clip.common.unused", "Takes effect once a range or a palette is in use." },
                 { "clip.editorUnavailable", "This clip's editor could not be shown." },
                 { "clip.multiEdit", "Editing {0} clips at once. Items whose values differ show as \"{1}\", and only the items you change apply to all clips." },
                 { "clip.profileSync", "Follow Profile" },
