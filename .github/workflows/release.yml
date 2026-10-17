@@ -18,6 +18,8 @@ concurrency:
 
 jobs:
   release:
+    # A manual run from another branch would tag that branch, so only main releases.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,10 +46,6 @@ jobs:
         if: steps.version.outputs.exists == 'false'
         run: python3 .github/scripts/build-unitypackage.py --output "dist/ALPS-${{ steps.version.outputs.version }}.unitypackage"
 
-      - name: Write release notes
-        if: steps.version.outputs.exists == 'false'
-        run: python3 .github/scripts/release-notes.py --repository "${{ github.repository }}" --output dist/notes.md
-
       - name: Publish release
         if: steps.version.outputs.exists == 'false'
         env:
@@ -57,4 +55,4 @@ jobs:
           gh release create "v${VERSION}" "dist/ALPS-${VERSION}.unitypackage" \
             --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
-            --notes-file dist/notes.md
+            --notes ""
