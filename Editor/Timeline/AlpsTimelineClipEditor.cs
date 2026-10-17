@@ -9,8 +9,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Draws an <see cref="AlpsClipStrip"/> on every ALPS clip in the Timeline window: a
     /// color band along the bottom edge, a thin line wherever the clip's phase starts a
-    /// new cycle, the way StageLightManeuver showed its clips, and the slopes of the clip's
-    /// own fade in and fade out with the faded part shaded like Timeline's blends.
+    /// new cycle, the way StageLightManeuver showed its clips, and the slopes of its
+    /// brightness fade in and fade out with the faded part shaded like Timeline's blends.
     ///
     /// Strips are cached per clip and rebuilt when the clip's timing, the show tempo, its
     /// fixture count or its effects change. Any ALPS edit bumps <see cref="AlpsPreviewDriver.Revision"/>

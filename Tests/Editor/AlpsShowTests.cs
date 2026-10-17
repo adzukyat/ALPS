@@ -424,14 +424,21 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(10f, Evaluate(show, 0, 1.4f)[AlpsShowLayout.FrameBrightness], 0.01f, "The next clip starts over at its own start.");
         }
 
-        [Test]
-        public void ClipFade_RisesAndFallsOverBeats()
+        /// <summary>A set lit at <paramref name="value"/> by a brightness effect that fades in and out.</summary>
+        private static AlpsClipEffectSet Faded(float value, float fadeIn, float fadeOut)
         {
             var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
-            set.fadeInBeats = 1f;
-            set.fadeOutBeats = 2f;
-            var show = Compile(1, set, end: 4f);
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.value = value;
+            brightness.fadeInBeats = fadeIn;
+            brightness.fadeOutBeats = fadeOut;
+            return set;
+        }
+
+        [Test]
+        public void BrightnessFade_RisesAndFallsOverBeats()
+        {
+            var show = Compile(1, Faded(80f, 1f, 2f), end: 4f);
 
             Assert.AreEqual(0f, Evaluate(show, 0, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "Dark on the first beat.");
             Assert.AreEqual(40f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way through the fade in.");
@@ -441,46 +448,52 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ClipFade_CountsInTheClipTempo()
+        public void BrightnessFade_CountsInTheClipTempo()
         {
-            var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var set = Faded(100f, 2f, 0f);
             set.bpm = 120f;
-            set.fadeInBeats = 2f;
             var show = Compile(1, set, end: 4f);
 
             Assert.AreEqual(50f, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "One of two beats at 120 BPM.");
         }
 
         [Test]
-        public void ClipFade_LeavesTheMoveAlone()
+        public void BrightnessFade_LeavesTheMoveAlone()
         {
-            var set = Set();
+            var set = Faded(100f, 1f, 1f);
             var move = set.Add(AlpsEffectKind.Move);
             move.tilt.value = 60f;
             move.pan.value = 90f;
-            set.fadeInBeats = 1f;
-            set.fadeOutBeats = 1f;
             var show = Compile(1, set, end: 4f);
 
             foreach (var time in new[] { 0.5f, 2f, 3.75f })
             {
                 var frame = Evaluate(show, 0, time);
-                Assert.AreEqual(60f, frame[AlpsShowLayout.FrameTilt], 0.01f, "Pan and tilt stop where they are once nothing moves them, so a fade does not blend them.");
+                Assert.AreEqual(60f, frame[AlpsShowLayout.FrameTilt], 0.01f, "The fade dims the light alone.");
                 Assert.AreEqual(90f, frame[AlpsShowLayout.FramePan], 0.01f);
             }
         }
 
         [Test]
-        public void ClipFade_LeavesTheGoboAndItsTurnAlone()
+        public void BrightnessFade_SplitsByParity()
         {
-            var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var set = Faded(100f, 2f, 0f);
+            var odd = set.Add(AlpsEffectKind.Brightness);
+            odd.fadeInBeats = 0f;
+            var show = Compile(2, set, end: 4f);
+
+            // Order positions count from 1, so the first fixture is odd.
+            Assert.AreEqual(100f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "The odd half does not fade.");
+            Assert.AreEqual(50f, Evaluate(show, 1, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "The even half does.");
+        }
+
+        [Test]
+        public void BrightnessFade_LeavesTheGoboAndItsTurnAlone()
+        {
+            var set = Faded(100f, 2f, 2f);
             var gobo = set.Add(AlpsEffectKind.Gobo);
             gobo.goboStops.Add(new AlpsGoboStop(5));
             gobo.goboRotationBeats = 4f;
-            set.fadeInBeats = 2f;
-            set.fadeOutBeats = 2f;
             var show = Compile(1, set, end: 8f);
 
             var entering = Evaluate(show, 0, 0.5f);
@@ -600,13 +613,10 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ClipFade_KeepsTheColourOverNothingLit()
+        public void BrightnessFade_KeepsTheColourOverNothingLit()
         {
-            var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var set = Faded(100f, 2f, 2f);
             set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
-            set.fadeInBeats = 2f;
-            set.fadeOutBeats = 2f;
             var show = Compile(1, set, end: 8f);
 
             foreach (var time in new[] { 0.5f, 7.5f })
@@ -620,15 +630,12 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ClipFade_KeepsTheConeOverNothingLit()
+        public void BrightnessFade_KeepsTheConeOverNothingLit()
         {
-            var set = Set();
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var set = Faded(100f, 2f, 2f);
             var cone = set.Add(AlpsEffectKind.Cone);
             cone.coneWidth.value = 10f;
             cone.coneLength.value = 7f;
-            set.fadeInBeats = 2f;
-            set.fadeOutBeats = 2f;
             var show = Compile(1, set, end: 8f);
 
             foreach (var time in new[] { 0.5f, 7.5f })
@@ -641,15 +648,13 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ClipFade_MixesTheColourWithALitLayerBelow()
+        public void BrightnessFade_CoversTheLayerBelow()
         {
             var below = Set();
             below.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
             below.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
-            var above = Set();
-            above.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            var above = Faded(20f, 2f, 0f);
             above.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.blue));
-            above.fadeInBeats = 2f;
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
@@ -657,25 +662,29 @@ namespace AdzukiSoft.ALPS.Tests
                 new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1 });
 
             var frame = Evaluate(show, 0, 1f);
-            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameRed], 0.001f, "Half way from the red below to blue.");
-            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameBlue], 0.001f);
+            Assert.AreEqual(10f, frame[AlpsShowLayout.FrameBrightness], 0.01f, "The fade scales the value, so the layer still covers the one below.");
+            Assert.AreEqual(0f, frame[AlpsShowLayout.FrameRed], 0.001f, "The colour above covers too, since it is lit.");
+            Assert.AreEqual(1f, frame[AlpsShowLayout.FrameBlue], 0.001f);
         }
 
         [Test]
-        public void ClipFade_BlendsTowardTheLayerBelow()
+        public void MixIn_BlendsTowardTheLayerBelow()
         {
             var below = Set();
             below.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            below.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.red));
             var above = Set();
-            above.Add(AlpsEffectKind.Brightness).brightness.value = 20f;
-            above.fadeInBeats = 2f;
+            above.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
+            above.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.blue));
             var show = AlpsShowCompiler.CompileStandalone(
                 1,
                 Bpm,
                 new AlpsStandaloneClip { set = below, start = 0f, end = 4f, layer = 0 },
-                new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1 });
+                new AlpsStandaloneClip { set = above, start = 0f, end = 4f, layer = 1, mixIn = 2f });
 
-            Assert.AreEqual(60f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "Half way from the lower layer's 100 to 20.");
+            var frame = Evaluate(show, 0, 1f);
+            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameRed], 0.001f, "Half way from the red below to blue, where a fade covers it.");
+            Assert.AreEqual(0.5f, frame[AlpsShowLayout.FrameBlue], 0.001f);
         }
 
         [Test]
@@ -1999,6 +2008,184 @@ namespace AdzukiSoft.ALPS.Tests
                     // The noise hashes large products, where the GPU may round a step differently.
                     var tolerance = phase.mode == AlpsPhaseMode.Random ? 0.5f : 0.05f;
                     Assert.AreEqual(expected, Evaluate(show, 0, time)[AlpsShowLayout.FrameBrightness], tolerance, $"{name} at {time}s.");
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------ in / out
+
+        /// <summary>A linear in / out phase of <paramref name="inBeats"/> and <paramref name="outBeats"/>.</summary>
+        private static AlpsClipEffectSet InOut(float inBeats, float outBeats)
+        {
+            var set = Set();
+            set.phase.mode = AlpsPhaseMode.InOut;
+            set.phase.inBeats = inBeats;
+            set.phase.outBeats = outBeats;
+            set.phase.fallEase = AlpsEaseType.Linear;
+            return set;
+        }
+
+        /// <summary>Brightness ranged over 0 to 100, so it reads the phase in percent.</summary>
+        private static AlpsAnimatableValue RangedBrightness(AlpsClipEffectSet set)
+        {
+            var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
+            brightness.isRange = true;
+            brightness.range = new Vector2(0f, 100f);
+            return brightness;
+        }
+
+        [Test]
+        public void InOut_MovesFromTheFirstValueToTheLastAndBack()
+        {
+            var set = InOut(2f, 2f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.value = 20f;
+            move.pan.isRange = true;
+            move.pan.range = new Vector2(0f, 90f);
+            var show = Compile(1, set, end: 8f);
+
+            Assert.AreEqual(0f, Evaluate(show, 0, 0f)[AlpsShowLayout.FramePan], 0.01f, "At the first value when the clip starts.");
+            Assert.AreEqual(45f, Evaluate(show, 0, 1f)[AlpsShowLayout.FramePan], 0.01f, "Half way through the in.");
+            Assert.AreEqual(90f, Evaluate(show, 0, 4f)[AlpsShowLayout.FramePan], 0.01f, "Held at the last value between the in and the out.");
+            Assert.AreEqual(45f, Evaluate(show, 0, 7f)[AlpsShowLayout.FramePan], 0.01f, "Half way back through the out.");
+        }
+
+        [Test]
+        public void InOut_SpreadStaggersAndTheLastEndsWithTheClip()
+        {
+            var set = InOut(1f, 1f);
+            set.phase.spreadBeats = 2f;
+            RangedBrightness(set);
+            var show = Compile(3, set, end: 6f);
+
+            float At(int fixture, float time) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+
+            Assert.AreEqual(50f, At(0, 0.5f), 0.01f, "The first starts with the clip.");
+            Assert.AreEqual(50f, At(1, 1.5f), 0.01f, "The next a beat later.");
+            Assert.AreEqual(0f, At(2, 1.5f), 0.01f, "The last has not started yet.");
+            Assert.AreEqual(50f, At(2, 2.5f), 0.01f);
+            Assert.AreEqual(50f, At(0, 3.5f), 0.01f, "The first is out two beats before the clip ends.");
+            Assert.AreEqual(0f, At(0, 4.5f), 0.01f);
+            Assert.AreEqual(50f, At(2, 5.5f), 0.01f, "The last is out as the clip ends.");
+        }
+
+        [Test]
+        public void InOut_NegativeSpreadStartsFromTheLast()
+        {
+            var set = InOut(1f, 1f);
+            set.phase.spreadBeats = -2f;
+            RangedBrightness(set);
+            var show = Compile(3, set, end: 6f);
+
+            Assert.AreEqual(50f, Evaluate(show, 2, 0.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "The last order position starts with the clip.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 5.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "The first ends with it.");
+        }
+
+        [Test]
+        public void InOut_ShrinksTheInAndOutTogetherInAShortClip()
+        {
+            var set = InOut(4f, 4f);
+            RangedBrightness(set);
+            var show = Compile(1, set, end: 4f);
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(100f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameBrightness], 0.5f, "Both halved, they meet in the middle.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 3f)[AlpsShowLayout.FrameBrightness], 0.01f);
+        }
+
+        [Test]
+        public void InOut_SecondHalfOfASplitClipDoesNotRiseAgain()
+        {
+            var set = InOut(2f, 2f);
+            RangedBrightness(set);
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, start = 0f, end = 3f, clipIn = 3f });
+
+            Assert.AreEqual(100f, Evaluate(show, 0, 0f)[AlpsShowLayout.FrameBrightness], 0.01f, "Three beats in, past the in.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameBrightness], 0.01f, "The out still ends with this clip.");
+        }
+
+        [Test]
+        public void InOut_SweepsAValueSetToStepPerCycle()
+        {
+            var set = InOut(2f, 2f);
+            RangedBrightness(set).timing = AlpsTimingMode.PerCycle;
+            var show = Compile(1, set, end: 8f);
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "In / out has no cycles to step on.");
+        }
+
+        [Test]
+        public void InOut_RunsAsAValuesOwnPhase()
+        {
+            var set = Set();
+            var brightness = RangedBrightness(set);
+            brightness.useOwnPhase = true;
+            brightness.ownPhase.mode = AlpsPhaseMode.InOut;
+            brightness.ownPhase.inBeats = 2f;
+            brightness.ownPhase.outBeats = 2f;
+            brightness.ownPhase.ease = AlpsEaseType.Linear;
+            brightness.ownPhase.fallEase = AlpsEaseType.Linear;
+            var show = Compile(1, set, end: 8f);
+
+            Assert.AreEqual(50f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(100f, Evaluate(show, 0, 4.5f)[AlpsShowLayout.FrameBrightness], 0.01f, "Not the shared sawtooth.");
+        }
+
+        [Test]
+        public void InOut_DrawsWhatPlays()
+        {
+            var cases = new (string name, System.Action<AlpsPhaseSettings> build)[]
+            {
+                ("eased", p =>
+                {
+                    p.ease = AlpsEaseType.InOutCubic;
+                    p.fallEase = AlpsEaseType.OutBounce;
+                }),
+                ("inverted back", p =>
+                {
+                    p.ease = AlpsEaseType.InBack;
+                    p.fallEase = AlpsEaseType.OutBack;
+                    p.inverse = true;
+                }),
+                ("spread", p =>
+                {
+                    p.ease = AlpsEaseType.OutSine;
+                    p.spreadBeats = 1.5f;
+                }),
+                ("reverse spread", p => p.spreadBeats = -3f),
+                ("longer than the clip", p =>
+                {
+                    p.inBeats = 5f;
+                    p.outBeats = 3f;
+                }),
+                ("jumps", p =>
+                {
+                    p.inBeats = 0f;
+                    p.outBeats = 0f;
+                    p.spreadBeats = 2f;
+                }),
+            };
+
+            const int fixtures = 4;
+            const float end = 6f;
+            foreach (var (name, build) in cases)
+            {
+                var set = InOut(2f, 1.5f);
+                build(set.phase);
+                RangedBrightness(set);
+                var show = Compile(fixtures, set, end);
+                var phase = set.phase;
+                var step = phase.spreadBeats / (fixtures - 1);
+                for (var fixture = 0; fixture < fixtures; fixture++)
+                {
+                    // Off the beat, so no sample sits on the edge of a jump.
+                    for (var time = 0.005f; time < end; time += 0.07f)
+                    {
+                        var expected = 100f * AlpsPhaseCurve.InOut(
+                            (int)phase.ease, (int)phase.fallEase, phase.inBeats, phase.outBeats, phase.inverse,
+                            time, end, step * fixture, phase.spreadBeats);
+                        Assert.AreEqual(expected, Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness], 0.05f, $"{name}, fixture {fixture} at {time}s.");
+                    }
                 }
             }
         }

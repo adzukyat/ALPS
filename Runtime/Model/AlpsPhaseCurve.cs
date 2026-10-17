@@ -173,6 +173,49 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
+        /// An in / out phase <paramref name="beats"/> after the clip's start, for a clip
+        /// <paramref name="lengthBeats"/> long. It rises over the in beats, holds at 1 and falls
+        /// over the out beats, reaching 0 at the clip's end. An order position
+        /// <paramref name="delay"/> beats late starts and ends that much later than the first,
+        /// counted so that the last one, <paramref name="lastDelay"/> beats late, still ends
+        /// with the clip. Invert flips the result upside down.
+        /// </summary>
+        public static float InOut(int riseEase, int fallEase, float inBeats, float outBeats, bool inverse, float beats, float lengthBeats, float delay, float lastDelay)
+        {
+            var u = InOutWave(inBeats, outBeats, beats, lengthBeats, delay, lastDelay, out var rise, out var holdHigh, out var fall);
+            var phase = u < 0f ? 0f : Wave(riseEase, fallEase, rise, holdHigh, fall, u);
+            return inverse ? 1f - phase : phase;
+        }
+
+        /// <summary>
+        /// The one wave an in / out phase runs over the clip, as shares of the stretch it has
+        /// between its start and its end, and how far along that stretch
+        /// <paramref name="beats"/> is: negative before it starts and 1 or more once it ended.
+        /// An in and an out longer than the stretch shrink together to fit it. The evaluator
+        /// runs it through the same wave code as a cycling phase, so the eases compile once.
+        /// </summary>
+        public static float InOutWave(float inBeats, float outBeats, float beats, float lengthBeats, float delay, float lastDelay, out float rise, out float holdHigh, out float fall)
+        {
+            rise = 0f;
+            holdHigh = 0f;
+            fall = 0f;
+            var length = lengthBeats - Mathf.Abs(lastDelay);
+            if (length <= 0f)
+            {
+                return -1f;
+            }
+
+            var inShare = Mathf.Max(0f, inBeats);
+            var outShare = Mathf.Max(0f, outBeats);
+            var scale = inShare + outShare > length ? length / (inShare + outShare) : 1f;
+            rise = inShare * scale / length;
+            fall = outShare * scale / length;
+            holdHigh = Mathf.Max(0f, 1f - rise - fall);
+            var start = delay - Mathf.Min(0f, lastDelay);
+            return (beats - start) / length;
+        }
+
+        /// <summary>
         /// True while no wave that fired is on its way out, which is where blackout on return
         /// is dark: every wave under way is on its return leg, the fall and the low hold after
         /// it, or none is under way at all. A wave whose rise and high hold fill all of it

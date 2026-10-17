@@ -307,7 +307,8 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             var multiple = HasMultipleStops;
-            AlpsPhaseSettingsView.Show(_timing, multiple);
+            // An in / out phase has no cycles to step on.
+            AlpsPhaseSettingsView.Show(_timing, multiple && GoverningPhase.mode != AlpsPhaseMode.InOut);
             AlpsPhaseSettingsView.Show(_ownPhase, multiple);
             AlpsPhaseSettingsView.Show(_ownPhaseView, multiple && _model.useOwnPhase);
             _ownPhaseView.Refresh();

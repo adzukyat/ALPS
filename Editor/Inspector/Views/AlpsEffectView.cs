@@ -12,6 +12,9 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     public class AlpsEffectView : VisualElement
     {
+        /// <summary>Longest brightness fade either side of a clip, in beats.</summary>
+        public const float MaxFadeBeats = 8f;
+
         private readonly AlpsEffect _effect;
 
         /// <summary>A fresh effect of the same kind. Double clicking a slider thumb restores its value.</summary>
@@ -222,8 +225,8 @@ namespace AdzukiSoft.ALPS.Editor
                 AlpsPhaseSettingsView.Show(anglePane, angle);
                 AlpsPhaseSettingsView.Show(circlePane, _effect.moveMode == AlpsMoveMode.Circle);
                 AlpsPhaseSettingsView.Show(trackPane, _effect.moveMode == AlpsMoveMode.TrackUser);
-                // Phase offset only means something once both axes sweep a range.
-                AlpsPhaseSettingsView.Show(phaseOffset, angle && _effect.ShowPanTiltPhaseOffset);
+                // Phase offset only means something once both axes sweep a range, over a cycle.
+                AlpsPhaseSettingsView.Show(phaseOffset, angle && _effect.ShowPanTiltPhaseOffset && _clipPhase.mode != AlpsPhaseMode.InOut);
             }
 
             tabs.RegisterValueChangedCallback(evt =>
@@ -340,6 +343,25 @@ namespace AdzukiSoft.ALPS.Editor
                 mixed: _mixed);
             _animatables.Add(view);
             body.Add(view);
+
+            // The fade over the clip in beats, separate from Timeline's ease in and out, which
+            // is set in seconds and blends with the layers below.
+            var clipFade = new AlpsFadeSlider(AlpsStrings.Tr("effect.brightness.fade"), MaxFadeBeats, AlpsStrings.Tr("unit.beats"), "0.##")
+            {
+                Snaps = new[] { 1f, 2f, 4f },
+                DefaultValue = new Vector2(_defaults.fadeInBeats, _defaults.fadeOutBeats),
+                tooltip = AlpsStrings.Tr("effect.brightness.fade.tip"),
+            };
+            clipFade.SetValueWithoutNotify(new Vector2(_effect.fadeInBeats, _effect.fadeOutBeats));
+            clipFade.RegisterValueChangedCallback(evt =>
+            {
+                _effect.fadeInBeats = evt.newValue.x;
+                _effect.fadeOutBeats = evt.newValue.y;
+                _onChanged?.Invoke();
+            });
+            _mixed?.Bind(clipFade, _effect, nameof(AlpsEffect.fadeInBeats), nameof(AlpsEffect.fadeOutBeats));
+            body.Add(clipFade);
+
             body.Add(blackout);
             body.Add(fadeFrame);
 
@@ -462,7 +484,8 @@ namespace AdzukiSoft.ALPS.Editor
             _mixed?.Bind(offset, _effect, nameof(AlpsEffect.phaseOffset));
             body.Add(offset);
 
-            _refreshPhaseOffset = () => AlpsPhaseSettingsView.Show(offset, FollowsPhase());
+            // An in / out phase has no cycle to run late by.
+            _refreshPhaseOffset = () => AlpsPhaseSettingsView.Show(offset, FollowsPhase() && _clipPhase.mode != AlpsPhaseMode.InOut);
             RefreshHooks += _refreshPhaseOffset;
             _refreshPhaseOffset();
         }

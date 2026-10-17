@@ -76,6 +76,16 @@ namespace AdzukiSoft.ALPS
         /// <summary>Fade out at the end of the outbound leg, as a fraction of that leg (0 to 0.5).</summary>
         [Range(0f, 0.5f)] public float blackoutFadeOut;
 
+        /// <summary>
+        /// Beats the brightness takes to rise from dark after the clip's start, counted at the
+        /// clip's tempo. It scales the value, so the clip still covers the layers below while
+        /// it fades. Timeline's ease in blends with them instead.
+        /// </summary>
+        [Min(0f)] public float fadeInBeats;
+
+        /// <summary>Beats the brightness takes to go dark again before the clip's end.</summary>
+        [Min(0f)] public float fadeOutBeats;
+
         // --- Flicker ---
         public float flickerSpeed = 12f;
         [Range(0f, 1f)] public float flickerStrength = 0.3f;
@@ -134,6 +144,8 @@ namespace AdzukiSoft.ALPS
             blackoutOnReturn = other.blackoutOnReturn;
             blackoutFadeIn = other.blackoutFadeIn;
             blackoutFadeOut = other.blackoutFadeOut;
+            fadeInBeats = other.fadeInBeats;
+            fadeOutBeats = other.fadeOutBeats;
 
             flickerSpeed = other.flickerSpeed;
             flickerStrength = other.flickerStrength;

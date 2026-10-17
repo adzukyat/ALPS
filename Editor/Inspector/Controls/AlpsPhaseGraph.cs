@@ -7,7 +7,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// Graph preview. Plots φ(t) for the first few fixtures of a
     /// <see cref="AlpsPhaseSettings"/>, so the spread and the fixture group size are visible as the
-    /// fading offset traces, and a fire chance below 1 as cycles that stay down.
+    /// fading offset traces, and a fire chance below 1 as cycles that stay down. An in / out
+    /// phase is plotted over one clip instead of four cycles.
     /// </summary>
     public class AlpsPhaseGraph : VisualElement
     {
@@ -63,13 +64,18 @@ namespace AdzukiSoft.ALPS.Editor
                 return strokes;
             }
 
-            for (var i = 1; i < CycleCount; i++)
+            var inOut = _settings.mode == AlpsPhaseMode.InOut;
+            var clipBeats = InOutClipBeats(_settings);
+            if (!inOut)
             {
-                var x = rect.width * i / CycleCount;
-                strokes.Add(new Stroke(
-                    new List<Vector2> { new Vector2(x, 0f), new Vector2(x, rect.height) },
-                    GridColor,
-                    1f));
+                for (var i = 1; i < CycleCount; i++)
+                {
+                    var x = rect.width * i / CycleCount;
+                    strokes.Add(new Stroke(
+                        new List<Vector2> { new Vector2(x, 0f), new Vector2(x, rect.height) },
+                        GridColor,
+                        1f));
+                }
             }
 
             var top = 6f;
@@ -83,27 +89,47 @@ namespace AdzukiSoft.ALPS.Editor
                 // The spread is measured over the whole group, so the traces stand for a
                 // fixture at the start of the order, a third along and two thirds along.
                 // That needs no fixture count, which this view does not have. k stays the
-                // trace index so random mode still tells the three apart.
+                // trace index so random mode still tells the three apart. An in / out spread
+                // runs to the last order position, which the last trace stands for instead.
                 var k = trace;
                 var offset = _settings.SpreadCycles * trace / TraceCount;
+                var delay = _settings.spreadBeats * trace / (TraceCount - 1);
 
                 var points = new List<Vector2>(Samples + 1);
                 for (var i = 0; i <= Samples; i++)
                 {
                     var t = i / (float)Samples;
-                    var cycles = AlpsPhaseCurve.FixtureCycles(t * CycleCount, 1f, offset, 1, 0f);
-                    var phase = AlpsPhaseCurve.Phase(
-                        (int)_settings.mode,
-                        (int)_settings.ease,
-                        (int)_settings.fallEase,
-                        _settings.rise,
-                        _settings.holdHigh,
-                        _settings.fall,
-                        _settings.inverse,
-                        _settings.fireChance,
-                        cycles,
-                        k,
-                        0);
+                    float phase;
+                    if (inOut)
+                    {
+                        phase = AlpsPhaseCurve.InOut(
+                            (int)_settings.ease,
+                            (int)_settings.fallEase,
+                            _settings.inBeats,
+                            _settings.outBeats,
+                            _settings.inverse,
+                            t * clipBeats,
+                            clipBeats,
+                            delay,
+                            _settings.spreadBeats);
+                    }
+                    else
+                    {
+                        var cycles = AlpsPhaseCurve.FixtureCycles(t * CycleCount, 1f, offset, 1, 0f);
+                        phase = AlpsPhaseCurve.Phase(
+                            (int)_settings.mode,
+                            (int)_settings.ease,
+                            (int)_settings.fallEase,
+                            _settings.rise,
+                            _settings.holdHigh,
+                            _settings.fall,
+                            _settings.inverse,
+                            _settings.fireChance,
+                            cycles,
+                            k,
+                            0);
+                    }
+
                     points.Add(new Vector2(rect.width * t, Mathf.Lerp(bottom, top, Mathf.Clamp01(phase))));
                 }
 
@@ -111,6 +137,18 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             return strokes;
+        }
+
+        /// <summary>
+        /// The clip length an in / out graph stands for, which this view does not know: room
+        /// for the delay, the in and the out, and a hold as long as the longer of the two, so
+        /// the top always shows.
+        /// </summary>
+        private static float InOutClipBeats(AlpsPhaseSettings settings)
+        {
+            var ramps = Mathf.Max(0f, settings.inBeats) + Mathf.Max(0f, settings.outBeats);
+            var hold = Mathf.Max(1f, Mathf.Max(settings.inBeats, settings.outBeats));
+            return Mathf.Abs(settings.spreadBeats) + ramps + hold;
         }
 
         private void OnGenerateVisualContent(MeshGenerationContext context)

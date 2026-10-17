@@ -188,12 +188,14 @@ namespace AdzukiSoft.ALPS
 
             private int _layer;
 
-            // The clip being encoded, for the spread division its phase blocks and value spreads share.
+            // The clip being encoded, for the spread division its phase blocks and value spreads
+            // share, and the shared phase its values follow unless they have their own.
             private int _clipOrder;
             private bool _clipSymmetric;
             private int _clipOrderSeed;
             private int _clipFixtureCount;
             private int _clipGroupSize = 1;
+            private AlpsPhaseSettings _clipPhase;
 
             public Builder(PlayableDirector director, AlpsCompiledShow show, float showBpm)
             {
@@ -279,6 +281,11 @@ namespace AdzukiSoft.ALPS
 
             private void AddClip(TimelineClip clip, AlpsTimelineClip asset, int layer, int groupIndex)
             {
+                if (asset.EffectiveData != null && asset.EffectiveData.HasLegacyFade)
+                {
+                    _show.warnings.Add($"Clip '{clip.displayName}' has a fade but no brightness effect. The fade now belongs to the brightness effect, so this clip no longer fades until one is added.");
+                }
+
                 AddClipRow(
                     asset.EffectiveData,
                     (float)clip.start,
@@ -330,6 +337,7 @@ namespace AdzukiSoft.ALPS
                 _clipOrderSeed = set.orderSeed;
                 _clipFixtureCount = groupIndex >= 0 && groupIndex < _groupCount.Count ? _groupCount[groupIndex] : 0;
                 _clipGroupSize = Mathf.Max(1, set.phase.fixtureGroupSize);
+                _clipPhase = set.phase;
 
                 var row = new float[AlpsShowLayout.ClipStride];
                 row[AlpsShowLayout.ClipStart] = start;
@@ -343,8 +351,6 @@ namespace AdzukiSoft.ALPS
                 row[AlpsShowLayout.ClipOrder] = (int)set.order;
                 row[AlpsShowLayout.ClipSeed] = seed;
                 row[AlpsShowLayout.ClipBpm] = bpm;
-                row[AlpsShowLayout.ClipFadeIn] = Mathf.Max(0f, set.fadeInBeats);
-                row[AlpsShowLayout.ClipFadeOut] = Mathf.Max(0f, set.fadeOutBeats);
                 row[AlpsShowLayout.ClipPositionStart] = AddPositions(groupIndex);
                 row[AlpsShowLayout.ClipIn] = Mathf.Max(0f, clipIn);
                 row[AlpsShowLayout.ClipMoves] = MovedParities(set);
@@ -447,6 +453,8 @@ namespace AdzukiSoft.ALPS
                         row[AlpsShowLayout.EffectScalarA] = effect.blackoutOnReturn ? 1f : 0f;
                         row[AlpsShowLayout.EffectScalarB] = Mathf.Clamp(effect.blackoutFadeIn, 0f, 0.5f);
                         row[AlpsShowLayout.EffectScalarC] = Mathf.Clamp(effect.blackoutFadeOut, 0f, 0.5f);
+                        row[AlpsShowLayout.EffectScalarD] = Mathf.Max(0f, effect.fadeInBeats);
+                        row[AlpsShowLayout.EffectScalarE] = Mathf.Max(0f, effect.fadeOutBeats);
                         break;
                     case AlpsEffectKind.Flicker:
                         row[AlpsShowLayout.EffectScalarA] = effect.flickerSpeed;
@@ -503,7 +511,11 @@ namespace AdzukiSoft.ALPS
 
                 row[AlpsShowLayout.ParamIsRange] = value.isRange ? 1f : 0f;
                 row[AlpsShowLayout.ParamHasSpread] = value.hasSpread ? 1f : 0f;
-                row[AlpsShowLayout.ParamTiming] = (int)value.timing;
+                // An in / out phase has no cycles to step on, so it is always swept.
+                var governing = value.useOwnPhase && value.ownPhase != null ? value.ownPhase : _clipPhase;
+                row[AlpsShowLayout.ParamTiming] = governing != null && governing.mode == AlpsPhaseMode.InOut
+                    ? AlpsShowLayout.TimingWithinCycle
+                    : (int)value.timing;
                 row[AlpsShowLayout.ParamUseOwnPhase] = value.useOwnPhase ? 1f : 0f;
                 WritePhase(row, AlpsShowLayout.ParamOwnPhase, value.ownPhase ?? new AlpsPhaseSettings());
                 _parameters.AddRange(row);
@@ -555,7 +567,9 @@ namespace AdzukiSoft.ALPS
             /// Encodes one phase block. The spread is divided here, with the clip's symmetric
             /// fold and fixture grouping: the evaluator takes the order position k once per clip
             /// from the clip's own phase, so an own phase has to be divided the same way or
-            /// its step would not match the k it is multiplied by.
+            /// its step would not match the k it is multiplied by. An in / out spread runs from
+            /// the first order position to the last in beats, so it is divided like a value
+            /// spread, and the last position's delay travels with it.
             /// </summary>
             private void WritePhase(float[] row, int offset, AlpsPhaseSettings phase)
             {
@@ -565,15 +579,28 @@ namespace AdzukiSoft.ALPS
                 row[offset + AlpsShowLayout.PhaseHoldHigh] = phase.holdHigh;
                 row[offset + AlpsShowLayout.PhaseFall] = phase.fall;
                 row[offset + AlpsShowLayout.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
-                row[offset + AlpsShowLayout.PhaseDelay] = AlpsShowLayout.DelayFromSpread(
-                    phase.SpreadCycles,
-                    _clipSymmetric,
-                    _clipFixtureCount,
-                    _clipGroupSize);
+                if (phase.mode == AlpsPhaseMode.InOut)
+                {
+                    var step = AlpsShowLayout.StepFromSpread(0f, phase.spreadBeats, _clipSymmetric, _clipFixtureCount, _clipGroupSize);
+                    var positions = AlpsShowLayout.SpreadPositions(_clipSymmetric, _clipFixtureCount, _clipGroupSize);
+                    row[offset + AlpsShowLayout.PhaseDelay] = step;
+                    row[offset + AlpsShowLayout.PhaseLastDelay] = step * (positions - 1);
+                }
+                else
+                {
+                    row[offset + AlpsShowLayout.PhaseDelay] = AlpsShowLayout.DelayFromSpread(
+                        phase.SpreadCycles,
+                        _clipSymmetric,
+                        _clipFixtureCount,
+                        _clipGroupSize);
+                }
+
                 row[offset + AlpsShowLayout.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);
                 row[offset + AlpsShowLayout.PhaseInverse] = phase.inverse ? 1f : 0f;
                 row[offset + AlpsShowLayout.PhaseFallEase] = (int)phase.fallEase;
                 row[offset + AlpsShowLayout.PhaseFireChance] = Mathf.Clamp01(phase.fireChance);
+                row[offset + AlpsShowLayout.PhaseInBeats] = Mathf.Max(0f, phase.inBeats);
+                row[offset + AlpsShowLayout.PhaseOutBeats] = Mathf.Max(0f, phase.outBeats);
             }
 
             private static void WriteCurve(float[] row, int offset, AnimationCurve curve, float from, float to)

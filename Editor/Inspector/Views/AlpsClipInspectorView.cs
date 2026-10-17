@@ -17,9 +17,6 @@ namespace AdzukiSoft.ALPS.Editor
     {
         public const string StyleSheetName = "AlpsInspector";
 
-        /// <summary>Longest fade either side of a clip, in beats.</summary>
-        public const float MaxFadeBeats = 8f;
-
         private readonly AlpsClipEffectSet _set;
         private readonly AlpsMixedValues _mixed;
         private readonly VisualElement _effectContainer;
@@ -140,25 +137,6 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(seed, set, nameof(AlpsClipEffectSet.orderSeed));
             AlpsPhaseSettingsView.Show(seed, set.order == AlpsOrderMode.Random);
             fields.Add(seed);
-
-            // --- Fade ----------------------------------------------------
-            // The clip's own fade in beats. It scales the clip's weight, so it acts like
-            // blending with an empty clip, where Timeline's ease in and out is set in seconds.
-            var fade = new AlpsFadeSlider(AlpsStrings.Tr("common.fade"), MaxFadeBeats, AlpsStrings.Tr("unit.beats"), "0.##")
-            {
-                Snaps = new[] { 1f, 2f, 4f },
-                DefaultValue = Vector2.zero,
-                tooltip = AlpsStrings.Tr("clip.fade.tip"),
-            };
-            fade.SetValueWithoutNotify(new Vector2(set.fadeInBeats, set.fadeOutBeats));
-            fade.RegisterValueChangedCallback(evt =>
-            {
-                set.fadeInBeats = evt.newValue.x;
-                set.fadeOutBeats = evt.newValue.y;
-                RaiseChanged();
-            });
-            mixed?.Bind(fade, set, nameof(AlpsClipEffectSet.fadeInBeats), nameof(AlpsClipEffectSet.fadeOutBeats));
-            fields.Add(fade);
 
             // --- Shared settings -----------------------------------------
             _phaseCard = new AlpsEffectCard(

@@ -47,6 +47,7 @@ float _AlpsTime;
 
 #define PhaseWave 0
 #define PhaseRandom 1
+#define PhaseInOut 2
 #define TimingPerCycle 1
 #define KindMove 0
 #define KindCone 1
@@ -69,7 +70,10 @@ float _AlpsTime;
 #define PhaseInverse 8
 #define PhaseFallEase 9
 #define PhaseFireChance 10
-#define PhaseStride 11
+#define PhaseInBeats 11
+#define PhaseOutBeats 12
+#define PhaseLastDelay 13
+#define PhaseStride 14
 #define WaveMaxCycles 3
 
 #define ClipStart 0
@@ -82,12 +86,10 @@ float _AlpsTime;
 #define ClipEffectCount 7
 #define ClipSeed 9
 #define ClipBpm 10
-#define ClipFadeIn 11
-#define ClipFadeOut 12
-#define ClipPositionStart 13
-#define ClipIn 14
-#define ClipMoves 15
-#define ClipPhase 16
+#define ClipPositionStart 11
+#define ClipIn 12
+#define ClipMoves 13
+#define ClipPhase 14
 #define CurveSamples 16
 #define ClipMixInCurve (ClipPhase + PhaseStride)
 #define ClipMixOutCurve (ClipMixInCurve + CurveSamples)
@@ -362,11 +364,16 @@ float AlpsWaveSpan(float rise, float holdHigh, float fall)
 // comes from, AlpsPhaseCurve.Phase. Every cycle that fires starts a wave that may run on
 // into the cycles after it, and where waves overlap the highest wins, the latest on a tie.
 // With no wave under way the phase rests at the bottom of the current cycle.
-float AlpsPhaseAt(int row, float cycles, int k, int seed, out float source)
+//
+// An in / out phase, AlpsPhaseCurve.InOut, has no cycles. It runs one wave over the clip,
+// <beats> into a clip <lengthBeats> long, through the same loop, so the eases are compiled
+// once, and its source is cycle 0.
+float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, int seed, out float source)
 {
+    int mode = AlpsReadInt(row + PhaseMode);
     float current = floor(cycles);
     source = current;
-    if (AlpsReadInt(row + PhaseMode) == PhaseRandom)
+    if (mode == PhaseRandom)
     {
         return saturate(AlpsNoise(cycles * 2.0, (k + 1) * 7.31 + seed * 0.137));
     }
@@ -377,6 +384,28 @@ float AlpsPhaseAt(int row, float cycles, int k, int seed, out float source)
     float holdHigh = AlpsRead(row + PhaseHoldHigh);
     float fall = AlpsRead(row + PhaseFall);
     float chance = AlpsRead(row + PhaseFireChance);
+    float into = cycles - current;
+
+    if (mode == PhaseInOut)
+    {
+        // AlpsPhaseCurve.InOutWave: the wave as shares of the stretch the order position has
+        // between its start and its end, where the ramps shrink together to fit.
+        float lastDelay = AlpsRead(row + PhaseLastDelay);
+        float length = lengthBeats - abs(lastDelay);
+        float inBeats = max(0.0, AlpsRead(row + PhaseInBeats));
+        float outBeats = max(0.0, AlpsRead(row + PhaseOutBeats));
+        float scale = inBeats + outBeats > length ? length / max(0.0001, inBeats + outBeats) : 1.0;
+        bool fits = length > 0.0;
+        rise = fits ? inBeats * scale / length : 0.0;
+        fall = fits ? outBeats * scale / length : 0.0;
+        holdHigh = max(0.0, 1.0 - rise - fall);
+        float waveStart = AlpsRead(row + PhaseDelay) * k - min(0.0, lastDelay);
+        into = fits ? (beats - waveStart) / length : -1.0;
+        current = 0.0;
+        source = 0.0;
+        chance = 1.0;
+    }
+
     float span = AlpsWaveSpan(rise, holdHigh, fall);
     int reach = (int)ceil(span);
 
@@ -386,8 +415,8 @@ float AlpsPhaseAt(int row, float cycles, int k, int seed, out float source)
     for (int j = 0; j < reach; j++)
     {
         float start = current - j;
-        float position = cycles - start;
-        if (position >= span || !AlpsFires(chance, start, k, seed)) continue;
+        float position = into + j;
+        if (position < 0.0 || position >= span || !AlpsFires(chance, start, k, seed)) continue;
 
         float wave = AlpsWave(riseEase, fallEase, rise, holdHigh, fall, position);
         if (!found || wave > u)
@@ -442,14 +471,13 @@ float AlpsClipWeight(int row, float time)
     return saturate(weight);
 }
 
-// The clip's own fade in and fade out, counted in beats at the clip's tempo.
-float AlpsClipFade(int row, float time)
+// A brightness effect's fade in and fade out over the clip at data index <row>, counted in
+// beats at the clip's tempo.
+float AlpsBrightnessFade(int row, float time, float fadeIn, float fadeOut)
 {
     float bpm = AlpsRead(row + ClipBpm);
     float scale = 1.0;
-    float fadeIn = AlpsRead(row + ClipFadeIn);
     if (fadeIn > 0.0) scale = min(scale, AlpsBeats(time, bpm, AlpsRead(row + ClipStart)) / fadeIn);
-    float fadeOut = AlpsRead(row + ClipFadeOut);
     if (fadeOut > 0.0) scale = min(scale, AlpsBeats(AlpsRead(row + ClipEnd), bpm, time) / fadeOut);
     return saturate(scale);
 }
@@ -462,6 +490,7 @@ struct AlpsClipContext
     int row;
     int seed;
     float beats;
+    float lengthBeats;
     int k;
     float sharedCycles;
     float sharedSource;
@@ -487,7 +516,7 @@ float AlpsResolve(AlpsClipContext c, int paramRow, float extra, out float cycles
     [branch]
     if (own || extra != 0.0)
     {
-        phase = AlpsPhaseAt(phaseRow, cycles, c.k, c.seed, source);
+        phase = AlpsPhaseAt(phaseRow, cycles, c.beats, c.lengthBeats, c.k, c.seed, source);
     }
     else
     {
@@ -644,14 +673,18 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
     c.row = show.clips + clip * ClipStride;
     int phaseRow = c.row + ClipPhase;
     c.seed = AlpsReadInt(c.row + ClipSeed);
-    c.beats = AlpsBeats(time + AlpsRead(c.row + ClipIn), AlpsRead(c.row + ClipBpm), AlpsRead(c.row + ClipStart));
+    float clipIn = AlpsRead(c.row + ClipIn);
+    float bpm = AlpsRead(c.row + ClipBpm);
+    float clipStart = AlpsRead(c.row + ClipStart);
+    c.beats = AlpsBeats(time + clipIn, bpm, clipStart);
+    c.lengthBeats = AlpsBeats(AlpsRead(c.row + ClipEnd) + clipIn, bpm, clipStart);
     int positionRow = show.positions + AlpsReadInt(c.row + ClipPositionStart) + fixtureIndex * 2;
     c.k = AlpsReadInt(positionRow);
     bool mirrored = AlpsRead(positionRow + 1) > 0.5;
     // Odd and even count order positions from 1, so a symmetric order splits both halves alike.
     bool isOdd = c.k % 2 == 0;
     c.sharedCycles = AlpsFixtureCycles(c.beats, AlpsRead(phaseRow + PhaseBeatsPerCycle), AlpsRead(phaseRow + PhaseDelay), c.k, 0.0);
-    c.sharedPhase = AlpsPhaseAt(phaseRow, c.sharedCycles, c.k, c.seed, c.sharedSource);
+    c.sharedPhase = AlpsPhaseAt(phaseRow, c.sharedCycles, c.beats, c.lengthBeats, c.k, c.seed, c.sharedSource);
 
     int effectStart = AlpsReadInt(c.row + ClipEffectStart);
     int effectEnd = effectStart + AlpsReadInt(c.row + ClipEffectCount);
@@ -766,6 +799,8 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
                 brightness *= AlpsBlackoutScale(c, paramRow, cycles[0], AlpsRead(effectRow + EffectScalarB), AlpsRead(effectRow + EffectScalarC));
             }
 
+            // The fade scales the value alone, so the clip still covers the layers below.
+            brightness *= AlpsBrightnessFade(c.row, time, AlpsRead(effectRow + EffectScalarD), AlpsRead(effectRow + EffectScalarE));
             AlpsWrite(frame, FrameBrightness, brightness);
         }
         else if (kind == KindColor)
@@ -823,15 +858,6 @@ bool AlpsIsDiscrete(int channel)
     return channel == FrameGobo || channel == FrameTrackEffect;
 }
 
-// Channels a clip's own fade leaves alone. The fade dims the light, so the gobo, its turn and
-// the track effect hold what the clip gives them until the clip ends instead of falling back to
-// the default halfway through the fade. Pan and tilt only blend between the clips that move
-// the head, see AlpsComposeFixture.
-bool AlpsIgnoresFade(int channel)
-{
-    return AlpsIsDiscrete(channel) || channel == FrameGoboRotation || channel == FramePan || channel == FrameTilt;
-}
-
 // Channels of how the light looks, its colour and its cone, which mix as light.
 bool AlpsMixesAsLight(int channel)
 {
@@ -871,10 +897,9 @@ float AlpsMoveEnd(int clip, int fixture, float time, AlpsShow show)
 // Clips are listed by layer. Inside a layer, overlapping clips blend by their weights. A
 // layer then covers the layers below it by its total weight, per channel, so a later track
 // only overrides the channels its effects drive. Channels nobody drives keep the fixture
-// default, except brightness, which is dark until a brightness effect lights it. A clip's
-// own fade scales its weight, so fading behaves like blending with an empty clip, except on
-// the channels the fade leaves alone (AlpsIgnoresFade). Colour and cone cover by brightness
-// as well (AlpsMixesAsLight), so they only blend with layers below that are lit.
+// default, except brightness, which is dark until a brightness effect lights it. Colour and
+// cone cover by brightness as well (AlpsMixesAsLight), so they only blend with layers below
+// that are lit, and a brightness fade does not pull them toward the default.
 //
 // Pan and tilt start from the default, and the lowest layer moving the head covers it by its
 // mix in alone: a clip mixing in turns the head from where it stopped, and one mixing out
@@ -922,7 +947,7 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
         if (clipLayer != layer)
         {
             // Colour and cone mix as light: each side counts by how bright it is, so a dark
-            // layer below, or the empty clip a fade blends with, does not pull them toward the
+            // layer below, or the empty clip a mix blends with, does not pull them toward the
             // default.
             float below = result[FrameBrightness];
             float above = weightSum[FrameBrightness] > 0.0 ? sum[FrameBrightness] / weightSum[FrameBrightness] : below;
@@ -972,9 +997,8 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
         // The bucket also lists the clips that last turned a head before it.
         heldUntil = max(heldUntil, AlpsMoveEnd(clip, fixture, time, show));
 
-        float mixWeight = AlpsClipWeight(row, time);
-        if (mixWeight <= 0.0) continue;
-        float fadedWeight = mixWeight * AlpsClipFade(row, time);
+        float weight = AlpsClipWeight(row, time);
+        if (weight <= 0.0) continue;
 
         int index = AlpsIndexInGroup(show, AlpsReadInt(row + ClipGroup), fixture);
         if (index < 0) continue;
@@ -997,8 +1021,6 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
         for (int ch = 0; ch < FrameStride; ch++)
         {
             if (!frame.written[ch]) continue;
-            float weight = AlpsIgnoresFade(ch) ? mixWeight : fadedWeight;
-            if (weight <= 0.0) continue;
             if (AlpsIsDiscrete(ch))
             {
                 if (weight > weightSum[ch])

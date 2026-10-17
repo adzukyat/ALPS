@@ -85,10 +85,13 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public float spreadBeats = 0f;
 
-        /// <summary>Which of the two spreads is authored. The other one is kept, not used.</summary>
+        /// <summary>
+        /// Which of the two spreads is authored. The other one is kept, not used. In / out
+        /// always reads <see cref="spreadBeats"/>.
+        /// </summary>
         public bool spreadInBeats;
 
-        /// <summary>Speed in beats per cycle.</summary>
+        /// <summary>Speed in beats per cycle. In / out has no cycle and ignores it.</summary>
         [Min(0f)] public float beatsPerCycle = 2f;
 
         /// <summary>Invert. Ignored while <see cref="mode"/> is Random.</summary>
@@ -97,10 +100,21 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Chance that a cycle fires, rolled for every cycle at every order position. A cycle
         /// that does not fire rests at the bottom of the wave, or the top when inverted. Missing
-        /// from older data, which then keeps 1 and fires every cycle. Ignored while
-        /// <see cref="mode"/> is Random.
+        /// from older data, which then keeps 1 and fires every cycle. Wave only.
         /// </summary>
         [Range(0f, 1f)] public float fireChance = 1f;
+
+        /// <summary>
+        /// Beats an in / out phase takes to rise from 0 to 1 after the clip's start, along
+        /// <see cref="ease"/>. In / out only.
+        /// </summary>
+        [Min(0f)] public float inBeats = 2f;
+
+        /// <summary>
+        /// Beats an in / out phase takes to fall back to 0 before the clip's end, along
+        /// <see cref="fallEase"/>. In / out only.
+        /// </summary>
+        [Min(0f)] public float outBeats = 2f;
 
         public AlpsPhaseSettings() { }
 
@@ -112,6 +126,19 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>The spread in cycles, whichever unit it was authored in.</summary>
         public float SpreadCycles => UsesSpreadBeats ? spreadBeats / beatsPerCycle : spread;
+
+        /// <summary>
+        /// Seeds <see cref="spreadBeats"/> from the spread in cycles. In / out has no cycle and
+        /// reads the spread in beats alone, as how many beats after the first order position
+        /// the last one starts, so switching to it starts from about the delay the wave had.
+        /// </summary>
+        public void SeedSpreadBeats()
+        {
+            if (!UsesSpreadBeats)
+            {
+                spreadBeats = spread * beatsPerCycle;
+            }
+        }
 
         public AlpsPhaseSettings(AlpsPhaseSettings other)
         {
@@ -128,6 +155,8 @@ namespace AdzukiSoft.ALPS
             beatsPerCycle = other.beatsPerCycle;
             inverse = other.inverse;
             fireChance = other.fireChance;
+            inBeats = other.inBeats;
+            outBeats = other.outBeats;
         }
 
         /// <summary>

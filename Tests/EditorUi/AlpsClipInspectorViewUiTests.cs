@@ -514,14 +514,60 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ModeControl_OffersWaveAndRandom()
+        public void ModeControl_OffersWaveRandomAndInOut()
         {
             var view = new AlpsClipInspectorView(new AlpsClipEffectSet());
             var mode = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.mode"));
 
             CollectionAssert.AreEqual(
-                new[] { AlpsStrings.Tr("phase.mode.wave"), AlpsStrings.Tr("phase.mode.random") },
+                new[] { AlpsStrings.Tr("phase.mode.wave"), AlpsStrings.Tr("phase.mode.random"), AlpsStrings.Tr("phase.mode.inOut") },
                 mode.Query<Label>(className: "alps-seg__item").ToList().Select(l => l.text).ToArray());
+        }
+
+        [Test]
+        public void InOutMode_ShowsItsBeatsInPlaceOfTheCycle()
+        {
+            var set = new AlpsClipEffectSet();
+            set.phase.mode = AlpsPhaseMode.InOut;
+            var view = new AlpsClipInspectorView(set);
+
+            DisplayStyle Display(VisualElement element) => element.style.display.value;
+            var inOut = view.Query<AlpsFadeSlider>().ToList().First(f => f.label == AlpsStrings.Tr("phase.inOut"));
+            var shares = view.Query<AlpsShareBar>().ToList().First(s => s.label == AlpsStrings.Tr("phase.shares"));
+            var length = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.length"));
+            var speed = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("common.speed"));
+            var percent = view.Query<AlpsValueSlider>().ToList().First(slider => slider.label == AlpsStrings.Tr("phase.delay"));
+            var beats = view.Query<AlpsStepper>().ToList().First(stepper => stepper.label == AlpsStrings.Tr("phase.delay"));
+            var flag = view.Query<AlpsRangeFlag>().ToList().First(f => f.Q<Label>().text == AlpsStrings.Tr("phase.beatsFlag.letter"));
+            var easing = view.Query<AlpsEasingPicker>().First();
+
+            Assert.AreEqual(DisplayStyle.Flex, Display(inOut));
+            Assert.AreEqual(new Vector2(set.phase.inBeats, set.phase.outBeats), inOut.value);
+            Assert.AreEqual(DisplayStyle.Flex, Display(easing), "The in and the out keep their eases.");
+            Assert.AreEqual(DisplayStyle.Flex, Display(beats), "The delay is counted in beats.");
+            foreach (var hidden in new VisualElement[] { shares, length, speed, percent, flag, FireChance(view) })
+            {
+                Assert.AreEqual(DisplayStyle.None, Display(hidden), $"{hidden.GetType().Name} belongs to a cycle.");
+            }
+
+            set.phase.mode = AlpsPhaseMode.Wave;
+            view.Query<AlpsPhaseSettingsView>().First().Refresh();
+            Assert.AreEqual(DisplayStyle.None, Display(inOut));
+            Assert.AreEqual(DisplayStyle.Flex, Display(speed));
+        }
+
+        [Test]
+        public void Brightness_CarriesTheClipFade()
+        {
+            var set = new AlpsClipEffectSet();
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.fadeInBeats = 2f;
+            brightness.fadeOutBeats = 1f;
+            var view = new AlpsClipInspectorView(set);
+
+            var fade = view.Query<AlpsFadeSlider>().ToList().Single(f => f.label == AlpsStrings.Tr("effect.brightness.fade"));
+            Assert.AreEqual(new Vector2(2f, 1f), fade.value);
+            Assert.IsNotNull(fade.GetFirstAncestorOfType<AlpsEffectView>(), "The fade sits on the brightness card, not the clip.");
         }
 
         [Test]

@@ -6,8 +6,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// What the Timeline window draws on an ALPS clip: the color the clip plays over time,
-    /// dimmed by its brightness and fade, where the clip's shared phase starts a new cycle,
-    /// and the slopes of its own fade in and fade out.
+    /// dimmed by its brightness, fade included, where the clip's shared phase starts a new
+    /// cycle, and the slopes of its brightness fade in and fade out.
     ///
     /// The clip is compiled on its own and evaluated by the same shader code as the show
     /// (<c>Hidden/ALPS/Clip Strip</c>), so the strip shows the same maths as the preview.
@@ -38,7 +38,10 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Length of one cycle in seconds, 0 when the phase does not cycle.</summary>
         public float secondsPerCycle;
 
-        /// <summary>Seconds the clip's own fade in and fade out take, 0 when it has none.</summary>
+        /// <summary>
+        /// Seconds the brightness fade in and fade out take, the longest of the clip's
+        /// brightness effects, 0 when it has none.
+        /// </summary>
         public float fadeInSeconds;
         public float fadeOutSeconds;
 
@@ -52,8 +55,9 @@ namespace AdzukiSoft.ALPS.Editor
         public bool HasFade => fadeInSeconds > 0f || fadeOutSeconds > 0f;
 
         /// <summary>
-        /// The clip's own fade at <paramref name="local"/> seconds from its start, 1 when it
-        /// has none. Fades longer than the clip meet in a triangle.
+        /// The brightness fade at <paramref name="local"/> seconds from the clip's start, 1
+        /// when it has none. Fades longer than the clip meet in a triangle. The colors already
+        /// carry it, since the evaluator fades the brightness, so only the slopes read it.
         /// </summary>
         public float FadeAt(float local)
         {
@@ -102,8 +106,14 @@ namespace AdzukiSoft.ALPS.Editor
 
             if (rowBpm > 0f)
             {
-                strip.fadeInSeconds = show.clips[AlpsShowLayout.ClipFadeIn] * 60f / rowBpm;
-                strip.fadeOutSeconds = show.clips[AlpsShowLayout.ClipFadeOut] * 60f / rowBpm;
+                foreach (var effect in set.effects)
+                {
+                    if (effect != null && effect.kind == AlpsEffectKind.Brightness)
+                    {
+                        strip.fadeInSeconds = Mathf.Max(strip.fadeInSeconds, Mathf.Max(0f, effect.fadeInBeats) * 60f / rowBpm);
+                        strip.fadeOutSeconds = Mathf.Max(strip.fadeOutSeconds, Mathf.Max(0f, effect.fadeOutBeats) * 60f / rowBpm);
+                    }
+                }
             }
 
             var representatives = Representatives(set, show, fixtureCount);
@@ -133,12 +143,11 @@ namespace AdzukiSoft.ALPS.Editor
 
                     // Brightness is dark unless an effect lights it, as in the show.
                     anyColor = true;
-                    var local = (end - start) * (i + 0.5f) / strip.width;
                     pixels[lane * strip.width + i] = new Color(
                         Mathf.Clamp01(value.r),
                         Mathf.Clamp01(value.g),
                         Mathf.Clamp01(value.b),
-                        Mathf.Clamp01(value.a) * strip.FadeAt(local));
+                        Mathf.Clamp01(value.a));
                 }
             }
 
@@ -256,12 +265,14 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Cycle starts of the clip's shared phase, for order position 0. Beats count from
-        /// the clip's start, so the first cycle begins with the clip and gets no line.
+        /// the clip's start, so the first cycle begins with the clip and gets no line. An in /
+        /// out phase has no cycles.
         /// </summary>
         private static void FindCycles(AlpsClipStrip strip, AlpsCompiledShow show, float bpm, float start, float end, float clipIn)
         {
             var beatsPerCycle = show.clips[AlpsShowLayout.ClipPhase + AlpsShowLayout.PhaseBeatsPerCycle];
-            if (bpm <= 0f || beatsPerCycle <= 0f)
+            var mode = AlpsShowLayout.ToInt(show.clips[AlpsShowLayout.ClipPhase + AlpsShowLayout.PhaseMode]);
+            if (bpm <= 0f || beatsPerCycle <= 0f || mode == AlpsShowLayout.PhaseInOut)
             {
                 return;
             }

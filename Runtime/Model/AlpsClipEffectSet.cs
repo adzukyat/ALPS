@@ -13,10 +13,11 @@ namespace AdzukiSoft.ALPS
     {
         /// <summary>
         /// The layout <see cref="version"/> marks. Sets saved before version 1 had symmetric
-        /// as an order of its own, between reverse and random. <see cref="OnAfterDeserialize"/>
-        /// converts it.
+        /// as an order of its own, between reverse and random. Before version 2 the fade
+        /// belonged to the clip and scaled its weight, and it now belongs to the brightness
+        /// effect. <see cref="OnAfterDeserialize"/> converts both.
         /// </summary>
-        private const int CurrentVersion = 1;
+        private const int CurrentVersion = 2;
 
         /// <summary>
         /// The clip's own tempo, for songs that change tempo part way. Zero follows the
@@ -45,11 +46,12 @@ namespace AdzukiSoft.ALPS
         [SerializeField, HideInInspector] private int version;
 
         /// <summary>
-        /// Beats the clip takes to rise from dark at its start and to go dark again before
-        /// its end. This is the clip's own envelope, separate from Timeline's blend between clips.
+        /// The clip's fade from before version 2, kept under its old names only while the set
+        /// has no brightness effect to take it. The first brightness effect added takes it
+        /// (<see cref="Add"/>), and until then the clip does not fade.
         /// </summary>
-        public float fadeInBeats;
-        public float fadeOutBeats;
+        [SerializeField, HideInInspector] private float fadeInBeats;
+        [SerializeField, HideInInspector] private float fadeOutBeats;
 
         public bool phaseExpanded = true;
         public AlpsPhaseSettings phase = new AlpsPhaseSettings();
@@ -130,6 +132,11 @@ namespace AdzukiSoft.ALPS
             if (existingIndex < 0)
             {
                 var fresh = AlpsEffect.Create(kind);
+                if (kind == AlpsEffectKind.Brightness)
+                {
+                    TakeLegacyFade(fresh);
+                }
+
                 effects.Insert(InsertionIndex(kind), fresh);
                 return fresh;
             }
@@ -213,8 +220,58 @@ namespace AdzukiSoft.ALPS
                 order = AlpsLegacyOrder.Upgrade(order);
             }
 
+            if (version < 2)
+            {
+                MoveFadeToBrightness();
+            }
+
             version = CurrentVersion;
             SortEffects();
+        }
+
+        /// <summary>
+        /// True while the set carries a fade from before version 2 that no brightness effect
+        /// took, so the clip no longer fades.
+        /// </summary>
+        public bool HasLegacyFade => fadeInBeats > 0f || fadeOutBeats > 0f;
+
+        /// <summary>
+        /// Gives the clip's fade to every brightness effect on it. The fade scaled the clip's
+        /// weight and now scales the brightness, which looks the same on a clip alone, but a
+        /// fading clip now covers the layers below where it used to blend with them. A set
+        /// without brightness keeps it for the first brightness effect added.
+        /// </summary>
+        private void MoveFadeToBrightness()
+        {
+            if (!HasLegacyFade || effects == null)
+            {
+                return;
+            }
+
+            var moved = false;
+            foreach (var effect in effects)
+            {
+                if (effect != null && effect.kind == AlpsEffectKind.Brightness)
+                {
+                    effect.fadeInBeats = fadeInBeats;
+                    effect.fadeOutBeats = fadeOutBeats;
+                    moved = true;
+                }
+            }
+
+            if (moved)
+            {
+                fadeInBeats = 0f;
+                fadeOutBeats = 0f;
+            }
+        }
+
+        private void TakeLegacyFade(AlpsEffect brightness)
+        {
+            brightness.fadeInBeats = fadeInBeats;
+            brightness.fadeOutBeats = fadeOutBeats;
+            fadeInBeats = 0f;
+            fadeOutBeats = 0f;
         }
 
         private bool IsSorted()

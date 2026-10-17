@@ -6,8 +6,8 @@ using UnityEngine.UIElements;
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Shared settings: graph preview, mode, distribution and its length, easing, fixture
-    /// group size, spread, speed, fire chance, invert.
+    /// Shared settings: graph preview, mode, distribution and its length or the in / out
+    /// beats, easing, fixture group size, spread, speed, fire chance, invert.
     ///
     /// The same view is reused verbatim under a parameter that turns own phase on,
     /// which is why it takes a plain <see cref="AlpsPhaseSettings"/> rather than reaching
@@ -21,6 +21,9 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>The delay in beats reaches four bars of four, far past any cycle it staggers.</summary>
         private const float SpreadBeatsLimit = 16f;
 
+        /// <summary>Longest in or out of an in / out phase, four bars of four.</summary>
+        public const float MaxInOutBeats = 16f;
+
         /// <summary>Musical divisions the trip across the group can be made to land on.</summary>
         private static readonly float[] BeatSnaps = { 1f, 2f, 4f, 0.5f };
 
@@ -31,6 +34,8 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsEasingPicker _easing;
         private readonly AlpsShareBar _shares;
         private readonly AlpsSegmentedControl _length;
+        private readonly AlpsFadeSlider _inOut;
+        private readonly AlpsStepper _speed;
         private readonly AlpsValueSlider _spread;
         private readonly AlpsStepper _spreadBeats;
         private readonly AlpsRangeFlag _beatsFlag;
@@ -68,7 +73,8 @@ namespace AdzukiSoft.ALPS.Editor
             var mode = new AlpsSegmentedControl(
                 AlpsStrings.Tr("phase.mode"),
                 AlpsStrings.Tr("phase.mode.wave"),
-                AlpsStrings.Tr("phase.mode.random"));
+                AlpsStrings.Tr("phase.mode.random"),
+                AlpsStrings.Tr("phase.mode.inOut"));
             if (compact)
             {
                 mode.AddToClassList("alps-seg--compact");
@@ -78,6 +84,11 @@ namespace AdzukiSoft.ALPS.Editor
             mode.RegisterValueChangedCallback(evt =>
             {
                 settings.mode = (AlpsPhaseMode)evt.newValue;
+                if (settings.mode == AlpsPhaseMode.InOut)
+                {
+                    settings.SeedSpreadBeats();
+                }
+
                 Refresh();
                 Changed();
             });
@@ -123,6 +134,24 @@ namespace AdzukiSoft.ALPS.Editor
             _length.RegisterValueChangedCallback(evt => _shares.SetCycles(evt.newValue + 1));
             _shares.CyclesChanged += () => _length.SetValueWithoutNotify(_shares.Cycles - 1);
             Add(_length);
+
+            // In / out rises once after the clip's start and falls once before its end, in
+            // beats, where the wave's distribution splits a cycle.
+            _inOut = new AlpsFadeSlider(AlpsStrings.Tr("phase.inOut"), MaxInOutBeats, AlpsStrings.Tr("unit.beats"), "0.##")
+            {
+                Snaps = new[] { 1f, 2f, 4f, 8f },
+                DefaultValue = new Vector2(defaults.inBeats, defaults.outBeats),
+                tooltip = AlpsStrings.Tr("phase.inOut.tip"),
+            };
+            _inOut.SetValueWithoutNotify(new Vector2(settings.inBeats, settings.outBeats));
+            _inOut.RegisterValueChangedCallback(evt =>
+            {
+                settings.inBeats = evt.newValue.x;
+                settings.outBeats = evt.newValue.y;
+                Changed();
+            });
+            mixed?.Bind(_inOut, settings, nameof(AlpsPhaseSettings.inBeats), nameof(AlpsPhaseSettings.outBeats));
+            Add(_inOut);
 
             _easing = new AlpsEasingPicker(AlpsStrings.Tr("phase.easing"), compact);
             _easing.Rise.SetValueWithoutNotify((int)settings.ease);
@@ -181,8 +210,13 @@ namespace AdzukiSoft.ALPS.Editor
             _spreadBeats.RegisterValueChangedCallback(evt =>
             {
                 settings.spreadBeats = evt.newValue;
-                // Kept in step, so a speed of zero falls back to the same look.
-                settings.spread = evt.newValue / settings.beatsPerCycle;
+                // Kept in step, so a speed of zero falls back to the same look. In / out reads
+                // the beats alone and leaves the wave's share as it was.
+                if (settings.mode != AlpsPhaseMode.InOut && settings.beatsPerCycle > 0f)
+                {
+                    settings.spread = evt.newValue / settings.beatsPerCycle;
+                }
+
                 Changed();
             });
 
@@ -215,15 +249,15 @@ namespace AdzukiSoft.ALPS.Editor
             spreadRow.Add(_beatsFlag);
             Add(spreadRow);
 
-            var speed = new AlpsStepper(AlpsStrings.Tr("common.speed"), AlpsStrings.Tr("unit.beats"), 1f, compact ? null : AlpsStrings.Tr("phase.perCycle")) { Minimum = 0f, Subdivides = true };
-            speed.SetValueWithoutNotify(settings.beatsPerCycle);
-            speed.RegisterValueChangedCallback(evt =>
+            _speed = new AlpsStepper(AlpsStrings.Tr("common.speed"), AlpsStrings.Tr("unit.beats"), 1f, compact ? null : AlpsStrings.Tr("phase.perCycle")) { Minimum = 0f, Subdivides = true };
+            _speed.SetValueWithoutNotify(settings.beatsPerCycle);
+            _speed.RegisterValueChangedCallback(evt =>
             {
                 settings.beatsPerCycle = Mathf.Max(0f, evt.newValue);
                 Changed();
             });
-            mixed?.Bind(speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
-            Add(speed);
+            mixed?.Bind(_speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
+            Add(_speed);
 
             // Every cycle at every order position rolls its own dice, so a chance below 100%
             // leaves some cycles resting at the bottom of the wave.
@@ -258,12 +292,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Re-applies the conditional visibility rules and repaints the graph.</summary>
         public void Refresh()
         {
-            var isRandom = _settings.mode == AlpsPhaseMode.Random;
-            Show(_easing, !isRandom);
-            Show(_inverse, !isRandom);
-            Show(_fireChance, !isRandom);
-            Show(_shares, !isRandom);
-            Show(_length, !isRandom);
+            var isWave = _settings.mode == AlpsPhaseMode.Wave;
+            var isInOut = _settings.mode == AlpsPhaseMode.InOut;
+            Show(_easing, isWave || isInOut);
+            Show(_inverse, isWave || isInOut);
+            Show(_fireChance, isWave);
+            Show(_shares, isWave);
+            Show(_length, isWave);
+            Show(_inOut, isInOut);
+            Show(_speed, !isInOut);
             RefreshSpread();
             _graph.SetSettings(_settings);
         }
@@ -275,11 +312,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private void RefreshSpread()
         {
-            var inBeats = _settings.UsesSpreadBeats;
+            // In / out has no cycle to take a share of, so its delay is always in beats.
+            var isInOut = _settings.mode == AlpsPhaseMode.InOut;
+            var inBeats = isInOut || _settings.UsesSpreadBeats;
             _beatsFlag.SetEnabled(_settings.beatsPerCycle > 0f);
             _beatsFlag.SetValueWithoutNotify(inBeats);
+            Show(_beatsFlag, !isInOut);
             Show(_spread, !inBeats);
             Show(_spreadBeats, inBeats);
+            _spreadBeats.tooltip = isInOut ? AlpsStrings.Tr("phase.delay.inOut.tip") : string.Empty;
 
             if (_settings.beatsPerCycle != _snapBeats)
             {
