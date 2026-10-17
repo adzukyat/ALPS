@@ -1139,21 +1139,19 @@
     color: #ffffff;
 }
 
-/* The always open catalog: a header in the thumbnail wells' colour over the tiles. */
+/* The always open catalog: a centred heading over the tiles, on the thumbnail wells' colour. */
 .alps-add__panel {
     margin-top: 14px;
-    background-color: var(--alps-panel-bg);
+    background-color: var(--alps-well-bg);
     border-width: 1px;
     border-color: var(--alps-line);
     border-radius: 5px;
     overflow: hidden;
 }
 
+/* Brings the space above the tiles the list used to. */
 .alps-add__header {
-    background-color: var(--alps-well-bg);
-    border-bottom-width: 1px;
-    border-bottom-color: var(--alps-line);
-    padding: 7px 11px 7px 11px;
+    padding: 10px 11px 8px 11px;
 }
 
 .alps-add__heading {
@@ -1161,6 +1159,7 @@
     -unity-font-style: bold;
     letter-spacing: 1px;
     color: var(--alps-text-strong);
+    -unity-text-align: middle-center;
     padding: 0;
     margin: 0;
 }
@@ -1168,10 +1167,13 @@
 .alps-add__list {
     flex-direction: row;
     flex-wrap: wrap;
+    justify-content: center;
     /* Three 137.33px tiles + two 8px gutters = 428px, the card's content width.
        Each tile carries its own trailing gutter, so the right padding gives that
-       8px back (11 - 8 = 3) and the row still breaks after the third tile. */
-    padding: 10px 3px 4px 11px;
+       8px back (11 - 8 = 3) and the row still breaks after the third tile. The
+       trailing gutter and the 3px make 11px on the right too, so a short last row
+       centres between equal sides. */
+    padding: 0 3px 4px 11px;
 }
 
 .alps-add__item {
