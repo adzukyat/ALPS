@@ -92,8 +92,9 @@ namespace AdzukiSoft.ALPS
                 { "fixture.multiLightBar", "멀티 라이트 바" },
                 { "fixture.laser", "레이저" },
                 { "setup.timeline", "타임라인 설정" },
-                { "setup.timeline.tip", "Assets/ALPS/Shows에 타임라인을 만들고, 그것을 재생하는 Playable Director가 붙은 부모를 만듭니다. 이 컨테이너와 안의 컨테이너마다 무브, 컬러, 밝기 트랙 그룹을 만듭니다." },
+                { "setup.timeline.tip", "Assets/ALPS/Shows에 타임라인을 만들고, 그것을 재생하는 Playable Director가 붙은 부모를 만듭니다. 이 컨테이너와 안의 컨테이너마다 무브, 컬러, 밝기 레이어를 가진 트랙을 만듭니다." },
                 { "setup.openTimeline", "타임라인 열기" },
+                { "track.layer", "레이어 {0}" },
                 { "setup.openTimeline.tip", "이 컨테이너를 움직이는 타임라인을 표시합니다." },
 
                 // --- Clip --------------------------------------------------

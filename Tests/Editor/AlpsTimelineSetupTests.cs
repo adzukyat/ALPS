@@ -103,8 +103,10 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsFalse(director.playOnAwake);
         }
 
+        private static string[] LayerNames => new[] { AlpsStrings.Tr("track.layer", 1), AlpsStrings.Tr("track.layer", 2), AlpsStrings.Tr("track.layer", 3) };
+
         [Test]
-        public void SetUp_GivesEachContainerAGroupOfLayers()
+        public void SetUp_GivesEachContainerATrackWithThreeLayers()
         {
             var top = Container("Setup Layers", null, 2);
             var left = Container("Left", top.gameObject, 2);
@@ -113,34 +115,40 @@ namespace AdzukiSoft.ALPS.Tests
             var director = SetUp(top);
             var timeline = (TimelineAsset)director.playableAsset;
 
+            // A container with others in it groups its track with theirs, as the Hierarchy nests them.
             var topGroup = (GroupTrack)timeline.GetRootTracks().Single();
             Assert.AreEqual("Setup Layers", topGroup.name);
             var children = topGroup.GetChildTracks().ToList();
-            CollectionAssert.AreEqual(
-                new[] { AlpsStrings.Tr("effect.move.name"), AlpsStrings.Tr("effect.color.name"), AlpsStrings.Tr("effect.brightness.name"), "Left" },
-                children.Select(t => t.name));
-
-            var leftGroup = (GroupTrack)children[3];
+            CollectionAssert.AreEqual(new[] { "Setup Layers", "Left" }, children.Select(t => t.name));
+            var topTrack = (AlpsLightingTrack)children[0];
+            var leftGroup = (GroupTrack)children[1];
             var leftChildren = leftGroup.GetChildTracks().ToList();
-            Assert.AreEqual(4, leftChildren.Count, "Three layers and the group of the container nested in it.");
-            Assert.AreEqual("Deep", leftChildren[3].name);
+            CollectionAssert.AreEqual(new[] { "Left", "Deep" }, leftChildren.Select(t => t.name), "A container with nothing in it needs no group.");
 
-            foreach (var track in children.Take(3))
+            Assert.AreSame(top, director.GetGenericBinding(topTrack));
+            Assert.AreSame(left, director.GetGenericBinding(leftChildren[0]));
+            Assert.AreSame(deep, director.GetGenericBinding(leftChildren[1]));
+
+            CollectionAssert.AreEqual(LayerNames, topTrack.GetChildTracks().Select(t => t.name));
+            Assert.AreEqual(0, topTrack.GetClips().Count(), "The track itself waits below its layers.");
+            foreach (var layer in topTrack.GetChildTracks())
             {
-                Assert.AreSame(top, director.GetGenericBinding(track));
-                Assert.AreEqual(1, track.GetClips().Count(), "The top group starts with one clip a track.");
+                Assert.IsInstanceOf<AlpsLightingTrack>(layer);
+                Assert.AreSame(topTrack, ((AlpsLightingTrack)layer).RootTrack, "A layer plays on the track's container.");
+                Assert.AreEqual(1, layer.GetClips().Count(), "The top container's layers start with one clip each.");
             }
 
-            foreach (var track in leftChildren.Take(3))
+            foreach (var track in leftChildren)
             {
-                Assert.AreSame(left, director.GetGenericBinding(track));
-                Assert.AreEqual(0, track.GetClips().Count(), "A nested group starts empty, so it does not cover the top one.");
+                CollectionAssert.AreEqual(LayerNames, track.GetChildTracks().Select(t => t.name));
+                Assert.IsTrue(track.GetChildTracks().All(layer => !layer.GetClips().Any()), "A nested container starts empty, so it does not cover the top one.");
             }
 
             var show = AlpsShowCompiler.Compile(director);
             CollectionAssert.IsEmpty(show.errors);
             CollectionAssert.IsEmpty(show.warnings);
             Assert.AreEqual(5, show.FixtureCount);
+            Assert.AreEqual(3, show.ClipCount);
         }
 
         [Test]
@@ -148,7 +156,11 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var director = SetUp(Container("Setup Clips", null, 1));
             var timeline = (TimelineAsset)director.playableAsset;
-            var clips = timeline.GetRootTracks().Single().GetChildTracks().Select(t => t.GetClips().Single()).ToList();
+            var track = (AlpsLightingTrack)timeline.GetRootTracks().Single();
+            var clips = track.GetChildTracks().Select(t => t.GetClips().Single()).ToList();
+            CollectionAssert.AreEqual(
+                new[] { AlpsStrings.Tr("effect.move.name"), AlpsStrings.Tr("effect.color.name"), AlpsStrings.Tr("effect.brightness.name") },
+                clips.Select(c => c.displayName));
 
             AlpsClipEffectSet Data(int index) => ((AlpsLightingClip)clips[index].asset).data;
 

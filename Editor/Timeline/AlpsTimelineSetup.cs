@@ -10,11 +10,12 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Sets a show up around a container from its inspector: a Timeline asset under
-    /// <see cref="ShowsFolder"/>, a parent with a director playing it, and a group of lighting
-    /// tracks for the container and for each container nested in it, every track bound to its
-    /// container. Each group starts with a move, a colour and a brightness track, the usual
-    /// way of keeping parts that move differently apart, and the top group's tracks start with
-    /// one clip each, so the lights come on at once.
+    /// <see cref="ShowsFolder"/>, a parent with a director playing it, and a lighting track for
+    /// the container and for each container nested in it, each bound to its container. Every
+    /// track starts with three layers, for move, colour and brightness, the usual way of
+    /// keeping parts that move differently apart, and the top container's layers start with
+    /// one clip each, so the lights come on at once. The nested ones start empty, so they do
+    /// not cover the top one.
     ///
     /// Everything it creates is in view afterwards, the asset in the Project window, the
     /// director in the Hierarchy and the tracks in the Timeline window, so the setup can be
@@ -100,7 +101,7 @@ namespace AdzukiSoft.ALPS.Editor
             // without Play would freeze it.
             director.extrapolationMode = DirectorWrapMode.Hold;
 
-            AddGroup(timeline, director, null, container);
+            AddContainer(timeline, director, null, container, true);
 
             EditorUtility.SetDirty(timeline);
             AssetDatabase.SaveAssets();
@@ -201,35 +202,41 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// A group for <paramref name="container"/> holding its three tracks, then the groups of
-        /// the containers nested in it, which come later and so lie above it as layers.
+        /// The lighting track of <paramref name="container"/>, bound to it, with its three layers
+        /// below it. A container with containers nested in it gets a group holding its track and
+        /// theirs, which come later and so lie above it, so the Timeline nests like the Hierarchy.
         /// </summary>
-        private static void AddGroup(TimelineAsset timeline, PlayableDirector director, GroupTrack parent, AlpsContainer container)
+        private static void AddContainer(TimelineAsset timeline, PlayableDirector director, GroupTrack parent, AlpsContainer container, bool top)
         {
-            var group = timeline.CreateTrack<GroupTrack>(parent, container.name);
-            var top = parent == null;
+            var nested = NestedContainers(container);
+            var group = nested.Count > 0 ? timeline.CreateTrack<GroupTrack>(parent, container.name) : parent;
 
-            AddTrack(timeline, director, group, container, AlpsStrings.Tr("effect.move.name"), top ? StarterMove() : null);
-            AddTrack(timeline, director, group, container, AlpsStrings.Tr("effect.color.name"), top ? StarterColor() : null);
-            AddTrack(timeline, director, group, container, AlpsStrings.Tr("effect.brightness.name"), top ? StarterBrightness() : null);
+            var track = timeline.CreateTrack<AlpsLightingTrack>(group, container.name);
+            director.SetGenericBinding(track, container);
+            AddLayer(timeline, track, 1, AlpsStrings.Tr("effect.move.name"), top ? StarterMove() : null);
+            AddLayer(timeline, track, 2, AlpsStrings.Tr("effect.color.name"), top ? StarterColor() : null);
+            AddLayer(timeline, track, 3, AlpsStrings.Tr("effect.brightness.name"), top ? StarterBrightness() : null);
 
-            foreach (var child in NestedContainers(container))
+            foreach (var child in nested)
             {
-                AddGroup(timeline, director, group, child);
+                AddContainer(timeline, director, group, child, false);
             }
         }
 
-        private static void AddTrack(TimelineAsset timeline, PlayableDirector director, GroupTrack group, AlpsContainer container, string name, AlpsClipEffectSet starter)
+        /// <summary>
+        /// A layer of <paramref name="track"/>: a lighting track below it, which plays on the
+        /// container the track is bound to and lies above the layers before it.
+        /// </summary>
+        private static void AddLayer(TimelineAsset timeline, AlpsLightingTrack track, int number, string clipName, AlpsClipEffectSet starter)
         {
-            var track = timeline.CreateTrack<AlpsLightingTrack>(group, name);
-            director.SetGenericBinding(track, container);
+            var layer = timeline.CreateTrack<AlpsLightingTrack>(track, AlpsStrings.Tr("track.layer", number));
             if (starter == null)
             {
                 return;
             }
 
-            var clip = track.CreateClip<AlpsLightingClip>();
-            clip.displayName = name;
+            var clip = layer.CreateClip<AlpsLightingClip>();
+            clip.displayName = clipName;
             clip.start = 0.0;
             clip.duration = StarterBeats * 60.0 / AlpsLightingTrack.DefaultBpm;
             ((AlpsLightingClip)clip.asset).data = starter;

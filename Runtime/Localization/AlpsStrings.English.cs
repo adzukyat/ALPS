@@ -92,8 +92,9 @@ namespace AdzukiSoft.ALPS
                 { "fixture.multiLightBar", "Multi Light Bar" },
                 { "fixture.laser", "Laser" },
                 { "setup.timeline", "Set Up Timeline" },
-                { "setup.timeline.tip", "Creates a Timeline in Assets/ALPS/Shows and a parent with a Playable Director that plays it, then gives this container and every container in it a group of move, colour and brightness tracks." },
+                { "setup.timeline.tip", "Creates a Timeline in Assets/ALPS/Shows and a parent with a Playable Director that plays it, then gives this container and every container in it a lighting track with layers for move, colour and brightness." },
                 { "setup.openTimeline", "Open Timeline" },
+                { "track.layer", "Layer {0}" },
                 { "setup.openTimeline.tip", "Shows the Timeline that drives this container." },
 
                 // --- Clip --------------------------------------------------
