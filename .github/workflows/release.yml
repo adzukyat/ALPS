@@ -44,7 +44,7 @@ jobs:
 
       - name: Build unitypackage
         if: steps.version.outputs.exists == 'false'
-        run: python3 .github/scripts/build-unitypackage.py --output "dist/ALPS-${{ steps.version.outputs.version }}.unitypackage"
+        run: python3 .github/scripts/build-unitypackage.py --output "dist/ALPS-v${{ steps.version.outputs.version }}.unitypackage"
 
       # The notes are the CHANGELOG.md section headed "## [<version>]" (or
       # "## <version>"), up to the next "## " heading. Without one they are empty.
@@ -81,7 +81,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "v${VERSION}" "dist/ALPS-${VERSION}.unitypackage" \
+          gh release create "v${VERSION}" "dist/ALPS-v${VERSION}.unitypackage" \
             --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
             --notes-file dist/notes.md
