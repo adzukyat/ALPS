@@ -1127,16 +1127,8 @@
     border-radius: 3px;
 }
 
-.alps-add__button--open {
-    background-color: var(--alps-accent);
-}
-
 .alps-add__title {
     color: var(--alps-button-text);
-}
-
-.alps-add__button--open .alps-add__title {
-    color: #ffffff;
 }
 
 /* The always open catalog: a centred heading over the tiles, on the thumbnail wells' colour. */
@@ -1307,10 +1299,6 @@
 
 .alps-add__button:hover {
     background-color: var(--alps-button-bg-hover);
-}
-
-.alps-root .alps-add__button--open:hover {
-    background-color: var(--alps-accent);
 }
 
 .alps-iconbutton:hover {

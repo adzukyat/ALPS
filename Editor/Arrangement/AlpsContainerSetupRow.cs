@@ -52,9 +52,6 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             style.display = Step == AlpsContainerSetupStep.None ? DisplayStyle.None : DisplayStyle.Flex;
-
-            // Setting up is the step the container waits for, so it stands out like an open list.
-            _button.EnableInClassList("alps-add__button--open", Step == AlpsContainerSetupStep.SetUp);
             _title.text = Step == AlpsContainerSetupStep.Open ? AlpsStrings.Tr("setup.openTimeline") : AlpsStrings.Tr("setup.timeline");
             _button.tooltip = Step == AlpsContainerSetupStep.Open ? AlpsStrings.Tr("setup.openTimeline.tip") : AlpsStrings.Tr("setup.timeline.tip");
         }
