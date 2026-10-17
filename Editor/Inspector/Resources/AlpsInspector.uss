@@ -69,13 +69,14 @@
     min-width: 476px;
 }
 
-/* In a component's inspector, Unity's inspector element already pads the content like the
-   IMGUI fields around it, so the view adds nothing at the sides, and its minimum keeps the
-   card's content width without those 24px. */
+/* In a component's inspector, Unity's inspector element already pads the content, 15px on
+   the left for the foldout arrows of IMGUI fields and 6px on the right. The view adds the
+   9px that makes the right side match, so centred content sits in the middle, and its
+   minimum keeps the card's 452px content width with that padding. */
 .alps-root--component {
     padding-left: 0;
-    padding-right: 0;
-    min-width: 452px;
+    padding-right: 9px;
+    min-width: 461px;
 }
 
 /* ------------------------------------------------------------ vertical flow
