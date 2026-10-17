@@ -42,7 +42,7 @@ A container can also lay its direct children out for you. Its 形状 starts at �
 
 ### 4. Timeline
 
-Add an `AlpsTimelineTrack` to a Timeline and bind it to a container, or to a single fixture to drive it alone. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
+Add an `ALPS/Lighting Track` (`AlpsLightingTrack`) to a Timeline and bind it to a container, or to a single fixture to drive it alone. Tracks lower in the Timeline are layers above the ones before them: a later track only overrides the channels its effects drive. Override tracks nest the same way.
 
 Other Timeline tracks such as `ActivationTrack`, `AnimationTrack` or `ControlTrack` are left untouched.
 

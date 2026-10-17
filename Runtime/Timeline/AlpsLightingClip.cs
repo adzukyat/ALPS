@@ -8,7 +8,7 @@ namespace AdzukiSoft.ALPS
     /// A lighting cue: the order, shared settings and effect stack the clip inspector edits.
     /// Evaluation happens in the track mixer, so the clip playable itself carries nothing.
     /// </summary>
-    public class AlpsTimelineClip : PlayableAsset, ITimelineClipAsset
+    public class AlpsLightingClip : PlayableAsset, ITimelineClipAsset
     {
         public AlpsClipEffectSet data = AlpsClipEffectSet.CreateNew();
 

@@ -81,7 +81,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void CustomEditor_BuildsTheInspectorAndResolvesTheStyleSheet()
         {
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -89,9 +89,9 @@ namespace AdzukiSoft.ALPS.Tests
             try
             {
                 inspector = UnityEditor.Editor.CreateEditor(asset);
-                Assert.IsInstanceOf<AlpsTimelineClipInspector>(
+                Assert.IsInstanceOf<AlpsLightingClipInspector>(
                     inspector,
-                    "AlpsTimelineClip must use AlpsTimelineClipInspector.");
+                    "AlpsLightingClip must use AlpsLightingClipInspector.");
 
                 var host = inspector.CreateInspectorGUI();
                 Assert.NotNull(host);
@@ -123,12 +123,12 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // The timeline clip inspector only calls OnInspectorGUI on the clip asset editor.
             // Without an override, Unity falls back to the default fields and the ALPS UI is lost.
-            var method = typeof(AlpsTimelineClipInspector).GetMethod(
+            var method = typeof(AlpsLightingClipInspector).GetMethod(
                 "OnInspectorGUI",
                 BindingFlags.Instance | BindingFlags.Public);
             Assert.NotNull(method);
             Assert.AreEqual(
-                typeof(AlpsTimelineClipInspector),
+                typeof(AlpsLightingClipInspector),
                 method.DeclaringType,
                 "The editor must override OnInspectorGUI for the timeline clip inspector.");
 
@@ -140,7 +140,7 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void CustomEditor_HangsTheViewAfterTheImguiContainer()
         {
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -150,10 +150,10 @@ namespace AdzukiSoft.ALPS.Tests
             inspectorElement.Add(container);
             window.rootVisualElement.Add(inspectorElement);
 
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
 
                 Assert.IsTrue(inspector.AttachTo(container));
                 Assert.AreEqual(2, inspectorElement.childCount, "The view is a sibling of the IMGUI block.");
@@ -188,7 +188,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // Unity throws when the hierarchy changes while the panel measures itself, and the
             // clip inspector runs its IMGUI block inside that pass.
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
@@ -196,10 +196,10 @@ namespace AdzukiSoft.ALPS.Tests
             var container = new IMGUIContainer(() => { });
             parent.Add(container);
 
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
 
                 Assert.IsTrue(inspector.AttachTo(container, false));
                 Assert.AreEqual(1, parent.childCount, "Nothing moves while the panel is laying out.");
@@ -223,12 +223,12 @@ namespace AdzukiSoft.ALPS.Tests
         {
             // Timeline stops calling OnInspectorGUI while its asset title bar is collapsed. The
             // view sits outside IMGUI, so it has to hide itself when a repaint skips the draw.
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.hideFlags = HideFlags.HideAndDontSave;
             asset.data = BuildFullSet();
 
             var expanded = true;
-            AlpsTimelineClipInspector inspector = null;
+            AlpsLightingClipInspector inspector = null;
             System.Action original = null;
             var parent = new VisualElement();
             var container = new IMGUIContainer();
@@ -236,7 +236,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             try
             {
-                inspector = (AlpsTimelineClipInspector)UnityEditor.Editor.CreateEditor(asset);
+                inspector = (AlpsLightingClipInspector)UnityEditor.Editor.CreateEditor(asset);
                 var target = inspector;
                 original = () =>
                 {
@@ -292,7 +292,7 @@ namespace AdzukiSoft.ALPS.Tests
                 AssetDatabase.CreateFolder("Assets", "AlpsUndoTest");
             }
 
-            var asset = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var asset = ScriptableObject.CreateInstance<AlpsLightingClip>();
             asset.data = new AlpsClipEffectSet();
             asset.data.Add(AlpsEffectKind.Brightness);
             AssetDatabase.CreateAsset(asset, path);
@@ -565,7 +565,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsTrue(created.phase.spreadInBeats, "New clips count the delay in beats, like the in / out.");
             Assert.AreEqual(AlpsPhaseMode.Wave, new AlpsPhaseSettings().mode, "The model keeps the wave older data was saved against.");
 
-            var clip = ScriptableObject.CreateInstance<AlpsTimelineClip>();
+            var clip = ScriptableObject.CreateInstance<AlpsLightingClip>();
             var profile = ScriptableObject.CreateInstance<AlpsClipProfile>();
             try
             {

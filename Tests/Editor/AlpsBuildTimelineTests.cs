@@ -89,7 +89,7 @@ namespace AdzukiSoft.ALPS.Tests
             AssetDatabase.CreateAsset(timeline, SourcePath);
             timeline.durationMode = mode;
 
-            var clip = timeline.CreateTrack<AlpsTimelineTrack>(null, "Show").CreateClip<AlpsTimelineClip>();
+            var clip = timeline.CreateTrack<AlpsLightingTrack>(null, "Show").CreateClip<AlpsLightingClip>();
             clip.start = 0.0;
             clip.duration = ShowLength;
             Save(timeline);

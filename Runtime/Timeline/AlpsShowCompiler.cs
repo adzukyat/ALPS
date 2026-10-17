@@ -40,7 +40,7 @@ namespace AdzukiSoft.ALPS
                 return show;
             }
 
-            var builder = new Builder(director, show, AlpsTimelineTrack.ShowBpm(timeline));
+            var builder = new Builder(director, show, AlpsLightingTrack.ShowBpm(timeline));
             foreach (var track in timeline.GetRootTracks())
             {
                 builder.VisitTrack(track, false);
@@ -70,9 +70,9 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>Every ALPS track of a timeline, parents before their override tracks.</summary>
-        public static List<AlpsTimelineTrack> CollectTracks(TimelineAsset timeline)
+        public static List<AlpsLightingTrack> CollectTracks(TimelineAsset timeline)
         {
-            var result = new List<AlpsTimelineTrack>();
+            var result = new List<AlpsLightingTrack>();
             if (timeline == null)
             {
                 return result;
@@ -86,9 +86,9 @@ namespace AdzukiSoft.ALPS
             return result;
         }
 
-        private static void CollectTracks(TrackAsset track, List<AlpsTimelineTrack> result)
+        private static void CollectTracks(TrackAsset track, List<AlpsLightingTrack> result)
         {
-            if (track is AlpsTimelineTrack alpsTrack)
+            if (track is AlpsLightingTrack alpsTrack)
             {
                 result.Add(alpsTrack);
             }
@@ -104,7 +104,7 @@ namespace AdzukiSoft.ALPS
         /// plays nothing because it is muted or its root is not bound to a container or fixture.
         /// Follows the same walk and skip rules as the compiler, so seeds derived from it match.
         /// </summary>
-        public static int LayerOf(PlayableDirector director, AlpsTimelineTrack target)
+        public static int LayerOf(PlayableDirector director, AlpsLightingTrack target)
         {
             var timeline = director != null ? director.playableAsset as TimelineAsset : null;
             if (timeline == null || target == null)
@@ -126,10 +126,10 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>The layer of the target, -1 if it plays nothing, or -2 if it is not below <paramref name="track"/>.</summary>
-        private static int FindLayer(PlayableDirector director, TrackAsset track, AlpsTimelineTrack target, bool parentMuted, ref int layer)
+        private static int FindLayer(PlayableDirector director, TrackAsset track, AlpsLightingTrack target, bool parentMuted, ref int layer)
         {
             var muted = parentMuted || track.muted;
-            if (track is AlpsTimelineTrack alpsTrack)
+            if (track is AlpsLightingTrack alpsTrack)
             {
                 var plays = !muted && (director.GetGenericBinding(alpsTrack.RootTrack) as AlpsTarget) != null;
                 if (alpsTrack == target)
@@ -207,7 +207,7 @@ namespace AdzukiSoft.ALPS
             public void VisitTrack(TrackAsset track, bool parentMuted)
             {
                 var muted = parentMuted || track.muted;
-                if (track is AlpsTimelineTrack alpsTrack && !muted)
+                if (track is AlpsLightingTrack alpsTrack && !muted)
                 {
                     AddTrack(alpsTrack);
                 }
@@ -218,7 +218,7 @@ namespace AdzukiSoft.ALPS
                 }
             }
 
-            private void AddTrack(AlpsTimelineTrack track)
+            private void AddTrack(AlpsLightingTrack track)
             {
                 var root = track.RootTrack;
                 var group = _director.GetGenericBinding(root) as AlpsTarget;
@@ -232,7 +232,7 @@ namespace AdzukiSoft.ALPS
                 var layer = _layer++;
                 foreach (var clip in track.GetAlpsClips())
                 {
-                    AddClip(clip, (AlpsTimelineClip)clip.asset, layer, groupIndex);
+                    AddClip(clip, (AlpsLightingClip)clip.asset, layer, groupIndex);
                 }
             }
 
@@ -279,7 +279,7 @@ namespace AdzukiSoft.ALPS
                 return _groups.Count - 1;
             }
 
-            private void AddClip(TimelineClip clip, AlpsTimelineClip asset, int layer, int groupIndex)
+            private void AddClip(TimelineClip clip, AlpsLightingClip asset, int layer, int groupIndex)
             {
                 if (asset.EffectiveData != null && asset.EffectiveData.HasLegacyFade)
                 {

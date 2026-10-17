@@ -370,10 +370,10 @@ namespace AdzukiSoft.ALPS.Tests
             var timeline = ScriptableObject.CreateInstance<UnityEngine.Timeline.TimelineAsset>();
             try
             {
-                var track = timeline.CreateTrack<AlpsTimelineTrack>(null, "Track");
-                var first = track.CreateClip<AlpsTimelineClip>();
+                var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Track");
+                var first = track.CreateClip<AlpsLightingClip>();
                 first.start = 2.0;
-                var second = track.CreateClip<AlpsTimelineClip>();
+                var second = track.CreateClip<AlpsLightingClip>();
                 second.start = 3.0;
                 second.clipIn = 1.0;
 

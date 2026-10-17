@@ -76,7 +76,7 @@ namespace AdzukiSoft.ALPS.Tests
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
             return timeline != null &&
                 File.Exists(ScenePath) &&
-                timeline.GetRootTracks().OfType<AlpsTimelineTrack>().Count() == 2 &&
+                timeline.GetRootTracks().OfType<AlpsLightingTrack>().Count() == 2 &&
                 timeline.GetRootTracks().OfType<ActivationTrack>().Any() &&
                 timeline.GetRootTracks().OfType<AnimationTrack>().Any();
         }
@@ -89,23 +89,23 @@ namespace AdzukiSoft.ALPS.Tests
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
             timeline.fixedDuration = 2.0;
 
-            var baseTrack = timeline.CreateTrack<AlpsTimelineTrack>(null, "Base");
+            var baseTrack = timeline.CreateTrack<AlpsLightingTrack>(null, "Base");
             baseTrack.bpm = Bpm;
-            var baseClip = baseTrack.CreateClip<AlpsTimelineClip>();
+            var baseClip = baseTrack.CreateClip<AlpsLightingClip>();
             baseClip.displayName = "Base Cue";
             baseClip.start = 0.0;
             baseClip.duration = 2.0;
-            ((AlpsTimelineClip)baseClip.asset).data = BuildBaseSet();
+            ((AlpsLightingClip)baseClip.asset).data = BuildBaseSet();
 
-            var accentTrack = timeline.CreateTrack<AlpsTimelineTrack>(null, "Accent");
+            var accentTrack = timeline.CreateTrack<AlpsLightingTrack>(null, "Accent");
             accentTrack.bpm = Bpm;
-            var accentClip = accentTrack.CreateClip<AlpsTimelineClip>();
+            var accentClip = accentTrack.CreateClip<AlpsLightingClip>();
             accentClip.displayName = "Accent Cue";
             accentClip.start = 1.5;
             accentClip.duration = 0.5;
             var accent = new AlpsClipEffectSet();
             accent.Add(AlpsEffectKind.Brightness).brightness.value = AccentBrightness;
-            ((AlpsTimelineClip)accentClip.asset).data = accent;
+            ((AlpsLightingClip)accentClip.asset).data = accent;
 
             var activationTrack = timeline.CreateTrack<ActivationTrack>(null, "Activation Retained");
             var activationClip = activationTrack.CreateDefaultClip();
@@ -186,7 +186,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             foreach (var track in timeline.GetRootTracks())
             {
-                if (track is AlpsTimelineTrack)
+                if (track is AlpsLightingTrack)
                 {
                     director.SetGenericBinding(track, group);
                 }

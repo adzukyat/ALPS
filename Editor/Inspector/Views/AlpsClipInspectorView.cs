@@ -33,7 +33,7 @@ namespace AdzukiSoft.ALPS.Editor
         public AlpsClipInspectorView(
             AlpsClipEffectSet set,
             AlpsMixedValues mixed = null,
-            float showBpm = AlpsTimelineTrack.DefaultBpm,
+            float showBpm = AlpsLightingTrack.DefaultBpm,
             bool showBpmEditable = true)
         {
             _set = set;

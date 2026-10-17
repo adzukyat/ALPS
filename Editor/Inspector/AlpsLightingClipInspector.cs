@@ -30,9 +30,9 @@ namespace AdzukiSoft.ALPS.Editor
     /// over to the others by <see cref="AlpsClipEditSync"/>, so only what was changed
     /// lands on them.
     /// </summary>
-    [CustomEditor(typeof(AlpsTimelineClip))]
+    [CustomEditor(typeof(AlpsLightingClip))]
     [CanEditMultipleObjects]
-    public class AlpsTimelineClipInspector : UnityEditor.Editor
+    public class AlpsLightingClipInspector : UnityEditor.Editor
     {
         private VisualElement _injected;
         private IMGUIContainer _watched;
@@ -192,7 +192,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private VisualElement BuildHost()
         {
-            var clips = targets.OfType<AlpsTimelineClip>().ToArray();
+            var clips = targets.OfType<AlpsLightingClip>().ToArray();
             var host = new VisualElement();
 
             void Rebuild()
@@ -224,7 +224,7 @@ namespace AdzukiSoft.ALPS.Editor
 
                 // A track added later, or a timeline from before 全体BPM, can disagree. The
                 // compiler plays the first track's copy, so the rest are brought in line.
-                var showBpm = AlpsTimelineTrack.ShowBpm(timeline);
+                var showBpm = AlpsLightingTrack.ShowBpm(timeline);
                 foreach (var track in tracks)
                 {
                     if (track.bpm != showBpm)
@@ -304,7 +304,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>
         /// The timeline holding <paramref name="clip"/>, or null when the clip is on none.
         /// </summary>
-        private static TimelineAsset TimelineOf(AlpsTimelineClip clip)
+        private static TimelineAsset TimelineOf(AlpsLightingClip clip)
         {
             var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(AssetDatabase.GetAssetPath(clip));
             if (timeline == null)
@@ -324,7 +324,7 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>The asset an edit of this clip writes to, which is the profile while synced.</summary>
-        private static Object EditedObject(AlpsTimelineClip clip)
+        private static Object EditedObject(AlpsLightingClip clip)
         {
             return clip.syncProfile && clip.profile != null ? (Object)clip.profile : clip;
         }
@@ -333,7 +333,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// Profile field, sync toggle and load apply to every selected clip. Save writes one
         /// clip into one profile, so it only works on a single clip.
         /// </summary>
-        private static VisualElement BuildProfile(AlpsTimelineClip[] clips, System.Action rebuild)
+        private static VisualElement BuildProfile(AlpsLightingClip[] clips, System.Action rebuild)
         {
             var root = new VisualElement();
             var first = clips[0];
@@ -341,7 +341,7 @@ namespace AdzukiSoft.ALPS.Editor
             var allHaveProfile = clips.All(clip => clip.profile != null);
             var anySynced = clips.Any(clip => clip.syncProfile);
 
-            void Edit(string undoName, System.Action<AlpsTimelineClip> apply)
+            void Edit(string undoName, System.Action<AlpsLightingClip> apply)
             {
                 Undo.RecordObjects(clips, undoName);
                 foreach (var clip in clips)
@@ -443,7 +443,7 @@ namespace AdzukiSoft.ALPS.Editor
         private static void NotifyPreview()
         {
             AlpsPreviewDriver.MarkDirty();
-            // The window redraw updates the color strip AlpsTimelineClipEditor draws on each clip.
+            // The window redraw updates the color strip AlpsLightingClipEditor draws on each clip.
             TimelineEditor.Refresh(RefreshReason.SceneNeedsUpdate | RefreshReason.WindowNeedsRedraw);
         }
     }

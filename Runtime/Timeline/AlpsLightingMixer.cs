@@ -6,7 +6,7 @@ namespace AdzukiSoft.ALPS
     /// Hands timeline evaluation to <see cref="AlpsPreviewDriver"/>. Every ALPS track and
     /// layer gets one of these, and the driver evaluates the whole show once per frame.
     /// </summary>
-    public class AlpsTimelineMixer : PlayableBehaviour
+    public class AlpsLightingMixer : PlayableBehaviour
     {
         public PlayableDirector director;
 
