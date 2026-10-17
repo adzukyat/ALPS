@@ -12,12 +12,14 @@ names starting with a dot or ending in ~ are skipped along with all below.
 """
 
 import argparse
+import gzip
 import io
 import json
 import re
 import subprocess
 import sys
 import tarfile
+import time
 from pathlib import Path
 
 GUID_PATTERN = re.compile(r"^guid:\s*([0-9a-f]{32})\s*$", re.MULTILINE)
@@ -41,19 +43,19 @@ def read_guid(meta_path):
     return match.group(1)
 
 
-def add_bytes(archive, name, data):
+def add_bytes(archive, name, data, mtime):
     info = tarfile.TarInfo(name)
     info.size = len(data)
     info.mode = 0o644
-    info.mtime = 0
+    info.mtime = mtime
     archive.addfile(info, io.BytesIO(data))
 
 
-def add_folder(archive, name):
+def add_folder(archive, name, mtime):
     info = tarfile.TarInfo(name)
     info.type = tarfile.DIRTYPE
     info.mode = 0o755
-    info.mtime = 0
+    info.mtime = mtime
     archive.addfile(info)
 
 
@@ -83,21 +85,29 @@ def main():
         return 1
 
     seen = {}
+    for rel, is_folder in entries:
+        guid = read_guid(root / f"{rel}.meta")
+        if guid in seen:
+            print(f"Duplicate GUID {guid}: {seen[guid][0]} and {rel}", file=sys.stderr)
+            return 1
+        seen[guid] = (rel, is_folder)
+
+    # Laid out the way Unity's own export is: by GUID, then asset, asset.meta, pathname.
+    mtime = int(time.time())
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tarfile.open(output, "w:gz", format=tarfile.GNU_FORMAT) as archive:
-        for rel, is_folder in entries:
-            guid = read_guid(root / f"{rel}.meta")
-            if guid in seen:
-                print(f"Duplicate GUID {guid}: {seen[guid]} and {rel}", file=sys.stderr)
-                return 1
-            seen[guid] = rel
-
-            add_folder(archive, guid)
-            add_bytes(archive, f"{guid}/pathname", f"Packages/{package_name}/{rel}".encode("utf-8"))
-            add_bytes(archive, f"{guid}/asset.meta", (root / f"{rel}.meta").read_bytes())
+    # Unity imports nothing, without an error, when the name stored in the gzip
+    # header is not that of a tar, and tarfile stores the output's own name, so
+    # the gzip stream is opened here with the name Unity's own export stores.
+    with open(output, "wb") as file, gzip.GzipFile(
+        filename="archtemp.tar", mode="wb", fileobj=file, mtime=mtime
+    ) as stream, tarfile.open(fileobj=stream, mode="w", format=tarfile.GNU_FORMAT) as archive:
+        for guid, (rel, is_folder) in sorted(seen.items()):
+            add_folder(archive, guid, mtime)
             if not is_folder:
-                add_bytes(archive, f"{guid}/asset", (root / rel).read_bytes())
+                add_bytes(archive, f"{guid}/asset", (root / rel).read_bytes(), mtime)
+            add_bytes(archive, f"{guid}/asset.meta", (root / f"{rel}.meta").read_bytes(), mtime)
+            add_bytes(archive, f"{guid}/pathname", f"Packages/{package_name}/{rel}".encode("utf-8"), mtime)
 
     print(f"Wrote {output} ({len(folders)} folders, {len(files)} files)")
     return 0
