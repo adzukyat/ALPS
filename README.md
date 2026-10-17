@@ -96,7 +96,7 @@ Test levels:
 - Level 3: the real `PreviewSmoke` Timeline previewed in edit mode.
 - Level 4: the build conversion applied to that scene, with the Udon player matching the preview and other tracks kept.
 
-`ALPS > Tests > Regenerate Preview Smoke Fixture` rebuilds the test scene, and `ALPS > Demo > Rebuild Example` in `DemoProject~` rebuilds the demo show.
+`ALPS > Debug > Tests > Regenerate Preview Smoke Fixture` rebuilds the test scene, and `ALPS > Debug > Demo > Rebuild Example` in `DemoProject~` rebuilds the demo show.
 
 ## Third party notices
 

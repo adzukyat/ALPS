@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using AdzukiSoft.ALPS.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -41,7 +42,7 @@ namespace AdzukiSoft.ALPS.Tests
         public const double AnimationStart = 0.5;
         public const double AnimationDuration = 1.0;
 
-        [MenuItem("ALPS/Tests/Regenerate Preview Smoke Fixture")]
+        [MenuItem(AlpsMainMenu.DebugRoot + "Tests/Regenerate Preview Smoke Fixture", false, AlpsMainMenu.DebugPriority)]
         public static void RegenerateAssets()
         {
             EnsureFolder(FolderPath);

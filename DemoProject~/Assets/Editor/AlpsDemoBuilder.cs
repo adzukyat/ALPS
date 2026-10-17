@@ -20,7 +20,7 @@ public static class AlpsDemoBuilder
     private const float Bpm = 120f;
     private const double Duration = 26.0;
 
-    [MenuItem("ALPS/Demo/Rebuild Example")]
+    [MenuItem(AlpsMainMenu.DebugRoot + "Demo/Rebuild Example", false, AlpsMainMenu.DebugPriority)]
     public static void Rebuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
