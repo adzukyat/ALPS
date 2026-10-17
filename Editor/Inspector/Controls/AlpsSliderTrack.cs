@@ -210,10 +210,14 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
+        /// <summary>
+        /// Left unclamped, so a thumb grabbed off centre still reaches the ends once its grab
+        /// offset is added. <see cref="Apply"/> clamps after that.
+        /// </summary>
         private float NormalizedAt(Vector2 localPosition)
         {
             var width = contentRect.width;
-            return width <= 0f ? 0f : Mathf.Clamp01(localPosition.x / width);
+            return width <= 0f ? 0f : localPosition.x / width;
         }
 
         /// <summary>
