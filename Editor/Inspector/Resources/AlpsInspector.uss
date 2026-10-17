@@ -1175,6 +1175,11 @@
     -unity-text-align: middle-center;
 }
 
+/* The container's setup step under its fixture list, spaced like the add button. */
+.alps-setup {
+    margin-top: 2px;
+}
+
 /* ------------------------------------------------------------- foldout */
 
 .alps-plainfold {

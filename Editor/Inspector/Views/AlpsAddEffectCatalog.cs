@@ -106,7 +106,7 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     internal static class AlpsEffectThumbnail
     {
-        private static readonly Color Art = new Color(0.851f, 0.643f, 0.255f);
+        internal static readonly Color Art = new Color(0.851f, 0.643f, 0.255f);
 
         public static VisualElement Build(AlpsEffectKind kind)
         {
@@ -268,7 +268,7 @@ namespace AdzukiSoft.ALPS.Editor
             return disc;
         }
 
-        private static void SetRadius(VisualElement element, float radius)
+        internal static void SetRadius(VisualElement element, float radius)
         {
             element.style.borderTopLeftRadius = radius;
             element.style.borderTopRightRadius = radius;

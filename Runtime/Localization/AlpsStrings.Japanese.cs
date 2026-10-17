@@ -81,6 +81,21 @@ namespace AdzukiSoft.ALPS
                 { "arrangement.spread.first", "最初のオブジェクト" },
                 { "arrangement.spread.last", "最後のオブジェクト" },
 
+                // --- Container setup ---------------------------------------
+                { "addFixture.title", "灯体を追加" },
+                { "addFixture.missing", "VR Stage Lighting にこの灯体のプレハブが見つかりません。" },
+                { "fixture.moverSpotlight", "ムービング スポット" },
+                { "fixture.moverWashLight", "ムービング ウォッシュ" },
+                { "fixture.parLight", "パーライト" },
+                { "fixture.blinder", "ブラインダー" },
+                { "fixture.lightBar", "ライトバー" },
+                { "fixture.multiLightBar", "マルチライトバー" },
+                { "fixture.laser", "レーザー" },
+                { "setup.timeline", "タイムラインをセットアップ" },
+                { "setup.timeline.tip", "Assets/ALPS/Shows にタイムラインを作り、それを再生する Playable Director 付きの親を作ります。このコンテナーと中のコンテナーには、それぞれムーブ・カラー・明るさのトラックのグループを作ります。" },
+                { "setup.openTimeline", "タイムラインを開く" },
+                { "setup.openTimeline.tip", "このコンテナーを動かしているタイムラインを表示します。" },
+
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPMオーバーライド" },
                 { "clip.bpmOverride.tip", "全体BPMと違う値にすると、このクリップだけそのBPMで動きます。全体BPMと同じ値に戻すと全体BPMに追従します。" },

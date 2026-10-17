@@ -81,6 +81,21 @@ namespace AdzukiSoft.ALPS
                 { "arrangement.spread.first", "First object" },
                 { "arrangement.spread.last", "Last object" },
 
+                // --- Container setup ---------------------------------------
+                { "addFixture.title", "Add Fixture" },
+                { "addFixture.missing", "VR Stage Lighting does not have this fixture's prefab." },
+                { "fixture.moverSpotlight", "Mover Spotlight" },
+                { "fixture.moverWashLight", "Mover Wash Light" },
+                { "fixture.parLight", "Par Light" },
+                { "fixture.blinder", "Blinder" },
+                { "fixture.lightBar", "Light Bar" },
+                { "fixture.multiLightBar", "Multi Light Bar" },
+                { "fixture.laser", "Laser" },
+                { "setup.timeline", "Set Up Timeline" },
+                { "setup.timeline.tip", "Creates a Timeline in Assets/ALPS/Shows and a parent with a Playable Director that plays it, then gives this container and every container in it a group of move, colour and brightness tracks." },
+                { "setup.openTimeline", "Open Timeline" },
+                { "setup.openTimeline.tip", "Shows the Timeline that drives this container." },
+
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM Override" },
                 { "clip.bpmOverride.tip", "Set to a value other than the global BPM and this clip alone runs at that BPM. Return it to the global BPM to follow the global BPM again." },

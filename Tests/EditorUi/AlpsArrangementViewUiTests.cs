@@ -126,6 +126,68 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsTrue(HasVisibleLabel(view, AlpsStrings.Tr("common.seed")));
         }
 
+        [Test]
+        public void CustomEditor_OffersFixturesThenTheTimeline()
+        {
+            var container = AlpsCreateMenu.CreateContainer(null).GetComponent<AlpsContainer>();
+            string timelinePath = null;
+            UnityEditor.Editor inspector = null;
+            try
+            {
+                inspector = UnityEditor.Editor.CreateEditor(container);
+                var host = inspector.CreateInspectorGUI();
+                var catalog = host.Q<AlpsAddFixtureCatalog>();
+                var setup = host.Q<AlpsContainerSetupRow>();
+                Assert.NotNull(catalog);
+                Assert.IsTrue(catalog.Expanded, "An empty container opens its fixture list.");
+                CollectionAssert.AreEqual(
+                    AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey)),
+                    catalog.Query<Label>(className: "alps-add__label").ToList().Select(l => l.text));
+                Assert.AreEqual(DisplayStyle.None, setup.style.display.value, "Nothing to set up without a fixture.");
+
+                var added = catalog.RequestAdd(AlpsCreateMenu.ParLight);
+                Assert.AreSame(container.transform, added.transform.parent, "The fixture goes under the container.");
+                Assert.AreEqual(AlpsContainerSetupStep.SetUp, setup.Step);
+                Assert.AreEqual(DisplayStyle.Flex, setup.style.display.value);
+                Assert.AreEqual(AlpsStrings.Tr("setup.timeline"), setup.Title);
+
+                var director = AlpsTimelineSetup.SetUp(container);
+                timelinePath = AssetDatabase.GetAssetPath(director.playableAsset);
+                setup.Refresh();
+                Assert.AreEqual(AlpsContainerSetupStep.Open, setup.Step);
+                Assert.AreEqual(AlpsStrings.Tr("setup.openTimeline"), setup.Title);
+
+                Object.DestroyImmediate(inspector);
+                inspector = UnityEditor.Editor.CreateEditor(container);
+                Assert.IsFalse(inspector.CreateInspectorGUI().Q<AlpsAddFixtureCatalog>().Expanded, "With fixtures the list starts closed.");
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                if (timelinePath != null)
+                {
+                    AssetDatabase.DeleteAsset(timelinePath);
+                }
+            }
+        }
+
+        [Test]
+        public void SetupRow_StaysHiddenOnANestedContainer()
+        {
+            var top = AlpsCreateMenu.CreateContainer(null);
+            var nested = AlpsCreateMenu.CreateContainer(top).GetComponent<AlpsContainer>();
+            AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, nested.gameObject);
+
+            var setup = new AlpsContainerSetupRow(nested);
+            Assert.AreEqual(AlpsContainerSetupStep.None, setup.Step, "The container above is the one to set up.");
+            Assert.AreEqual(DisplayStyle.None, setup.style.display.value);
+            Assert.AreEqual(AlpsContainerSetupStep.SetUp, new AlpsContainerSetupRow(top.GetComponent<AlpsContainer>()).Step);
+        }
+
         [UnityTest]
         public IEnumerator Editing_MovesTheChildren()
         {

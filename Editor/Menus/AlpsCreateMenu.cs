@@ -27,25 +27,25 @@ namespace AdzukiSoft.ALPS.Editor
         private const string PrefabFolder = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/";
 
         public static readonly AlpsVrslPrefab MoverSpotlight = new AlpsVrslPrefab(
-            "Mover Spotlight", "f5be3cfe3f15bfb4e9477904c5af9daf", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab");
+            "Mover Spotlight", "fixture.moverSpotlight", "f5be3cfe3f15bfb4e9477904c5af9daf", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab MoverWashLight = new AlpsVrslPrefab(
-            "Mover Wash Light", "b3e8ff051cc2d684aa255ceccce9b96f", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab");
+            "Mover Wash Light", "fixture.moverWashLight", "b3e8ff051cc2d684aa255ceccce9b96f", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab ParLight = new AlpsVrslPrefab(
-            "Par Light", "946b3c09cfa93244c90a4b0ac7764b44", PrefabFolder + "VRSL-DMX-Static-ParLight-H-13CH.prefab");
+            "Par Light", "fixture.parLight", "946b3c09cfa93244c90a4b0ac7764b44", PrefabFolder + "VRSL-DMX-Static-ParLight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab Blinder = new AlpsVrslPrefab(
-            "Blinder", "e9dde3e86ccb8ca4bb4ecbe35a6fa7b1", PrefabFolder + "VRSL-DMX-Static-Blinder-H-13CH.prefab");
+            "Blinder", "fixture.blinder", "e9dde3e86ccb8ca4bb4ecbe35a6fa7b1", PrefabFolder + "VRSL-DMX-Static-Blinder-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab LightBar = new AlpsVrslPrefab(
-            "Light Bar", "96ffbd2a722ae324e892d303e2ee9a2a", PrefabFolder + "VRSL-DMX-Static-LightBar-H-13CH.prefab");
+            "Light Bar", "fixture.lightBar", "96ffbd2a722ae324e892d303e2ee9a2a", PrefabFolder + "VRSL-DMX-Static-LightBar-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab MultiLightBar = new AlpsVrslPrefab(
-            "Multi Light Bar", "c19e8fd46b4abdf49bb7b6cdc62acdde", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab");
+            "Multi Light Bar", "fixture.multiLightBar", "c19e8fd46b4abdf49bb7b6cdc62acdde", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab");
 
         public static readonly AlpsVrslPrefab Laser = new AlpsVrslPrefab(
-            "Laser", "3d6c0b40980bcd34aba9183a62ecbd21", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
+            "Laser", "fixture.laser", "3d6c0b40980bcd34aba9183a62ecbd21", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
 
         /// <summary>Every fixture the menu offers, in menu order.</summary>
         public static IReadOnlyList<AlpsVrslPrefab> Fixtures { get; } = new[]
@@ -168,14 +168,19 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     public sealed class AlpsVrslPrefab
     {
-        public AlpsVrslPrefab(string name, string guid, string path)
+        public AlpsVrslPrefab(string name, string labelKey, string guid, string path)
         {
             Name = name;
+            LabelKey = labelKey;
             Guid = guid;
             Path = path;
         }
 
+        /// <summary>The English name the Hierarchy's menu shows.</summary>
         public string Name { get; }
+
+        /// <summary>The <see cref="AlpsStrings"/> key of the name the container's fixture list shows.</summary>
+        public string LabelKey { get; }
 
         public string Guid { get; }
 
