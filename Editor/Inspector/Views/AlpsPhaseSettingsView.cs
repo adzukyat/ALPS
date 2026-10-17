@@ -65,33 +65,21 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private int _shapeValue;
 
-        public AlpsPhaseSettingsView(AlpsPhaseSettings settings, Action onChanged, bool compact = false, AlpsMixedValues mixed = null)
+        public AlpsPhaseSettingsView(AlpsPhaseSettings settings, Action onChanged, AlpsMixedValues mixed = null)
         {
             _settings = settings;
             _onChanged = onChanged;
 
             var defaults = new AlpsPhaseSettings();
 
-            if (compact)
-            {
-                AddToClassList("alps-nested");
-            }
-            else
-            {
-                // The view sits inside a card body, so its rows carry the body's 9px rhythm.
-                AddToClassList("alps-flow9");
-            }
+            // The view sits inside a card body, so its rows carry the body's 9px rhythm.
+            AddToClassList("alps-flow9");
 
             // The mode picks what the graph below draws, so the tabs head it.
             _tabs = new AlpsTabControl(
                 (AlpsStrings.Tr("phase.mode.inOut"), AlpsIcons.CircuitCapacitor),
                 (AlpsStrings.Tr("phase.mode.wave"), AlpsIcons.ArrowBounce),
                 (AlpsStrings.Tr("phase.mode.random"), AlpsIcons.CircuitBattery));
-            if (compact)
-            {
-                _tabs.AddToClassList("alps-tabs--compact");
-            }
-
             _tabs.SetValueWithoutNotify(TabOf(settings.mode));
             _tabs.RegisterValueChangedCallback(evt =>
             {
@@ -107,11 +95,6 @@ namespace AdzukiSoft.ALPS.Editor
             Add(_tabs);
 
             _graph = new AlpsPhaseGraph();
-            if (compact)
-            {
-                _graph.AddToClassList("alps-graph--compact");
-            }
-
             Add(_graph);
 
             // The shape is read off the distribution, which would otherwise have to be dragged
@@ -125,11 +108,6 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 tooltip = AlpsStrings.Tr("phase.shape.tip"),
             };
-            if (compact)
-            {
-                _shape.AddToClassList("alps-seg--compact");
-            }
-
             _shape.SetValueWithoutNotify(_shapeValue);
             _shape.RegisterValueChangedCallback(evt => SetShape(evt.newValue));
             mixed?.Bind(
@@ -139,6 +117,17 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsPhaseSettings.holdHigh),
                 nameof(AlpsPhaseSettings.fall));
             Add(_shape);
+
+            // Right under the shape it flips, or under the graph for an in / out.
+            _inverse = new AlpsToggleSwitch(AlpsStrings.Tr("phase.inverse"));
+            _inverse.SetValueWithoutNotify(settings.inverse);
+            _inverse.RegisterValueChangedCallback(evt =>
+            {
+                settings.inverse = evt.newValue;
+                Changed();
+            });
+            mixed?.Bind(_inverse, settings, nameof(AlpsPhaseSettings.inverse));
+            Add(_inverse);
 
             // How long the wave rises, holds at the top, falls and holds at the bottom. A rise
             // over the whole cycle is a sawtooth, and zero length ramps make a square wave.
@@ -178,18 +167,7 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_inOut, settings, nameof(AlpsPhaseSettings.inBeats), nameof(AlpsPhaseSettings.outBeats));
             Add(_inOut);
 
-            // Under the wave it flips, whichever of the distribution or the in / out shows.
-            _inverse = new AlpsToggleSwitch(AlpsStrings.Tr("phase.inverse"));
-            _inverse.SetValueWithoutNotify(settings.inverse);
-            _inverse.RegisterValueChangedCallback(evt =>
-            {
-                settings.inverse = evt.newValue;
-                Changed();
-            });
-            mixed?.Bind(_inverse, settings, nameof(AlpsPhaseSettings.inverse));
-            Add(_inverse);
-
-            _easing = new AlpsEasingPicker(AlpsStrings.Tr("phase.easing"), compact);
+            _easing = new AlpsEasingPicker(AlpsStrings.Tr("phase.easing"));
             _easing.Rise.SetValueWithoutNotify((int)settings.ease);
             _easing.Rise.RegisterValueChangedCallback(evt =>
             {
@@ -220,7 +198,7 @@ namespace AdzukiSoft.ALPS.Editor
             Add(group);
 
             // Next to the fixture group, so the two steppers sit together above the sliders.
-            _speed = new AlpsStepper(AlpsStrings.Tr("common.speed"), AlpsStrings.Tr("unit.beats"), 1f, compact ? null : AlpsStrings.Tr("phase.perCycle")) { Minimum = 0f, Subdivides = true };
+            _speed = new AlpsStepper(AlpsStrings.Tr("common.speed"), AlpsStrings.Tr("unit.beats"), 1f, AlpsStrings.Tr("phase.perCycle")) { Minimum = 0f, Subdivides = true };
             _speed.SetValueWithoutNotify(settings.beatsPerCycle);
             _speed.RegisterValueChangedCallback(evt =>
             {
@@ -322,11 +300,6 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 tooltip = AlpsStrings.Tr("phase.length.tip"),
             };
-            if (compact)
-            {
-                _length.AddToClassList("alps-seg--compact");
-            }
-
             _length.SetValueWithoutNotify(_shares.Cycles - 1);
             _length.RegisterValueChangedCallback(evt => _shares.SetCycles(evt.newValue + 1));
             _shares.CyclesChanged += () => _length.SetValueWithoutNotify(_shares.Cycles - 1);
@@ -377,7 +350,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Takes the shape from the shares again once they no longer fit the one shown, after an
-        /// undo for example, and locks the side the shape leaves out.
+        /// undo for example, and locks and greys out the side the shape leaves out.
         /// </summary>
         private void RefreshShape()
         {
@@ -395,17 +368,18 @@ namespace AdzukiSoft.ALPS.Editor
             _shares.LockRise = isWave && _shapeValue == ShapePulse;
             _shares.LockFall = isWave && _shapeValue == ShapeSweep;
 
-            var only = -1;
+            var unused = -1;
             if (isWave && _shapeValue == ShapeSweep)
             {
-                only = AlpsEasingPicker.RiseSide;
+                unused = AlpsEasingPicker.FallSide;
             }
             else if (isWave && _shapeValue == ShapePulse)
             {
-                only = AlpsEasingPicker.FallSide;
+                unused = AlpsEasingPicker.RiseSide;
             }
 
-            _easing.ShowOnly(only);
+            _easing.SetUnused(unused);
+            _easing.SetInOut(_settings.mode == AlpsPhaseMode.InOut);
         }
 
         /// <summary>

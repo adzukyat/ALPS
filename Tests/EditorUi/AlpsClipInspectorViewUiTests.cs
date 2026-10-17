@@ -530,7 +530,10 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void NewClips_StartInOut()
         {
-            Assert.AreEqual(AlpsPhaseMode.InOut, AlpsClipEffectSet.CreateNew().phase.mode);
+            var created = AlpsClipEffectSet.CreateNew();
+            Assert.AreEqual(AlpsPhaseMode.InOut, created.phase.mode);
+            Assert.AreEqual(AlpsEaseType.Linear, created.phase.ease, "New clips rise and fall in a straight line.");
+            Assert.AreEqual(AlpsEaseType.Linear, created.phase.fallEase);
             Assert.AreEqual(AlpsPhaseMode.Wave, new AlpsPhaseSettings().mode, "The model keeps the wave older data was saved against.");
 
             var clip = ScriptableObject.CreateInstance<AlpsTimelineClip>();
@@ -548,10 +551,38 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void ModeTabs_AreSmallUnderAnOwnPhase()
+        public void OwnPhase_HangsUnderTheEffectAsACardOfItsOwn()
         {
-            var view = new AlpsPhaseSettingsView(new AlpsPhaseSettings(), null, compact: true);
-            Assert.IsTrue(view.Q<AlpsTabControl>().ClassListContains("alps-tabs--compact"));
+            var set = new AlpsClipEffectSet();
+            var move = set.Add(AlpsEffectKind.Move);
+            move.pan.isRange = true;
+            move.pan.range = new Vector2(-45f, 45f);
+            move.pan.useOwnPhase = true;
+            set.Add(AlpsEffectKind.Color);
+            var view = new AlpsClipInspectorView(set);
+
+            var effect = view.Query<AlpsEffectView>().First();
+            AlpsEffectCard Motion(VisualElement root, string name) =>
+                root.Query<AlpsEffectCard>().ToList().Single(card => card.Title == AlpsStrings.Tr("animatable.motion", name));
+
+            var pan = Motion(effect, "Pan");
+            Assert.AreEqual(DisplayStyle.Flex, pan.style.display.value);
+            Assert.IsNull(pan.GetFirstAncestorOfType<AlpsAnimatableView>(), "The motion sits under the effect, not inside its row.");
+            Assert.AreSame(effect, pan.GetFirstAncestorOfType<AlpsEffectView>());
+            Assert.IsNull(pan.Q<Label>(className: "alps-card__desc"), "A motion card has no description.");
+            Assert.IsNotNull(pan.Body.Q<AlpsPhaseSettingsView>(), "The motion lays its phase out like the shared settings.");
+            Assert.AreEqual(DisplayStyle.None, Motion(effect, "Tilt").style.display.value, "Tilt has no own phase on.");
+            Assert.IsNotNull(Motion(view, AlpsStrings.Tr("effect.color.palette")), "A palette's motion is named after its effect's palette.");
+
+            move.moveMode = AlpsMoveMode.Circle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.None, pan.style.display.value, "The motion leaves with its row's tab.");
+            move.moveMode = AlpsMoveMode.Angle;
+            effect.Refresh();
+            Assert.AreEqual(DisplayStyle.Flex, pan.style.display.value);
+
+            effect.Card.Expanded = false;
+            Assert.AreEqual(DisplayStyle.None, pan.parent.style.display.value, "The motion folds away with its effect.");
         }
 
         [Test]
@@ -588,24 +619,30 @@ namespace AdzukiSoft.ALPS.Tests
                 var shape = view.Query<AlpsSegmentedControl>().ToList().First(c => c.label == AlpsStrings.Tr("phase.mode"));
                 var easing = view.Query<AlpsEasingPicker>().First();
                 Assert.AreEqual(AlpsPhaseSettingsView.ShapePingPong, shape.value);
-                Assert.AreEqual(DisplayStyle.Flex, easing.Side.style.display.value, "A ping-pong eases both ways.");
+                Assert.IsTrue(easing.Rise.parent.parent.enabledSelf && easing.Fall.parent.parent.enabledSelf, "A ping-pong eases both ways.");
 
                 shape.value = AlpsPhaseSettingsView.ShapeSweep;
                 Assert.AreEqual(new Vector3(0.5f, 0.25f, 0f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
-                Assert.AreEqual(DisplayStyle.None, easing.Side.style.display.value, "A sweep has no fall to ease.");
-                Assert.AreEqual(DisplayStyle.Flex, easing.Rise.style.display.value);
+                Assert.IsFalse(easing.Fall.parent.parent.enabledSelf, "A sweep has no fall to ease.");
+                Assert.IsTrue(easing.Fall.parent.parent.ClassListContains("alps-easepicker__side--unused"), "The unused side stays in place, greyed out.");
+                Assert.IsTrue(easing.Rise.parent.parent.enabledSelf);
 
                 shape.value = AlpsPhaseSettingsView.ShapePulse;
                 Assert.AreEqual(new Vector3(0f, 0.25f, 0.5f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
-                Assert.AreEqual(DisplayStyle.None, easing.Side.style.display.value, "A pulse has no rise to ease.");
-                Assert.AreEqual(DisplayStyle.Flex, easing.Fall.style.display.value);
+                Assert.IsFalse(easing.Rise.parent.parent.enabledSelf, "A pulse has no rise to ease.");
+                Assert.IsTrue(easing.Fall.parent.parent.enabledSelf);
 
                 shape.value = AlpsPhaseSettingsView.ShapePingPong;
                 Assert.AreEqual(new Vector3(0.25f, 0.25f, 0.25f), new Vector3(set.phase.rise, set.phase.holdHigh, set.phase.fall));
 
-                set.phase.SetShares(0f, 0.5f, 0f);
+                // A ping-pong takes any shares, but a pulse with a rise is a sweep again, after
+                // an undo for example.
+                shape.value = AlpsPhaseSettingsView.ShapePulse;
+                set.phase.SetShares(0.5f, 0.25f, 0f);
                 view.Query<AlpsPhaseSettingsView>().First().Refresh();
-                Assert.AreEqual(AlpsPhaseSettingsView.ShapePulse, shape.value, "Shares that no longer fit take their shape again.");
+                Assert.AreEqual(AlpsPhaseSettingsView.ShapeSweep, shape.value, "Shares that no longer fit take their shape again.");
+
+                set.phase.SetShares(0f, 0.5f, 0f);
                 shape.value = AlpsPhaseSettingsView.ShapePingPong;
                 Assert.AreEqual(0.125f, set.phase.rise, 0.0001f, "A square wave borrows half its low hold.");
                 Assert.AreEqual(0.5f, set.phase.holdHigh, 0.0001f);
@@ -687,6 +724,8 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(DisplayStyle.Flex, Display(inOut));
             Assert.AreEqual(new Vector2(set.phase.inBeats, set.phase.outBeats), inOut.value);
             Assert.AreEqual(DisplayStyle.Flex, Display(easing), "The in and the out keep their eases.");
+            Assert.AreEqual(AlpsStrings.Tr("phase.easing.in"), easing.Heading(AlpsEasingPicker.RiseSide));
+            Assert.AreEqual(AlpsStrings.Tr("phase.easing.out"), easing.Heading(AlpsEasingPicker.FallSide));
             Assert.AreEqual(DisplayStyle.Flex, Display(beats), "The delay is counted in beats.");
             foreach (var hidden in new VisualElement[] { shares, length, speed, percent, flag, FireChance(view) })
             {
@@ -2096,51 +2135,59 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
-        public IEnumerator EasingPicker_SwitchesBetweenTheRiseAndTheFall()
+        public IEnumerator EasingPicker_ShowsTheRiseLeftOfTheFall()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
             var set = new AlpsClipEffectSet();
             set.phase.ease = AlpsEaseType.InQuad;
             set.phase.fallEase = AlpsEaseType.OutBounce;
 
+            AlpsEasingPicker.Expanded = false;
             var window = ScriptableObject.CreateInstance<PanelHostWindow>();
             window.hideFlags = HideFlags.HideAndDontSave;
             window.ShowUtility();
-            var view = new AlpsClipInspectorView(set);
-            var picker = view.Query<AlpsEasingPicker>().First();
             try
             {
+                var view = new AlpsClipInspectorView(set);
+                var picker = view.Query<AlpsEasingPicker>().First();
                 window.rootVisualElement.Add(view);
-                picker.Side.value = AlpsEasingPicker.RiseSide;
                 yield return null;
 
-                Assert.AreEqual(AlpsStrings.Tr("phase.easing"), picker.Side.label, "The switch carries the row label.");
-                Assert.AreEqual(DisplayStyle.Flex, picker.Rise.style.display.value);
-                Assert.AreEqual(DisplayStyle.None, picker.Fall.style.display.value);
-                Assert.AreEqual((int)AlpsEaseType.InQuad, picker.Rise.value);
-                Assert.AreEqual((int)AlpsEaseType.OutBounce, picker.Fall.value);
-                Assert.AreEqual(
-                    picker.Side.Q(className: "alps-seg__input").worldBound.x,
-                    picker.Rise.worldBound.x,
-                    0.6f,
-                    "The tiles start in the input column, under the switch.");
+                Assert.AreEqual(AlpsStrings.Tr("common.rise"), picker.Heading(AlpsEasingPicker.RiseSide));
+                Assert.AreEqual(AlpsStrings.Tr("common.fall"), picker.Heading(AlpsEasingPicker.FallSide));
+                Assert.Less(picker.Rise.worldBound.xMax, picker.Fall.worldBound.xMin, "The rise sits left of the fall.");
 
-                picker.Side.value = AlpsEasingPicker.FallSide;
-                Assert.AreEqual(DisplayStyle.None, picker.Rise.style.display.value);
-                Assert.AreEqual(DisplayStyle.Flex, picker.Fall.style.display.value);
-                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Switching sides edits nothing.");
-                Assert.AreEqual(AlpsEaseType.OutBounce, set.phase.fallEase);
+                var featured = AlpsEasingGrid.Featured;
+                CollectionAssert.AreEqual(
+                    featured.Append(AlpsEaseType.InQuad).ToArray(),
+                    picker.Rise.ShownTypes().ToArray(),
+                    "Folded, the picked curve shows after the featured ones.");
+                CollectionAssert.AreEqual(featured.Append(AlpsEaseType.OutBounce).ToArray(), picker.Fall.ShownTypes().ToArray());
+
+                var tiles = picker.Rise.Q(className: "alps-easegrid__input").Children()
+                    .Where(tile => tile.style.display.value != DisplayStyle.None)
+                    .ToList();
+                Assert.AreEqual(tiles[0].worldBound.y, tiles[tiles.Count - 1].worldBound.y, 0.6f, "Folded, the tiles keep to one row.");
+
+                picker.Rise.value = (int)AlpsEaseType.InCubic;
+                Assert.AreEqual(AlpsEaseType.InCubic, set.phase.ease);
+                Assert.AreEqual(AlpsEaseType.OutBounce, set.phase.fallEase, "Picking a rise leaves the fall alone.");
+                CollectionAssert.AreEqual(featured, picker.Rise.ShownTypes().ToArray(), "A featured pick needs no extra tile.");
 
                 picker.Fall.value = (int)AlpsEaseType.InBack;
                 Assert.AreEqual(AlpsEaseType.InBack, set.phase.fallEase);
-                Assert.AreEqual(AlpsEaseType.InQuad, set.phase.ease, "Picking a fall leaves the rise alone.");
+                Assert.AreEqual(AlpsEaseType.InCubic, set.phase.ease, "Picking a fall leaves the rise alone.");
 
+                AlpsEasingPicker.Expanded = true;
                 var rebuilt = new AlpsClipInspectorView(set).Query<AlpsEasingPicker>().First();
-                Assert.AreEqual(AlpsEasingPicker.FallSide, rebuilt.Side.value, "A rebuild keeps the side being edited.");
+                var all = rebuilt.Rise.ShownTypes().ToArray();
+                Assert.AreEqual(18, all.Length, "Opened, every curve shows, and a rebuild keeps it open.");
+                Assert.AreEqual(AlpsEaseType.InSine, all[1], "Opened, the curves keep the list's order.");
+                Assert.AreEqual(AlpsStrings.Tr("phase.easing.showLess"), rebuilt.More.text);
             }
             finally
             {
-                picker.Side.value = AlpsEasingPicker.RiseSide;
+                AlpsEasingPicker.Expanded = false;
                 window.Close();
                 Object.DestroyImmediate(window);
             }

@@ -7,7 +7,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// The grey header + panel body every effect (and the shared settings) sits in: disclosure arrow,
-    /// title, description, and the copy / delete actions on the right of the header.
+    /// title, description, and the copy / delete actions on the right of the header. A card
+    /// without a description, such as a parameter's own motion, leaves the line out.
     /// Collapsed cards show a row of mini chips summarising their palette.
     /// </summary>
     public class AlpsEffectCard : VisualElement
@@ -53,7 +54,10 @@ namespace AdzukiSoft.ALPS.Editor
             _description.AddToClassList("alps-card__desc");
 
             _header.Add(headerLine);
-            _header.Add(_description);
+            if (!string.IsNullOrEmpty(description))
+            {
+                _header.Add(_description);
+            }
             Add(_header);
 
             Body = new VisualElement();

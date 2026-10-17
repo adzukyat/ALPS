@@ -37,6 +37,7 @@ namespace AdzukiSoft.ALPS.Editor
             nameof(AlpsEffect.selectedColorStop),
             nameof(AlpsEffect.selectedGoboStop),
             nameof(AlpsEffect.goboPickerExpanded),
+            nameof(AlpsAnimatableValue.ownPhaseExpanded),
         };
 
         private static readonly Dictionary<Type, FieldInfo[]> FieldCache = new Dictionary<Type, FieldInfo[]>();

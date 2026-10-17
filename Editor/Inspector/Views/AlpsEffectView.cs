@@ -8,7 +8,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// <summary>
     /// One effect card. The body is built per <see cref="AlpsEffectKind"/>. Everything the
     /// kinds share (header, description, copy / delete, collapse) lives in
-    /// <see cref="AlpsEffectCard"/>.
+    /// <see cref="AlpsEffectCard"/>. Under it hang the own motion cards of its parameters,
+    /// which fold away with it.
     /// </summary>
     public class AlpsEffectView : VisualElement
     {
@@ -73,10 +74,19 @@ namespace AdzukiSoft.ALPS.Editor
             BuildBody(Card.Body);
             BuildPhaseOffset(Card.Body);
             Card.SetChips(BuildChips());
+
+            var motions = new VisualElement();
+            foreach (var animatable in _animatables)
+            {
+                motions.Add(animatable.MotionCard);
+            }
+
+            Card.ExpandedChanged += expanded => AlpsPhaseSettingsView.Show(motions, expanded);
             Card.Expanded = effect.expanded;
             RefreshPasteAvailability();
 
             Add(Card);
+            Add(motions);
         }
 
         private void RefreshPasteAvailability()
@@ -173,9 +183,17 @@ namespace AdzukiSoft.ALPS.Editor
 
             var circlePane = new VisualElement();
             circlePane.AddToClassList("alps-flow9");
-            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerTilt"), _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable(AlpsStrings.Tr("effect.move.centerPan"), _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles));
-            circlePane.Add(Animatable(AlpsStrings.Tr("common.radius"), _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles));
+            var circleValues = new[]
+            {
+                Animatable(AlpsStrings.Tr("effect.move.centerTilt"), _effect.circleCenterTilt, _defaults.circleCenterTilt, "°", "0.#", AlpsSnapPoints.Angles),
+                Animatable(AlpsStrings.Tr("effect.move.centerPan"), _effect.circleCenterPan, _defaults.circleCenterPan, "°", "0.#", AlpsSnapPoints.Angles),
+                Animatable(AlpsStrings.Tr("common.radius"), _effect.circleRadius, _defaults.circleRadius, "°", "0.#", AlpsSnapPoints.Angles),
+            };
+            foreach (var value in circleValues)
+            {
+                circlePane.Add(value);
+            }
+
 
             // 1 draws a true circle.
             var aspect = new AlpsValueSlider(AlpsStrings.Tr("effect.move.aspect"), new Vector2(0.1f, 4f), string.Empty, "0.##")
@@ -225,6 +243,15 @@ namespace AdzukiSoft.ALPS.Editor
                 AlpsPhaseSettingsView.Show(anglePane, angle);
                 AlpsPhaseSettingsView.Show(circlePane, _effect.moveMode == AlpsMoveMode.Circle);
                 AlpsPhaseSettingsView.Show(trackPane, _effect.moveMode == AlpsMoveMode.TrackUser);
+
+                // A motion card under the card follows its row in and out with the tab.
+                tilt.RowShown = angle;
+                pan.RowShown = angle;
+                foreach (var value in circleValues)
+                {
+                    value.RowShown = _effect.moveMode == AlpsMoveMode.Circle;
+                }
+
                 // Phase offset only means something once both axes sweep a range, over a cycle.
                 AlpsPhaseSettingsView.Show(phaseOffset, angle && _effect.ShowPanTiltPhaseOffset && _clipPhase.mode != AlpsPhaseMode.InOut);
             }
@@ -275,7 +302,8 @@ namespace AdzukiSoft.ALPS.Editor
                 },
                 paletteRow: palette,
                 paletteCount: () => _effect.colorStops.Count,
-                mixed: _mixed);
+                mixed: _mixed,
+                motionName: AlpsStrings.Tr("effect.color.palette"));
 
             palette.Changed += () =>
             {
@@ -416,7 +444,8 @@ namespace AdzukiSoft.ALPS.Editor
                 _onChanged,
                 paletteRow: palette,
                 paletteCount: () => _effect.goboStops.Count,
-                mixed: _mixed);
+                mixed: _mixed,
+                motionName: AlpsStrings.Tr("effect.gobo.palette"));
 
             palette.Changed += () =>
             {

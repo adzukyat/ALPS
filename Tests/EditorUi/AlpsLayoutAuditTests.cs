@@ -371,19 +371,27 @@ namespace AdzukiSoft.ALPS.Tests
                     }
                 }
 
-                // The easing tiles come in two sizes. The compact one lives in an own-phase panel.
+                // An own phase lays out like the shared one, so every tile and graph is one size.
+                // A folded row keeps to one line, so a fifth tile, the picked curve past the
+                // featured four, shrinks them all rather than wrapping.
                 foreach (var tile in Visible(view).Where(e => e.ClassListContains("alps-easegrid__tile")))
                 {
-                    var compact = tile.GetFirstAncestorOfType<AlpsPhaseSettingsView>()
-                        ?.ClassListContains("alps-nested") == true;
-                    Assert.AreEqual(compact ? 32f : 36f, tile.layout.width, 0.6f, "Easing tile width drifted.");
-                    Assert.AreEqual(compact ? 26f : 30f, tile.layout.height, 0.6f, "Easing tile height drifted.");
+                    var shown = tile.parent.Children().Count(t => t.resolvedStyle.display != DisplayStyle.None);
+                    if (shown <= AlpsEasingGrid.Featured.Length)
+                    {
+                        Assert.AreEqual(36f, tile.layout.width, 0.6f, "Easing tile width drifted.");
+                    }
+                    else
+                    {
+                        Assert.That(tile.layout.width, Is.InRange(25.4f, 36.6f), "A folded easing tile shrank past its floor.");
+                    }
+
+                    Assert.AreEqual(30f, tile.layout.height, 0.6f, "Easing tile height drifted.");
                 }
 
                 foreach (var graph in Visible(view).Where(e => e.ClassListContains("alps-graph")))
                 {
-                    var compact = graph.ClassListContains("alps-graph--compact");
-                    Assert.AreEqual(compact ? 32f : 46f, graph.layout.height, 0.6f, "Graph height drifted.");
+                    Assert.AreEqual(46f, graph.layout.height, 0.6f, "Graph height drifted.");
                 }
 
                 // The card body is a 452px panel, indented 12px inside the root.

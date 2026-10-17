@@ -59,6 +59,9 @@ namespace AdzukiSoft.ALPS
 
         public AlpsPhaseSettings ownPhase = new AlpsPhaseSettings();
 
+        /// <summary>Whether the own motion card under the effect is open. Inspector state only.</summary>
+        public bool ownPhaseExpanded = true;
+
         public AlpsAnimatableValue() { }
 
         public AlpsAnimatableValue(float value, Vector2 limit)
@@ -82,6 +85,7 @@ namespace AdzukiSoft.ALPS
             timing = other.timing;
             useOwnPhase = other.useOwnPhase;
             ownPhase = new AlpsPhaseSettings(other.ownPhase);
+            ownPhaseExpanded = other.ownPhaseExpanded;
         }
 
         /// <summary>

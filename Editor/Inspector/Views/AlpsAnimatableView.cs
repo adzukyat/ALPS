@@ -17,7 +17,7 @@ namespace AdzukiSoft.ALPS.Editor
     ///   Lower spread slider ....... R and S are both on
     ///   Range frame ............... timing / own phase are shown
     ///   Timing / own phase ........ a range with two distinct ends, or a palette with two or more stops
-    ///   Own phase ON .............. the shared settings panel opens right below
+    ///   Own phase ON .............. its <see cref="MotionCard"/> shows under the effect
     ///
     /// A value with nothing to move it over time, such as an arrangement's, leaves R out,
     /// and a range saved on it is read as off.
@@ -66,6 +66,9 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsSegmentedControl _timing;
         private readonly AlpsToggleSwitch _ownPhase;
         private readonly AlpsPhaseSettingsView _ownPhaseView;
+        private readonly AlpsEffectCard _motionCard;
+
+        private bool _rowShown = true;
 
         public AlpsAnimatableView(
             string label,
@@ -81,7 +84,8 @@ namespace AdzukiSoft.ALPS.Editor
             AlpsMixedValues mixed = null,
             bool allowRange = true,
             string spreadFirstTip = null,
-            string spreadLastTip = null)
+            string spreadLastTip = null,
+            string motionName = null)
         {
             spreadFirstTip = spreadFirstTip ?? AlpsStrings.Tr("animatable.spread.first");
             spreadLastTip = spreadLastTip ?? AlpsStrings.Tr("animatable.spread.last");
@@ -249,16 +253,51 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_ownPhase, model, nameof(AlpsAnimatableValue.useOwnPhase));
             _rangeFrame.Add(_ownPhase);
 
+            Add(_rangeFrame);
+
+            // The own phase gets a card of its own, which the effect puts under its card, so
+            // its settings lay out as the shared ones do rather than squeezed into the row.
+            _motionCard = new AlpsEffectCard(AlpsStrings.Tr("animatable.motion", motionName ?? label), null, showActions: false);
+            _motionCard.AddToClassList("alps-card--motion");
             _ownPhaseView = new AlpsPhaseSettingsView(model.ownPhase, () =>
             {
                 Refresh();
                 Changed();
-            }, compact: true, mixed: mixed);
-            _rangeFrame.Add(_ownPhaseView);
-
-            Add(_rangeFrame);
+            }, mixed);
+            _motionCard.Body.Add(_ownPhaseView);
+            _motionCard.Expanded = model.ownPhaseExpanded;
+            _motionCard.ExpandedChanged += expanded =>
+            {
+                model.ownPhaseExpanded = expanded;
+                Changed();
+            };
 
             Refresh();
+        }
+
+        /// <summary>
+        /// The card holding this parameter's own phase. It is not part of the row: the effect
+        /// adds it under its own card, and the row shows it while own phase is on.
+        /// </summary>
+        public AlpsEffectCard MotionCard => _motionCard;
+
+        /// <summary>
+        /// False while the row sits in a pane the effect has hidden, such as another move mode,
+        /// so its motion card under the effect hides with it.
+        /// </summary>
+        public bool RowShown
+        {
+            get => _rowShown;
+            set
+            {
+                if (_rowShown == value)
+                {
+                    return;
+                }
+
+                _rowShown = value;
+                Refresh();
+            }
         }
 
         /// <summary>The phase that actually drives this parameter.</summary>
@@ -310,7 +349,7 @@ namespace AdzukiSoft.ALPS.Editor
             // An in / out phase has no cycles to step on.
             AlpsPhaseSettingsView.Show(_timing, multiple && GoverningPhase.mode != AlpsPhaseMode.InOut);
             AlpsPhaseSettingsView.Show(_ownPhase, multiple);
-            AlpsPhaseSettingsView.Show(_ownPhaseView, multiple && _model.useOwnPhase);
+            AlpsPhaseSettingsView.Show(_motionCard, _rowShown && multiple && _model.useOwnPhase);
             _ownPhaseView.Refresh();
 
             // A palette's frame holds the same options but is not titled as a range.
