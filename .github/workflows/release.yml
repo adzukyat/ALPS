@@ -1,0 +1,60 @@
+name: Release
+
+# Bumping "version" in package.json on main publishes a GitHub Release tagged
+# v<version> with a .unitypackage attached. A version that already has a tag
+# is left alone, so other edits to package.json do not release again.
+on:
+  push:
+    branches: [main]
+    paths: [package.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          version="$(jq -r .version package.json)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            echo "Tag v${version} already exists, nothing to release."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check package metadata
+        if: steps.version.outputs.exists == 'false'
+        run: bash scripts/check-package-metadata.sh
+
+      - name: Build unitypackage
+        if: steps.version.outputs.exists == 'false'
+        run: python3 .github/scripts/build-unitypackage.py --output "dist/ALPS-${{ steps.version.outputs.version }}.unitypackage"
+
+      - name: Write release notes
+        if: steps.version.outputs.exists == 'false'
+        run: python3 .github/scripts/release-notes.py --repository "${{ github.repository }}" --output dist/notes.md
+
+      - name: Publish release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" "dist/ALPS-${VERSION}.unitypackage" \
+            --target "${GITHUB_SHA}" \
+            --title "v${VERSION}" \
+            --notes-file dist/notes.md
