@@ -1462,7 +1462,6 @@ namespace AdzukiSoft.ALPS.Tests
         public void AddCatalog_ListsOnlyAddableKinds()
         {
             var set = new AlpsClipEffectSet();
-            set.addCatalogExpanded = true;
             set.Add(AlpsEffectKind.Color);
             set.Add(AlpsEffectKind.Color);
 

@@ -59,7 +59,6 @@ namespace AdzukiSoft.ALPS
 
         public List<AlpsEffect> effects = new List<AlpsEffect>();
 
-        public bool addCatalogExpanded;
         public bool profileExpanded;
 
         public AlpsClipEffectSet() { }
@@ -96,7 +95,6 @@ namespace AdzukiSoft.ALPS
                 effects.Add(new AlpsEffect(effect));
             }
 
-            addCatalogExpanded = other.addCatalogExpanded;
             profileExpanded = other.profileExpanded;
         }
 

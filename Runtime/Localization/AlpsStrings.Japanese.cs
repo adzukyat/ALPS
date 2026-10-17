@@ -84,6 +84,8 @@ namespace AdzukiSoft.ALPS
                 // --- Container setup ---------------------------------------
                 { "addFixture.title", "灯体を追加" },
                 { "addFixture.missing", "VR Stage Lighting にこの灯体のプレハブが見つかりません。" },
+                { "addFixture.container", "ALPS Container" },
+                { "addFixture.container.tip", "このコンテナーの中にコンテナーを追加します。中の灯体はこのコンテナーのトラックでも動き、中のコンテナーは自分のトラックも持てます。" },
                 { "fixture.moverSpotlight", "ムービング スポット" },
                 { "fixture.moverWashLight", "ムービング ウォッシュ" },
                 { "fixture.parLight", "パーライト" },

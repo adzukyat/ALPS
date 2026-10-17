@@ -140,27 +140,32 @@ namespace AdzukiSoft.ALPS.Tests
                 var catalog = host.Q<AlpsAddFixtureCatalog>();
                 var setup = host.Q<AlpsContainerSetupRow>();
                 Assert.NotNull(catalog);
-                Assert.IsTrue(catalog.Expanded, "An empty container opens its fixture list.");
+                Assert.IsTrue(host.Q<AlpsArrangementView>().ClassListContains("alps-root--component"), "Unity pads a component's inspector already.");
+                Assert.AreEqual(AlpsStrings.Tr("addFixture.title"), catalog.Q<Label>(className: "alps-add__heading").text);
                 CollectionAssert.AreEqual(
-                    AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey)),
-                    catalog.Query<Label>(className: "alps-add__label").ToList().Select(l => l.text));
+                    new[] { AlpsStrings.Tr("addFixture.container") }.Concat(AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey))),
+                    catalog.Query<Label>(className: "alps-add__label").ToList().Select(l => l.text),
+                    "A container leads, to show that containers nest.");
                 Assert.AreEqual(DisplayStyle.None, setup.style.display.value, "Nothing to set up without a fixture.");
 
+                Selection.activeGameObject = container.gameObject;
                 var added = catalog.RequestAdd(AlpsCreateMenu.ParLight);
                 Assert.AreSame(container.transform, added.transform.parent, "The fixture goes under the container.");
+                Assert.AreSame(container.gameObject, Selection.activeGameObject, "The container stays selected, so another can be added.");
                 Assert.AreEqual(AlpsContainerSetupStep.SetUp, setup.Step);
                 Assert.AreEqual(DisplayStyle.Flex, setup.style.display.value);
                 Assert.AreEqual(AlpsStrings.Tr("setup.timeline"), setup.Title);
+
+                var nested = catalog.RequestAddContainer();
+                Assert.AreSame(container.transform, nested.transform.parent);
+                Assert.NotNull(nested.GetComponent<AlpsContainer>());
+                Assert.AreSame(container.gameObject, Selection.activeGameObject);
 
                 var director = AlpsTimelineSetup.SetUp(container);
                 timelinePath = AssetDatabase.GetAssetPath(director.playableAsset);
                 setup.Refresh();
                 Assert.AreEqual(AlpsContainerSetupStep.Open, setup.Step);
                 Assert.AreEqual(AlpsStrings.Tr("setup.openTimeline"), setup.Title);
-
-                Object.DestroyImmediate(inspector);
-                inspector = UnityEditor.Editor.CreateEditor(container);
-                Assert.IsFalse(inspector.CreateInspectorGUI().Q<AlpsAddFixtureCatalog>().Expanded, "With fixtures the list starts closed.");
             }
             finally
             {

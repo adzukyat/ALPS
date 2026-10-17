@@ -84,6 +84,8 @@ namespace AdzukiSoft.ALPS
                 // --- Container setup ---------------------------------------
                 { "addFixture.title", "Add Fixture" },
                 { "addFixture.missing", "VR Stage Lighting does not have this fixture's prefab." },
+                { "addFixture.container", "ALPS Container" },
+                { "addFixture.container.tip", "Adds a container inside this one. Its fixtures still play with this container's tracks, and it can have tracks of its own." },
                 { "fixture.moverSpotlight", "Mover Spotlight" },
                 { "fixture.moverWashLight", "Mover Wash Light" },
                 { "fixture.parLight", "Par Light" },

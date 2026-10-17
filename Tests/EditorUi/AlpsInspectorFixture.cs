@@ -15,7 +15,6 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 order = AlpsOrderMode.Normal,
                 phaseExpanded = true,
-                addCatalogExpanded = true,
             };
 
             set.phase.mode = AlpsPhaseMode.Wave;

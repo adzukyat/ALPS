@@ -29,7 +29,6 @@ namespace AdzukiSoft.ALPS.Editor
         private static readonly HashSet<string> SkippedFields = new HashSet<string>
         {
             nameof(AlpsClipEffectSet.phaseExpanded),
-            nameof(AlpsClipEffectSet.addCatalogExpanded),
             nameof(AlpsClipEffectSet.profileExpanded),
             nameof(AlpsEffect.kind),
             nameof(AlpsEffect.parity),

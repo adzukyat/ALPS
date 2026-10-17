@@ -1101,15 +1101,16 @@
 }
 
 /* Spaces like the divider under the shared settings, 18px on each side. Above, the last
-   card and the stack carry 2px each and the list 2px more. Below, the button brings 14px.
-   With no effects this divider hides and the button's 14px completes the 18px under the
-   other one, so the button keeps its margin and the divider makes up the difference. */
+   card and the stack carry 2px each and the list 2px more. Below, the panel brings 14px.
+   With no effects this divider hides and the panel's 14px completes the 18px under the
+   other one, so the panel keeps its margin and the divider makes up the difference. */
 .alps-root .alps-add > .alps-divider {
     margin-top: 12px;
     margin-bottom: 4px;
 }
 
-/* Sized and placed like the inspector's Add Component button. */
+/* Sized and placed like the inspector's Add Component button. The container's setup step
+   still uses it. */
 .alps-add__button {
     align-self: center;
     width: 230px;
@@ -1137,14 +1138,35 @@
     color: #ffffff;
 }
 
-.alps-add__list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin-top: 8px;
+/* The always open catalog: a header in the thumbnail wells' colour over the tiles. */
+.alps-add__panel {
+    margin-top: 14px;
     background-color: var(--alps-panel-bg);
     border-width: 1px;
     border-color: var(--alps-line);
     border-radius: 5px;
+    overflow: hidden;
+}
+
+.alps-add__header {
+    background-color: var(--alps-well-bg);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--alps-line);
+    padding: 7px 11px 7px 11px;
+}
+
+.alps-add__heading {
+    font-size: 14px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    color: var(--alps-text-strong);
+    padding: 0;
+    margin: 0;
+}
+
+.alps-add__list {
+    flex-direction: row;
+    flex-wrap: wrap;
     /* Three 137.33px tiles + two 8px gutters = 428px, the card's content width.
        Each tile carries its own trailing gutter, so the right padding gives that
        8px back (11 - 8 = 3) and the row still breaks after the third tile. */

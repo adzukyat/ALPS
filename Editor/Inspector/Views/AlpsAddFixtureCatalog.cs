@@ -1,60 +1,66 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// Add fixture: the container inspector's counterpart of the clip's add effect list. A
-    /// centred button reveals a thumbnail grid of the VR Stage Lighting fixtures the
-    /// Hierarchy's ALPS menu offers, and picking one adds it under the container. The grid
-    /// starts open while the container holds no fixture, since that is the next step there.
+    /// Add fixture: the container inspector's counterpart of the clip's add effect list, an
+    /// always open grid of the VR Stage Lighting fixtures the Hierarchy's ALPS menu offers,
+    /// led by a container, which shows that containers nest. Picking one adds it under this
+    /// container and leaves the container selected, so several can be added in a row.
     /// </summary>
     public class AlpsAddFixtureCatalog : VisualElement
     {
         private readonly AlpsContainer _container;
         private readonly Action<GameObject> _onAdded;
-        private readonly VisualElement _button;
-        private readonly VisualElement _list;
 
         public AlpsAddFixtureCatalog(AlpsContainer container, Action<GameObject> onAdded)
         {
             _container = container;
             _onAdded = onAdded;
-            Expanded = container.Fixtures().Count == 0;
             AddToClassList("alps-add");
 
             var divider = new VisualElement();
             divider.AddToClassList("alps-divider");
             Add(divider);
 
-            _button = new VisualElement();
-            _button.AddToClassList("alps-add__button");
-            var title = new Label(AlpsStrings.Tr("addFixture.title"));
-            title.AddToClassList("alps-add__title");
-            _button.Add(title);
-            _button.RegisterCallback<PointerDownEvent>(_ =>
+            var list = AlpsCatalogPanel.Build(this, AlpsStrings.Tr("addFixture.title"));
+
+            var nested = AlpsCatalogPanel.Item(AlpsFixtureThumbnail.BuildContainer(), AlpsStrings.Tr("addFixture.container"), AlpsStrings.Tr("addFixture.container.tip"));
+            nested.RegisterCallback<PointerDownEvent>(_ => RequestAddContainer());
+            list.Add(nested);
+
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
             {
-                Expanded = !Expanded;
-                Rebuild();
-            });
-            Add(_button);
-
-            _list = new VisualElement();
-            _list.AddToClassList("alps-add__list");
-            Add(_list);
-
-            Rebuild();
+                var captured = fixture;
+                var available = fixture.Load() != null;
+                var item = AlpsCatalogPanel.Item(
+                    AlpsFixtureThumbnail.Build(fixture),
+                    AlpsStrings.Tr(fixture.LabelKey),
+                    available ? string.Empty : AlpsStrings.Tr("addFixture.missing"));
+                item.SetEnabled(available);
+                item.RegisterCallback<PointerDownEvent>(_ => RequestAdd(captured));
+                list.Add(item);
+            }
         }
-
-        /// <summary>True while the grid is open.</summary>
-        public bool Expanded { get; private set; }
 
         /// <summary>Adds <paramref name="fixture"/> under the container, the same entry point a tile uses.</summary>
         public GameObject RequestAdd(AlpsVrslPrefab fixture)
         {
-            var created = AlpsCreateMenu.CreateFixture(fixture, _container.gameObject);
+            return Added(KeepSelection(() => AlpsCreateMenu.CreateFixture(fixture, _container.gameObject)));
+        }
+
+        /// <summary>Adds a container under this one, the same entry point its tile uses.</summary>
+        public GameObject RequestAddContainer()
+        {
+            return Added(KeepSelection(() => AlpsCreateMenu.CreateContainer(_container.gameObject)));
+        }
+
+        private GameObject Added(GameObject created)
+        {
             if (created != null)
             {
                 _onAdded?.Invoke(created);
@@ -63,39 +69,24 @@ namespace AdzukiSoft.ALPS.Editor
             return created;
         }
 
-        private void Rebuild()
+        /// <summary>
+        /// Placing a new object selects it, which would swap this inspector for the new
+        /// object's, so the selection goes back to what it was.
+        /// </summary>
+        private static GameObject KeepSelection(Func<GameObject> create)
         {
-            _button.EnableInClassList("alps-add__button--open", Expanded);
-            _list.style.display = Expanded ? DisplayStyle.Flex : DisplayStyle.None;
-            _list.Clear();
-            if (!Expanded)
-            {
-                return;
-            }
-
-            foreach (var fixture in AlpsCreateMenu.Fixtures)
-            {
-                var captured = fixture;
-                var available = fixture.Load() != null;
-                var item = new VisualElement { tooltip = available ? string.Empty : AlpsStrings.Tr("addFixture.missing") };
-                item.AddToClassList("alps-add__item");
-                item.Add(AlpsFixtureThumbnail.Build(fixture));
-
-                var caption = new Label(AlpsStrings.Tr(fixture.LabelKey));
-                caption.AddToClassList("alps-add__label");
-                item.Add(caption);
-
-                item.SetEnabled(available);
-                item.RegisterCallback<PointerDownEvent>(_ => RequestAdd(captured));
-                _list.Add(item);
-            }
+            var selection = Selection.objects;
+            var created = create();
+            Selection.objects = selection;
+            return created;
         }
     }
 
     /// <summary>
     /// The preview well of each fixture tile: amber outlines in the style of the effect
     /// thumbnails, a moving head with a narrow or a wide beam, the face of a par can, the four
-    /// cells of a blinder, a bar of lamps, a bar of segments and a fan of laser lines.
+    /// cells of a blinder, a bar of lamps, a bar of segments, a fan of laser lines, and a
+    /// frame holding lamps for a container.
     /// </summary>
     internal static class AlpsFixtureThumbnail
     {
@@ -104,12 +95,29 @@ namespace AdzukiSoft.ALPS.Editor
 
         public static VisualElement Build(AlpsVrslPrefab fixture)
         {
+            return Well(Contours(fixture));
+        }
+
+        /// <summary>A container: a frame holding three lamps.</summary>
+        public static VisualElement BuildContainer()
+        {
+            var contours = new List<Vector2[]> { Box(15f, 4f, 45f, 22f) };
+            for (var i = 0; i < 3; i++)
+            {
+                contours.Add(Circle(22f + i * 8f, 13f, 2.5f));
+            }
+
+            return Well(contours);
+        }
+
+        private static VisualElement Well(List<Vector2[]> contours)
+        {
             var well = new VisualElement();
             well.AddToClassList("alps-add__thumb");
 
             var icon = new AlpsVectorIcon { StrokeWidth = 1.5f, IconColor = AlpsEffectThumbnail.Art };
             icon.SetViewBox(new Vector2(Width, Height));
-            icon.SetContours(Contours(fixture));
+            icon.SetContours(contours);
             icon.style.width = Width;
             icon.style.height = Height;
             well.Add(icon);
