@@ -1151,7 +1151,7 @@
 
 /* Brings the space above the tiles the list used to. */
 .alps-add__header {
-    padding: 10px 11px 8px 11px;
+    padding: 10px 11px 10px 11px;
 }
 
 .alps-add__heading {
