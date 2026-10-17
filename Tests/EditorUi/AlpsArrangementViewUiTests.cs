@@ -130,6 +130,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void CustomEditor_OffersFixturesThenTheTimeline()
         {
             var container = AlpsCreateMenu.CreateContainer(null).GetComponent<AlpsContainer>();
+            var hadFolders = AssetDatabase.IsValidFolder(AlpsTimelineSetup.ShowsFolder);
             string timelinePath = null;
             UnityEditor.Editor inspector = null;
             try
@@ -172,6 +173,8 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     AssetDatabase.DeleteAsset(timelinePath);
                 }
+
+                AlpsTimelineSetup.DeleteFoldersCreatedSince(hadFolders);
             }
         }
 

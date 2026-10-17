@@ -18,10 +18,12 @@ namespace AdzukiSoft.ALPS.Tests
     {
         private readonly List<string> _assets = new List<string>();
         private AlpsLanguage _language;
+        private bool _hadFolders;
 
         [SetUp]
         public void OpenScene()
         {
+            _hadFolders = AssetDatabase.IsValidFolder(AlpsTimelineSetup.ShowsFolder);
             // Track names come from the language tables.
             _language = AlpsStrings.Language;
             AlpsStrings.Language = AlpsLanguage.English;
@@ -39,6 +41,7 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             _assets.Clear();
+            AlpsTimelineSetup.DeleteFoldersCreatedSince(_hadFolders);
         }
 
         /// <summary>A container named <paramref name="name"/> holding <paramref name="fixtures"/> par lights.</summary>

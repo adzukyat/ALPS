@@ -161,6 +161,25 @@ namespace AdzukiSoft.ALPS.Editor
             return null;
         }
 
+        /// <summary>
+        /// For tests: removes <see cref="ShowsFolder"/>, and its parent when that holds nothing
+        /// else, unless the shows folder was there before (<paramref name="hadShowsFolder"/>).
+        /// </summary>
+        public static void DeleteFoldersCreatedSince(bool hadShowsFolder)
+        {
+            if (hadShowsFolder || !AssetDatabase.IsValidFolder(ShowsFolder)
+                || AssetDatabase.FindAssets(string.Empty, new[] { ShowsFolder }).Length > 0)
+            {
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(ShowsFolder);
+            if (AssetDatabase.FindAssets(string.Empty, new[] { AlpsShowSetup.GeneratedFolder }).Length == 0)
+            {
+                AssetDatabase.DeleteAsset(AlpsShowSetup.GeneratedFolder);
+            }
+        }
+
         private static TimelineAsset CreateTimeline(string name)
         {
             AlpsShowSetup.EnsureFolder(ShowsFolder);
