@@ -2201,6 +2201,42 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void InOut_InOnlyHoldsAtTheTopToTheClipsEnd()
+        {
+            var set = InOut(1f, 1f);
+            set.phase.inOutMode = AlpsInOutMode.InOnly;
+            set.phase.spreadBeats = 2f;
+            RangedBrightness(set);
+            var show = Compile(3, set, end: 6f);
+
+            float At(int fixture, float time) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+
+            Assert.AreEqual(50f, At(0, 0.5f), 0.01f, "The in plays as before.");
+            Assert.AreEqual(0f, At(2, 1.5f), 0.01f, "The last has not started yet.");
+            Assert.AreEqual(100f, At(0, 3.5f), 0.01f, "No out before the end.");
+            Assert.AreEqual(100f, At(0, 5.5f), 0.01f, "The first stays up past its own stretch.");
+            Assert.AreEqual(100f, At(2, 5.5f), 0.01f);
+        }
+
+        [Test]
+        public void InOut_OutOnlyIsAtTheTopFromTheClipsStart()
+        {
+            var set = InOut(1f, 1f);
+            set.phase.inOutMode = AlpsInOutMode.OutOnly;
+            set.phase.spreadBeats = 2f;
+            RangedBrightness(set);
+            var show = Compile(3, set, end: 6f);
+
+            float At(int fixture, float time) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+
+            Assert.AreEqual(100f, At(0, 0.5f), 0.01f, "No in after the start.");
+            Assert.AreEqual(100f, At(2, 0.5f), 0.01f, "The last is up before its own stretch starts.");
+            Assert.AreEqual(50f, At(0, 3.5f), 0.01f, "The out plays as before.");
+            Assert.AreEqual(0f, At(0, 4.5f), 0.01f);
+            Assert.AreEqual(50f, At(2, 5.5f), 0.01f, "The last is out as the clip ends.");
+        }
+
+        [Test]
         public void InOut_NegativeSpreadStartsFromTheLast()
         {
             var set = InOut(1f, 1f);
@@ -2295,6 +2331,17 @@ namespace AdzukiSoft.ALPS.Tests
                     p.outBeats = 0f;
                     p.spreadBeats = 2f;
                 }),
+                ("in only", p =>
+                {
+                    p.inOutMode = AlpsInOutMode.InOnly;
+                    p.spreadBeats = 1.5f;
+                }),
+                ("out only inverted", p =>
+                {
+                    p.inOutMode = AlpsInOutMode.OutOnly;
+                    p.spreadBeats = -1.5f;
+                    p.inverse = true;
+                }),
             };
 
             const int fixtures = 4;
@@ -2313,7 +2360,7 @@ namespace AdzukiSoft.ALPS.Tests
                     for (var time = 0.005f; time < end; time += 0.07f)
                     {
                         var expected = 100f * AlpsPhaseCurve.InOut(
-                            (int)phase.ease, (int)phase.fallEase, phase.inBeats, phase.outBeats, phase.inverse,
+                            (int)phase.ease, (int)phase.fallEase, phase.PlayedInBeats, phase.PlayedOutBeats, (int)phase.inOutMode, phase.inverse,
                             time, end, step * fixture, phase.spreadBeats);
                         Assert.AreEqual(expected, Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness], 0.05f, $"{name}, fixture {fixture} at {time}s.");
                     }

@@ -866,14 +866,6 @@
     border-color: var(--alps-accent-soft);
 }
 
-.alps-swatch--off {
-    background-color: #0c0c0e;
-    color: #8a8c94;
-    font-size: 8.5px;
-    -unity-text-align: middle-center;
-    padding: 0;
-}
-
 .alps-swatch--action {
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.3);

@@ -178,12 +178,25 @@ namespace AdzukiSoft.ALPS
         /// over the out beats, reaching 0 at the clip's end. An order position
         /// <paramref name="delay"/> beats late starts and ends that much later than the first,
         /// counted so that the last one, <paramref name="lastDelay"/> beats late, still ends
-        /// with the clip. Invert flips the result upside down.
+        /// with the clip. <paramref name="inOutMode"/> (<see cref="AlpsInOutMode"/>) keeps the
+        /// end it leaves out at the top past that stretch, to the clip's edge, so an in only
+        /// stays up to the end and an out only is up from the start, with its in and out beats
+        /// already zero for the end left out. Invert flips the result upside down.
         /// </summary>
-        public static float InOut(int riseEase, int fallEase, float inBeats, float outBeats, bool inverse, float beats, float lengthBeats, float delay, float lastDelay)
+        public static float InOut(int riseEase, int fallEase, float inBeats, float outBeats, int inOutMode, bool inverse, float beats, float lengthBeats, float delay, float lastDelay)
         {
             var u = InOutWave(inBeats, outBeats, beats, lengthBeats, delay, lastDelay, out var rise, out var holdHigh, out var fall);
-            var phase = u < 0f ? 0f : Wave(riseEase, fallEase, rise, holdHigh, fall, u);
+            var fits = lengthBeats - Mathf.Abs(lastDelay) > 0f;
+            float phase;
+            if (fits && ((inOutMode == AlpsShowLayout.InOutInOnly && u >= 1f) || (inOutMode == AlpsShowLayout.InOutOutOnly && u < 0f)))
+            {
+                phase = 1f;
+            }
+            else
+            {
+                phase = u < 0f ? 0f : Wave(riseEase, fallEase, rise, holdHigh, fall, u);
+            }
+
             return inverse ? 1f - phase : phase;
         }
 

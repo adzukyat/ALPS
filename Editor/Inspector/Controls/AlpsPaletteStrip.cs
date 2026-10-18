@@ -706,24 +706,17 @@ namespace AdzukiSoft.ALPS.Editor
         {
             var swatch = new VisualElement();
             swatch.AddToClassList("alps-swatch--gobo");
+            swatch.tooltip = AlpsGoboLibrary.GetName(stop.goboIndex);
 
-            if (stop.IsOff)
+            // OFF is VRSL's open beam, so it shows the round spot that gobo projects.
+            var image = new Image
             {
-                swatch.AddToClassList("alps-swatch--off");
-                swatch.Add(new Label("OFF") { pickingMode = PickingMode.Ignore });
-            }
-            else
-            {
-                swatch.tooltip = AlpsGoboLibrary.GetName(stop.goboIndex);
-                var image = new Image
-                {
-                    image = AlpsGoboLibrary.Load(stop.goboIndex),
-                    scaleMode = ScaleMode.ScaleToFit,
-                    pickingMode = PickingMode.Ignore,
-                };
-                image.AddToClassList("alps-swatch__image");
-                swatch.Add(image);
-            }
+                image = AlpsGoboLibrary.Load(stop.IsOff ? AlpsGoboStop.OffIndex : stop.goboIndex),
+                scaleMode = ScaleMode.ScaleToFit,
+                pickingMode = PickingMode.Ignore,
+            };
+            image.AddToClassList("alps-swatch__image");
+            swatch.Add(image);
 
             return swatch;
         }

@@ -49,6 +49,18 @@ namespace AdzukiSoft.ALPS
         InOut,
     }
 
+    /// <summary>
+    /// Which ends of an in / out phase move. In only rises after the clip's start and holds
+    /// at the top to its end, out only starts at the top and falls before the end. The order
+    /// is the segmented control's.
+    /// </summary>
+    public enum AlpsInOutMode
+    {
+        InOnly,
+        Both,
+        OutOnly,
+    }
+
     /// <summary>Timing: whether a range/palette is swept inside one cycle or stepped per cycle.</summary>
     public enum AlpsTimingMode
     {
