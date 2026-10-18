@@ -47,7 +47,39 @@ namespace AdzukiSoft.ALPS
             }
 
             builder.Finish();
+            show.clipInSignature = ClipInSignature(director);
             return show;
+        }
+
+        /// <summary>
+        /// A number that moves when any lighting clip's Clip In does: each one weighted by its
+        /// place in the timeline, so trading two between clips still moves it.
+        /// </summary>
+        public static double ClipInSignature(PlayableDirector director)
+        {
+            var timeline = director != null ? director.playableAsset as TimelineAsset : null;
+            if (timeline == null)
+            {
+                return 0.0;
+            }
+
+            var signature = 0.0;
+            var place = 0;
+            foreach (var track in timeline.GetOutputTracks())
+            {
+                if (!(track is AlpsLightingTrack))
+                {
+                    continue;
+                }
+
+                foreach (var clip in track.GetClips())
+                {
+                    place++;
+                    signature += clip.clipIn * (1.0 + place * 0.618034);
+                }
+            }
+
+            return signature;
         }
 
         /// <summary>
