@@ -116,7 +116,10 @@ namespace AdzukiSoft.ALPS
         public VRStageLighting_DMX_Static[] vrslFixtures = new VRStageLighting_DMX_Static[0];
         public Transform[] aimTransforms = new Transform[0];
 
-        /// <summary>The DMX grid row of every fixture, handed out across every show of the scene.</summary>
+        /// <summary>
+        /// The DMX grid row of every fixture. Rows are counted per show, so fixtures of other
+        /// shows of the scene read the same rows.
+        /// </summary>
         public int[] dmxRows = new int[0];
 
         /// <summary>Whether the VRSL the world was built with is older than 2.7 (<see cref="AlpsVrslVersion"/>).</summary>
@@ -160,6 +163,13 @@ namespace AdzukiSoft.ALPS
         private void Start()
         {
             Initialize();
+        }
+
+        // Another show may have drawn on the shared rows while this one was off, so a show that
+        // comes back draws again even when its time has not moved.
+        private void OnEnable()
+        {
+            _lastTime = -1f;
         }
 
         private void Update()
