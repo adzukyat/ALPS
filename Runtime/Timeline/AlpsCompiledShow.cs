@@ -46,6 +46,14 @@ namespace AdzukiSoft.ALPS
 
         public readonly List<string> warnings = new List<string>();
 
+        /// <summary>
+        /// <see cref="AlpsShowCompiler.ClipInSignature"/> of the timeline when it was compiled.
+        /// Timeline does not rebuild the graph when only a Clip In is edited, so the preview
+        /// compares it to notice. A number rather than the clips, so a preview kept in a static
+        /// does not hold a closed scene's timeline in memory.
+        /// </summary>
+        public double clipInSignature;
+
         public int ClipCount => clips.Length / AlpsShowLayout.ClipStride;
 
         public int FixtureCount => fixtures.Count;

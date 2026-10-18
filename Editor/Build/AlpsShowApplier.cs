@@ -75,27 +75,89 @@ namespace AdzukiSoft.ALPS.Editor
             return errors.Count == startErrors;
         }
 
-        /// <summary>
-        /// Hands every fixture of the scene's shows its own row of VRSL's DMX grid, which all
-        /// the shows share. A fixture in several shows keeps one row.
-        /// </summary>
         private static Dictionary<AlpsFixture, int> AssignDmxRows(List<PlayableDirector> directors, List<string> errors)
         {
-            var rows = new Dictionary<AlpsFixture, int>();
+            var shows = new List<List<AlpsFixture>>();
+            var names = new List<string>();
             foreach (var director in directors)
             {
-                foreach (var fixture in AlpsShowCompiler.Compile(director).fixtures)
+                shows.Add(AlpsShowCompiler.Compile(director).fixtures);
+                names.Add(director.name);
+            }
+
+            return AssignDmxRows(shows, names, errors);
+        }
+
+        /// <summary>
+        /// Hands every fixture of the scene's shows a row of VRSL's DMX grid, which all the
+        /// shows share. Only one show is on the grid at a time, so the rows are counted per
+        /// show and fixtures of different shows share them: a show that is not playing keeps
+        /// its fixtures inactive, or they would show the playing one. A fixture in several shows
+        /// keeps one row, free in each of them.
+        /// </summary>
+        public static Dictionary<AlpsFixture, int> AssignDmxRows(List<List<AlpsFixture>> shows, List<string> names, List<string> errors)
+        {
+            var showsOf = new Dictionary<AlpsFixture, List<int>>();
+            var order = new List<AlpsFixture>();
+            for (var s = 0; s < shows.Count; s++)
+            {
+                var count = 0;
+                foreach (var fixture in shows[s])
                 {
-                    if (fixture != null && !rows.ContainsKey(fixture))
+                    if (fixture == null)
                     {
-                        rows.Add(fixture, rows.Count);
+                        continue;
                     }
+
+                    if (!showsOf.TryGetValue(fixture, out var of))
+                    {
+                        of = new List<int>();
+                        showsOf.Add(fixture, of);
+                        order.Add(fixture);
+                    }
+
+                    if (!of.Contains(s))
+                    {
+                        of.Add(s);
+                        count++;
+                    }
+                }
+
+                if (count > AlpsShowPlayer.GpuMaxFixtures)
+                {
+                    errors.Add($"A show drives {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, which is what VRSL's DMX grid holds. {names[s]} drives {count}.");
                 }
             }
 
-            if (rows.Count > AlpsShowPlayer.GpuMaxFixtures)
+            var used = new List<HashSet<int>>();
+            foreach (var _ in shows)
             {
-                errors.Add($"The shows of a scene drive {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, which is what VRSL's DMX grid holds. This scene's shows drive {rows.Count}.");
+                used.Add(new HashSet<int>());
+            }
+
+            var rows = new Dictionary<AlpsFixture, int>();
+            var overflow = false;
+            foreach (var fixture in order)
+            {
+                var row = 0;
+                while (showsOf[fixture].Exists(s => used[s].Contains(row)))
+                {
+                    row++;
+                }
+
+                foreach (var s in showsOf[fixture])
+                {
+                    used[s].Add(row);
+                }
+
+                rows.Add(fixture, row);
+                overflow |= row >= AlpsShowPlayer.GpuMaxFixtures;
+            }
+
+            // Every show fits on its own, but the fixtures they share pushed a row past the grid.
+            if (overflow && used.TrueForAll(u => u.Count <= AlpsShowPlayer.GpuMaxFixtures))
+            {
+                errors.Add($"The fixtures the shows share leave no room for the others in VRSL's DMX grid, which holds {AlpsShowPlayer.GpuMaxFixtures}.");
             }
 
             return rows;

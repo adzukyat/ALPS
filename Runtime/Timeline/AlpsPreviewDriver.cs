@@ -141,6 +141,12 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
+            // Editing only a clip's Clip In leaves the graph as it is, so nothing else marks it.
+            if (state.show != null && state.show.clipInSignature != AlpsShowCompiler.ClipInSignature(director))
+            {
+                state.stale = true;
+            }
+
             // Every ALPS track calls in, but one evaluation per frame covers them all.
             if (state.lastFrameId == frameId && Mathf.Approximately(state.lastTime, time) && !state.stale && state.revision == Revision)
             {

@@ -117,6 +117,28 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Level3_ClipInEditsReachThePreviewWithoutRebuildingTheGraph()
+        {
+            var context = OpenFreshScene();
+            context.Sample(BaseTime);
+
+            // Timeline keeps the graph when only the Clip In changes, and nothing marks it dirty.
+            var clip = context.Timeline.GetRootTracks().OfType<AlpsLightingTrack>().First().GetClips().First();
+            clip.clipIn = 1.5;
+            try
+            {
+                context.Sample(BaseTime);
+                var show = AlpsPreviewDriver.GetShow(context.Director);
+                var clipIns = Enumerable.Range(0, show.ClipCount).Select(c => show.clips[c * AlpsShowLayout.ClipStride + AlpsShowLayout.ClipIn]);
+                CollectionAssert.Contains(clipIns, 1.5f, "The preview compiled the new Clip In.");
+            }
+            finally
+            {
+                clip.clipIn = 0.0;
+            }
+        }
+
+        [Test]
         public void Level3_StoppingTheTimelinePreviewRevertsTheFixtures()
         {
             var context = OpenFreshScene();
