@@ -2249,15 +2249,31 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void InOut_ShrinksTheInAndOutTogetherInAShortClip()
+        public void InOut_CutsTheInAndOutOffInAShortClip()
         {
             var set = InOut(4f, 4f);
             RangedBrightness(set);
             var show = Compile(1, set, end: 4f);
 
-            Assert.AreEqual(50f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f);
-            Assert.AreEqual(100f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameBrightness], 0.5f, "Both halved, they meet in the middle.");
-            Assert.AreEqual(50f, Evaluate(show, 0, 3f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(25f, Evaluate(show, 0, 1f)[AlpsShowLayout.FrameBrightness], 0.01f, "The in keeps its four beats.");
+            Assert.AreEqual(50f, Evaluate(show, 0, 2f)[AlpsShowLayout.FrameBrightness], 0.5f, "Cut off where it meets the out.");
+            Assert.AreEqual(25f, Evaluate(show, 0, 3f)[AlpsShowLayout.FrameBrightness], 0.01f, "The out keeps its four beats too.");
+        }
+
+        [Test]
+        public void InOut_KeepsTheDelayInAShortClip()
+        {
+            var set = InOut(2f, 2f);
+            set.phase.spreadBeats = 2f;
+            RangedBrightness(set);
+            var show = Compile(3, set, end: 3f);
+
+            float At(int fixture, float time) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+
+            Assert.AreEqual(25f, At(0, 0.5f), 0.01f, "The first rises at its own pace.");
+            Assert.AreEqual(0f, At(1, 0.5f), 0.01f, "The next is still a beat away.");
+            Assert.AreEqual(25f, At(1, 1.5f), 0.01f, "A beat later, at the same pace.");
+            Assert.AreEqual(25f, At(2, 2.5f), 0.01f, "The last falls with the clip's end.");
         }
 
         [Test]

@@ -372,9 +372,10 @@ float AlpsWaveSpan(float rise, float holdHigh, float fall)
 // into the cycles after it, and where waves overlap the highest wins, the latest on a tie.
 // With no wave under way the phase rests at the bottom of the current cycle.
 //
-// An in / out phase, AlpsPhaseCurve.InOut, has no cycles. It runs one wave over the clip,
-// <beats> into a clip <lengthBeats> long, through the same loop, so the eases are compiled
-// once, and its source is cycle 0.
+// An in / out phase, AlpsPhaseCurve.InOut, has no cycles. <beats> into a clip <lengthBeats>
+// long, it runs the in and the out as two waves through the same loop, so the eases are
+// compiled once, and takes the lower of the two, so a clip too short for both cuts them off
+// where they cross instead of shortening them. Its source is cycle 0.
 float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, int seed, out float source)
 {
     int mode = AlpsReadInt(row + PhaseMode);
@@ -392,49 +393,69 @@ float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, 
     float fall = AlpsRead(row + PhaseFall);
     float chance = AlpsRead(row + PhaseFireChance);
     float into = cycles - current;
-    bool holdsTop = false;
+    bool inOut = mode == PhaseInOut;
+    float inPosition = 0.0;
+    float outPosition = 0.0;
+    int inOutMode = InOutBoth;
 
-    if (mode == PhaseInOut)
+    if (inOut)
     {
-        // AlpsPhaseCurve.InOutWave: the wave as shares of the stretch the order position has
-        // between its start and its end, where the ramps shrink together to fit.
+        // AlpsPhaseCurve.InOut: the in rises over its beats from the order position's start
+        // and the out falls over its beats to its end, the last position's end being the
+        // clip's. Each keeps its beats and its delay however long the clip is. The in reads
+        // as a rise then a high hold, the out as a high hold then a fall.
         float lastDelay = AlpsRead(row + PhaseLastDelay);
-        float length = lengthBeats - abs(lastDelay);
         float inBeats = max(0.0, AlpsRead(row + PhaseInBeats));
         float outBeats = max(0.0, AlpsRead(row + PhaseOutBeats));
-        float scale = inBeats + outBeats > length ? length / max(0.0001, inBeats + outBeats) : 1.0;
-        bool fits = length > 0.0;
-        rise = fits ? inBeats * scale / length : 0.0;
-        fall = fits ? outBeats * scale / length : 0.0;
-        holdHigh = max(0.0, 1.0 - rise - fall);
         float waveStart = AlpsRead(row + PhaseDelay) * k - min(0.0, lastDelay);
-        into = fits ? (beats - waveStart) / length : -1.0;
-        current = 0.0;
+        float waveEnd = waveStart + lengthBeats - abs(lastDelay);
+        inPosition = min(1.5, inBeats > 0.0 ? (beats - waveStart) / inBeats : (beats >= waveStart ? 1.0 : -1.0));
+        outPosition = max(0.0, outBeats > 0.0 ? 2.0 - (waveEnd - beats) / outBeats : (beats < waveEnd ? 1.0 : 2.0));
+        inOutMode = AlpsReadInt(row + PhaseInOutMode);
         source = 0.0;
-        chance = 1.0;
-        // The end left out holds at the top beyond the order position's own stretch, so an
-        // in only stays up to the clip's end and an out only is up from the clip's start.
-        int inOutMode = AlpsReadInt(row + PhaseInOutMode);
-        if (fits && ((inOutMode == InOutInOnly && into >= 1.0) || (inOutMode == InOutOutOnly && into < 0.0)))
-        {
-            holdsTop = true;
-        }
     }
 
     float span = AlpsWaveSpan(rise, holdHigh, fall);
-    int reach = (int)ceil(span);
+    int reach = inOut ? 2 : (int)ceil(span);
 
-    float u = 0.0;
+    // An in / out starts from the top and each of its two waves can only lower it.
+    float u = inOut ? 1.0 : 0.0;
     bool found = false;
     [loop]
     for (int j = 0; j < reach; j++)
     {
         float start = current - j;
         float position = into + j;
-        if (position < 0.0 || position >= span || !AlpsFires(chance, start, k, seed)) continue;
+        float waveRise = rise;
+        float waveHigh = holdHigh;
+        float waveFall = fall;
+        bool skip;
+        if (inOut)
+        {
+            // The end the mode leaves out stays at the top.
+            bool isIn = j == 0;
+            position = isIn ? inPosition : outPosition;
+            waveRise = isIn ? 1.0 : 0.0;
+            waveHigh = 1.0;
+            waveFall = isIn ? 0.0 : 1.0;
+            skip = isIn ? inOutMode == InOutOutOnly : inOutMode == InOutInOnly;
+        }
+        else
+        {
+            skip = position < 0.0 || position >= span || !AlpsFires(chance, start, k, seed);
+        }
 
-        float wave = AlpsWave(riseEase, fallEase, rise, holdHigh, fall, position);
-        if (!found || wave > u)
+        if (skip) continue;
+
+        // Before the in and after the out the wave is at the bottom. The rest stays inside
+        // the two shares each in / out wave has.
+        bool outside = position < 0.0 || position >= 2.0;
+        float wave = AlpsWave(riseEase, fallEase, waveRise, waveHigh, waveFall, inOut ? clamp(position, 0.0, 1.999) : position);
+        if (inOut)
+        {
+            u = min(u, outside ? 0.0 : wave);
+        }
+        else if (!found || wave > u)
         {
             u = wave;
             source = start;
@@ -442,7 +463,6 @@ float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, 
         }
     }
 
-    u = holdsTop ? 1.0 : u;
     return AlpsRead(row + PhaseInverse) > 0.5 ? 1.0 - u : u;
 }
 
