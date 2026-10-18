@@ -105,8 +105,9 @@ namespace AdzukiSoft.ALPS.Editor
                         phase = AlpsPhaseCurve.InOut(
                             (int)_settings.ease,
                             (int)_settings.fallEase,
-                            _settings.inBeats,
-                            _settings.outBeats,
+                            _settings.PlayedInBeats,
+                            _settings.PlayedOutBeats,
+                            (int)_settings.inOutMode,
                             _settings.inverse,
                             t * clipBeats,
                             clipBeats,
@@ -146,8 +147,8 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private static float InOutClipBeats(AlpsPhaseSettings settings)
         {
-            var ramps = Mathf.Max(0f, settings.inBeats) + Mathf.Max(0f, settings.outBeats);
-            var hold = Mathf.Max(1f, Mathf.Max(settings.inBeats, settings.outBeats));
+            var ramps = settings.PlayedInBeats + settings.PlayedOutBeats;
+            var hold = Mathf.Max(1f, Mathf.Max(settings.PlayedInBeats, settings.PlayedOutBeats));
             return Mathf.Abs(settings.spreadBeats) + ramps + hold;
         }
 

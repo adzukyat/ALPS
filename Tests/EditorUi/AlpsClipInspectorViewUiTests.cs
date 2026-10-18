@@ -733,6 +733,63 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(1f, group.Minimum, "A group holds at least one fixture.");
         }
 
+        [UnityTest]
+        public IEnumerator InOutEnds_LockTheSideLeftOut()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var set = new AlpsClipEffectSet();
+            set.phase.mode = AlpsPhaseMode.InOut;
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            try
+            {
+                var view = new AlpsClipInspectorView(set);
+                window.rootVisualElement.Add(view);
+                yield return null;
+
+                var ends = view.Query<AlpsSegmentedControl>().ToList().First(c => c.tooltip == AlpsStrings.Tr("phase.inOutMode.tip"));
+                var shape = view.Query<AlpsSegmentedControl>().ToList().First(c => c.tooltip == AlpsStrings.Tr("phase.shape.tip"));
+                var inOut = view.Query<AlpsFadeSlider>().ToList().First(f => f.label == AlpsStrings.Tr("phase.inOut"));
+                var easing = view.Query<AlpsEasingPicker>().First();
+                var tracks = inOut.Query<AlpsSliderTrack>().ToList();
+                bool Rise() => easing.Rise.parent.parent.enabledSelf;
+                bool Fall() => easing.Fall.parent.parent.enabledSelf;
+
+                Assert.AreEqual(DisplayStyle.Flex, ends.style.display.value);
+                Assert.AreEqual(DisplayStyle.None, shape.style.display.value, "The ends take the shape's place.");
+                Assert.AreEqual((int)AlpsInOutMode.Both, ends.value);
+                Assert.IsTrue(Rise() && Fall() && tracks[0].enabledSelf && tracks[1].enabledSelf);
+
+                ends.value = (int)AlpsInOutMode.InOnly;
+                Assert.AreEqual(AlpsInOutMode.InOnly, set.phase.inOutMode);
+                Assert.AreEqual(0f, set.phase.PlayedOutBeats);
+                Assert.AreEqual(2f, set.phase.outBeats, "The out keeps its beats.");
+                Assert.IsTrue(Rise() && tracks[0].enabledSelf);
+                Assert.IsFalse(Fall() || tracks[1].enabledSelf, "No out to ease or time.");
+
+                ends.value = (int)AlpsInOutMode.OutOnly;
+                Assert.AreEqual(0f, set.phase.PlayedInBeats);
+                Assert.IsTrue(Fall() && tracks[1].enabledSelf);
+                Assert.IsFalse(Rise() || tracks[0].enabledSelf, "No in to ease or time.");
+
+                // Moved from outside the control, an undo for example.
+                set.phase.inOutMode = AlpsInOutMode.Both;
+                view.Query<AlpsPhaseSettingsView>().First().Refresh();
+                Assert.AreEqual((int)AlpsInOutMode.Both, ends.value);
+                Assert.IsTrue(Rise() && Fall());
+
+                set.phase.mode = AlpsPhaseMode.Wave;
+                view.Query<AlpsPhaseSettingsView>().First().Refresh();
+                Assert.AreEqual(DisplayStyle.None, ends.style.display.value);
+            }
+            finally
+            {
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
         [Test]
         public void InOutMode_ShowsItsBeatsInPlaceOfTheCycle()
         {

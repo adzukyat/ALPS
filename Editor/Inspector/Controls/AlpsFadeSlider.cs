@@ -89,6 +89,18 @@ namespace AdzukiSoft.ALPS.Editor
             return _snaps.ToValue(new Vector2(0f, _max), t);
         }
 
+        /// <summary>
+        /// Locks and greys out the sides that do not play. Their values stay, for when they
+        /// play again.
+        /// </summary>
+        public void SetUnused(bool fadeIn, bool fadeOut)
+        {
+            _inTrack.SetEnabled(!fadeIn);
+            _inBox.SetEnabled(!fadeIn);
+            _outTrack.SetEnabled(!fadeOut);
+            _outBox.SetEnabled(!fadeOut);
+        }
+
         /// <summary>What a double click on a thumb restores for its side. Null leaves the thumbs as they are.</summary>
         public Vector2? DefaultValue { get; set; }
 

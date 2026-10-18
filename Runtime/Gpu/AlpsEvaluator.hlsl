@@ -48,6 +48,9 @@ float _AlpsTime;
 #define PhaseWave 0
 #define PhaseRandom 1
 #define PhaseInOut 2
+#define InOutInOnly 0
+#define InOutBoth 1
+#define InOutOutOnly 2
 #define TimingPerCycle 1
 #define KindMove 0
 #define KindCone 1
@@ -73,7 +76,8 @@ float _AlpsTime;
 #define PhaseInBeats 11
 #define PhaseOutBeats 12
 #define PhaseLastDelay 13
-#define PhaseStride 14
+#define PhaseInOutMode 14
+#define PhaseStride 15
 #define WaveMaxCycles 3
 
 #define ClipStart 0
@@ -388,6 +392,7 @@ float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, 
     float fall = AlpsRead(row + PhaseFall);
     float chance = AlpsRead(row + PhaseFireChance);
     float into = cycles - current;
+    bool holdsTop = false;
 
     if (mode == PhaseInOut)
     {
@@ -407,6 +412,13 @@ float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, 
         current = 0.0;
         source = 0.0;
         chance = 1.0;
+        // The end left out holds at the top beyond the order position's own stretch, so an
+        // in only stays up to the clip's end and an out only is up from the clip's start.
+        int inOutMode = AlpsReadInt(row + PhaseInOutMode);
+        if (fits && ((inOutMode == InOutInOnly && into >= 1.0) || (inOutMode == InOutOutOnly && into < 0.0)))
+        {
+            holdsTop = true;
+        }
     }
 
     float span = AlpsWaveSpan(rise, holdHigh, fall);
@@ -430,6 +442,7 @@ float AlpsPhaseAt(int row, float cycles, float beats, float lengthBeats, int k, 
         }
     }
 
+    u = holdsTop ? 1.0 : u;
     return AlpsRead(row + PhaseInverse) > 0.5 ? 1.0 - u : u;
 }
 

@@ -26,6 +26,11 @@ namespace AdzukiSoft.ALPS
         public const int PhaseRandom = 1;
         public const int PhaseInOut = 2;
 
+        // AlpsInOutMode: which ends of an in / out phase move.
+        public const int InOutInOnly = 0;
+        public const int InOutBoth = 1;
+        public const int InOutOutOnly = 2;
+
         public const int OrderNormal = 0;
         public const int OrderReverse = 1;
         public const int OrderRandom = 2;
@@ -88,7 +93,12 @@ namespace AdzukiSoft.ALPS
         /// counted against so the last one still ends with the clip.
         /// </summary>
         public const int PhaseLastDelay = 13;
-        public const int PhaseStride = 14;
+        /// <summary>
+        /// Which ends of an in / out phase move, <see cref="InOutInOnly"/> and so on. The end
+        /// left out holds at the top past the order position's own stretch, to the clip's edge.
+        /// </summary>
+        public const int PhaseInOutMode = 14;
+        public const int PhaseStride = 15;
 
         /// <summary>
         /// Most cycles one wave lasts. Shares adding up to more than one cycle run on into the

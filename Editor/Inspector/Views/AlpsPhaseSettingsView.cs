@@ -45,6 +45,7 @@ namespace AdzukiSoft.ALPS.Editor
         private readonly AlpsTabControl _tabs;
         private readonly AlpsPhaseGraph _graph;
         private readonly AlpsSegmentedControl _shape;
+        private readonly AlpsSegmentedControl _inOutMode;
         private readonly AlpsEasingPicker _easing;
         private readonly AlpsShareBar _shares;
         private readonly AlpsSegmentedControl _length;
@@ -117,6 +118,25 @@ namespace AdzukiSoft.ALPS.Editor
                 nameof(AlpsPhaseSettings.holdHigh),
                 nameof(AlpsPhaseSettings.fall));
             Add(_shape);
+
+            // In the shape's place for an in / out: which of its two ends move. The one left
+            // out keeps its beats for when it comes back.
+            _inOutMode = new AlpsSegmentedControl(
+                AlpsStrings.Tr("phase.mode"),
+                AlpsStrings.Tr("phase.inOutMode.inOnly"),
+                AlpsStrings.Tr("phase.inOutMode.both"),
+                AlpsStrings.Tr("phase.inOutMode.outOnly"))
+            {
+                tooltip = AlpsStrings.Tr("phase.inOutMode.tip"),
+            };
+            _inOutMode.SetValueWithoutNotify((int)settings.inOutMode);
+            _inOutMode.RegisterValueChangedCallback(evt =>
+            {
+                settings.inOutMode = (AlpsInOutMode)evt.newValue;
+                Changed();
+            });
+            mixed?.Bind(_inOutMode, settings, nameof(AlpsPhaseSettings.inOutMode));
+            Add(_inOutMode);
 
             // Right under the shape it flips, or under the graph for an in / out.
             _inverse = new AlpsToggleSwitch(AlpsStrings.Tr("phase.inverse"));
@@ -323,6 +343,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             RefreshShape();
             Show(_shape, isWave);
+            Show(_inOutMode, isInOut);
             Show(_easing, isWave || isInOut);
             Show(_inverse, isWave || isInOut);
             Show(_fireChance, isWave);
@@ -380,8 +401,24 @@ namespace AdzukiSoft.ALPS.Editor
                 unused = AlpsEasingPicker.RiseSide;
             }
 
+            var isInOut = _settings.mode == AlpsPhaseMode.InOut;
+            if (isInOut && _settings.inOutMode == AlpsInOutMode.InOnly)
+            {
+                unused = AlpsEasingPicker.FallSide;
+            }
+            else if (isInOut && _settings.inOutMode == AlpsInOutMode.OutOnly)
+            {
+                unused = AlpsEasingPicker.RiseSide;
+            }
+
+            if (_inOutMode.value != (int)_settings.inOutMode)
+            {
+                _inOutMode.SetValueWithoutNotify((int)_settings.inOutMode);
+            }
+
+            _inOut.SetUnused(_settings.inOutMode == AlpsInOutMode.OutOnly, _settings.inOutMode == AlpsInOutMode.InOnly);
             _easing.SetUnused(unused);
-            _easing.SetInOut(_settings.mode == AlpsPhaseMode.InOut);
+            _easing.SetInOut(isInOut);
         }
 
         /// <summary>

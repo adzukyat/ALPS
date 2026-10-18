@@ -116,6 +116,18 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         [Min(0f)] public float outBeats = 2f;
 
+        /// <summary>
+        /// Which of the in and the out play. The one left out keeps its beats for when it is
+        /// turned back on. Missing from older data, which then keeps both. In / out only.
+        /// </summary>
+        public AlpsInOutMode inOutMode = AlpsInOutMode.Both;
+
+        /// <summary>The in beats that play: none while <see cref="inOutMode"/> is out only.</summary>
+        public float PlayedInBeats => inOutMode == AlpsInOutMode.OutOnly ? 0f : Mathf.Max(0f, inBeats);
+
+        /// <summary>The out beats that play: none while <see cref="inOutMode"/> is in only.</summary>
+        public float PlayedOutBeats => inOutMode == AlpsInOutMode.InOnly ? 0f : Mathf.Max(0f, outBeats);
+
         public AlpsPhaseSettings() { }
 
         /// <summary>
@@ -157,6 +169,7 @@ namespace AdzukiSoft.ALPS
             fireChance = other.fireChance;
             inBeats = other.inBeats;
             outBeats = other.outBeats;
+            inOutMode = other.inOutMode;
         }
 
         /// <summary>
