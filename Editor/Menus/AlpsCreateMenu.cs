@@ -85,6 +85,10 @@ namespace AdzukiSoft.ALPS.Editor
         /// Puts a new object where the menu was opened, the way Unity's create items do, and
         /// registers it for undo. A container above it lays it out when the creation is
         /// published.
+        ///
+        /// Unity resets the scale only when it places the object under a parent, so one
+        /// placed at the scene root would keep the VRSL prefab's own scale (1.25 on the
+        /// movers). The scale is reset here too, so every place gets the same size.
         /// </summary>
         private static void Place(GameObject gameObject, GameObject context)
         {
@@ -97,6 +101,7 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             ObjectFactory.PlaceGameObject(gameObject, parent);
+            gameObject.transform.localScale = Vector3.one;
             if (after >= 0)
             {
                 gameObject.transform.SetSiblingIndex(after + 1);

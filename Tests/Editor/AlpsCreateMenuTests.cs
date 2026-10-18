@@ -52,6 +52,20 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void CreateFixture_HasTheSameScaleAtTheRootAsUnderAContainer()
+        {
+            var rig = new GameObject("Rig");
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
+            {
+                var underRig = AlpsCreateMenu.CreateFixture(fixture, rig);
+                var atRoot = AlpsCreateMenu.CreateFixture(fixture, null);
+
+                Assert.AreEqual(Vector3.one, underRig.transform.localScale, $"{fixture.Name} under a parent.");
+                Assert.AreEqual(Vector3.one, atRoot.transform.localScale, $"{fixture.Name} at the scene root.");
+            }
+        }
+
+        [Test]
         public void CreateFixture_OnAFixtureGoesNextToIt()
         {
             var rig = new GameObject("Rig");
