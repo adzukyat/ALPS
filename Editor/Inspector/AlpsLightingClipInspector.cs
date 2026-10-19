@@ -207,6 +207,14 @@ namespace AdzukiSoft.ALPS.Editor
                 foreach (var clip in clips)
                 {
                     clip.data ??= AlpsClipEffectSet.CreateNew();
+
+                    // An in / out delay saved across the group becomes the delay between
+                    // neighbours once the fixtures it plays on are known.
+                    var count = FixtureCountOf(clip);
+                    if (count > 0 && clip.EffectiveData.ConvertLegacyDelays(count))
+                    {
+                        EditorUtility.SetDirty(EditedObject(clip));
+                    }
                 }
 
                 // Clips following the same profile share one effect set, so it is edited once.
@@ -234,7 +242,7 @@ namespace AdzukiSoft.ALPS.Editor
                     }
                 }
 
-                var view = new AlpsClipInspectorView(set, mixed, showBpm, tracks.Length > 0);
+                var view = new AlpsClipInspectorView(set, mixed, showBpm, tracks.Length > 0, FixtureCountOf(clips[0]));
                 view.RegisterCallback<PointerDownEvent>(
                     _ => Undo.RegisterCompleteObjectUndo(undoTargets, "Edit Clip Effects"),
                     TrickleDown.TrickleDown);
@@ -324,6 +332,31 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>The asset an edit of this clip writes to, which is the profile while synced.</summary>
+        /// <summary>
+        /// How many fixtures the track holding <paramref name="clip"/> drives in the director
+        /// the Timeline window inspects, or 0 when that is not known.
+        /// </summary>
+        private static int FixtureCountOf(AlpsLightingClip clip)
+        {
+            var director = TimelineEditor.inspectedDirector;
+            var timeline = TimelineOf(clip);
+            if (director == null || timeline == null || director.playableAsset != timeline)
+            {
+                return 0;
+            }
+
+            foreach (var track in AlpsShowCompiler.CollectTracks(timeline))
+            {
+                if (track.GetClips().Any(timelineClip => timelineClip.asset == clip))
+                {
+                    var target = director.GetGenericBinding(track.RootTrack) as AlpsTarget;
+                    return target != null ? target.Fixtures().Count : 0;
+                }
+            }
+
+            return 0;
+        }
+
         private static Object EditedObject(AlpsLightingClip clip)
         {
             return clip.syncProfile && clip.profile != null ? (Object)clip.profile : clip;

@@ -86,14 +86,15 @@ namespace AdzukiSoft.ALPS.Editor
                 var color = TraceColor;
                 color.a = trace == 0 ? 1f : (trace == 1 ? 0.4f : 0.2f);
 
-                // The spread is measured over the whole group, so the traces stand for a
-                // fixture at the start of the order, a third along and two thirds along.
-                // That needs no fixture count, which this view does not have. k stays the
-                // trace index so random mode still tells the three apart. An in / out spread
-                // runs to the last order position, which the last trace stands for instead.
+                // A share is measured over the whole group, so its traces stand for a fixture
+                // at the start of the order, a third along and two thirds along, which needs
+                // no fixture count, which this view does not have. Beats are between
+                // neighbours, so their traces stand for the first three. k stays the trace
+                // index so random mode still tells the three apart. An in / out counts the
+                // last trace as the last order position.
                 var k = trace;
-                var offset = _settings.SpreadCycles * trace / TraceCount;
-                var delay = _settings.spreadBeats * trace / (TraceCount - 1);
+                var offset = _settings.PositionDelayCycles(TraceCount) * trace;
+                var delay = _settings.InOutDelayBeats(TraceCount) * trace;
 
                 var points = new List<Vector2>(Samples + 1);
                 for (var i = 0; i <= Samples; i++)
@@ -112,7 +113,7 @@ namespace AdzukiSoft.ALPS.Editor
                             t * clipBeats,
                             clipBeats,
                             delay,
-                            _settings.spreadBeats);
+                            LastDelay(_settings));
                     }
                     else
                     {
@@ -149,7 +150,13 @@ namespace AdzukiSoft.ALPS.Editor
         {
             var ramps = settings.PlayedInBeats + settings.PlayedOutBeats;
             var hold = Mathf.Max(1f, Mathf.Max(settings.PlayedInBeats, settings.PlayedOutBeats));
-            return Mathf.Abs(settings.spreadBeats) + ramps + hold;
+            return Mathf.Abs(LastDelay(settings)) + ramps + hold;
+        }
+
+        /// <summary>The in / out delay of the last trace, which stands for the last order position.</summary>
+        private static float LastDelay(AlpsPhaseSettings settings)
+        {
+            return settings.InOutDelayBeats(TraceCount) * (TraceCount - 1);
         }
 
         private void OnGenerateVisualContent(MeshGenerationContext context)

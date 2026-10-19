@@ -87,7 +87,7 @@ namespace AdzukiSoft.ALPS.Editor
                 settings.mode = TabModes[evt.newValue];
                 if (settings.mode == AlpsPhaseMode.InOut)
                 {
-                    settings.SeedSpreadBeats();
+                    settings.SeedSpreadBeats(SpreadPositions());
                 }
 
                 Changed();
@@ -228,12 +228,12 @@ namespace AdzukiSoft.ALPS.Editor
             mixed?.Bind(_speed, settings, nameof(AlpsPhaseSettings.beatsPerCycle));
             Add(_speed);
 
-            // The delay is counted in beats by default, like the in / out's, and holds when
-            // the speed changes. Beats are counted, not dragged, so that unit gets the same
-            // stepper as the speed above. The % flag reads the same trip as a share of the
-            // cycle instead, over the whole group, so 100% walks the wave over every fixture in
-            // exactly one cycle however many there are. Negative runs the order backwards, for
-            // example from the edges in.
+            // The delay is counted in beats by default, like the in / out's, from one fixture
+            // to the next, and holds when the speed or the fixture count changes. Beats are
+            // counted, not dragged, so that unit gets the same stepper as the speed above. The
+            // % flag reads the trip as a share of the cycle instead, over the whole group, so
+            // 100% walks the wave over every fixture in exactly one cycle however many there
+            // are. Negative runs the order backwards, for example from the edges in.
             _spread = new AlpsValueSlider(AlpsStrings.Tr("phase.delay"), new Vector2(-SpreadLimit, SpreadLimit), "%", "0.##") { DefaultValue = 0f };
             _spread.AddToClassList("alps-animatable__field");
             _spread.RegisterValueChangedCallback(evt =>
@@ -252,12 +252,12 @@ namespace AdzukiSoft.ALPS.Editor
             _spreadBeats.AddToClassList("alps-animatable__field");
             _spreadBeats.RegisterValueChangedCallback(evt =>
             {
-                settings.spreadBeats = evt.newValue;
+                settings.SetSpreadBeats(evt.newValue);
                 // Kept in step, so a speed of zero falls back to the same look. In / out reads
                 // the beats alone and leaves the wave's share as it was.
                 if (settings.mode != AlpsPhaseMode.InOut && settings.beatsPerCycle > 0f)
                 {
-                    settings.spread = evt.newValue / settings.beatsPerCycle;
+                    settings.spread = settings.BeatsAsSpread(SpreadPositions());
                 }
 
                 Changed();
@@ -267,15 +267,16 @@ namespace AdzukiSoft.ALPS.Editor
             _percentFlag.RegisterValueChangedCallback(evt =>
             {
                 // Seed the unit being switched to from the current look, so the switch alone
-                // never moves the fixtures.
+                // never moves the fixtures. The share runs over the whole group and the beats
+                // between neighbours, so the two meet over the clip's order positions.
                 var inBeats = !evt.newValue;
                 if (inBeats)
                 {
-                    settings.spreadBeats = settings.spread * settings.beatsPerCycle;
+                    settings.SetSpreadBeats(settings.SpreadAsBeats(SpreadPositions()));
                 }
                 else if (settings.UsesSpreadBeats)
                 {
-                    settings.spread = settings.spreadBeats / settings.beatsPerCycle;
+                    settings.spread = settings.BeatsAsSpread(SpreadPositions());
                 }
 
                 settings.spreadInBeats = inBeats;
@@ -478,7 +479,7 @@ namespace AdzukiSoft.ALPS.Editor
             Show(_percentFlag, !isInOut);
             Show(_spread, !inBeats);
             Show(_spreadBeats, inBeats);
-            _spreadBeats.tooltip = isInOut ? AlpsStrings.Tr("phase.delay.inOut.tip") : string.Empty;
+            _spreadBeats.tooltip = AlpsStrings.Tr(isInOut ? "phase.delay.inOut.tip" : "phase.delay.beats.tip");
 
             if (_settings.beatsPerCycle != _snapBeats)
             {
@@ -541,6 +542,16 @@ namespace AdzukiSoft.ALPS.Editor
 
             kept.Sort();
             return kept.ToArray();
+        }
+
+        /// <summary>
+        /// The order positions of the clip this view edits a phase of, which only the clip
+        /// inspector above knows. 1 outside one.
+        /// </summary>
+        private int SpreadPositions()
+        {
+            var clip = GetFirstAncestorOfType<AlpsClipInspectorView>();
+            return clip != null ? clip.SpreadPositions : 1;
         }
 
         private void Changed()

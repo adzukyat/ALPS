@@ -19,6 +19,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private readonly AlpsClipEffectSet _set;
         private readonly AlpsMixedValues _mixed;
+        private readonly int _fixtureCount;
         private readonly VisualElement _effectContainer;
         private AlpsPhaseSettingsView _phaseView;
         private readonly AlpsEffectCard _phaseCard;
@@ -30,14 +31,17 @@ namespace AdzukiSoft.ALPS.Editor
         /// <param name="showBpmEditable">
         /// False when the clip is on no timeline, so there is no show tempo to write back.
         /// </param>
+        /// <param name="fixtureCount">How many fixtures the clip plays on, 0 when that is not known.</param>
         public AlpsClipInspectorView(
             AlpsClipEffectSet set,
             AlpsMixedValues mixed = null,
             float showBpm = AlpsLightingTrack.DefaultBpm,
-            bool showBpmEditable = true)
+            bool showBpmEditable = true,
+            int fixtureCount = 0)
         {
             _set = set;
             _mixed = mixed;
+            _fixtureCount = fixtureCount;
             AddToClassList("alps-root");
 
             var styleSheet = AlpsStyleSheets.Load(StyleSheetName);
@@ -218,6 +222,15 @@ namespace AdzukiSoft.ALPS.Editor
 
             RebuildEffects();
         }
+
+        /// <summary>
+        /// The order positions a delay of this clip counts over, the ones the compiler divides
+        /// a share by, which phase views below read to switch between a share and beats
+        /// without moving the fixtures. 1 while the fixture count is not known.
+        /// </summary>
+        public int SpreadPositions => _fixtureCount > 0
+            ? AlpsShowLayout.SpreadPositions(_set.symmetric, _fixtureCount, Mathf.Max(1, _set.phase.fixtureGroupSize))
+            : 1;
 
         /// <summary>Shown under the profile header while it is expanded. Empty until the host fills it.</summary>
         public VisualElement ProfileBody { get; }
