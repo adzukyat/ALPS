@@ -202,6 +202,62 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void WaveDelayInBeats_BecomesTheShareItCameTo()
+        {
+            var settings = Load("{\"version\":2,\"mode\":0,\"spreadInBeats\":true,\"spreadBeats\":1,\"beatsPerCycle\":2}");
+
+            Assert.IsFalse(settings.spreadInBeats, "Beats now count between neighbours, so the trip over the group is kept as a share.");
+            Assert.AreEqual(0.5f, settings.spread, 0.0001f);
+            Assert.AreEqual(0.125f, settings.PositionDelayCycles(4), 0.0001f);
+            Assert.IsFalse(settings.HasLegacyDelay);
+        }
+
+        [Test]
+        public void WaveDelayInBeats_WithoutASpeedKeepsTheShareThatPlayed()
+        {
+            var settings = Load("{\"version\":2,\"mode\":0,\"spreadInBeats\":true,\"spreadBeats\":1,\"beatsPerCycle\":0,\"spread\":0.3}");
+
+            Assert.IsFalse(settings.spreadInBeats);
+            Assert.AreEqual(0.3f, settings.spread, 0.0001f);
+        }
+
+        [Test]
+        public void NoDelay_KeepsItsUnit()
+        {
+            var settings = Load("{\"version\":2,\"mode\":0,\"spreadInBeats\":true,\"spreadBeats\":0,\"beatsPerCycle\":2}");
+
+            Assert.IsTrue(settings.spreadInBeats);
+            Assert.AreEqual(0f, settings.spread, 0.0001f);
+        }
+
+        [Test]
+        public void InOutDelay_WaitsForTheFixtureCount()
+        {
+            var settings = Load("{\"version\":2,\"mode\":2,\"spreadBeats\":3}");
+
+            Assert.IsTrue(settings.HasLegacyDelay);
+            Assert.AreEqual(1f, settings.InOutDelayBeats(4), 0.0001f, "Read the old way until converted.");
+
+            var saved = Load(JsonUtility.ToJson(settings));
+            Assert.IsTrue(saved.HasLegacyDelay, "Saving before the conversion keeps it waiting.");
+
+            Assert.IsTrue(settings.ConvertLegacyDelay(4));
+            Assert.AreEqual(1f, settings.spreadBeats, 0.0001f);
+            Assert.AreEqual(1f, settings.InOutDelayBeats(10), 0.0001f, "Between neighbours now, whatever the count.");
+        }
+
+        [Test]
+        public void InOutDelay_EditedBeforeConvertingIsBetweenNeighbours()
+        {
+            var settings = Load("{\"version\":2,\"mode\":2,\"spreadBeats\":3}");
+
+            settings.SetSpreadBeats(0.5f);
+
+            Assert.IsFalse(settings.HasLegacyDelay);
+            Assert.AreEqual(0.5f, settings.InOutDelayBeats(4), 0.0001f);
+        }
+
+        [Test]
         public void SharedEase_InvertedSwapsTheTwoAndKeepsTheMotion()
         {
             var settings = Load("{\"version\":1,\"mode\":0,\"ease\":10,\"rise\":0.3,\"holdHigh\":0.2,\"fall\":0.4,\"inverse\":true}");

@@ -602,12 +602,12 @@ namespace AdzukiSoft.ALPS
             }
 
             /// <summary>
-            /// Encodes one phase block. The spread is divided here, with the clip's symmetric
-            /// fold and fixture grouping: the evaluator takes the order position k once per clip
-            /// from the clip's own phase, so an own phase has to be divided the same way or
-            /// its step would not match the k it is multiplied by. An in / out spread runs from
-            /// the first order position to the last in beats, so it is divided like a value
-            /// spread, and the last position's delay travels with it.
+            /// Encodes one phase block. The delay per order position is worked out here, with
+            /// the clip's symmetric fold and fixture grouping: the evaluator takes the order
+            /// position k once per clip from the clip's own phase, so an own phase has to count
+            /// the same positions or its step would not match the k it is multiplied by. A share
+            /// is divided over those positions, and beats are already between neighbours. An in
+            /// / out's last position's delay travels with it.
             /// </summary>
             private void WritePhase(float[] row, int offset, AlpsPhaseSettings phase)
             {
@@ -617,20 +617,16 @@ namespace AdzukiSoft.ALPS
                 row[offset + AlpsShowLayout.PhaseHoldHigh] = phase.holdHigh;
                 row[offset + AlpsShowLayout.PhaseFall] = phase.fall;
                 row[offset + AlpsShowLayout.PhaseGroupSize] = Mathf.Max(1, phase.fixtureGroupSize);
+                var positions = AlpsShowLayout.SpreadPositions(_clipSymmetric, _clipFixtureCount, _clipGroupSize);
                 if (phase.mode == AlpsPhaseMode.InOut)
                 {
-                    var step = AlpsShowLayout.StepFromSpread(0f, phase.spreadBeats, _clipSymmetric, _clipFixtureCount, _clipGroupSize);
-                    var positions = AlpsShowLayout.SpreadPositions(_clipSymmetric, _clipFixtureCount, _clipGroupSize);
+                    var step = phase.InOutDelayBeats(positions);
                     row[offset + AlpsShowLayout.PhaseDelay] = step;
                     row[offset + AlpsShowLayout.PhaseLastDelay] = step * (positions - 1);
                 }
                 else
                 {
-                    row[offset + AlpsShowLayout.PhaseDelay] = AlpsShowLayout.DelayFromSpread(
-                        phase.SpreadCycles,
-                        _clipSymmetric,
-                        _clipFixtureCount,
-                        _clipGroupSize);
+                    row[offset + AlpsShowLayout.PhaseDelay] = phase.PositionDelayCycles(positions);
                 }
 
                 row[offset + AlpsShowLayout.PhaseBeatsPerCycle] = Mathf.Max(0f, phase.beatsPerCycle);

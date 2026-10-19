@@ -1000,22 +1000,26 @@ namespace AdzukiSoft.ALPS.Tests
             var set = Set();
             set.phase.beatsPerCycle = 2f;
             set.phase.spreadInBeats = true;
-            set.phase.spreadBeats = 2f;
+            set.phase.spreadBeats = 0.5f;
             var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
             brightness.isRange = true;
             brightness.range = new Vector2(0f, 100f);
 
-            // Two beats over a two beat cycle is the full trip, a quarter each over four.
+            // Half a beat over a two beat cycle is a quarter cycle from one fixture to the next.
             Assert.AreEqual(75f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
 
-            // Doubling the speed keeps the two beats, which is now half the trip.
+            // Doubling the speed keeps the half beat, which is now an eighth.
             set.phase.beatsPerCycle = 4f;
             Assert.AreEqual(87.5f, Evaluate(Compile(4, set), 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
+
+            // Neighbours keep their half beat however many fixtures there are.
+            Assert.AreEqual(87.5f, Evaluate(Compile(8, set), 1, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
+            Assert.AreEqual(75f, Evaluate(Compile(8, set), 2, 0f)[AlpsShowLayout.FrameBrightness], 0.01f);
 
             // Without a speed there are no beats, so the delay falls back to its share of the cycle.
             set.phase.beatsPerCycle = 0f;
             set.phase.spread = 1f;
-            Assert.AreEqual(1f, set.phase.SpreadCycles, 0.0001f);
+            Assert.AreEqual(0.25f, set.phase.PositionDelayCycles(4), 0.0001f);
         }
 
         [Test]
@@ -2185,7 +2189,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void InOut_SpreadStaggersAndTheLastEndsWithTheClip()
         {
             var set = InOut(1f, 1f);
-            set.phase.spreadBeats = 2f;
+            set.phase.spreadBeats = 1f;
             RangedBrightness(set);
             var show = Compile(3, set, end: 6f);
 
@@ -2201,11 +2205,61 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void InOut_DelaySavedAcrossTheGroupPlaysAsBeforeUntilConverted()
+        {
+            var set = InOut(1f, 1f);
+            JsonUtility.FromJsonOverwrite("{\"version\":2,\"spreadBeats\":2}", set.phase);
+            var brightness = RangedBrightness(set);
+            brightness.useOwnPhase = true;
+            brightness.ownPhase = new AlpsPhaseSettings(set.phase);
+            Assert.IsTrue(set.phase.HasLegacyDelay, "Two beats from the first to the last, which needs the fixture count.");
+
+            void AssertStaggered(string when)
+            {
+                var show = Compile(3, set, end: 6f);
+                float At(int fixture, float time) => Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness];
+
+                Assert.AreEqual(50f, At(1, 1.5f), 0.01f, $"{when}: the next a beat later.");
+                Assert.AreEqual(0f, At(2, 1.5f), 0.01f, $"{when}: the last has not started yet.");
+                Assert.AreEqual(50f, At(2, 5.5f), 0.01f, $"{when}: the last is out as the clip ends.");
+            }
+
+            AssertStaggered("Saved");
+
+            Assert.IsTrue(set.ConvertLegacyDelays(3));
+            Assert.IsFalse(set.phase.HasLegacyDelay);
+            Assert.IsFalse(brightness.ownPhase.HasLegacyDelay, "An own phase is converted with the clip's.");
+            Assert.AreEqual(1f, set.phase.spreadBeats, 0.0001f);
+            Assert.AreEqual(1f, brightness.ownPhase.spreadBeats, 0.0001f);
+            AssertStaggered("Converted");
+
+            Assert.IsFalse(set.ConvertLegacyDelays(5), "Converted once, for the fixtures it was saved for.");
+            Assert.AreEqual(1f, set.phase.spreadBeats, 0.0001f);
+        }
+
+        [Test]
+        public void InOut_DelaySavedAcrossTheGroupConvertsToTheNearestBeats()
+        {
+            var set = InOut(1f, 1f);
+            JsonUtility.FromJsonOverwrite("{\"version\":2,\"spreadBeats\":2}", set.phase);
+
+            Assert.IsTrue(set.ConvertLegacyDelays(4));
+            Assert.AreEqual(0.6667f, set.phase.spreadBeats, 0.00001f, "Kept to the digits the stepper shows.");
+
+            set = InOut(1f, 1f);
+            set.symmetric = true;
+            JsonUtility.FromJsonOverwrite("{\"version\":2,\"spreadBeats\":2}", set.phase);
+
+            Assert.IsTrue(set.ConvertLegacyDelays(6));
+            Assert.AreEqual(1f, set.phase.spreadBeats, 0.0001f, "Symmetric counts three positions out from the middle.");
+        }
+
+        [Test]
         public void InOut_InOnlyHoldsAtTheTopToTheClipsEnd()
         {
             var set = InOut(1f, 1f);
             set.phase.inOutMode = AlpsInOutMode.InOnly;
-            set.phase.spreadBeats = 2f;
+            set.phase.spreadBeats = 1f;
             RangedBrightness(set);
             var show = Compile(3, set, end: 6f);
 
@@ -2223,7 +2277,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             var set = InOut(1f, 1f);
             set.phase.inOutMode = AlpsInOutMode.OutOnly;
-            set.phase.spreadBeats = 2f;
+            set.phase.spreadBeats = 1f;
             RangedBrightness(set);
             var show = Compile(3, set, end: 6f);
 
@@ -2240,7 +2294,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void InOut_NegativeSpreadStartsFromTheLast()
         {
             var set = InOut(1f, 1f);
-            set.phase.spreadBeats = -2f;
+            set.phase.spreadBeats = -1f;
             RangedBrightness(set);
             var show = Compile(3, set, end: 6f);
 
@@ -2264,7 +2318,7 @@ namespace AdzukiSoft.ALPS.Tests
         public void InOut_KeepsTheDelayInAShortClip()
         {
             var set = InOut(2f, 2f);
-            set.phase.spreadBeats = 2f;
+            set.phase.spreadBeats = 1f;
             RangedBrightness(set);
             var show = Compile(3, set, end: 3f);
 
@@ -2333,9 +2387,9 @@ namespace AdzukiSoft.ALPS.Tests
                 ("spread", p =>
                 {
                     p.ease = AlpsEaseType.OutSine;
-                    p.spreadBeats = 1.5f;
+                    p.spreadBeats = 0.5f;
                 }),
-                ("reverse spread", p => p.spreadBeats = -3f),
+                ("reverse spread", p => p.spreadBeats = -1f),
                 ("longer than the clip", p =>
                 {
                     p.inBeats = 5f;
@@ -2345,17 +2399,17 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     p.inBeats = 0f;
                     p.outBeats = 0f;
-                    p.spreadBeats = 2f;
+                    p.spreadBeats = 0.75f;
                 }),
                 ("in only", p =>
                 {
                     p.inOutMode = AlpsInOutMode.InOnly;
-                    p.spreadBeats = 1.5f;
+                    p.spreadBeats = 0.5f;
                 }),
                 ("out only inverted", p =>
                 {
                     p.inOutMode = AlpsInOutMode.OutOnly;
-                    p.spreadBeats = -1.5f;
+                    p.spreadBeats = -0.5f;
                     p.inverse = true;
                 }),
             };
@@ -2369,7 +2423,7 @@ namespace AdzukiSoft.ALPS.Tests
                 RangedBrightness(set);
                 var show = Compile(fixtures, set, end);
                 var phase = set.phase;
-                var step = phase.spreadBeats / (fixtures - 1);
+                var step = phase.spreadBeats;
                 for (var fixture = 0; fixture < fixtures; fixture++)
                 {
                     // Off the beat, so no sample sits on the edge of a jump.
@@ -2377,7 +2431,7 @@ namespace AdzukiSoft.ALPS.Tests
                     {
                         var expected = 100f * AlpsPhaseCurve.InOut(
                             (int)phase.ease, (int)phase.fallEase, phase.PlayedInBeats, phase.PlayedOutBeats, (int)phase.inOutMode, phase.inverse,
-                            time, end, step * fixture, phase.spreadBeats);
+                            time, end, step * fixture, step * (fixtures - 1));
                         Assert.AreEqual(expected, Evaluate(show, fixture, time)[AlpsShowLayout.FrameBrightness], 0.05f, $"{name}, fixture {fixture} at {time}s.");
                     }
                 }

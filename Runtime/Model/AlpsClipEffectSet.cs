@@ -331,6 +331,46 @@ namespace AdzukiSoft.ALPS
         }
 
         /// <summary>
+        /// Turns every in / out delay still saved across the group, on the shared phase and on
+        /// each value's own phase, into the delay between neighbours over the order positions
+        /// of <paramref name="fixtureCount"/> fixtures, the ones the compiler counts. Returns
+        /// whether anything changed.
+        /// </summary>
+        public bool ConvertLegacyDelays(int fixtureCount)
+        {
+            var groupSize = phase != null ? Mathf.Max(1, phase.fixtureGroupSize) : 1;
+            var positions = AlpsShowLayout.SpreadPositions(symmetric, fixtureCount, groupSize);
+            var changed = phase != null && phase.ConvertLegacyDelay(positions);
+            if (effects == null)
+            {
+                return changed;
+            }
+
+            foreach (var effect in effects)
+            {
+                if (effect == null)
+                {
+                    continue;
+                }
+
+                AlpsAnimatableValue[] values =
+                {
+                    effect.tilt, effect.pan, effect.circleCenterTilt, effect.circleCenterPan, effect.circleRadius,
+                    effect.coneWidth, effect.coneLength, effect.colorPhasing, effect.brightness, effect.goboPhasing,
+                };
+                foreach (var value in values)
+                {
+                    if (value != null && value.ownPhase != null)
+                    {
+                        changed |= value.ownPhase.ConvertLegacyDelay(positions);
+                    }
+                }
+            }
+
+            return changed;
+        }
+
+        /// <summary>
         /// True while the set carries a fade from before version 2 that no brightness effect
         /// took, so the clip no longer fades.
         /// </summary>

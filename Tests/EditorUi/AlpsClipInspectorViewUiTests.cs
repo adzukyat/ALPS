@@ -484,7 +484,7 @@ namespace AdzukiSoft.ALPS.Tests
             window.ShowUtility();
             try
             {
-                var view = new AlpsClipInspectorView(set);
+                var view = new AlpsClipInspectorView(set, fixtureCount: 4);
                 window.rootVisualElement.Add(view);
                 yield return null;
 
@@ -504,17 +504,18 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsTrue(set.phase.spreadInBeats);
                 Assert.AreEqual(DisplayStyle.None, percent.style.display.value);
                 Assert.AreEqual(DisplayStyle.Flex, beats.style.display.value, "Beats are counted like the speed, not dragged.");
-                Assert.AreEqual(1f, beats.value, 0.001f, "Half the trip of a two beat cycle is one beat.");
-                Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f, "The switch alone must not move the fixtures.");
+                Assert.AreEqual(0.25f, beats.value, 0.001f, "Half the trip of a two beat cycle over four fixtures is a quarter beat each.");
+                Assert.AreEqual(0.125f, set.phase.PositionDelayCycles(4), 0.0001f, "The switch alone must not move the fixtures.");
+                Assert.AreEqual(AlpsStrings.Tr("phase.delay.beats.tip"), beats.tooltip);
 
                 speed.value = 4f;
-                Assert.AreEqual(1f, beats.value, 0.001f, "A delay in beats stays that many beats.");
-                Assert.AreEqual(0.25f, set.phase.SpreadCycles, 0.0001f);
+                Assert.AreEqual(0.25f, beats.value, 0.001f, "A delay in beats stays that many beats.");
+                Assert.AreEqual(0.0625f, set.phase.PositionDelayCycles(4), 0.0001f);
 
-                beats.value = 2f;
+                beats.value = 0.5f;
                 flag.value = true;
-                Assert.AreEqual(50f, percent.value, 0.001f, "Two beats of a four beat cycle is half the trip.");
-                Assert.AreEqual(0.5f, set.phase.SpreadCycles, 0.0001f);
+                Assert.AreEqual(50f, percent.value, 0.001f, "Half a beat each over four fixtures of a four beat cycle is half the trip.");
+                Assert.AreEqual(0.125f, set.phase.PositionDelayCycles(4), 0.0001f);
 
                 speed.value = 0f;
                 Assert.IsFalse(flag.enabledSelf, "Without a speed there are no beats to count.");

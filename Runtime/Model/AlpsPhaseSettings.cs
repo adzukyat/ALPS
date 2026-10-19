@@ -16,9 +16,11 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// The layout <see cref="version"/> marks. Settings saved before version 1 had forward
         /// and ping-pong modes and a step ease. Before version 2 the rise and the fall shared
-        /// one ease, the fall running it backwards. <see cref="OnAfterDeserialize"/> converts both.
+        /// one ease, the fall running it backwards. Before version 3 the delay in beats was
+        /// measured over the whole group, not between neighbours. <see cref="OnAfterDeserialize"/>
+        /// converts all three.
         /// </summary>
-        private const int CurrentVersion = 2;
+        private const int CurrentVersion = 3;
 
         /// <summary>The ease list before version 1 still had Step here.</summary>
         private const int LegacyStepEase = 11;
@@ -79,9 +81,10 @@ namespace AdzukiSoft.ALPS
         public float spread = 0f;
 
         /// <summary>
-        /// The same spread in beats, for a show authored against the music: it stays that
-        /// many beats when the speed changes, where <see cref="spread"/> stays a share of
-        /// the cycle. Used while <see cref="spreadInBeats"/> is on.
+        /// The delay in beats between neighbouring order positions, for a show authored
+        /// against the music: it stays that many beats when the speed changes or fixtures are
+        /// added, where <see cref="spread"/> stays a share of the cycle over the whole group.
+        /// Used while <see cref="spreadInBeats"/> is on.
         /// </summary>
         public float spreadBeats = 0f;
 
@@ -90,6 +93,18 @@ namespace AdzukiSoft.ALPS
         /// always reads <see cref="spreadBeats"/>.
         /// </summary>
         public bool spreadInBeats;
+
+        /// <summary>
+        /// An in / out saved before version 3, whose <see cref="spreadBeats"/> still runs from
+        /// the first order position to the last. Turning that into the delay between
+        /// neighbours needs the fixture count, which only the bound track knows, so
+        /// <see cref="ConvertLegacyDelay"/> does it once one is known, and the compiler reads
+        /// it the old way until then.
+        /// </summary>
+        [SerializeField, HideInInspector] private bool legacyDelayAcrossGroup;
+
+        /// <summary>The digits a converted delay keeps, the four the beats stepper shows.</summary>
+        private const float LegacyDelayPrecision = 10000f;
 
         /// <summary>Speed in beats per cycle. In / out has no cycle and ignores it.</summary>
         [Min(0f)] public float beatsPerCycle = 2f;
@@ -136,20 +151,83 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public bool UsesSpreadBeats => spreadInBeats && beatsPerCycle > 0f;
 
-        /// <summary>The spread in cycles, whichever unit it was authored in.</summary>
-        public float SpreadCycles => UsesSpreadBeats ? spreadBeats / beatsPerCycle : spread;
+        /// <summary>True while an in / out's delay still waits for <see cref="ConvertLegacyDelay"/>.</summary>
+        public bool HasLegacyDelay => legacyDelayAcrossGroup;
 
         /// <summary>
-        /// Seeds <see cref="spreadBeats"/> from the spread in cycles. In / out has no cycle and
-        /// reads the spread in beats alone, as how many beats after the first order position
-        /// the last one starts, so switching to it starts from about the delay the wave had.
+        /// The wave's delay from one order position to the next in cycles, whichever unit it
+        /// was authored in. The share is spread over <paramref name="positions"/>, and the
+        /// beats are already between neighbours.
         /// </summary>
-        public void SeedSpreadBeats()
+        public float PositionDelayCycles(int positions)
+        {
+            return UsesSpreadBeats ? spreadBeats / beatsPerCycle : spread / Mathf.Max(1, positions);
+        }
+
+        /// <summary>
+        /// The in / out's delay from one order position to the next in beats. One saved before
+        /// version 3 and not converted yet still spreads its beats from the first position to
+        /// the last.
+        /// </summary>
+        public float InOutDelayBeats(int positions)
+        {
+            if (!legacyDelayAcrossGroup)
+            {
+                return spreadBeats;
+            }
+
+            return positions > 1 ? spreadBeats / (positions - 1) : 0f;
+        }
+
+        /// <summary>
+        /// The delay between neighbours in beats that the share comes to over
+        /// <paramref name="positions"/>, so a switch from the share to beats keeps the look.
+        /// </summary>
+        public float SpreadAsBeats(int positions)
+        {
+            return spread * beatsPerCycle / Mathf.Max(1, positions);
+        }
+
+        /// <summary>The share over <paramref name="positions"/> that the delay in beats comes to.</summary>
+        public float BeatsAsSpread(int positions)
+        {
+            return beatsPerCycle > 0f ? spreadBeats / beatsPerCycle * Mathf.Max(1, positions) : spread;
+        }
+
+        /// <summary>
+        /// Seeds <see cref="spreadBeats"/> from the share. In / out has no cycle and reads the
+        /// delay between neighbours in beats alone, so switching to it starts from the delay
+        /// the wave had over <paramref name="positions"/>.
+        /// </summary>
+        public void SeedSpreadBeats(int positions)
         {
             if (!UsesSpreadBeats)
             {
-                spreadBeats = spread * beatsPerCycle;
+                SetSpreadBeats(SpreadAsBeats(positions));
             }
+        }
+
+        /// <summary>Sets the delay between neighbours in beats, which is never the old one across the group.</summary>
+        public void SetSpreadBeats(float beats)
+        {
+            spreadBeats = beats;
+            legacyDelayAcrossGroup = false;
+        }
+
+        /// <summary>
+        /// Turns an in / out delay saved across the group into the delay between neighbours
+        /// over <paramref name="positions"/>, kept to the four digits the stepper shows, so the
+        /// last position lands very close to where it did. Returns whether anything changed.
+        /// </summary>
+        public bool ConvertLegacyDelay(int positions)
+        {
+            if (!legacyDelayAcrossGroup)
+            {
+                return false;
+            }
+
+            SetSpreadBeats(Mathf.Round(InOutDelayBeats(positions) * LegacyDelayPrecision) / LegacyDelayPrecision);
+            return true;
         }
 
         public AlpsPhaseSettings(AlpsPhaseSettings other)
@@ -164,6 +242,7 @@ namespace AdzukiSoft.ALPS
             spread = other.spread;
             spreadBeats = other.spreadBeats;
             spreadInBeats = other.spreadInBeats;
+            legacyDelayAcrossGroup = other.legacyDelayAcrossGroup;
             beatsPerCycle = other.beatsPerCycle;
             inverse = other.inverse;
             fireChance = other.fireChance;
@@ -202,7 +281,40 @@ namespace AdzukiSoft.ALPS
                 SplitEase();
             }
 
+            if (version < 3)
+            {
+                SplitDelay();
+            }
+
             version = CurrentVersion;
+        }
+
+        /// <summary>
+        /// The delay in beats used to run from the first order position to the last. A wave
+        /// takes the share of the cycle it came to, which still reads across the group. An in /
+        /// out has no cycle, so it waits for the fixture count (<see cref="ConvertLegacyDelay"/>).
+        /// No delay reads the same either way and keeps its unit.
+        /// </summary>
+        private void SplitDelay()
+        {
+            if (spreadBeats == 0f)
+            {
+                return;
+            }
+
+            if (mode == AlpsPhaseMode.InOut)
+            {
+                legacyDelayAcrossGroup = true;
+                return;
+            }
+
+            // Without a speed the share was already what played.
+            if (UsesSpreadBeats)
+            {
+                spread = spreadBeats / beatsPerCycle;
+            }
+
+            spreadInBeats = false;
         }
 
         /// <summary>
