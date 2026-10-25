@@ -115,16 +115,73 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(0f, other[AlpsShowLayout.FramePan], 0.001f, "Nothing turned the head before, so the default pan.");
         }
 
-        /// <summary>Pan that points the head at a point in its aim space. VRSL pans around the mesh's local Z axis.</summary>
-        private static float AimPan(Vector3 local)
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        public void Tracking_PointsTheVrslBeamAtTheUser(bool invertPan, bool invertTilt)
         {
-            return Mathf.Atan2(local.x, -local.y) * Mathf.Rad2Deg;
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            mover.transform.rotation = Quaternion.Euler(70f, 30f, 15f);
+            var fixture = mover.GetComponentInChildren<VRSL.VRStageLighting_DMX_Static>();
+            fixture.invertPan = invertPan;
+            fixture.invertTilt = invertTilt;
+            var head = AlpsShowPlayer.GetVRSLAimTransform(fixture);
+
+            // Where the beam rests in the mesh, from the far end of the volumetric cone.
+            var volumetric = System.Array.Find(fixture.objRenderers, r => r != null && r.sharedMaterial.shader.name.EndsWith("/Volumetric"));
+            var mesh = volumetric.GetComponent<MeshFilter>().sharedMesh;
+            var vertices = mesh.vertices;
+            var uvs = mesh.uv;
+            var rest = Vector3.zero;
+            var far = 0;
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                if (uvs[i].x > 0.9f)
+                {
+                    rest += vertices[i];
+                    far++;
+                }
+            }
+
+            rest = rest / far - (Vector3)volumetric.sharedMaterial.GetVector("_FixtureRotationOrigin");
+            rest = rest.normalized;
+
+            var aim = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(head.worldToLocalMatrix, aim, 0);
+            AlpsShowPlayer.OrientVRSLAim(fixture, aim, 0);
+            foreach (var user in new[] { new Vector3(3f, -8f, 2f), new Vector3(-6f, -1f, -4f), new Vector3(1f, 5f, 7f) })
+            {
+                var target = head.position + user;
+                var local = new Vector3(
+                    aim[0] * target.x + aim[1] * target.y + aim[2] * target.z + aim[3],
+                    aim[4] * target.x + aim[5] * target.y + aim[6] * target.z + aim[7],
+                    aim[8] * target.x + aim[9] * target.y + aim[10] * target.z + aim[11]);
+
+                // VRSL's own rotation (VRSL-StandardMover-Vertex.cginc) of the pan and tilt the
+                // grid hands it, which reads the pan negated.
+                var panAngle = -AimPan(local) * (invertPan ? -1f : 1f) * Mathf.Deg2Rad;
+                var tiltAngle = (AlpsShowPlayer.VrslDefaultTiltOffset + AimTilt(local)) * (invertTilt ? -1f : 1f) * Mathf.Deg2Rad;
+                var tilted = new Vector3(rest.x, Mathf.Cos(tiltAngle) * rest.y - Mathf.Sin(tiltAngle) * rest.z, Mathf.Sin(tiltAngle) * rest.y + Mathf.Cos(tiltAngle) * rest.z);
+                var beam = new Vector3(Mathf.Cos(panAngle) * tilted.x - Mathf.Sin(panAngle) * tilted.y, Mathf.Sin(panAngle) * tilted.x + Mathf.Cos(panAngle) * tilted.y, tilted.z);
+
+                Assert.Less(Vector3.Angle(head.TransformDirection(beam), user), 1f, $"The beam points at a user at {user}.");
+            }
         }
 
-        /// <summary>Tilt that points the head at a point in its aim space. Tilt 0 aims along the mesh's local -Z axis.</summary>
+        private const string MoverPrefab = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+
+        /// <summary>Pan that points the head at a point in its aim space, turning from +Y around Z.</summary>
+        private static float AimPan(Vector3 local)
+        {
+            return Mathf.Atan2(local.x, local.y) * Mathf.Rad2Deg;
+        }
+
+        /// <summary>Tilt that points the head at a point in its aim space. Tilt 0 aims along +Z.</summary>
         private static float AimTilt(Vector3 local)
         {
-            return Mathf.Atan2(Mathf.Sqrt(local.x * local.x + local.y * local.y), -local.z) * Mathf.Rad2Deg;
+            return Mathf.Atan2(Mathf.Sqrt(local.x * local.x + local.y * local.y), local.z) * Mathf.Rad2Deg;
         }
 
         /// <summary>What VRSL reads from a grid texel holding <paramref name="value"/>, through LinearToGammaSpaceExact before 2.7.</summary>
