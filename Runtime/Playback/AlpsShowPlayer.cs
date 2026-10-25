@@ -236,6 +236,10 @@ namespace AdzukiSoft.ALPS
                 if (i < aimTransforms.Length && aimTransforms[i] != null)
                 {
                     WriteAim(aimTransforms[i].worldToLocalMatrix, aim, i * GpuAimStride);
+                    if (IsVRSL(i))
+                    {
+                        OrientVRSLAim(vrslFixtures[i], aim, i * GpuAimStride);
+                    }
                 }
             }
 
@@ -422,6 +426,31 @@ namespace AdzukiSoft.ALPS
             aim[offset + 9] = worldToAim.m21;
             aim[offset + 10] = worldToAim.m22;
             aim[offset + 11] = worldToAim.m23;
+        }
+
+        /// <summary>
+        /// Turns the mesh space of a VRSL head into the aim space the frames pass reads, where
+        /// tilt 0 aims along +Z and pan 0 tilted forward along +Y. VRSL's beam rests along the
+        /// mesh's -Y axis and its default tilt of 90 turns it onto +Z, which inverting the tilt
+        /// mirrors to -Z, and inverting the pan mirrors X.
+        /// </summary>
+        public static void OrientVRSLAim(VRStageLighting_DMX_Static fixture, float[] aim, int offset)
+        {
+            if (fixture.invertPan)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    aim[offset + i] = -aim[offset + i];
+                }
+            }
+
+            if (!fixture.invertTilt)
+            {
+                for (var i = 8; i < 12; i++)
+                {
+                    aim[offset + i] = -aim[offset + i];
+                }
+            }
         }
 
         // ==================================================================================

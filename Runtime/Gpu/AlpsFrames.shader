@@ -85,9 +85,9 @@ Shader "Hidden/ALPS/Frames"
                 local.y = AlpsRead(aim + 4) * target.x + AlpsRead(aim + 5) * target.y + AlpsRead(aim + 6) * target.z + AlpsRead(aim + 7);
                 local.z = AlpsRead(aim + 8) * target.x + AlpsRead(aim + 9) * target.y + AlpsRead(aim + 10) * target.z + AlpsRead(aim + 11);
 
-                // VRSL pans around the mesh's local Z axis and tilt 0 aims along its -Z axis.
-                float pan = degrees(atan2(local.x, -local.y));
-                float tilt = degrees(atan2(sqrt(local.x * local.x + local.y * local.y), -local.z));
+                // Tilt 0 aims along the aim space's +Z axis, and pan 0 tilts toward +Y.
+                float pan = degrees(atan2(local.x, local.y));
+                float tilt = degrees(atan2(sqrt(local.x * local.x + local.y * local.y), local.z));
 
                 float4 previous = _AlpsPrevFrames.Load(int3(0, fixture, 0));
                 if (_AlpsPrevFrames.Load(int3(FrameAimed / 4, fixture, 0))[FrameAimed % 4] > 0.5)
