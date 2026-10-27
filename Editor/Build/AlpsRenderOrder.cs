@@ -14,16 +14,15 @@ namespace AdzukiSoft.ALPS.Editor
     /// projection shaders have no shadow caster pass, so the cones stay out of it.
     ///
     /// Avatars draw their opaque parts from Geometry (2000) on, which is where the world draws
-    /// too, so the world's opaque materials move <see cref="WorldShift"/> earlier, keeping
-    /// their order, and the projections sit at <see cref="ProjectionQueue"/> between them.
-    /// The renderers switch to copies of their materials made in memory. Nothing saves them,
-    /// so the project gains no assets: a build writes them into the scene, which is the only
-    /// thing that refers to them. A material a script or an animation swaps in while the world
-    /// runs is the original, so it draws after the projections again.
+    /// too, so the world's opaque queues move below <see cref="ProjectionQueue"/>
+    /// (<see cref="Remap"/>), keeping their order, and the projections sit there between the
+    /// two. The renderers switch to copies of their materials made in memory. Nothing saves
+    /// them, so the project gains no assets: a build writes them into the scene, which is the
+    /// only thing that refers to them. A material a script or an animation swaps in while the
+    /// world runs is the original, so it draws after the projections again.
     /// </summary>
     public static class AlpsRenderOrder
     {
-        public const int WorldShift = 1000;
         public const int ProjectionQueue = (int)RenderQueue.Geometry - 50;
 
         /// <summary>VRChat's Player, PlayerLocal and MirrorReflection layers.</summary>
@@ -31,13 +30,14 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Points every renderer of the scene but players at copies of its materials: VRSL
-        /// projections at <see cref="ProjectionQueue"/>, opaque ones <see cref="WorldShift"/>
-        /// earlier. An avatar placed in the scene to look at counts as a player, so it stays
-        /// after the projections the way a player's will. Only ever run on a scene copy.
+        /// projections at <see cref="ProjectionQueue"/>, opaque ones below it in the order they
+        /// had. An avatar placed in the scene to look at counts as a player, so it stays after
+        /// the projections the way a player's will. Only ever run on a scene copy.
         /// </summary>
         public static void Apply(Scene scene)
         {
-            var copies = new Dictionary<Material, Material>();
+            var renderers = new List<Renderer>();
+            var queues = new List<int>();
             foreach (var root in scene.GetRootGameObjects())
             {
                 foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
@@ -47,24 +47,61 @@ namespace AdzukiSoft.ALPS.Editor
                         continue;
                     }
 
-                    var materials = renderer.sharedMaterials;
-                    var changed = false;
-                    for (var i = 0; i < materials.Length; i++)
+                    renderers.Add(renderer);
+                    foreach (var material in renderer.sharedMaterials)
                     {
-                        var copy = Reordered(materials[i], copies);
-                        if (copy != materials[i])
+                        if (IsOpaque(material))
                         {
-                            materials[i] = copy;
-                            changed = true;
+                            queues.Add(material.renderQueue);
                         }
-                    }
-
-                    if (changed)
-                    {
-                        renderer.sharedMaterials = materials;
                     }
                 }
             }
+
+            var remap = Remap(queues);
+            var copies = new Dictionary<Material, Material>();
+            foreach (var renderer in renderers)
+            {
+                var materials = renderer.sharedMaterials;
+                var changed = false;
+                for (var i = 0; i < materials.Length; i++)
+                {
+                    var copy = Reordered(materials[i], remap, copies);
+                    if (copy != materials[i])
+                    {
+                        materials[i] = copy;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    renderer.sharedMaterials = materials;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Where each of the world's opaque queues moves so all of them draw before
+        /// <see cref="ProjectionQueue"/>. Only their order decides what draws first, so from the
+        /// highest down each keeps its own value or takes one below the queue above it,
+        /// whichever is lower: queues low enough already stay where they are, the ones from
+        /// the projections up close in below them, and equal queues stay equal. They run out of
+        /// room only with more different queues than there are below the projections.
+        /// </summary>
+        public static Dictionary<int, int> Remap(IEnumerable<int> queues)
+        {
+            var distinct = new SortedSet<int>(queues);
+            var remap = new Dictionary<int, int>();
+            var next = ProjectionQueue - 1;
+            foreach (var queue in distinct.Reverse())
+            {
+                var moved = Mathf.Max(0, Mathf.Min(queue, next));
+                remap.Add(queue, moved);
+                next = moved - 1;
+            }
+
+            return remap;
         }
 
         private static bool IsPlayer(Renderer renderer)
@@ -73,7 +110,18 @@ namespace AdzukiSoft.ALPS.Editor
                 || renderer.GetComponentInParent<VRC_AvatarDescriptor>(true) != null;
         }
 
-        private static Material Reordered(Material material, Dictionary<Material, Material> copies)
+        private static bool IsProjection(Material material)
+        {
+            return material.shader.name.StartsWith("VRSL/") && material.shader.name.EndsWith("/Projection");
+        }
+
+        private static bool IsOpaque(Material material)
+        {
+            return material != null && material.shader != null && !IsProjection(material)
+                && material.renderQueue <= (int)RenderQueue.GeometryLast;
+        }
+
+        private static Material Reordered(Material material, Dictionary<int, int> remap, Dictionary<Material, Material> copies)
         {
             if (material == null || material.shader == null)
             {
@@ -85,15 +133,14 @@ namespace AdzukiSoft.ALPS.Editor
                 return copy;
             }
 
-            var queue = material.renderQueue;
             int reordered;
-            if (material.shader.name.StartsWith("VRSL/") && material.shader.name.EndsWith("/Projection"))
+            if (IsProjection(material))
             {
                 reordered = ProjectionQueue;
             }
-            else if (queue <= (int)RenderQueue.GeometryLast)
+            else if (IsOpaque(material) && remap[material.renderQueue] != material.renderQueue)
             {
-                reordered = Mathf.Max(0, queue - WorldShift);
+                reordered = remap[material.renderQueue];
             }
             else
             {

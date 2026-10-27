@@ -64,7 +64,7 @@ namespace AdzukiSoft.ALPS.Tests
             AssetDatabase.DeleteAsset(PlayerMaterialPath);
             FileUtil.DeleteFileOrDirectory(BundleFolder);
 
-            Assert.AreEqual((int)RenderQueue.Geometry - AlpsRenderOrder.WorldShift, worldQueue, "The world draws with the copy made while the scene was processed.");
+            Assert.AreEqual(AlpsRenderOrder.ProjectionQueue - 1, worldQueue, "The world draws with the copy made while the scene was processed.");
             Assert.AreEqual((int)RenderQueue.Geometry, playerQueue, "The player keeps its material.");
             yield return new ExitPlayMode();
         }

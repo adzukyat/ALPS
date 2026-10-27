@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using AdzukiSoft.ALPS.Editor;
 using NUnit.Framework;
@@ -102,10 +103,45 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(projectionQueue, projectionMaterial.renderQueue);
 
             Assert.IsFalse(EditorUtility.IsPersistent(floor.sharedMaterial), "The floor draws with a copy in memory.");
-            Assert.AreEqual((int)RenderQueue.Geometry - AlpsRenderOrder.WorldShift, floor.sharedMaterial.renderQueue);
+            Assert.Less(floor.sharedMaterial.renderQueue, AlpsRenderOrder.ProjectionQueue);
             Assert.IsFalse(EditorUtility.IsPersistent(projection.sharedMaterial));
             Assert.AreEqual(AlpsRenderOrder.ProjectionQueue, projection.sharedMaterial.renderQueue);
             Assert.AreSame(playerMaterial, GameObject.Find("Player Stand-in").GetComponent<Renderer>().sharedMaterial, "Players keep their materials.");
+        }
+
+        [Test]
+        public void Remap_KeepsTheOrderBelowTheProjections()
+        {
+            var queues = new[] { 2000, 2450, 1000, 2001, 2000, 1949, 2500, 0, 1 };
+            var remap = AlpsRenderOrder.Remap(queues);
+
+            var sorted = new List<int>(remap.Keys);
+            sorted.Sort();
+            for (var i = 0; i < sorted.Count; i++)
+            {
+                Assert.Less(remap[sorted[i]], AlpsRenderOrder.ProjectionQueue, $"{sorted[i]} draws before the projections.");
+                if (i > 0)
+                {
+                    Assert.Less(remap[sorted[i - 1]], remap[sorted[i]], $"{sorted[i - 1]} still draws before {sorted[i]}.");
+                }
+            }
+
+            Assert.AreEqual(1000, remap[1000], "A queue low enough already stays.");
+            Assert.AreEqual(0, remap[0]);
+            Assert.AreEqual(1, remap[1]);
+            Assert.AreEqual(AlpsRenderOrder.ProjectionQueue - 1, remap[2500], "The highest closes in right below the projections.");
+        }
+
+        [Test]
+        public void Remap_LeavesAWorldBelowTheProjectionsAlone()
+        {
+            var queues = new[] { 1000, 1500, 1900 };
+            var remap = AlpsRenderOrder.Remap(queues);
+
+            foreach (var queue in queues)
+            {
+                Assert.AreEqual(queue, remap[queue]);
+            }
         }
 
         private struct Gain
@@ -229,7 +265,7 @@ namespace AdzukiSoft.ALPS.Tests
             fixture.target = vrsl;
 
             projection = null;
-            var cones = new System.Collections.Generic.List<Renderer>();
+            var cones = new List<Renderer>();
             foreach (var renderer in vrsl.objRenderers)
             {
                 var shader = renderer.sharedMaterial.shader.name;
