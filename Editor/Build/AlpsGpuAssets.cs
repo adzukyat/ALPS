@@ -1,26 +1,26 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using VRSL;
 
 namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
-    /// The assets GPU playback needs in a build: the materials and targets every show player
-    /// shares, and copies of VRSL's volumetric materials with cone length via DMX turned on.
-    /// Udon cannot create render targets, and a build cannot create assets, so the preflights
-    /// make them beforehand under <see cref="AssetFolder"/>.
+    /// What GPU playback needs in a build: the materials and targets every show player of a
+    /// scene shares, and copies of VRSL's volumetric materials with cone length via DMX turned
+    /// on. Udon cannot create render targets, so Apply makes them on the scene copy, in memory
+    /// like <see cref="AlpsRenderOrder"/>'s copies: a build writes them into the scene, and the
+    /// project gains no assets.
     /// </summary>
     public static class AlpsGpuAssets
     {
+        /// <summary>Where older versions wrote these, which the preflights remove (<see cref="AlpsGeneratedCleanup"/>).</summary>
         public const string AssetFolder = AlpsShowSetup.GeneratedFolder + "/Gpu";
-        public const string MaterialFolder = AssetFolder + "/Materials";
 
         /// <summary>Rows of the shared frames targets, one per fixture of a show.</summary>
         public const int FrameRows = 128;
 
-        /// <summary>The materials and targets every show player shares.</summary>
+        /// <summary>The materials and targets every show player of a scene shares.</summary>
         public sealed class Shared
         {
             public Material framesMaterial;
@@ -35,63 +35,31 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// The shared materials and targets. Their size never depends on the show, so one set
-        /// covers every scene. Missing ones are created when <paramref name="create"/> allows
-        /// it, which a running build does not.
+        /// New shared materials and targets. Their size never depends on the show, so one set
+        /// covers every show of a scene.
         /// </summary>
-        public static Shared GetShared(bool create)
+        public static Shared CreateShared()
         {
             var shared = new Shared
             {
-                framesMaterial = GetMaterial(create, "ALPS Frames", AlpsPreviewDriver.GpuFramesShader),
-                gridMaterial = GetMaterial(create, "ALPS DMX Grid", AlpsPreviewDriver.GpuGridShader),
-                frames = GetTarget(create, "ALPS Frames", AlpsShowPlayer.GpuFrameTexels, FrameRows),
-                framesPrevious = GetTarget(create, "ALPS Frames Previous", AlpsShowPlayer.GpuFrameTexels, FrameRows),
-                grid = GetTarget(create, "ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
-                spin = GetTarget(create, "ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
+                framesMaterial = CreateMaterial("ALPS Frames", AlpsPreviewDriver.GpuFramesShader),
+                gridMaterial = CreateMaterial("ALPS DMX Grid", AlpsPreviewDriver.GpuGridShader),
+                frames = CreateTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, FrameRows),
+                framesPrevious = CreateTarget("ALPS Frames Previous", AlpsShowPlayer.GpuFrameTexels, FrameRows),
+                grid = CreateTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
+                spin = CreateTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
             };
 
-            if (AlpsVrslVersion.Apply(shared.gridMaterial))
-            {
-                EditorUtility.SetDirty(shared.gridMaterial);
-            }
-
-            if (create)
-            {
-                AssetDatabase.SaveAssets();
-            }
-
+            AlpsVrslVersion.Apply(shared.gridMaterial);
             return shared;
         }
 
         /// <summary>
-        /// Makes the cone length copies of every VRSL material the shows in
-        /// <paramref name="scene"/> use, refreshed from their source each time.
+        /// Points a VRSL fixture's renderers at copies of their volumetric materials with cone
+        /// length via DMX on, one copy per material in <paramref name="copies"/>, so renderers
+        /// sharing a material still share one. Only ever run on a scene copy.
         /// </summary>
-        public static void PrepareConeLengthMaterials(Scene scene)
-        {
-            foreach (var director in AlpsShowApplier.FindShowDirectors(scene))
-            {
-                foreach (var fixture in AlpsShowCompiler.Compile(director).fixtures)
-                {
-                    if (fixture is AlpsVRSLFixture vrslFixture && vrslFixture.ResolveTarget() != null)
-                    {
-                        foreach (var material in UsedMaterials(vrslFixture.ResolveTarget()))
-                        {
-                            ConeLengthMaterial(material, true);
-                        }
-                    }
-                }
-            }
-
-            AssetDatabase.SaveAssets();
-        }
-
-        /// <summary>
-        /// Points a VRSL fixture's renderers at the cone length copies of their materials.
-        /// Only ever run on a scene copy.
-        /// </summary>
-        public static void UseConeLengthMaterials(VRStageLighting_DMX_Static fixture, bool create, List<string> errors)
+        public static void UseConeLengthMaterials(VRStageLighting_DMX_Static fixture, Dictionary<Material, Material> copies)
         {
             if (fixture.objRenderers == null)
             {
@@ -114,11 +82,10 @@ namespace AdzukiSoft.ALPS.Editor
                         continue;
                     }
 
-                    var copy = ConeLengthMaterial(materials[i], create);
-                    if (copy == null)
+                    if (!copies.TryGetValue(materials[i], out var copy))
                     {
-                        errors.Add($"The cone length copy of material '{materials[i].name}' on '{renderer.name}' is missing.");
-                        continue;
+                        copy = ConeLengthMaterial(materials[i]);
+                        copies.Add(materials[i], copy);
                     }
 
                     materials[i] = copy;
@@ -132,30 +99,6 @@ namespace AdzukiSoft.ALPS.Editor
             }
         }
 
-        private static IEnumerable<Material> UsedMaterials(VRStageLighting_DMX_Static fixture)
-        {
-            if (fixture.objRenderers == null)
-            {
-                yield break;
-            }
-
-            foreach (var renderer in fixture.objRenderers)
-            {
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                foreach (var material in renderer.sharedMaterials)
-                {
-                    if (NeedsConeLength(material))
-                    {
-                        yield return material;
-                    }
-                }
-            }
-        }
-
         /// <summary>A VRSL volumetric material whose cone length via DMX is off.</summary>
         private static bool NeedsConeLength(Material material)
         {
@@ -165,59 +108,19 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// The copy of <paramref name="source"/> with cone length via DMX on, or null when it
-        /// is missing and <paramref name="create"/> does not allow making it. A material that
-        /// is not an asset lives in the scene copy alone, so it is turned on in place.
+        /// The copy of <paramref name="source"/> with cone length via DMX on. A material that is
+        /// no asset lives on the scene copy alone, so it is turned on in place.
         /// </summary>
-        private static Material ConeLengthMaterial(Material source, bool create)
+        private static Material ConeLengthMaterial(Material source)
         {
-            var sourcePath = AssetDatabase.GetAssetPath(source);
-            if (string.IsNullOrEmpty(sourcePath))
-            {
-                EnableConeLength(source);
-                return source;
-            }
-
-            var guid = AssetDatabase.AssetPathToGUID(sourcePath);
-            var path = $"{MaterialFolder}/{source.name} {guid.Substring(0, 8)}.mat";
-            var copy = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (!create)
-            {
-                return copy;
-            }
-
-            if (copy == null)
-            {
-                AlpsShowSetup.EnsureFolder(MaterialFolder);
-                copy = new Material(source) { name = source.name };
-                EnableConeLength(copy);
-                AssetDatabase.CreateAsset(copy, path);
-                return copy;
-            }
-
-            // Follows edits to the source since the copy was made.
-            copy.shader = source.shader;
-            copy.CopyPropertiesFromMaterial(source);
-            EnableConeLength(copy);
-            EditorUtility.SetDirty(copy);
+            var copy = EditorUtility.IsPersistent(source) ? new Material(source) { name = source.name } : source;
+            copy.SetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty, 1f);
+            copy.EnableKeyword("_ENABLEEXTRACHANNELS_ON");
             return copy;
         }
 
-        private static void EnableConeLength(Material material)
+        private static Material CreateMaterial(string name, string shaderName)
         {
-            material.SetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty, 1f);
-            material.EnableKeyword("_ENABLEEXTRACHANNELS_ON");
-        }
-
-        private static Material GetMaterial(bool create, string name, string shaderName)
-        {
-            var path = AssetFolder + "/" + name + ".mat";
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material != null || !create)
-            {
-                return material;
-            }
-
             var shader = Shader.Find(shaderName);
             if (shader == null)
             {
@@ -225,25 +128,13 @@ namespace AdzukiSoft.ALPS.Editor
                 return null;
             }
 
-            AlpsShowSetup.EnsureFolder(AssetFolder);
-            material = new Material(shader) { name = name };
-            AssetDatabase.CreateAsset(material, path);
-            return material;
+            return new Material(shader) { name = name };
         }
 
-        private static RenderTexture GetTarget(bool create, string name, int width, int height)
+        private static RenderTexture CreateTarget(string name, int width, int height)
         {
-            var path = AssetFolder + "/" + name + ".renderTexture";
-            var target = AssetDatabase.LoadAssetAtPath<RenderTexture>(path);
-            if (target != null || !create)
-            {
-                return target;
-            }
-
-            AlpsShowSetup.EnsureFolder(AssetFolder);
-            target = AlpsPreviewDriver.CreateGpuTarget(name, width, height);
+            var target = AlpsPreviewDriver.CreateGpuTarget(name, width, height);
             target.hideFlags = HideFlags.None;
-            AssetDatabase.CreateAsset(target, path);
             return target;
         }
     }

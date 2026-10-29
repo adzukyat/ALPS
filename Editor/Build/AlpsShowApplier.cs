@@ -14,8 +14,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// whose projection tracks are bound to Animators above the fixtures, the fixtures'
     /// volumetric materials switch to copies with cone length via DMX on, the projections
     /// draw between the world and the players (<see cref="AlpsRenderOrder"/>), and the
-    /// authoring only components are removed. Only ever run on a scene copy that is not
-    /// saved back.
+    /// authoring only components are removed. Only ever run on a scene copy that is not saved
+    /// back.
     /// </summary>
     public static class AlpsShowApplier
     {
@@ -63,17 +63,20 @@ namespace AdzukiSoft.ALPS.Editor
             var builds = new Dictionary<TimelineAsset, TimelineAsset>();
             var directors = FindShowDirectors(scene);
             var rows = AssignDmxRows(directors, errors);
-            if (errors.Count == startErrors)
+            var shared = errors.Count == startErrors && directors.Count > 0 ? AlpsGpuAssets.CreateShared() : null;
+            if (shared != null && !shared.IsComplete)
             {
+                errors.Add("The show player's materials and targets could not be created.");
+            }
+            else if (shared != null)
+            {
+                var coneLengthCopies = new Dictionary<Material, Material>();
                 for (var i = 0; i < directors.Count; i++)
                 {
-                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, errors);
+                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, shared, coneLengthCopies, errors);
                 }
 
-                if (directors.Count > 0)
-                {
-                    AlpsRenderOrder.Apply(scene);
-                }
+                AlpsRenderOrder.Apply(scene);
             }
 
             AlpsBuildReferences.Retarget(scene, builds);
@@ -170,20 +173,14 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         private static void ApplyDirector(PlayableDirector director, int showToken, bool generateTimelines,
-            Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, List<string> errors)
+            Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, AlpsGpuAssets.Shared shared,
+            Dictionary<Material, Material> coneLengthCopies, List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
             var show = AlpsShowCompiler.Compile(director);
             if (show.errors.Count > 0)
             {
                 errors.AddRange(show.errors);
-                return;
-            }
-
-            var shared = AlpsGpuAssets.GetShared(generateTimelines);
-            if (!shared.IsComplete)
-            {
-                errors.Add("The show player's materials and targets are missing.");
                 return;
             }
 
@@ -220,7 +217,7 @@ namespace AdzukiSoft.ALPS.Editor
                 player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : i;
                 if (player.vrslFixtures[i] != null)
                 {
-                    AlpsGpuAssets.UseConeLengthMaterials(player.vrslFixtures[i], generateTimelines, errors);
+                    AlpsGpuAssets.UseConeLengthMaterials(player.vrslFixtures[i], coneLengthCopies);
                 }
             }
 

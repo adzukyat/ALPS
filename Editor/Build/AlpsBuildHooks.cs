@@ -11,8 +11,8 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Runs before VRChat starts a build: validates every open show, compiles the Udon
-    /// player, and writes the build timelines and the GPU assets the scene processor will
-    /// switch to.
+    /// player, and writes the build timelines the scene processor will switch to. They go
+    /// again once the build finishes (<see cref="AlpsGeneratedCleanup"/>).
     /// </summary>
     public class AlpsBuildPreflight : IVRCSDKBuildRequestedCallback
     {
@@ -31,6 +31,7 @@ namespace AdzukiSoft.ALPS.Editor
         public static bool Run()
         {
             AssetDatabase.SaveAssets();
+            AlpsGeneratedCleanup.RemoveLeftovers();
 
             var errors = new List<string>();
             var warnings = new List<string>();
@@ -54,19 +55,6 @@ namespace AdzukiSoft.ALPS.Editor
             if (hasShow)
             {
                 AlpsShowSetup.EnsureProgramAsset();
-                if (!AlpsGpuAssets.GetShared(true).IsComplete)
-                {
-                    errors.Add("The show player's materials and targets could not be created.");
-                }
-
-                for (var i = 0; i < SceneManager.sceneCount; i++)
-                {
-                    var scene = SceneManager.GetSceneAt(i);
-                    if (scene.isLoaded)
-                    {
-                        AlpsGpuAssets.PrepareConeLengthMaterials(scene);
-                    }
-                }
             }
 
             foreach (var warning in warnings)
@@ -102,6 +90,7 @@ namespace AdzukiSoft.ALPS.Editor
                 return;
             }
 
+            AlpsGeneratedCleanup.RemoveLeftovers();
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
@@ -109,16 +98,6 @@ namespace AdzukiSoft.ALPS.Editor
                 {
                     // Assets cannot be made once the play mode scene is being processed.
                     AlpsShowSetup.EnsureProgramAsset();
-                    AlpsGpuAssets.GetShared(true);
-                    for (var j = 0; j < SceneManager.sceneCount; j++)
-                    {
-                        var other = SceneManager.GetSceneAt(j);
-                        if (other.isLoaded)
-                        {
-                            AlpsGpuAssets.PrepareConeLengthMaterials(other);
-                        }
-                    }
-
                     return;
                 }
             }
