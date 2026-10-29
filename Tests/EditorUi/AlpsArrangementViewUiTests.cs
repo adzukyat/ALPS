@@ -37,6 +37,10 @@ namespace AdzukiSoft.ALPS.Tests
         {
             AlpsStrings.Language = _language;
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // The fixtures ALPS adds bring materials of their own.
+            AssetDatabase.DeleteAsset(AlpsFixtureMaterials.Folder);
+            AssetDatabase.DeleteAsset(AlpsProjectionLight.ShaderFolder);
+            AlpsShowSetup.DeleteFolderIfEmpty(AlpsShowSetup.GeneratedFolder);
         }
 
         [Test]

@@ -93,6 +93,8 @@ namespace AdzukiSoft.ALPS
                 { "fixture.lightBar", "라이트 바" },
                 { "fixture.multiLightBar", "멀티 라이트 바" },
                 { "fixture.laser", "레이저" },
+                { "fixture.useAlpsMaterials", "ALPS 머티리얼 사용" },
+                { "fixture.useAlpsMaterials.info", "이 조명의 프로젝션은 VRSL 방식 그대로 합성되므로, 겹친 부분의 빛이 곱해집니다. ALPS 머티리얼은 ALPS에서 추가한 조명처럼 빛을 더하므로 프로젝션의 모습이 달라집니다." },
                 { "setup.timeline", "타임라인 설정" },
                 { "setup.timeline.tip", "Assets/ALPS/Shows에 타임라인을 만들고, 그것을 재생하는 Playable Director가 붙은 부모를 만듭니다. 이 컨테이너와 안의 컨테이너마다 무브, 컬러, 밝기 레이어를 가진 트랙을 만듭니다." },
                 { "setup.openTimeline", "타임라인 열기" },

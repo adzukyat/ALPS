@@ -93,6 +93,8 @@ namespace AdzukiSoft.ALPS
                 { "fixture.lightBar", "Light Bar" },
                 { "fixture.multiLightBar", "Multi Light Bar" },
                 { "fixture.laser", "Laser" },
+                { "fixture.useAlpsMaterials", "Use ALPS Materials" },
+                { "fixture.useAlpsMaterials.info", "This fixture's projections still blend the way VRSL does, so where they overlap their light multiplies. ALPS's materials add it up instead, as on the fixtures ALPS adds, which changes how the projections look." },
                 { "setup.timeline", "Set Up Timeline" },
                 { "setup.timeline.tip", "Creates a Timeline in Assets/ALPS/Shows and a parent with a Playable Director that plays it, then gives this container and every container in it a lighting track with layers for move, colour and brightness." },
                 { "setup.openTimeline", "Open Timeline" },

@@ -93,6 +93,8 @@ namespace AdzukiSoft.ALPS
                 { "fixture.lightBar", "ライトバー" },
                 { "fixture.multiLightBar", "マルチライトバー" },
                 { "fixture.laser", "レーザー" },
+                { "fixture.useAlpsMaterials", "ALPSのマテリアルを使う" },
+                { "fixture.useAlpsMaterials.info", "この灯体の投影はVRSLの合成方法のままなので、重なった部分は光が掛け合わされます。ALPSのマテリアルでは、ALPSから追加した灯体と同じく足し合わされるため、投影の見た目が変わります。" },
                 { "setup.timeline", "タイムラインをセットアップ" },
                 { "setup.timeline.tip", "Assets/ALPS/Shows にタイムラインを作り、それを再生する Playable Director 付きの親を作ります。このコンテナーと中のコンテナーには、それぞれムーブ・カラー・明るさのレイヤーを持つトラックを作ります。" },
                 { "setup.openTimeline", "タイムラインを開く" },

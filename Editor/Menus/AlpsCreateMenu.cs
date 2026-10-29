@@ -63,8 +63,9 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// An instance of the fixture's VRSL prefab with an ALPS VRSL Fixture on it. Null when
-        /// the VR Stage Lighting package does not have the prefab.
+        /// An instance of the fixture's VRSL prefab with an ALPS VRSL Fixture on it, drawing
+        /// with ALPS's materials (<see cref="AlpsFixtureMaterials"/>). Null when the VR Stage
+        /// Lighting package does not have the prefab.
         /// </summary>
         public static GameObject CreateFixture(AlpsVrslPrefab fixture, GameObject context)
         {
@@ -77,6 +78,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             var gameObject = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             gameObject.AddComponent<AlpsVRSLFixture>();
+            AlpsFixtureMaterials.Apply(gameObject, undo: false);
             Place(gameObject, context);
             return gameObject;
         }

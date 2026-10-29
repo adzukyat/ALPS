@@ -9,8 +9,9 @@ using UnityEngine.Timeline;
 using VRSL;
 
 /// <summary>
-/// Rebuilds the demo: containers on the scene's VRSL universes, an example timeline
-/// with one ALPS track per container, and the show player. Safe to run again at any time.
+/// Rebuilds the demo: containers on the scene's VRSL universes, drawing with ALPS's
+/// materials like the fixtures ALPS adds, an example timeline with one ALPS track per
+/// container, and the show player. Safe to run again at any time.
 /// </summary>
 public static class AlpsDemoBuilder
 {
@@ -111,6 +112,7 @@ public static class AlpsDemoBuilder
                 }
 
                 fixture.target = vrsl;
+                AlpsFixtureMaterials.Apply(vrsl.gameObject, undo: false);
             }
 
             EditorUtility.SetDirty(container);

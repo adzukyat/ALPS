@@ -112,7 +112,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static bool IsProjection(Material material)
         {
-            return material.shader.name.StartsWith("VRSL/") && material.shader.name.EndsWith("/Projection");
+            return AlpsProjectionLight.IsProjection(material.shader);
         }
 
         private static bool IsOpaque(Material material)

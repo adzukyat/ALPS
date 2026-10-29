@@ -23,6 +23,10 @@ namespace AdzukiSoft.ALPS.Tests
         public void CloseScene()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // The fixtures ALPS adds bring materials of their own.
+            AssetDatabase.DeleteAsset(AlpsFixtureMaterials.Folder);
+            AssetDatabase.DeleteAsset(AlpsProjectionLight.ShaderFolder);
+            AlpsShowSetup.DeleteFolderIfEmpty(AlpsShowSetup.GeneratedFolder);
         }
 
         [Test]
@@ -49,6 +53,28 @@ namespace AdzukiSoft.ALPS.Tests
             var fixture = created.GetComponent<AlpsVRSLFixture>();
             Assert.NotNull(fixture);
             Assert.IsTrue(fixture.IsReady, "The fixture finds its VRSL target.");
+        }
+
+        [Test]
+        public void CreateFixture_DrawsItsProjectionWithAlpsMaterial()
+        {
+            var rig = new GameObject("Rig");
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load();
+            var stock = Projection(prefab).sharedMaterial;
+            var shader = stock.shader;
+
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, rig);
+            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, rig);
+
+            var material = Projection(first).sharedMaterial;
+            Assert.AreNotSame(stock, material);
+            Assert.IsTrue(AlpsShowSetup.IsInFolder(AssetDatabase.GetAssetPath(material), AlpsFixtureMaterials.Folder), "The material is an asset, so the preview draws it too.");
+            Assert.AreEqual("Hidden/ALPS/" + shader.name, material.shader.name, "The projection adds its light.");
+            Assert.AreEqual(stock.GetFloat("_ProjectionIntensity") * AlpsProjectionLight.IntensityScale, material.GetFloat("_ProjectionIntensity"), 1e-5f);
+            Assert.AreSame(material, Projection(second).sharedMaterial, "The fixtures share it the way they shared VRSL's.");
+            Assert.AreSame(shader, stock.shader, "VRSL's own material is left alone.");
+            Assert.IsFalse(AlpsFixtureMaterials.CanApply(first));
+            Assert.IsTrue(AlpsFixtureMaterials.CanApply(prefab), "A fixture still on VRSL's materials can switch.");
         }
 
         [Test]
@@ -99,6 +125,20 @@ namespace AdzukiSoft.ALPS.Tests
             container.settings.shape = AlpsArrangementShape.Line;
             AlpsArrangementLayout.CommitEdit(container);
             Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The container lays them out.");
+        }
+
+        private static Renderer Projection(GameObject fixture)
+        {
+            foreach (var renderer in fixture.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.sharedMaterial != null && AlpsProjectionLight.IsProjection(renderer.sharedMaterial.shader))
+                {
+                    return renderer;
+                }
+            }
+
+            Assert.Fail($"{fixture.name} has no projection.");
+            return null;
         }
     }
 }

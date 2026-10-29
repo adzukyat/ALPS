@@ -167,6 +167,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -305,6 +309,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -451,6 +459,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -632,16 +644,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     angle:
       limit: {x: -180, y: 180}
@@ -661,16 +675,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     sweep:
       limit: {x: 0, y: 360}
@@ -690,16 +706,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     width:
       limit: {x: 0, y: 60}
@@ -719,16 +737,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     depth:
       limit: {x: 0, y: 60}
@@ -748,16 +768,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     height:
       limit: {x: -20, y: 20}
@@ -777,16 +799,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     outward:
       limit: {x: -20, y: 20}
@@ -806,16 +830,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationX:
       limit: {x: -180, y: 180}
@@ -835,16 +861,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationY:
       limit: {x: -180, y: 180}
@@ -864,16 +892,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationZ:
       limit: {x: -180, y: 180}
@@ -893,16 +923,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
   initialized: 0
   legacyFixtures: []
@@ -942,6 +974,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -1268,11 +1304,17 @@ PlayableDirector:
     value: {fileID: 930694294}
   - key: {fileID: 0}
     value: {fileID: 182557434}
-  - key: {fileID: -6556985748628939291, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 1247740771}
-  - key: {fileID: -1619392005158362284, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
     value: {fileID: 930694294}
-  - key: {fileID: -4173705471115939419, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 182557434}
+  - key: {fileID: 945213809119301089, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 1247740771}
+  - key: {fileID: -2352437202484989204, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+    value: {fileID: 930694294}
+  - key: {fileID: 8778282534168204852, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 182557434}
   m_ExposedReferences:
     m_References: []
@@ -1312,6 +1354,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -1462,6 +1508,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+    - target: {fileID: 933324157596692447, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 060ddfe145ea94e40ace76c1899c9ce6, type: 2}
     - target: {fileID: 1027171290994513046, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -1608,6 +1658,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -1758,6 +1812,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+    - target: {fileID: 933324157596692447, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 060ddfe145ea94e40ace76c1899c9ce6, type: 2}
     - target: {fileID: 1027171290994513046, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -1892,6 +1950,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -2030,6 +2092,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -2180,6 +2246,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+    - target: {fileID: 933324157596692447, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 060ddfe145ea94e40ace76c1899c9ce6, type: 2}
     - target: {fileID: 1027171290994513046, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -2326,6 +2396,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -2511,16 +2585,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     angle:
       limit: {x: -180, y: 180}
@@ -2540,16 +2616,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     sweep:
       limit: {x: 0, y: 360}
@@ -2569,16 +2647,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     width:
       limit: {x: 0, y: 60}
@@ -2598,16 +2678,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     depth:
       limit: {x: 0, y: 60}
@@ -2627,16 +2709,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     height:
       limit: {x: -20, y: 20}
@@ -2656,16 +2740,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     outward:
       limit: {x: -20, y: 20}
@@ -2685,16 +2771,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationX:
       limit: {x: -180, y: 180}
@@ -2714,16 +2802,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationY:
       limit: {x: -180, y: 180}
@@ -2743,16 +2833,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationZ:
       limit: {x: -180, y: 180}
@@ -2772,16 +2864,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
   initialized: 0
   legacyFixtures: []
@@ -2833,6 +2927,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+    - target: {fileID: 933324157596692447, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 060ddfe145ea94e40ace76c1899c9ce6, type: 2}
     - target: {fileID: 1027171290994513046, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -3138,16 +3236,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     angle:
       limit: {x: -180, y: 180}
@@ -3167,16 +3267,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     sweep:
       limit: {x: 0, y: 360}
@@ -3196,16 +3298,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     width:
       limit: {x: 0, y: 60}
@@ -3225,16 +3329,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     depth:
       limit: {x: 0, y: 60}
@@ -3254,16 +3360,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     height:
       limit: {x: -20, y: 20}
@@ -3283,16 +3391,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     outward:
       limit: {x: -20, y: 20}
@@ -3312,16 +3422,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationX:
       limit: {x: -180, y: 180}
@@ -3341,16 +3453,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationY:
       limit: {x: -180, y: 180}
@@ -3370,16 +3484,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
     rotationZ:
       limit: {x: -180, y: 180}
@@ -3399,16 +3515,18 @@ MonoBehaviour:
         rise: 0.5
         holdHigh: 0
         fall: 0.5
-        version: 2
+        version: 3
         fixtureGroupSize: 1
         spread: 0
         spreadBeats: 0
         spreadInBeats: 0
+        legacyDelayAcrossGroup: 0
         beatsPerCycle: 2
         inverse: 0
         fireChance: 1
         inBeats: 2
         outBeats: 2
+        inOutMode: 1
       ownPhaseExpanded: 1
   initialized: 0
   legacyFixtures: []
@@ -3448,6 +3566,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -3586,6 +3708,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
@@ -3818,6 +3944,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+    - target: {fileID: 4329189394194989142, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9c59fa814baf0e745abae7ebcedd5c8f, type: 2}
     - target: {fileID: 4514495141956025119, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
       propertyPath: serializedProgramAsset
       value: 
