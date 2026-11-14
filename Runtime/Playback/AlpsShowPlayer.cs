@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using VRC.SDKBase;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 #if UDONSHARP
 using UdonSharp;
@@ -48,15 +48,11 @@ namespace AdzukiSoft.ALPS
         public const float VrslMaxConeLength = 10f;
         public const float VrslDefaultTiltOffset = 90f;
 
-        /// <summary>The material property that turns on VRSL's cone length via DMX.</summary>
-        public const string ConeLengthViaDmxProperty = "_EnableExtraChannels";
-
         /// <summary>
-        /// VRSL's switch for the fine pan and tilt channels, which stays off since the cone
-        /// length rides on the fine pan channel. Older VRSL such as 2.8.1 has no such field and
-        /// never reads fine channels, so it is set by name, which does nothing where it is missing.
+        /// The material property that turns on VRSL's cone length via DMX, which the volumetric
+        /// materials of the fixtures ALPS comes with have on.
         /// </summary>
-        public const string VrslFineChannelsField = "enableFineChannels";
+        public const string ConeLengthViaDmxProperty = "_EnableExtraChannels";
 
         /// <summary>Width of the show data texture the GPU evaluator reads.</summary>
         public const int GpuDataWidth = 1024;
@@ -82,19 +78,6 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>Most users one show can track, one shader vector each.</summary>
         public const int GpuMaxTrackedUsers = 8;
-
-        /// <summary>
-        /// How long the director's time may stand still while the show's clock runs on. A video
-        /// player's time steps once per video frame, 42 ms at 24 fps, and a director that stands
-        /// still longer than this has paused.
-        /// </summary>
-        public const float ClockStallSeconds = 0.1f;
-
-        /// <summary>How far the director's time may jump before the show's clock jumps with it.</summary>
-        public const float ClockSnapSeconds = 0.25f;
-
-        /// <summary>Share of the gap to the director's time the show's clock closes per second.</summary>
-        public const float ClockFollowRate = 5f;
 
         public PlayableDirector director;
 
@@ -122,9 +105,6 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public int[] dmxRows = new int[0];
 
-        /// <summary>Whether the VRSL the world was built with is older than 2.7 (<see cref="AlpsVrslVersion"/>).</summary>
-        public bool vrslLegacy;
-
         /// <summary>
         /// Tells this show's frames from the other shows' in the shared frames targets, so pan
         /// and tilt only carry on from a frame this show drew. Above 0, one per show of the scene.
@@ -145,9 +125,6 @@ namespace AdzukiSoft.ALPS
         private bool _flip;
         private float _lastTime = -1f;
         private float _lastRenderTime = -1f;
-        private float _clockTime = -1f;
-        private float _directorTime = -1f;
-        private float _directorMovedAt;
         private bool _tracks;
         private bool _playersDirty = true;
         private VRCPlayerApi[] _trackedPlayers;
@@ -176,35 +153,8 @@ namespace AdzukiSoft.ALPS
         {
             if (director != null)
             {
-                EvaluateAt(FollowDirector((float)director.time, Time.time, Time.deltaTime));
+                EvaluateAt((float)director.time);
             }
-        }
-
-        /// <summary>
-        /// The time to draw for a director at <paramref name="directorTime"/>. While the director's
-        /// time moves, the show runs on its own clock and leans toward the director's time, so a
-        /// sync system that writes a video player's time into the director every frame, which only
-        /// steps once per video frame, still moves the lights every frame. A seek or a loop jumps
-        /// to the director's time, and once it stops moving the show stops on it exactly.
-        /// </summary>
-        public float FollowDirector(float directorTime, float now, float deltaTime)
-        {
-            if (directorTime != _directorTime || _clockTime < 0f)
-            {
-                _directorTime = directorTime;
-                _directorMovedAt = now;
-            }
-
-            var ahead = _clockTime + deltaTime;
-            var error = directorTime - ahead;
-            if (_clockTime < 0f || now - _directorMovedAt > ClockStallSeconds || Mathf.Abs(error) > ClockSnapSeconds)
-            {
-                _clockTime = directorTime;
-                return _clockTime;
-            }
-
-            _clockTime = ahead + error * Mathf.Min(1f, deltaTime * ClockFollowRate);
-            return _clockTime;
         }
 
         /// <summary>
@@ -225,7 +175,7 @@ namespace AdzukiSoft.ALPS
                 {
                     CaptureVRSL(vrslFixtures[i], defaults, offset);
                     CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
-                    ConfigureVRSLDmx(vrslFixtures[i], row, VrslBaseConeLength(vrslLegacy, defaults[offset + AlpsShowLayout.FrameConeMeshLength]));
+                    ConfigureVRSLDmx(vrslFixtures[i], row, defaults[offset + AlpsShowLayout.FrameConeMeshLength]);
                 }
                 else
                 {
@@ -664,16 +614,6 @@ namespace AdzukiSoft.ALPS
             info[offset + 3] = fixture.legacyGoboRange ? 42.5f : 30f;
         }
 
-        /// <summary>
-        /// The mesh length the cone stretch starts from. It is the fixture's own mesh, so a
-        /// cone shorter than the mesh stretches by less than 0, except before VRSL 2.7, which
-        /// reads a value below 0 as 0, so the stretch starts from 0 there.
-        /// </summary>
-        public static float VrslBaseConeLength(bool legacy, float meshLength)
-        {
-            return legacy ? 0f : meshLength;
-        }
-
         public static void WriteNeutralDmxInfo(float[] info, int offset)
         {
             info[offset] = 90f;
@@ -685,10 +625,11 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Switches a VRSL fixture to DMX mode on grid row <paramref name="row"/>. Pan and tilt
         /// come from DMX on top of a base of 0 and 90, colour and brightness from the DMX
-        /// colour over a white tint. The cone reaches as far as the mesh stretch that VRSL's
-        /// cone length via DMX adds to <paramref name="baseConeLength"/>, with the fade along
-        /// the cone left fully open. That option is a material property, which the build turns
-        /// on in a copy of the volumetric material and the preview in each renderer's block.
+        /// colour over a white tint. The fine pan and tilt channels stay off, since the cone
+        /// length rides on the fine pan channel: the cone reaches as far as the mesh stretch
+        /// that VRSL's cone length via DMX adds to <paramref name="baseConeLength"/>, the
+        /// fixture's own mesh length, with the fade along the cone left fully open. That
+        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>).
         /// </summary>
         public static void ConfigureVRSLDmx(VRStageLighting_DMX_Static fixture, int row, float baseConeLength)
         {
@@ -698,7 +639,7 @@ namespace AdzukiSoft.ALPS
             fixture.useLegacySectorMode = false;
             fixture.nineUniverseMode = false;
             fixture.singleChannelMode = false;
-            fixture.SetProgramVariable(VrslFineChannelsField, false);
+            fixture.enableFineChannels = false;
             fixture.enableStrobe = false;
             fixture.enableAutoSpin = true;
             fixture.dmxUniverse = universe;

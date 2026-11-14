@@ -98,6 +98,17 @@ namespace AdzukiSoft.ALPS
                 { "setup.openTimeline", "タイムラインを開く" },
                 { "track.layer", "レイヤー{0}" },
                 { "setup.openTimeline.tip", "このコンテナーを動かしているタイムラインを表示します。" },
+                { "container.keepLightOffPlayers", "プレイヤーに光を当てない" },
+                { "container.keepLightOffPlayers.tip", "ライトのプロジェクションがプレイヤーを照らさないようにします。シーン内のすべてのコンテナーで共通の設定です。オンの間は、ワールドの不透明マテリアルがプロジェクションより先に描画されるよう、ビルド時に Render Queue を下げます。" },
+
+                // --- Migration ---------------------------------------------
+                { "migrate.title", "VRSL 灯体の移行" },
+                { "migrate.help", "開いているシーン、または開いているプレハブの中で、VR Stage Lighting パッケージから作った灯体を ALPS 付属の灯体に置き換えます。ALPS の灯体はオブジェクト、設定、トラックをそのまま保ちます。それ以外の灯体はその場で置き換わり、名前、配置、見た目を引き継ぎます。AudioLink の設定など、元のスクリプトにしかない設定は引き継ぎません。" },
+                { "migrate.source.alps", "VRSL パッケージから作った ALPS の灯体" },
+                { "migrate.source.dmx", "VRSL の DMX 灯体" },
+                { "migrate.source.audioLink", "VRSL の AudioLink 灯体" },
+                { "migrate.none", "VRSL パッケージの灯体はありません。" },
+                { "migrate.convert", "{0} 個の灯体を変換" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPMオーバーライド" },

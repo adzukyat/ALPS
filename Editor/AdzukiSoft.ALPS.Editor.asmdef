@@ -4,8 +4,9 @@
   "references": [
     "Unity.Timeline.Editor",
     "AdzukiSoft.ALPS.Runtime",
-    "VRSL.Core",
     "VRC.SDKBase",
+    "VRC.SDKBase.Editor",
+    "VRC.SDK3.Editor",
     "VRC.Udon",
     "VRC.Udon.Editor",
     "UdonSharp.Runtime",

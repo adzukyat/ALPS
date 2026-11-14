@@ -98,6 +98,17 @@ namespace AdzukiSoft.ALPS
                 { "setup.openTimeline", "타임라인 열기" },
                 { "track.layer", "레이어 {0}" },
                 { "setup.openTimeline.tip", "이 컨테이너를 움직이는 타임라인을 표시합니다." },
+                { "container.keepLightOffPlayers", "플레이어에게 빛을 비추지 않기" },
+                { "container.keepLightOffPlayers.tip", "라이트의 프로젝션이 플레이어를 비추지 않게 합니다. 씬의 모든 컨테이너에 공통인 설정입니다. 켜져 있는 동안에는 월드의 불투명 머티리얼이 프로젝션보다 먼저 그려지도록 빌드 시 Render Queue를 낮춥니다." },
+
+                // --- Migration ---------------------------------------------
+                { "migrate.title", "VRSL 조명 마이그레이션" },
+                { "migrate.help", "열려 있는 씬 또는 열려 있는 프리팹에서 VR Stage Lighting 패키지로 만든 조명을 ALPS에 포함된 조명으로 바꿉니다. ALPS 조명은 오브젝트, 설정, 트랙을 그대로 유지합니다. 그 밖의 조명은 제자리에서 교체되며 이름, 배치, 모양을 이어받습니다. AudioLink 설정처럼 원래 스크립트에만 있는 설정은 이어받지 않습니다." },
+                { "migrate.source.alps", "VRSL 패키지로 만든 ALPS 조명" },
+                { "migrate.source.dmx", "VRSL DMX 조명" },
+                { "migrate.source.audioLink", "VRSL AudioLink 조명" },
+                { "migrate.none", "VRSL 패키지의 조명이 없습니다." },
+                { "migrate.convert", "조명 {0}개 변환" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM 오버라이드" },

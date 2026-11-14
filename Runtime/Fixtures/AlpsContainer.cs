@@ -24,6 +24,13 @@ namespace AdzukiSoft.ALPS
         public AlpsArrangementSettings settings = new AlpsArrangementSettings();
 
         /// <summary>
+        /// Keeps the fixtures' projections from lighting players, which the build does by
+        /// changing the draw order of the whole scene. So it is one switch per scene: it is on
+        /// when any container of the scene has it on, and the inspector sets it on all of them.
+        /// </summary>
+        public bool keepLightOffPlayers;
+
+        /// <summary>
         /// False until the editor has laid the children out for the first time, which starts
         /// the line and the rotation from the children as they are. Reset clears it again.
         /// </summary>

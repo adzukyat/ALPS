@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Editor
 {
@@ -12,9 +12,11 @@ namespace AdzukiSoft.ALPS.Editor
     /// Turns an authoring scene into the scene VRChat runs: the show is compiled into an
     /// Udon player created under the director, the director switches to the build timeline,
     /// whose projection tracks are bound to Animators above the fixtures, the fixtures'
-    /// volumetric materials switch to copies with cone length via DMX on, and the authoring
-    /// only components are removed. Only ever run on a scene copy that is not
-    /// saved back.
+    /// volumetric materials switch to copies with cone length via DMX on, the projections
+    /// draw between the world and the players where a container asks for it
+    /// (<see cref="AlpsRenderOrder"/>), and the
+    /// authoring only components are removed. Only ever run on a scene copy that is not saved
+    /// back.
     /// </summary>
     public static class AlpsShowApplier
     {
@@ -62,11 +64,21 @@ namespace AdzukiSoft.ALPS.Editor
             var builds = new Dictionary<TimelineAsset, TimelineAsset>();
             var directors = FindShowDirectors(scene);
             var rows = AssignDmxRows(directors, errors);
-            if (errors.Count == startErrors)
+            var shared = errors.Count == startErrors && directors.Count > 0 ? AlpsGpuAssets.CreateShared() : null;
+            if (shared != null && !shared.IsComplete)
+            {
+                errors.Add("The show player's materials and targets could not be created.");
+            }
+            else if (shared != null)
             {
                 for (var i = 0; i < directors.Count; i++)
                 {
-                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, errors);
+                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, shared, errors);
+                }
+
+                if (AlpsRenderOrder.IsOn(scene))
+                {
+                    AlpsRenderOrder.Apply(scene);
                 }
             }
 
@@ -164,20 +176,14 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         private static void ApplyDirector(PlayableDirector director, int showToken, bool generateTimelines,
-            Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, List<string> errors)
+            Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, AlpsGpuAssets.Shared shared,
+            List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
             var show = AlpsShowCompiler.Compile(director);
             if (show.errors.Count > 0)
             {
                 errors.AddRange(show.errors);
-                return;
-            }
-
-            var shared = AlpsGpuAssets.GetShared(generateTimelines);
-            if (!shared.IsComplete)
-            {
-                errors.Add("The show player's materials and targets are missing.");
                 return;
             }
 
@@ -206,16 +212,11 @@ namespace AdzukiSoft.ALPS.Editor
 
             CopyShowToPlayer(show, player, director);
             player.dmxRows = new int[show.fixtures.Count];
-            player.vrslLegacy = AlpsVrslVersion.IsLegacy;
             player.showToken = showToken;
             for (var i = 0; i < show.fixtures.Count; i++)
             {
                 var fixture = show.fixtures[i];
                 player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : i;
-                if (player.vrslFixtures[i] != null)
-                {
-                    AlpsGpuAssets.UseConeLengthMaterials(player.vrslFixtures[i], generateTimelines, errors);
-                }
             }
 
             player.framesMaterial = shared.framesMaterial;

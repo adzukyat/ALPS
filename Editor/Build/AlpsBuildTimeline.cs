@@ -21,6 +21,19 @@ namespace AdzukiSoft.ALPS.Editor
             return AlpsShowCompiler.CollectTracks(timeline).Count > 0;
         }
 
+        /// <summary>
+        /// Removes every build timeline. A build has written them into its bundle by the time it
+        /// finishes, and play mode plays them only while it runs.
+        /// </summary>
+        public static void DeleteAll()
+        {
+            if (AssetDatabase.IsValidFolder(Folder))
+            {
+                AssetDatabase.DeleteAsset(Folder);
+                AlpsShowSetup.DeleteFolderIfEmpty(AlpsShowSetup.GeneratedFolder);
+            }
+        }
+
         public static string PathFor(TimelineAsset source)
         {
             var sourcePath = AssetDatabase.GetAssetPath(source);

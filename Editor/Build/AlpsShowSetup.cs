@@ -159,5 +159,27 @@ namespace AdzukiSoft.ALPS.Editor
                 current = next;
             }
         }
+
+        /// <summary>
+        /// Whether <paramref name="path"/> is <paramref name="folder"/> or below it. Unity keeps
+        /// the case a folder was first made with, which may not be ours.
+        /// </summary>
+        public static bool IsInFolder(string path, string folder)
+        {
+            return path.Equals(folder, System.StringComparison.OrdinalIgnoreCase)
+                || path.StartsWith(folder + "/", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Removes <paramref name="folder"/> and then each folder above it up to <see cref="GeneratedFolder"/> while they hold nothing.</summary>
+        public static void DeleteFolderIfEmpty(string folder)
+        {
+            while (IsInFolder(folder, GeneratedFolder) && AssetDatabase.IsValidFolder(folder)
+                && AssetDatabase.FindAssets(string.Empty, new[] { folder }).Length == 0
+                && AssetDatabase.GetSubFolders(folder).Length == 0)
+            {
+                AssetDatabase.DeleteAsset(folder);
+                folder = folder.Substring(0, folder.LastIndexOf('/'));
+            }
+        }
     }
 }

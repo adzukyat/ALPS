@@ -6,11 +6,12 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 /// <summary>
-/// Rebuilds the demo: containers on the scene's VRSL universes, an example timeline
-/// with one ALPS track per container, and the show player. Safe to run again at any time.
+/// Rebuilds the demo: the scene's fixtures as the ones ALPS comes with, containers on its
+/// universes, an example timeline with one ALPS track per container, and the show player.
+/// Safe to run again at any time.
 /// </summary>
 public static class AlpsDemoBuilder
 {
@@ -25,6 +26,8 @@ public static class AlpsDemoBuilder
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         RemoveLegacyObjects();
+        // The scene was made with fixtures of the VR Stage Lighting package.
+        AlpsVrslMigration.Convert(AlpsVrslMigration.Find());
 
         var groups = BuildGroups(scene);
         var director = Object.FindObjectOfType<PlayableDirector>();

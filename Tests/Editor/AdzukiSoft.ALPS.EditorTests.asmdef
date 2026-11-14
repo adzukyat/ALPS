@@ -4,7 +4,6 @@
   "references": [
     "AdzukiSoft.ALPS.Runtime",
     "AdzukiSoft.ALPS.Editor",
-    "VRSL.Core",
     "VRC.SDKBase",
     "VRC.Udon",
     "VRC.Udon.Editor",

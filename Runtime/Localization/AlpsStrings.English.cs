@@ -98,6 +98,17 @@ namespace AdzukiSoft.ALPS
                 { "setup.openTimeline", "Open Timeline" },
                 { "track.layer", "Layer {0}" },
                 { "setup.openTimeline.tip", "Shows the Timeline that drives this container." },
+                { "container.keepLightOffPlayers", "Keep Light Off Players" },
+                { "container.keepLightOffPlayers.tip", "Keeps the lights' projections from lighting players. One setting for every container in the scene. While on, the world's opaque materials are given lower render queues in the build, so they draw before the projections." },
+
+                // --- Migration ---------------------------------------------
+                { "migrate.title", "Migrate VRSL Fixtures" },
+                { "migrate.help", "Replaces fixtures made from the VR Stage Lighting package with the fixtures ALPS comes with, in the open scenes or the prefab that is open. ALPS fixtures keep their object, their settings and their tracks. Other fixtures are replaced in place: they keep their name, placement and look, and lose what only their own script had, such as AudioLink settings." },
+                { "migrate.source.alps", "ALPS fixtures made from the VRSL package" },
+                { "migrate.source.dmx", "VRSL DMX fixtures" },
+                { "migrate.source.audioLink", "VRSL AudioLink fixtures" },
+                { "migrate.none", "No fixtures of the VRSL package here." },
+                { "migrate.convert", "Convert {0} Fixtures" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM Override" },

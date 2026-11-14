@@ -1,6 +1,6 @@
 {
   "name": "me.adzuki.live-performance-system",
-  "version": "6.3.1",
+  "version": "7.0.0",
   "displayName": "Adzuki Live Performance System",
   "description": "Timeline based lighting shows for VRChat worlds, previewed in the editor and played by an Udon player on VR Stage Lighting fixtures.",
   "unity": "2022.3",
@@ -8,7 +8,6 @@
     "name": "Adzukyat"
   },
   "dependencies": {
-    "com.acchosen.vr-stage-lighting": "2.8.4",
     "com.vrchat.base": "3.10.2",
     "com.vrchat.worlds": "3.10.2"
   }

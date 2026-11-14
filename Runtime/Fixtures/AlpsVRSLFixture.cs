@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS
 {
@@ -17,6 +17,7 @@ namespace AdzukiSoft.ALPS
         {
             "enableDMXChannels",
             "enableStrobe",
+            "enableFineChannels",
             "enableAutoSpin",
             "dmxChannel",
             "dmxUniverse",
@@ -34,10 +35,6 @@ namespace AdzukiSoft.ALPS
             "maxConeLength",
         };
 
-        /// <summary>Older VRSL such as 2.8.1 has no fine channels and never reads them.</summary>
-        private static readonly bool HasFineChannels = typeof(VRStageLighting_DMX_Static).GetField(AlpsShowPlayer.VrslFineChannelsField) != null;
-
-        private MaterialPropertyBlock _block;
         private bool _hasAuthored;
         private bool _authoredDmx;
         private bool _authoredStrobe;
@@ -87,7 +84,7 @@ namespace AdzukiSoft.ALPS
             _authoredDmx = fixture.enableDMXChannels;
             _authoredStrobe = fixture.enableStrobe;
             _authoredAutoSpin = fixture.enableAutoSpin;
-            _authoredFineChannels = fixture.GetProgramVariable(AlpsShowPlayer.VrslFineChannelsField) is bool fine && fine;
+            _authoredFineChannels = fixture.enableFineChannels;
             _authoredChannel = fixture.dmxChannel;
             _authoredUniverse = fixture.dmxUniverse;
             _authoredNineUniverses = fixture.nineUniverseMode;
@@ -117,12 +114,11 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            // The preview put the fixture in DMX mode. Updating again also rebuilds the
-            // property block, which drops the cone length via DMX the preview turned on.
+            // The preview put the fixture in DMX mode.
             fixture.enableDMXChannels = _authoredDmx;
             fixture.enableStrobe = _authoredStrobe;
             fixture.enableAutoSpin = _authoredAutoSpin;
-            fixture.SetProgramVariable(AlpsShowPlayer.VrslFineChannelsField, _authoredFineChannels);
+            fixture.enableFineChannels = _authoredFineChannels;
             fixture.dmxChannel = _authoredChannel;
             fixture.dmxUniverse = _authoredUniverse;
             fixture.nineUniverseMode = _authoredNineUniverses;
@@ -149,11 +145,6 @@ namespace AdzukiSoft.ALPS
             foreach (var property in PreviewProperties)
             {
                 driver.AddFromName(fixture, property);
-            }
-
-            if (HasFineChannels)
-            {
-                driver.AddFromName(fixture, AlpsShowPlayer.VrslFineChannelsField);
             }
 
             var projection = new List<Renderer>();
@@ -223,39 +214,7 @@ namespace AdzukiSoft.ALPS
             }
 
             AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, infoOffset);
-            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, AlpsShowPlayer.VrslBaseConeLength(AlpsVrslVersion.IsLegacy, defaults[offset + AlpsShowLayout.FrameConeMeshLength]));
-            EnableConeLengthViaDmx(fixture);
-        }
-
-        /// <summary>
-        /// Turns VRSL's cone length via DMX on in each renderer's property block, after VRSL
-        /// rebuilt the blocks. A build turns it on in the materials instead, since a block
-        /// with a property outside VRSL's instanced ones could keep the renderers from being
-        /// drawn together.
-        /// </summary>
-        private void EnableConeLengthViaDmx(VRStageLighting_DMX_Static fixture)
-        {
-            if (fixture.objRenderers == null)
-            {
-                return;
-            }
-
-            if (_block == null)
-            {
-                _block = new MaterialPropertyBlock();
-            }
-
-            foreach (var renderer in fixture.objRenderers)
-            {
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                renderer.GetPropertyBlock(_block);
-                _block.SetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty, 1f);
-                renderer.SetPropertyBlock(_block);
-            }
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, defaults[offset + AlpsShowLayout.FrameConeMeshLength]);
         }
 
         private void Reset()

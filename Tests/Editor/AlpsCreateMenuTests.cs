@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Tests
 {
@@ -38,6 +38,28 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Fixtures_TakeTheirConeLengthFromDmx()
+        {
+            var found = 0;
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material != null && material.HasProperty(AlpsShowPlayer.ConeLengthViaDmxProperty))
+                        {
+                            found++;
+                            Assert.AreEqual(1f, material.GetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty), $"{material.name} of {fixture.Name} has cone length via DMX off.");
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(found, 0, "No fixture has a material that reads the cone length.");
+        }
+
+        [Test]
         public void CreateFixture_AddsAReadyFixtureUnderTheContext()
         {
             var rig = new GameObject("Rig");
@@ -49,6 +71,30 @@ namespace AdzukiSoft.ALPS.Tests
             var fixture = created.GetComponent<AlpsVRSLFixture>();
             Assert.NotNull(fixture);
             Assert.IsTrue(fixture.IsReady, "The fixture finds its VRSL target.");
+        }
+
+        [Test]
+        public void Fixtures_AddTheirProjectionsAsLight()
+        {
+            var found = 0;
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    var material = renderer.sharedMaterial;
+                    if (material == null || !material.shader.name.EndsWith("/Projection"))
+                    {
+                        continue;
+                    }
+
+                    found++;
+                    var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(AssetDatabase.GetAssetPath(material.shader)));
+                    StringAssert.Contains("Blend One One", source, $"{material.shader.name} does not add its light.");
+                    StringAssert.DoesNotContain("DstColor", source.Substring(source.IndexOf("SubShader", System.StringComparison.Ordinal)), $"{material.shader.name} still multiplies.");
+                }
+            }
+
+            Assert.Greater(found, 0, "No fixture has a projection.");
         }
 
         [Test]
