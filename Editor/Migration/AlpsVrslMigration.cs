@@ -61,7 +61,6 @@ namespace AdzukiSoft.ALPS.Editor
         private const string AudioLinkPrefix = "VRSL-AudioLink-";
         private const string PackageNamespace = "VRSL.";
         private const string PackageShaders = "VRSL/";
-        private const string GeneratedShaders = "Hidden/ALPS/VRSL/";
 
         /// <summary>Parts of the package's prefab names, in the order they are tried.</summary>
         private static readonly KeyValuePair<string, AlpsVrslPrefab>[] Names =
@@ -249,8 +248,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Gives the renderers the materials of the prefab back where an override holds one
-        /// drawn with a shader of the package, or with the copy of one that ALPS 7 before its
-        /// release wrote to the project, both of which read the grid the package's way.
+        /// drawn with a shader of the package, which reads the grid the package's way.
         /// </summary>
         private static void RevertPackageMaterials(GameObject root)
         {
@@ -260,7 +258,7 @@ namespace AdzukiSoft.ALPS.Editor
                 foreach (var material in renderer.sharedMaterials)
                 {
                     var shader = material != null && material.shader != null ? material.shader.name : "";
-                    held |= shader.StartsWith(PackageShaders, StringComparison.Ordinal) || shader.StartsWith(GeneratedShaders, StringComparison.Ordinal);
+                    held |= shader.StartsWith(PackageShaders, StringComparison.Ordinal);
                 }
 
                 if (held)
