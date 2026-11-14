@@ -110,6 +110,66 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Scene_AsksForItOnAnyContainerAndIsSetOnAll()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            Assert.IsFalse(AlpsRenderOrder.IsOn(scene), "A scene without containers does not ask.");
+
+            var first = new GameObject("First").AddComponent<AlpsContainer>();
+            var second = new GameObject("Second").AddComponent<AlpsContainer>();
+            second.transform.SetParent(first.transform, false);
+            second.gameObject.SetActive(false);
+            Assert.IsFalse(first.keepLightOffPlayers, "It starts off.");
+            Assert.IsFalse(AlpsRenderOrder.IsOn(scene));
+
+            second.keepLightOffPlayers = true;
+            Assert.IsTrue(AlpsRenderOrder.IsOn(scene), "One container asking is enough, an inactive one too.");
+
+            AlpsRenderOrder.SetOn(scene, true);
+            Assert.IsTrue(first.keepLightOffPlayers);
+
+            AlpsRenderOrder.SetOn(scene, false);
+            Assert.IsFalse(first.keepLightOffPlayers);
+            Assert.IsFalse(second.keepLightOffPlayers);
+            Assert.IsFalse(AlpsRenderOrder.IsOn(scene));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Build_ReordersOnlyWhereAContainerAsks(bool asks)
+        {
+            var scene = BuildScene(out _, out _, out var projection, out _);
+            var floor = GameObject.Find("Floor").GetComponent<Renderer>();
+            var floorMaterial = floor.sharedMaterial;
+            var projectionMaterial = projection.sharedMaterial;
+            Object.FindObjectOfType<AlpsContainer>().keepLightOffPlayers = asks;
+
+            var errors = new List<string>();
+            try
+            {
+                Assert.IsTrue(AlpsShowApplier.Apply(scene, true, errors), string.Join("\n", errors));
+                if (asks)
+                {
+                    Assert.Less(floor.sharedMaterial.renderQueue, AlpsRenderOrder.ProjectionQueue);
+                    Assert.AreEqual(AlpsRenderOrder.ProjectionQueue, projection.sharedMaterial.renderQueue);
+                }
+                else
+                {
+                    Assert.AreSame(floorMaterial, floor.sharedMaterial, "The world keeps its materials.");
+                    Assert.AreSame(projectionMaterial, projection.sharedMaterial);
+                }
+            }
+            finally
+            {
+                RenderTexture.active = null;
+                if (AssetDatabase.IsValidFolder(AlpsShowSetup.GeneratedFolder))
+                {
+                    AssetDatabase.DeleteAsset(AlpsShowSetup.GeneratedFolder);
+                }
+            }
+        }
+
+        [Test]
         public void Remap_KeepsTheOrderBelowTheProjections()
         {
             var queues = new[] { 2000, 2450, 1000, 2001, 2000, 1949, 2500, 0, 1 };

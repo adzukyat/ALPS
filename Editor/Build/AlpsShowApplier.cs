@@ -13,7 +13,8 @@ namespace AdzukiSoft.ALPS.Editor
     /// Udon player created under the director, the director switches to the build timeline,
     /// whose projection tracks are bound to Animators above the fixtures, the fixtures'
     /// volumetric materials switch to copies with cone length via DMX on, the projections
-    /// draw between the world and the players (<see cref="AlpsRenderOrder"/>), and the
+    /// draw between the world and the players where a container asks for it
+    /// (<see cref="AlpsRenderOrder"/>), and the
     /// authoring only components are removed. Only ever run on a scene copy that is not saved
     /// back.
     /// </summary>
@@ -75,7 +76,10 @@ namespace AdzukiSoft.ALPS.Editor
                     ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, shared, errors);
                 }
 
-                AlpsRenderOrder.Apply(scene);
+                if (AlpsRenderOrder.IsOn(scene))
+                {
+                    AlpsRenderOrder.Apply(scene);
+                }
             }
 
             AlpsBuildReferences.Retarget(scene, builds);

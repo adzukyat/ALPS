@@ -98,6 +98,8 @@ namespace AdzukiSoft.ALPS
                 { "setup.openTimeline", "타임라인 열기" },
                 { "track.layer", "레이어 {0}" },
                 { "setup.openTimeline.tip", "이 컨테이너를 움직이는 타임라인을 표시합니다." },
+                { "container.keepLightOffPlayers", "플레이어에게 빛을 비추지 않기" },
+                { "container.keepLightOffPlayers.tip", "라이트의 프로젝션이 플레이어를 비추지 않게 합니다. 씬의 모든 컨테이너에 공통인 설정입니다. 켜져 있는 동안에는 월드의 불투명 머티리얼이 프로젝션보다 먼저 그려지도록 빌드 시 Render Queue를 낮춥니다." },
 
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "VRSL 조명 마이그레이션" },

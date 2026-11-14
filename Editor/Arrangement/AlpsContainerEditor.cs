@@ -51,6 +51,7 @@ namespace AdzukiSoft.ALPS.Editor
                 var setup = new AlpsContainerSetupRow(container);
                 _view.Add(new AlpsAddFixtureCatalog(container, _ => setup.Refresh()));
                 _view.Add(setup);
+                _view.Add(BuildKeepLightOffPlayers(container));
                 host.Add(_view);
             }
 
@@ -84,6 +85,23 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 _view?.Reload();
             }
+        }
+
+        /// <summary>
+        /// The switch is one per scene (<see cref="AlpsRenderOrder.IsOn"/>), so it shows what
+        /// the scene has and sets every container of it.
+        /// </summary>
+        private static AlpsToggleSwitch BuildKeepLightOffPlayers(AlpsContainer container)
+        {
+            var keep = new AlpsToggleSwitch(AlpsStrings.Tr("container.keepLightOffPlayers"))
+            {
+                name = "keep-light-off-players",
+                tooltip = AlpsStrings.Tr("container.keepLightOffPlayers.tip"),
+            };
+            keep.AddToClassList("alps-setup");
+            keep.SetValueWithoutNotify(AlpsRenderOrder.IsOn(container.gameObject.scene));
+            keep.RegisterValueChangedCallback(evt => AlpsRenderOrder.SetOn(container.gameObject.scene, evt.newValue));
+            return keep;
         }
 
         private static void Snapshot(AlpsContainer container)

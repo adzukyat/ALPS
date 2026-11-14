@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
@@ -8,7 +9,7 @@ namespace AdzukiSoft.ALPS.Editor
 {
     /// <summary>
     /// Keeps players out of VRSL's projections by drawing them between the world and the
-    /// avatars. A projection only brightens the colour already drawn, so an avatar drawn after
+    /// avatars, in a scene that asks for it (<see cref="IsOn"/>). A projection only brightens the colour already drawn, so an avatar drawn after
     /// it covers its own pixels with its own colour. The depth texture is drawn before every
     /// opaque object, so the projection still finds where it lands that early, and VRSL's
     /// projection shaders have no shadow caster pass, so the cones stay out of it.
@@ -27,6 +28,52 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>VRChat's Player, PlayerLocal and MirrorReflection layers.</summary>
         private const int PlayerLayers = (1 << 9) | (1 << 10) | (1 << 18);
+
+        /// <summary>
+        /// Whether the scene asks for it, which it does when any of its containers has
+        /// <see cref="AlpsContainer.keepLightOffPlayers"/> on. It is off unless asked for, since
+        /// it changes the draw order of a world's own materials.
+        /// </summary>
+        public static bool IsOn(Scene scene)
+        {
+            foreach (var container in Containers(scene))
+            {
+                if (container.keepLightOffPlayers)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Sets the switch on every container of the scene, so they never disagree.</summary>
+        public static void SetOn(Scene scene, bool on)
+        {
+            foreach (var container in Containers(scene))
+            {
+                if (container.keepLightOffPlayers != on)
+                {
+                    Undo.RecordObject(container, "Keep Light Off Players");
+                    container.keepLightOffPlayers = on;
+                    EditorUtility.SetDirty(container);
+                }
+            }
+        }
+
+        private static List<AlpsContainer> Containers(Scene scene)
+        {
+            var containers = new List<AlpsContainer>();
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    containers.AddRange(root.GetComponentsInChildren<AlpsContainer>(true));
+                }
+            }
+
+            return containers;
+        }
 
         /// <summary>
         /// Points every renderer of the scene but players at copies of its materials: VRSL

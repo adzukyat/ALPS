@@ -98,6 +98,8 @@ namespace AdzukiSoft.ALPS
                 { "setup.openTimeline", "Open Timeline" },
                 { "track.layer", "Layer {0}" },
                 { "setup.openTimeline.tip", "Shows the Timeline that drives this container." },
+                { "container.keepLightOffPlayers", "Keep Light Off Players" },
+                { "container.keepLightOffPlayers.tip", "Keeps the lights' projections from lighting players. One setting for every container in the scene. While on, the world's opaque materials are given lower render queues in the build, so they draw before the projections." },
 
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "Migrate VRSL Fixtures" },

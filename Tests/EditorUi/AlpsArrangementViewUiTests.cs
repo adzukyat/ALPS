@@ -197,6 +197,58 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [UnityTest]
+        public IEnumerator KeepLightOffPlayers_IsOneSwitchForTheScene()
+        {
+            // ChangeEvent only fires on a panel, so this runs inside a real window.
+            var container = AlpsCreateMenu.CreateContainer(null).GetComponent<AlpsContainer>();
+            var other = AlpsCreateMenu.CreateContainer(null).GetComponent<AlpsContainer>();
+            var window = ScriptableObject.CreateInstance<PanelHostWindow>();
+            window.hideFlags = HideFlags.HideAndDontSave;
+            window.ShowUtility();
+            UnityEditor.Editor inspector = null;
+            UnityEditor.Editor otherInspector = null;
+            try
+            {
+                inspector = UnityEditor.Editor.CreateEditor(container);
+                var host = inspector.CreateInspectorGUI();
+                window.rootVisualElement.Add(host);
+                yield return null;
+
+                var keep = host.Q<AlpsToggleSwitch>("keep-light-off-players");
+                Assert.AreEqual(AlpsStrings.Tr("container.keepLightOffPlayers"), keep.label);
+                Assert.IsFalse(keep.value, "It starts off.");
+
+                keep.value = true;
+                Assert.IsTrue(container.keepLightOffPlayers);
+                Assert.IsTrue(other.keepLightOffPlayers, "Every container of the scene follows.");
+
+                // A container that never had it on shows what the scene has.
+                other.keepLightOffPlayers = false;
+                otherInspector = UnityEditor.Editor.CreateEditor(other);
+                Assert.IsTrue(otherInspector.CreateInspectorGUI().Q<AlpsToggleSwitch>("keep-light-off-players").value);
+
+                keep.value = false;
+                Assert.IsFalse(container.keepLightOffPlayers);
+                Assert.IsFalse(other.keepLightOffPlayers);
+            }
+            finally
+            {
+                if (inspector != null)
+                {
+                    Object.DestroyImmediate(inspector);
+                }
+
+                if (otherInspector != null)
+                {
+                    Object.DestroyImmediate(otherInspector);
+                }
+
+                window.Close();
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Editing_MovesTheChildren()
         {
             // ChangeEvent only fires on a panel, so this runs inside a real window.
