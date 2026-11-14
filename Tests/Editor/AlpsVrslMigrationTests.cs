@@ -105,6 +105,12 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.NotNull(target);
             Assert.AreEqual(4.25f, target.coneWidth, 1e-4f);
             Assert.IsTrue(target.invertPan);
+            foreach (var modification in PrefabUtility.GetPropertyModifications(old))
+            {
+                Assert.AreEqual(AlpsCreateMenu.MoverSpotlight.Path, AssetDatabase.GetAssetPath(modification.target),
+                    $"The override of {modification.propertyPath} still names the package's prefab.");
+            }
+
             Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
         }
 

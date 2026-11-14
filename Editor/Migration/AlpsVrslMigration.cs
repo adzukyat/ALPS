@@ -232,6 +232,7 @@ namespace AdzukiSoft.ALPS.Editor
             };
             PrefabUtility.ReplacePrefabAssetOfPrefabInstance(root, prefab, settings, InteractionMode.UserAction);
 
+            RemovePackageOverrides(root, prefab);
             RevertPackageMaterials(root);
             var fresh = root.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
             ApplyValues(fresh, values);
@@ -244,6 +245,36 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             return root;
+        }
+
+        /// <summary>
+        /// Drops the overrides the swap could not hand over, which still name objects of the
+        /// package's prefab: the ones on its fixture script, whose values
+        /// <see cref="ApplyValues"/> sets on the new script instead. Left in, they would keep
+        /// the scene referring to the package.
+        /// </summary>
+        private static void RemovePackageOverrides(GameObject root, GameObject prefab)
+        {
+            var modifications = PrefabUtility.GetPropertyModifications(root);
+            if (modifications == null)
+            {
+                return;
+            }
+
+            var path = AssetDatabase.GetAssetPath(prefab);
+            var kept = new List<PropertyModification>();
+            foreach (var modification in modifications)
+            {
+                if (modification.target != null && AssetDatabase.GetAssetPath(modification.target) == path)
+                {
+                    kept.Add(modification);
+                }
+            }
+
+            if (kept.Count != modifications.Length)
+            {
+                PrefabUtility.SetPropertyModifications(root, kept.ToArray());
+            }
         }
 
         /// <summary>
