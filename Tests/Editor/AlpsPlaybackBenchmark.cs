@@ -11,7 +11,7 @@ using UnityEngine.Playables;
 using UnityEngine.TestTools;
 using UnityEngine.Timeline;
 using VRC.Udon;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
@@ -28,7 +28,7 @@ namespace AdzukiSoft.ALPS.Tests
         private const string Folder = "Assets/AlpsTestFixtures/Baked";
         private const string ScenePath = Folder + "/Benchmark.unity";
         private const string TimelinePath = Folder + "/Benchmark.playable";
-        private const string MoverPrefab = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string MoverPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
         private const int Containers = 3;
         private const int FixturesPerContainer = 16;
         private const int Frames = 300;

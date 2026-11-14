@@ -93,13 +93,20 @@ namespace AdzukiSoft.ALPS
                 { "fixture.lightBar", "Light Bar" },
                 { "fixture.multiLightBar", "Multi Light Bar" },
                 { "fixture.laser", "Laser" },
-                { "fixture.useAlpsMaterials", "Use ALPS Materials" },
-                { "fixture.useAlpsMaterials.info", "This fixture's projections still blend the way VRSL does, so where they overlap their light multiplies. ALPS's materials add it up instead, as on the fixtures ALPS adds, which changes how the projections look." },
                 { "setup.timeline", "Set Up Timeline" },
                 { "setup.timeline.tip", "Creates a Timeline in Assets/ALPS/Shows and a parent with a Playable Director that plays it, then gives this container and every container in it a lighting track with layers for move, colour and brightness." },
                 { "setup.openTimeline", "Open Timeline" },
                 { "track.layer", "Layer {0}" },
                 { "setup.openTimeline.tip", "Shows the Timeline that drives this container." },
+
+                // --- Migration ---------------------------------------------
+                { "migrate.title", "Migrate VRSL Fixtures" },
+                { "migrate.help", "Replaces fixtures made from the VR Stage Lighting package with the fixtures ALPS comes with, in the open scenes or the prefab that is open. ALPS fixtures keep their object, their settings and their tracks. Other fixtures are replaced in place: they keep their name, placement and look, and lose what only their own script had, such as AudioLink settings." },
+                { "migrate.source.alps", "ALPS fixtures made from the VRSL package" },
+                { "migrate.source.dmx", "VRSL DMX fixtures" },
+                { "migrate.source.audioLink", "VRSL AudioLink fixtures" },
+                { "migrate.none", "No fixtures of the VRSL package here." },
+                { "migrate.convert", "Convert {0} Fixtures" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM Override" },

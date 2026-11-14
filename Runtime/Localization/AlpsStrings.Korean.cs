@@ -93,13 +93,20 @@ namespace AdzukiSoft.ALPS
                 { "fixture.lightBar", "라이트 바" },
                 { "fixture.multiLightBar", "멀티 라이트 바" },
                 { "fixture.laser", "레이저" },
-                { "fixture.useAlpsMaterials", "ALPS 머티리얼 사용" },
-                { "fixture.useAlpsMaterials.info", "이 조명의 프로젝션은 VRSL 방식 그대로 합성되므로, 겹친 부분의 빛이 곱해집니다. ALPS 머티리얼은 ALPS에서 추가한 조명처럼 빛을 더하므로 프로젝션의 모습이 달라집니다." },
                 { "setup.timeline", "타임라인 설정" },
                 { "setup.timeline.tip", "Assets/ALPS/Shows에 타임라인을 만들고, 그것을 재생하는 Playable Director가 붙은 부모를 만듭니다. 이 컨테이너와 안의 컨테이너마다 무브, 컬러, 밝기 레이어를 가진 트랙을 만듭니다." },
                 { "setup.openTimeline", "타임라인 열기" },
                 { "track.layer", "레이어 {0}" },
                 { "setup.openTimeline.tip", "이 컨테이너를 움직이는 타임라인을 표시합니다." },
+
+                // --- Migration ---------------------------------------------
+                { "migrate.title", "VRSL 조명 마이그레이션" },
+                { "migrate.help", "열려 있는 씬 또는 열려 있는 프리팹에서 VR Stage Lighting 패키지로 만든 조명을 ALPS에 포함된 조명으로 바꿉니다. ALPS 조명은 오브젝트, 설정, 트랙을 그대로 유지합니다. 그 밖의 조명은 제자리에서 교체되며 이름, 배치, 모양을 이어받습니다. AudioLink 설정처럼 원래 스크립트에만 있는 설정은 이어받지 않습니다." },
+                { "migrate.source.alps", "VRSL 패키지로 만든 ALPS 조명" },
+                { "migrate.source.dmx", "VRSL DMX 조명" },
+                { "migrate.source.audioLink", "VRSL AudioLink 조명" },
+                { "migrate.none", "VRSL 패키지의 조명이 없습니다." },
+                { "migrate.convert", "조명 {0}개 변환" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM 오버라이드" },

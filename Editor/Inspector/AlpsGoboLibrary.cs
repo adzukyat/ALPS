@@ -10,7 +10,7 @@ namespace AdzukiSoft.ALPS.Editor
     public static class AlpsGoboLibrary
     {
         private const string Folder =
-            "Packages/com.acchosen.vr-stage-lighting/Runtime/Textures/MoverLightTextures/GOBO/IndividualGobos/";
+            "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Textures/MoverLightTextures/GOBO/IndividualGobos/";
 
         /// <summary>File name suffixes in VRSL's own gobo order, starting at gobo 1.</summary>
         private static readonly string[] Names =

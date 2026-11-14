@@ -197,7 +197,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 497128361}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53041de46e0113848b91b1a94be742e1, type: 3}
+  m_Script: {fileID: 11500000, guid: 67c5f78fde67f522f17d6d60a2e18116, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   serializationData:
@@ -427,7 +427,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 780876892}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53041de46e0113848b91b1a94be742e1, type: 3}
+  m_Script: {fileID: 11500000, guid: 67c5f78fde67f522f17d6d60a2e18116, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   serializationData:

@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Tests
 {
@@ -23,10 +23,6 @@ namespace AdzukiSoft.ALPS.Tests
         public void CloseScene()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            // The fixtures ALPS adds bring materials of their own.
-            AssetDatabase.DeleteAsset(AlpsFixtureMaterials.Folder);
-            AssetDatabase.DeleteAsset(AlpsProjectionLight.ShaderFolder);
-            AlpsShowSetup.DeleteFolderIfEmpty(AlpsShowSetup.GeneratedFolder);
         }
 
         [Test]
@@ -39,6 +35,28 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.NotNull(prefab.GetComponentInChildren<VRStageLighting_DMX_Static>(true), $"{fixture.Name} is not a DMX Static fixture.");
                 Assert.AreEqual(fixture.Path, AssetDatabase.GUIDToAssetPath(fixture.Guid), $"{fixture.Name}'s GUID and path disagree.");
             }
+        }
+
+        [Test]
+        public void Fixtures_TakeTheirConeLengthFromDmx()
+        {
+            var found = 0;
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material != null && material.HasProperty(AlpsShowPlayer.ConeLengthViaDmxProperty))
+                        {
+                            found++;
+                            Assert.AreEqual(1f, material.GetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty), $"{material.name} of {fixture.Name} has cone length via DMX off.");
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(found, 0, "No fixture has a material that reads the cone length.");
         }
 
         [Test]
@@ -56,25 +74,27 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void CreateFixture_DrawsItsProjectionWithAlpsMaterial()
+        public void Fixtures_AddTheirProjectionsAsLight()
         {
-            var rig = new GameObject("Rig");
-            var prefab = AlpsCreateMenu.MoverSpotlight.Load();
-            var stock = Projection(prefab).sharedMaterial;
-            var shader = stock.shader;
+            var found = 0;
+            foreach (var fixture in AlpsCreateMenu.Fixtures)
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    var material = renderer.sharedMaterial;
+                    if (material == null || !material.shader.name.EndsWith("/Projection"))
+                    {
+                        continue;
+                    }
 
-            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, rig);
-            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, rig);
+                    found++;
+                    var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(AssetDatabase.GetAssetPath(material.shader)));
+                    StringAssert.Contains("Blend One One", source, $"{material.shader.name} does not add its light.");
+                    StringAssert.DoesNotContain("DstColor", source.Substring(source.IndexOf("SubShader", System.StringComparison.Ordinal)), $"{material.shader.name} still multiplies.");
+                }
+            }
 
-            var material = Projection(first).sharedMaterial;
-            Assert.AreNotSame(stock, material);
-            Assert.IsTrue(AlpsShowSetup.IsInFolder(AssetDatabase.GetAssetPath(material), AlpsFixtureMaterials.Folder), "The material is an asset, so the preview draws it too.");
-            Assert.AreEqual("Hidden/ALPS/" + shader.name, material.shader.name, "The projection adds its light.");
-            Assert.AreEqual(stock.GetFloat("_ProjectionIntensity") * AlpsProjectionLight.IntensityScale, material.GetFloat("_ProjectionIntensity"), 1e-5f);
-            Assert.AreSame(material, Projection(second).sharedMaterial, "The fixtures share it the way they shared VRSL's.");
-            Assert.AreSame(shader, stock.shader, "VRSL's own material is left alone.");
-            Assert.IsFalse(AlpsFixtureMaterials.CanApply(first));
-            Assert.IsTrue(AlpsFixtureMaterials.CanApply(prefab), "A fixture still on VRSL's materials can switch.");
+            Assert.Greater(found, 0, "No fixture has a projection.");
         }
 
         [Test]
@@ -125,20 +145,6 @@ namespace AdzukiSoft.ALPS.Tests
             container.settings.shape = AlpsArrangementShape.Line;
             AlpsArrangementLayout.CommitEdit(container);
             Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The container lays them out.");
-        }
-
-        private static Renderer Projection(GameObject fixture)
-        {
-            foreach (var renderer in fixture.GetComponentsInChildren<Renderer>(true))
-            {
-                if (renderer.sharedMaterial != null && AlpsProjectionLight.IsProjection(renderer.sharedMaterial.shader))
-                {
-                    return renderer;
-                }
-            }
-
-            Assert.Fail($"{fixture.name} has no projection.");
-            return null;
         }
     }
 }

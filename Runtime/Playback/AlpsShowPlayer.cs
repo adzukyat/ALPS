@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using VRC.SDKBase;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 #if UDONSHARP
 using UdonSharp;
@@ -48,15 +48,11 @@ namespace AdzukiSoft.ALPS
         public const float VrslMaxConeLength = 10f;
         public const float VrslDefaultTiltOffset = 90f;
 
-        /// <summary>The material property that turns on VRSL's cone length via DMX.</summary>
-        public const string ConeLengthViaDmxProperty = "_EnableExtraChannels";
-
         /// <summary>
-        /// VRSL's switch for the fine pan and tilt channels, which stays off since the cone
-        /// length rides on the fine pan channel. Older VRSL such as 2.8.1 has no such field and
-        /// never reads fine channels, so it is set by name, which does nothing where it is missing.
+        /// The material property that turns on VRSL's cone length via DMX, which the volumetric
+        /// materials of the fixtures ALPS comes with have on.
         /// </summary>
-        public const string VrslFineChannelsField = "enableFineChannels";
+        public const string ConeLengthViaDmxProperty = "_EnableExtraChannels";
 
         /// <summary>Width of the show data texture the GPU evaluator reads.</summary>
         public const int GpuDataWidth = 1024;
@@ -121,9 +117,6 @@ namespace AdzukiSoft.ALPS
         /// shows of the scene read the same rows.
         /// </summary>
         public int[] dmxRows = new int[0];
-
-        /// <summary>Whether the VRSL the world was built with is older than 2.7 (<see cref="AlpsVrslVersion"/>).</summary>
-        public bool vrslLegacy;
 
         /// <summary>
         /// Tells this show's frames from the other shows' in the shared frames targets, so pan
@@ -225,7 +218,7 @@ namespace AdzukiSoft.ALPS
                 {
                     CaptureVRSL(vrslFixtures[i], defaults, offset);
                     CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
-                    ConfigureVRSLDmx(vrslFixtures[i], row, VrslBaseConeLength(vrslLegacy, defaults[offset + AlpsShowLayout.FrameConeMeshLength]));
+                    ConfigureVRSLDmx(vrslFixtures[i], row, defaults[offset + AlpsShowLayout.FrameConeMeshLength]);
                 }
                 else
                 {
@@ -664,16 +657,6 @@ namespace AdzukiSoft.ALPS
             info[offset + 3] = fixture.legacyGoboRange ? 42.5f : 30f;
         }
 
-        /// <summary>
-        /// The mesh length the cone stretch starts from. It is the fixture's own mesh, so a
-        /// cone shorter than the mesh stretches by less than 0, except before VRSL 2.7, which
-        /// reads a value below 0 as 0, so the stretch starts from 0 there.
-        /// </summary>
-        public static float VrslBaseConeLength(bool legacy, float meshLength)
-        {
-            return legacy ? 0f : meshLength;
-        }
-
         public static void WriteNeutralDmxInfo(float[] info, int offset)
         {
             info[offset] = 90f;
@@ -685,10 +668,11 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Switches a VRSL fixture to DMX mode on grid row <paramref name="row"/>. Pan and tilt
         /// come from DMX on top of a base of 0 and 90, colour and brightness from the DMX
-        /// colour over a white tint. The cone reaches as far as the mesh stretch that VRSL's
-        /// cone length via DMX adds to <paramref name="baseConeLength"/>, with the fade along
-        /// the cone left fully open. That option is a material property, which the build turns
-        /// on in a copy of the volumetric material and the preview in each renderer's block.
+        /// colour over a white tint. The fine pan and tilt channels stay off, since the cone
+        /// length rides on the fine pan channel: the cone reaches as far as the mesh stretch
+        /// that VRSL's cone length via DMX adds to <paramref name="baseConeLength"/>, the
+        /// fixture's own mesh length, with the fade along the cone left fully open. That
+        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>).
         /// </summary>
         public static void ConfigureVRSLDmx(VRStageLighting_DMX_Static fixture, int row, float baseConeLength)
         {
@@ -698,7 +682,7 @@ namespace AdzukiSoft.ALPS
             fixture.useLegacySectorMode = false;
             fixture.nineUniverseMode = false;
             fixture.singleChannelMode = false;
-            fixture.SetProgramVariable(VrslFineChannelsField, false);
+            fixture.enableFineChannels = false;
             fixture.enableStrobe = false;
             fixture.enableAutoSpin = true;
             fixture.dmxUniverse = universe;

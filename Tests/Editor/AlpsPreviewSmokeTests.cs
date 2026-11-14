@@ -54,7 +54,6 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsTrue(state.EnableDmx, "The fixture reads the DMX grid.\n" + diagnostics);
                 Assert.AreEqual(13 * i + 1, state.DmxChannel, "Each fixture has a row of its own.\n" + diagnostics);
                 Assert.IsFalse(state.EnableStrobe, diagnostics);
-                Assert.AreEqual(1f, state.ExtraChannels, "Cone length via DMX is on.\n" + diagnostics);
                 Assert.AreEqual(Pan + PanSpread * i, Channel(AlpsShowLayout.FramePan), Tolerance, "Pan spread adds per fixture.");
                 Assert.AreEqual(Tilt, Channel(AlpsShowLayout.FrameTilt), Tolerance);
                 Assert.AreEqual(BaseBrightness, Channel(AlpsShowLayout.FrameBrightness), Tolerance);
@@ -239,8 +238,8 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             var states = context.Sample(BaseTime);
-            var baseLength = AlpsShowPlayer.VrslBaseConeLength(AlpsVrslVersion.IsLegacy, 1.5f);
-            Assert.AreEqual(baseLength, states[0].MaxConeLength, Tolerance, "The cone stretches from the mesh, or from 0 before VRSL 2.7.");
+            var baseLength = 1.5f;
+            Assert.AreEqual(baseLength, states[0].MaxConeLength, Tolerance, "The cone stretches from the mesh.");
             Assert.AreEqual(AlpsShowPlayer.VrslMaxConeLength, states[0].ConeLength, Tolerance, "The fade along the cone is left open.");
 
             // The fine pan channel stretches the mesh by 4 per unit on top of the base length.
@@ -249,7 +248,7 @@ namespace AdzukiSoft.ALPS.Tests
             var pixels = AlpsGpuShow.ReadBackTexture(grid);
             try
             {
-                var stretch = AlpsGpuEvaluatorTests.VrslReads(pixels.GetPixel(3, 1).r);
+                var stretch = pixels.GetPixel(3, 1).r;
                 Assert.AreEqual((1.5f * ConeLength / AlpsShowPlayer.ModelConeLengthLimit - baseLength) / 4f, stretch, Tolerance,
                     "A cone half the limit long is half its mesh.");
             }

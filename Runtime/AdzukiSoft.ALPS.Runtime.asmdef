@@ -3,7 +3,6 @@
   "rootNamespace": "AdzukiSoft.ALPS",
   "references": [
     "Unity.Timeline",
-    "VRSL.Core",
     "VRC.SDKBase",
     "UdonSharp.Runtime"
   ],

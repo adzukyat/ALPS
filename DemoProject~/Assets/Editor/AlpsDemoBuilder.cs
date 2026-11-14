@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 /// <summary>
 /// Rebuilds the demo: containers on the scene's VRSL universes, drawing with ALPS's
@@ -112,7 +112,6 @@ public static class AlpsDemoBuilder
                 }
 
                 fixture.target = vrsl;
-                AlpsFixtureMaterials.Apply(vrsl.gameObject, undo: false);
             }
 
             EditorUtility.SetDirty(container);

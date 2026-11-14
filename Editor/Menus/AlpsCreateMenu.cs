@@ -24,28 +24,28 @@ namespace AdzukiSoft.ALPS.Editor
         private const int ContainerPriority = 10;
         private const int FixturePriority = 30;
 
-        private const string PrefabFolder = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/";
+        private const string PrefabFolder = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/";
 
         public static readonly AlpsVrslPrefab MoverSpotlight = new AlpsVrslPrefab(
-            "Mover Spotlight", "fixture.moverSpotlight", "f5be3cfe3f15bfb4e9477904c5af9daf", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab");
+            "Mover Spotlight", "fixture.moverSpotlight", "a6ed1d9204338028a4e8bf3f8b764097", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab MoverWashLight = new AlpsVrslPrefab(
-            "Mover Wash Light", "fixture.moverWashLight", "b3e8ff051cc2d684aa255ceccce9b96f", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab");
+            "Mover Wash Light", "fixture.moverWashLight", "da85438bbc9c4379fc29b28fc7fe825d", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab ParLight = new AlpsVrslPrefab(
-            "Par Light", "fixture.parLight", "946b3c09cfa93244c90a4b0ac7764b44", PrefabFolder + "VRSL-DMX-Static-ParLight-H-13CH.prefab");
+            "Par Light", "fixture.parLight", "e04a6d9f5d1bfd384330c455a80f6928", PrefabFolder + "VRSL-DMX-Static-ParLight-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab Blinder = new AlpsVrslPrefab(
-            "Blinder", "fixture.blinder", "e9dde3e86ccb8ca4bb4ecbe35a6fa7b1", PrefabFolder + "VRSL-DMX-Static-Blinder-H-13CH.prefab");
+            "Blinder", "fixture.blinder", "6c33a58100fa3f6fac43ef8ac7564c1c", PrefabFolder + "VRSL-DMX-Static-Blinder-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab LightBar = new AlpsVrslPrefab(
-            "Light Bar", "fixture.lightBar", "96ffbd2a722ae324e892d303e2ee9a2a", PrefabFolder + "VRSL-DMX-Static-LightBar-H-13CH.prefab");
+            "Light Bar", "fixture.lightBar", "220324829ef5ebbe155cbec7bbba8951", PrefabFolder + "VRSL-DMX-Static-LightBar-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab MultiLightBar = new AlpsVrslPrefab(
-            "Multi Light Bar", "fixture.multiLightBar", "c19e8fd46b4abdf49bb7b6cdc62acdde", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab");
+            "Multi Light Bar", "fixture.multiLightBar", "bf66b05d4625a9ff51c75ec1c75e1675", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab");
 
         public static readonly AlpsVrslPrefab Laser = new AlpsVrslPrefab(
-            "Laser", "fixture.laser", "3d6c0b40980bcd34aba9183a62ecbd21", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
+            "Laser", "fixture.laser", "411e679ed1f72e7c2129a3d46442cb22", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
 
         /// <summary>Every fixture the menu offers, in menu order.</summary>
         public static IReadOnlyList<AlpsVrslPrefab> Fixtures { get; } = new[]
@@ -63,22 +63,20 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// An instance of the fixture's VRSL prefab with an ALPS VRSL Fixture on it, drawing
-        /// with ALPS's materials (<see cref="AlpsFixtureMaterials"/>). Null when the VR Stage
-        /// Lighting package does not have the prefab.
+        /// An instance of the fixture's prefab with an ALPS VRSL Fixture on it. Null when the
+        /// prefab is missing.
         /// </summary>
         public static GameObject CreateFixture(AlpsVrslPrefab fixture, GameObject context)
         {
             var prefab = fixture.Load();
             if (prefab == null)
             {
-                Debug.LogError($"[ALPS] The VR Stage Lighting prefab for {fixture.Name} was not found at {fixture.Path}.");
+                Debug.LogError($"[ALPS] The prefab for {fixture.Name} was not found at {fixture.Path}.");
                 return null;
             }
 
             var gameObject = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             gameObject.AddComponent<AlpsVRSLFixture>();
-            AlpsFixtureMaterials.Apply(gameObject, undo: false);
             Place(gameObject, context);
             return gameObject;
         }

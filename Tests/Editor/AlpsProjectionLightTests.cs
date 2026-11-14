@@ -9,13 +9,13 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Tests
 {
     /// <summary>
-    /// VRSL's projections drawn as added light (<see cref="AlpsProjectionLight"/>) on the
-    /// materials ALPS gives the fixtures it adds (<see cref="AlpsFixtureMaterials"/>): the
+    /// VRSL's projections drawn as added light on the fixtures ALPS comes with
+    /// (<c>scripts/vendor-vrsl.py</c>), against the material of a VRSL package: the
     /// shader copies made from VRSL's source, the materials, and two movers whose spots
     /// overlap on VRChat's default floor, previewed before and after. The renders are written
     /// to TestResults~ to look at.
@@ -25,11 +25,9 @@ namespace AdzukiSoft.ALPS.Tests
         private const string Folder = "Assets/AlpsTestFixtures";
         private const string TimelinePath = Folder + "/ProjectionLight.playable";
         private const string DefaultWorldScene = "Assets/Scenes/VRCDefaultWorldScene.unity";
-        private const string MoverPrefab = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string StockMaterial = "Packages/com.acchosen.vr-stage-lighting/Runtime/Materials/Lights/DMX/MoverLight - Spotlight/VRSL-StandardMover-ProjectionMat-HQ-Horizontal.mat";
         private const int Width = 640;
         private const int Height = 480;
-
-        private static readonly string[] ProjectionShaders = { "VRSL/Standard Mover/Projection", "VRSL/Wash Mover/Projection", "VRSL/Standard Static/Projection" };
 
         private bool _asyncCompilation;
 
@@ -56,47 +54,21 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Variant_BlendsVrslsProjectionsAsLight()
-        {
-            foreach (var name in ProjectionShaders)
-            {
-                var source = Shader.Find(name);
-                Assert.NotNull(source, name);
-                var variant = AlpsProjectionLight.Variant(source, true);
-                Assert.NotNull(variant, name);
-                Assert.AreEqual("Hidden/ALPS/" + name, variant.name);
-                Assert.IsFalse(ShaderUtil.ShaderHasError(variant), name);
-                Assert.IsTrue(AlpsProjectionLight.IsProjection(variant), "The copy still counts as a projection.");
-                Assert.IsFalse(AlpsProjectionLight.IsVrslProjection(variant));
-
-                var text = File.ReadAllText(AssetDatabase.GetAssetPath(variant));
-                StringAssert.Contains("Blend One One", text);
-                Assert.IsFalse(Regex.IsMatch(text, @"Blend\s+DstColor"), name);
-                Assert.AreSame(variant, AlpsProjectionLight.Variant(source, false), "The copy written is found again.");
-            }
-        }
-
-        [Test]
-        public void Refresh_WritesTheCopyAgainWhenVrslsShaderIsImported()
-        {
-            var source = Shader.Find("VRSL/Standard Mover/Projection");
-            var variant = AlpsProjectionLight.Variant(source, true);
-            var file = AssetDatabase.GetAssetPath(variant);
-            var written = File.ReadAllText(file);
-            File.WriteAllText(file, written + "\n// An older VRSL.");
-            AssetDatabase.ImportAsset(file, ImportAssetOptions.ForceSynchronousImport);
-
-            AlpsProjectionLight.Refresh(new[] { "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Other.shader" });
-            Assert.AreNotEqual(written, File.ReadAllText(file), "Another shader's import leaves the copy alone.");
-
-            AlpsProjectionLight.Refresh(new[] { AssetDatabase.GetAssetPath(source) });
-            Assert.AreEqual(written, File.ReadAllText(file), "The copy follows its VRSL source.");
-        }
-
-        [Test]
         public void AlpsMaterials_AddTheProjectionsAsLightInThePreview()
         {
+            var stock = AssetDatabase.LoadAssetAtPath<Material>(StockMaterial);
+            if (stock == null)
+            {
+                Assert.Ignore("The VR Stage Lighting package is not in the project.");
+            }
+
             BuildScene(out var cameras, out var director, out var projections);
+            var light = projections[0].sharedMaterial;
+            foreach (var projection in projections)
+            {
+                projection.sharedMaterial = stock;
+            }
+
             director.time = 1.0;
             director.Evaluate();
 
@@ -108,7 +80,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             foreach (var projection in projections)
             {
-                AlpsFixtureMaterials.Apply(projection.GetComponentInParent<AlpsVRSLFixture>().gameObject, undo: false);
+                projection.sharedMaterial = light;
             }
 
             director.Evaluate();
@@ -133,65 +105,6 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(1f, lightAdded / stockAdded, 0.1f, "One projection on VRChat's default floor looks the way it did.\n" + report);
             Assert.Greater(stockOverlap, 4f, "VRSL's projections multiply where they overlap.\n" + report);
             Assert.LessOrEqual(lightOverlap, 2f, "Overlapping projections add up.\n" + report);
-        }
-
-        [Test]
-        public void For_MakesOneMaterialPerVrslMaterialAndFindsItAgain()
-        {
-            BuildScene(out _, out _, out var projections);
-            var original = projections[0].sharedMaterial;
-            var source = original.shader;
-            var intensity = original.GetFloat("_ProjectionIntensity");
-            var queue = original.renderQueue;
-
-            var light = AlpsFixtureMaterials.For(original);
-
-            Assert.AreNotSame(original, light);
-            Assert.IsTrue(EditorUtility.IsPersistent(light), "The material is an asset, so the preview and the build draw the same.");
-            Assert.AreSame(AlpsProjectionLight.Variant(source, false), light.shader);
-            Assert.AreEqual(intensity * AlpsProjectionLight.IntensityScale, light.GetFloat("_ProjectionIntensity"), 1e-5f);
-            Assert.AreEqual(queue, light.renderQueue, "The copy keeps VRSL's queue.");
-            Assert.AreSame(source, original.shader, "VRSL's own material is left alone.");
-            Assert.AreEqual(intensity, original.GetFloat("_ProjectionIntensity"));
-            Assert.AreSame(light, AlpsFixtureMaterials.For(original), "The next fixture finds the same material.");
-            Assert.AreSame(light, AlpsFixtureMaterials.For(light), "ALPS's material stays as it is.");
-
-            light.SetFloat("_ProjectionIntensity", 0.42f);
-            Assert.AreEqual(0.42f, AlpsFixtureMaterials.For(original).GetFloat("_ProjectionIntensity"), "A value tuned on ALPS's material stays.");
-
-            var inScene = new Material(original);
-            Assert.AreSame(inScene, AlpsFixtureMaterials.For(inScene), "A material that is no asset stays as it is.");
-            var dithered = new Material(original);
-            dithered.EnableKeyword("_ALPHATEST_ON");
-            AlpsShowSetup.EnsureFolder(Folder);
-            AssetDatabase.CreateAsset(dithered, Folder + "/Dithered.mat");
-            try
-            {
-                Assert.AreSame(dithered, AlpsFixtureMaterials.For(dithered), "A dithered projection replaces the colour drawn, so it stays VRSL's.");
-            }
-            finally
-            {
-                AssetDatabase.DeleteAsset(Folder + "/Dithered.mat");
-            }
-        }
-
-        [Test]
-        public void Build_LeavesVrslsProjectionsAsTheyAre()
-        {
-            var scene = BuildScene(out _, out _, out var projections);
-            var stock = projections[0].sharedMaterial;
-            var errors = new List<string>();
-
-            try
-            {
-                Assert.IsTrue(AlpsShowApplier.Apply(scene, generateTimelines: true, errors), string.Join("\n", errors));
-                Assert.AreSame(stock.shader, projections[0].sharedMaterial.shader, "A fixture ALPS did not add keeps how VRSL blends it.");
-                Assert.AreEqual(stock.GetFloat("_ProjectionIntensity"), projections[0].sharedMaterial.GetFloat("_ProjectionIntensity"));
-            }
-            finally
-            {
-                AlpsBuildTimeline.DeleteAll();
-            }
         }
 
         /// <summary>The most two overlapping projections give over the brighter one alone.</summary>
@@ -261,8 +174,8 @@ namespace AdzukiSoft.ALPS.Tests
             DynamicGI.UpdateEnvironment();
             cameras = new[] { MakeCamera(new Vector3(0f, 3f, -9f), new Vector3(0f, 1.5f, 0f)), MakeCamera(new Vector3(0f, 9f, -2f), Vector3.zero) };
 
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab);
-            Assert.NotNull(prefab, MoverPrefab);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load();
+            Assert.NotNull(prefab, AlpsCreateMenu.MoverSpotlight.Path);
             var container = new GameObject("Container").AddComponent<AlpsContainer>();
             projections = new Renderer[2];
             for (var m = 0; m < 2; m++)

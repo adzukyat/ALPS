@@ -9,7 +9,7 @@ using UnityEngine.Playables;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Tests
 {
@@ -25,7 +25,7 @@ namespace AdzukiSoft.ALPS.Tests
         private const string Folder = "Assets/AlpsTestFixtures";
         private const string TimelinePath = Folder + "/RenderOrder.playable";
         private const string FloorMaterialPath = Folder + "/RenderOrderFloor.mat";
-        private const string MoverPrefab = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string MoverPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
         private const int Width = 640;
         private const int Height = 480;
 

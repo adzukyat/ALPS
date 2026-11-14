@@ -7,7 +7,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 using Object = UnityEngine.Object;
 
 namespace AdzukiSoft.ALPS.Tests
@@ -258,14 +258,8 @@ namespace AdzukiSoft.ALPS.Tests
             public readonly float MaxConeLength;
             public readonly int Gobo;
 
-            /// <summary>Cone length via DMX in the first renderer's property block.</summary>
-            public readonly float ExtraChannels;
-
             private FixtureState(VRStageLighting_DMX_Static fixture)
             {
-                var block = new MaterialPropertyBlock();
-                fixture.objRenderers[0].GetPropertyBlock(block);
-                ExtraChannels = block.GetFloat(AlpsShowPlayer.ConeLengthViaDmxProperty);
                 EnableDmx = fixture.enableDMXChannels;
                 EnableStrobe = fixture.enableStrobe;
                 DmxChannel = fixture.dmxChannel;
@@ -286,7 +280,7 @@ namespace AdzukiSoft.ALPS.Tests
 
             public override string ToString()
             {
-                return $"dmx={EnableDmx}, channel={DmxChannel}, strobe={EnableStrobe}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, maxConeLength={MaxConeLength:0.###}, gobo={Gobo}, extraChannels={ExtraChannels}";
+                return $"dmx={EnableDmx}, channel={DmxChannel}, strobe={EnableStrobe}, pan={Pan:0.###}, tilt={Tilt:0.###}, intensity={Intensity:0.###}, color={Color}, coneWidth={ConeWidth:0.###}, coneLength={ConeLength:0.###}, maxConeLength={MaxConeLength:0.###}, gobo={Gobo}";
             }
         }
     }

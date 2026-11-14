@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Editor
 {
@@ -70,10 +70,9 @@ namespace AdzukiSoft.ALPS.Editor
             }
             else if (shared != null)
             {
-                var coneLengthCopies = new Dictionary<Material, Material>();
                 for (var i = 0; i < directors.Count; i++)
                 {
-                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, shared, coneLengthCopies, errors);
+                    ApplyDirector(directors[i], i + 1, generateTimelines, builds, rows, shared, errors);
                 }
 
                 AlpsRenderOrder.Apply(scene);
@@ -174,7 +173,7 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static void ApplyDirector(PlayableDirector director, int showToken, bool generateTimelines,
             Dictionary<TimelineAsset, TimelineAsset> builds, Dictionary<AlpsFixture, int> rows, AlpsGpuAssets.Shared shared,
-            Dictionary<Material, Material> coneLengthCopies, List<string> errors)
+            List<string> errors)
         {
             var source = (TimelineAsset)director.playableAsset;
             var show = AlpsShowCompiler.Compile(director);
@@ -209,16 +208,11 @@ namespace AdzukiSoft.ALPS.Editor
 
             CopyShowToPlayer(show, player, director);
             player.dmxRows = new int[show.fixtures.Count];
-            player.vrslLegacy = AlpsVrslVersion.IsLegacy;
             player.showToken = showToken;
             for (var i = 0; i < show.fixtures.Count; i++)
             {
                 var fixture = show.fixtures[i];
                 player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : i;
-                if (player.vrslFixtures[i] != null)
-                {
-                    AlpsGpuAssets.UseConeLengthMaterials(player.vrslFixtures[i], coneLengthCopies);
-                }
             }
 
             player.framesMaterial = shared.framesMaterial;

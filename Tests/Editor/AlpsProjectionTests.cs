@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
-using VRSL;
+using AdzukiSoft.ALPS.Vrsl;
 
 namespace AdzukiSoft.ALPS.Tests
 {
@@ -19,7 +19,7 @@ namespace AdzukiSoft.ALPS.Tests
         private const float Bpm = 60f;
         private const string Folder = "Assets/AlpsTestFixtures";
         private const string TimelinePath = Folder + "/ProjectionTracks.playable";
-        private const string MoverPrefab = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string MoverPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
 
         private readonly List<Object> _created = new List<Object>();
 

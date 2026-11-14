@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- VR Stage Lightingの灯体をALPSに内包し、VRSLパッケージへの依存をなくしました。ワールドに入っているVRSLのバージョンに関係なく動作します
+- 2.7より前のVRSLへの対応を削除しました
+- 以前のバージョンで作った灯体や、VRSLのAudioLink版の灯体をALPSの灯体に置き換える「ALPS > Migrate VRSL Fixtures」を追加しました
+
 ## 6.3.1
 
 - プレイヤー追従が誤った方向を向いていた不具合を修正しました

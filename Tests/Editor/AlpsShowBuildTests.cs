@@ -26,7 +26,7 @@ namespace AdzukiSoft.ALPS.Tests
     public class AlpsShowBuildTests
     {
         private const string ScenePath = AlpsPreviewSmokeFixtureBuilder.FolderPath + "/ShowBundle.unity";
-        private const string VolumetricMaterial = "Packages/com.acchosen.vr-stage-lighting/Runtime/Materials/Lights/DMX/MoverLight - Spotlight/VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat";
+        private const string VolumetricMaterial = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Materials/Lights/DMX/MoverLight - Spotlight/VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat";
         private const string BundleFolder = "Temp/AlpsShowBundle";
         private const string BundleName = "show";
 

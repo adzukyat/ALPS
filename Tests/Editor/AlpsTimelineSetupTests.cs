@@ -41,9 +41,6 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             _assets.Clear();
-            // The fixtures ALPS adds bring materials of their own.
-            AssetDatabase.DeleteAsset(AlpsFixtureMaterials.Folder);
-            AssetDatabase.DeleteAsset(AlpsProjectionLight.ShaderFolder);
             AlpsTimelineSetup.DeleteFoldersCreatedSince(_hadFolders);
         }
 
