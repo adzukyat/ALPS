@@ -131,42 +131,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 182557433}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: coneWidth
-      value: 1.25
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 9
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 105
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: selectGOBO
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: finalIntensityProjection
-      value: 1.35
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: coneWidth
       value: 1.25
@@ -313,34 +277,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 27
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 3
@@ -479,42 +415,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 182557433}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: coneWidth
-      value: 1.25
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 12
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 144
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: selectGOBO
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: finalIntensityProjection
-      value: 1.35
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: coneWidth
       value: 1.25
@@ -1034,34 +934,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 92
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 8
@@ -1428,29 +1300,11 @@ PlayableDirector:
     value: {fileID: 930694294}
   - key: {fileID: 0}
     value: {fileID: 182557434}
-  - key: {fileID: 0}
+  - key: {fileID: -8345953233894050035, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 1247740771}
-  - key: {fileID: 0}
+  - key: {fileID: 3484314268656262114, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 930694294}
-  - key: {fileID: 0}
-    value: {fileID: 182557434}
-  - key: {fileID: 0}
-    value: {fileID: 1247740771}
-  - key: {fileID: 0}
-    value: {fileID: 930694294}
-  - key: {fileID: 0}
-    value: {fileID: 182557434}
-  - key: {fileID: 0}
-    value: {fileID: 1247740771}
-  - key: {fileID: 0}
-    value: {fileID: 930694294}
-  - key: {fileID: 0}
-    value: {fileID: 182557434}
-  - key: {fileID: 8050496051333933789, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 1247740771}
-  - key: {fileID: -6172400527310327116, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
-    value: {fileID: 930694294}
-  - key: {fileID: 2045082040054271966, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
+  - key: {fileID: -609406767366305093, guid: 64151ed807b036e4e9bf613998b2566b, type: 2}
     value: {fileID: 182557434}
   m_ExposedReferences:
     m_References: []
@@ -1462,34 +1316,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 14
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 2
@@ -1628,46 +1454,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1247740770}
     m_Modifications:
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneWidth
-      value: 4.75
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: fixtureID
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneLength
-      value: 6.5
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: dmxChannel
-      value: 157
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: finalIntensityVolumetric
-      value: 0.85
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
     - target: {fileID: -4465382353729456857, guid: da85438bbc9c4379fc29b28fc7fe825d, type: 3}
       propertyPath: coneWidth
       value: 4.75
@@ -1818,42 +1604,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 182557433}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: coneWidth
-      value: 1.25
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 118
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: selectGOBO
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: finalIntensityProjection
-      value: 1.35
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: coneWidth
       value: 1.25
@@ -2000,46 +1750,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1247740770}
     m_Modifications:
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneWidth
-      value: 4.75
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: fixtureID
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneLength
-      value: 6.5
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: dmxChannel
-      value: 183
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: finalIntensityVolumetric
-      value: 0.85
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
     - target: {fileID: -4465382353729456857, guid: da85438bbc9c4379fc29b28fc7fe825d, type: 3}
       propertyPath: coneWidth
       value: 4.75
@@ -2190,30 +1900,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 1
@@ -2348,34 +2034,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 79
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 7
@@ -2514,46 +2172,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1247740770}
     m_Modifications:
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneWidth
-      value: 4.75
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: fixtureID
-      value: 14
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneLength
-      value: 6.5
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: dmxChannel
-      value: 170
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: finalIntensityVolumetric
-      value: 0.85
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
     - target: {fileID: -4465382353729456857, guid: da85438bbc9c4379fc29b28fc7fe825d, type: 3}
       propertyPath: coneWidth
       value: 4.75
@@ -2704,42 +2322,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 182557433}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: coneWidth
-      value: 1.25
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 11
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 131
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: selectGOBO
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: finalIntensityProjection
-      value: 1.35
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: coneWidth
       value: 1.25
@@ -3263,46 +2845,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1247740770}
     m_Modifications:
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneWidth
-      value: 4.75
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: fixtureID
-      value: 16
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: coneLength
-      value: 6.5
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: dmxChannel
-      value: 196
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: finalIntensityVolumetric
-      value: 0.85
-      objectReference: {fileID: 0}
-    - target: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -4465382353729456857, guid: b3e8ff051cc2d684aa255ceccce9b96f, type: 3}
     - target: {fileID: -4465382353729456857, guid: da85438bbc9c4379fc29b28fc7fe825d, type: 3}
       propertyPath: coneWidth
       value: 4.75
@@ -3950,34 +3492,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 66
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 6
@@ -4116,34 +3630,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 40
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 4
@@ -4376,34 +3862,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 930694293}
     m_Modifications:
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: fixtureID
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: dmxChannel
-      value: 53
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableStrobe
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableAutoSpin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: globalIntensity
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: enableDMXChannels
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
-      propertyPath: serializationData.Prefab
-      value: 
-      objectReference: {fileID: -8425864988521483086, guid: f5be3cfe3f15bfb4e9477904c5af9daf, type: 3}
     - target: {fileID: -8425864988521483086, guid: a6ed1d9204338028a4e8bf3f8b764097, type: 3}
       propertyPath: fixtureID
       value: 5
