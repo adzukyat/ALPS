@@ -248,7 +248,8 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Gives the renderers the materials of the prefab back where an override holds one
-        /// drawn with a shader of the package, which reads the grid the package's way.
+        /// drawn with a shader of the package, which reads the grid the package's way, or
+        /// one that is missing.
         /// </summary>
         private static void RevertPackageMaterials(GameObject root)
         {
@@ -258,7 +259,7 @@ namespace AdzukiSoft.ALPS.Editor
                 foreach (var material in renderer.sharedMaterials)
                 {
                     var shader = material != null && material.shader != null ? material.shader.name : "";
-                    held |= shader.StartsWith(PackageShaders, StringComparison.Ordinal);
+                    held |= material == null || shader.StartsWith(PackageShaders, StringComparison.Ordinal);
                 }
 
                 if (held)

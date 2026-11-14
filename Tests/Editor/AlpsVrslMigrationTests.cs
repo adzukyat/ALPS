@@ -79,6 +79,10 @@ namespace AdzukiSoft.ALPS.Tests
             var renderer = old.GetComponentInChildren<Renderer>(true);
             renderer.sharedMaterial = new Material(renderer.sharedMaterial);
             PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
+            // And one whose material is gone.
+            var missing = old.GetComponentsInChildren<Renderer>(true)[1];
+            missing.sharedMaterial = null;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(missing);
 
             var items = AlpsVrslMigration.Find();
             Assert.AreEqual(1, items.Count);
@@ -94,6 +98,7 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsNull(PackageFixture(old), "The package's script is gone.");
             foreach (var drawn in old.GetComponentsInChildren<Renderer>(true))
             {
+                Assert.NotNull(drawn.sharedMaterial, $"{drawn.name} has no material.");
                 StringAssert.StartsWith("ALPS/VRSL/", drawn.sharedMaterial.shader.name, $"{drawn.name} still draws with the package's shader.");
             }
             var target = fixture.ResolveTarget();
