@@ -1198,6 +1198,16 @@
     margin-top: 2px;
 }
 
+/* A switch for the whole scene below the steps. Its label says what it does in full, so it
+   takes the width its text needs instead of the label column. */
+.alps-root .alps-scene-option {
+    margin-top: 6px;
+}
+
+.alps-root .alps-scene-option .unity-base-field__label {
+    width: auto;
+}
+
 /* ------------------------------------------------------------- foldout */
 
 .alps-plainfold {

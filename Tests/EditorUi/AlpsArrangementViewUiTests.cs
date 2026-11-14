@@ -230,6 +230,28 @@ namespace AdzukiSoft.ALPS.Tests
                 keep.value = false;
                 Assert.IsFalse(container.keepLightOffPlayers);
                 Assert.IsFalse(other.keepLightOffPlayers);
+
+                // The label says more than the label column holds, so it takes its own width.
+                foreach (var language in new[] { AlpsLanguage.English, AlpsLanguage.Japanese, AlpsLanguage.Korean })
+                {
+                    AlpsStrings.Language = language;
+                    keep.label = AlpsStrings.Tr("container.keepLightOffPlayers");
+                    for (var i = 0; i < 4; i++)
+                    {
+                        window.Repaint();
+                        yield return null;
+                    }
+
+                    var needed = keep.labelElement.MeasureTextSize(
+                        keep.label,
+                        0f, VisualElement.MeasureMode.Undefined,
+                        0f, VisualElement.MeasureMode.Undefined);
+                    Assert.GreaterOrEqual(keep.labelElement.contentRect.width + 0.6f, needed.x, $"The label is cut off in {language}.");
+                    Assert.GreaterOrEqual(
+                        keep.Q(className: "alps-switch__track").worldBound.xMin,
+                        keep.labelElement.worldBound.xMax,
+                        $"The label runs under the switch in {language}.");
+                }
             }
             finally
             {

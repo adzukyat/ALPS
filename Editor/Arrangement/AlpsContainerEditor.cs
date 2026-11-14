@@ -98,7 +98,7 @@ namespace AdzukiSoft.ALPS.Editor
                 name = "keep-light-off-players",
                 tooltip = AlpsStrings.Tr("container.keepLightOffPlayers.tip"),
             };
-            keep.AddToClassList("alps-setup");
+            keep.AddToClassList("alps-scene-option");
             keep.SetValueWithoutNotify(AlpsRenderOrder.IsOn(container.gameObject.scene));
             keep.RegisterValueChangedCallback(evt => AlpsRenderOrder.SetOn(container.gameObject.scene, evt.newValue));
             return keep;
