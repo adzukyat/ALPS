@@ -1,11 +1,5 @@
 {
   "dependencies": {
-    "com.acchosen.vr-stage-lighting": {
-      "version": "file:com.acchosen.vr-stage-lighting",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.anatawa12.apple-silicon-harmony": {
       "version": "file:com.anatawa12.apple-silicon-harmony",
       "depth": 0,
