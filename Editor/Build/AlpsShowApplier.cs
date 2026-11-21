@@ -105,7 +105,8 @@ namespace AdzukiSoft.ALPS.Editor
         /// shows share. Only one show is on the grid at a time, so the rows are counted per
         /// show and fixtures of different shows share them: a show that is not playing keeps
         /// its fixtures inactive, or they would show the playing one. A fixture in several shows
-        /// keeps one row, free in each of them.
+        /// keeps one row, free in each of them. A fixture that reads nothing from the grid,
+        /// a penlight slot, takes no row.
         /// </summary>
         public static Dictionary<AlpsFixture, int> AssignDmxRows(List<List<AlpsFixture>> shows, List<string> names, List<string> errors)
         {
@@ -116,7 +117,7 @@ namespace AdzukiSoft.ALPS.Editor
                 var count = 0;
                 foreach (var fixture in shows[s])
                 {
-                    if (fixture == null)
+                    if (fixture == null || !fixture.UsesDmxRow)
                     {
                         continue;
                     }
@@ -216,15 +217,17 @@ namespace AdzukiSoft.ALPS.Editor
             for (var i = 0; i < show.fixtures.Count; i++)
             {
                 var fixture = show.fixtures[i];
-                player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : i;
+                player.dmxRows[i] = fixture != null && rows.TryGetValue(fixture, out var row) ? row : (fixture != null && !fixture.UsesDmxRow ? -1 : i);
             }
 
             player.framesMaterial = shared.framesMaterial;
             player.gridMaterial = shared.gridMaterial;
+            player.penlightMaterial = shared.penlightMaterial;
             player.frames = shared.frames;
             player.framesPrevious = shared.framesPrevious;
             player.grid = shared.grid;
             player.spin = shared.spin;
+            player.penlightTarget = shared.penlight;
             player.gameObject.SetActive(true);
             UdonSharpEditorUtility.CopyProxyToUdon(player);
             AlpsBuildTimeline.SwapAndRebind(director, source, build);
@@ -246,6 +249,8 @@ namespace AdzukiSoft.ALPS.Editor
             player.bucketSeconds = show.bucketSeconds;
             player.groupCount = show.groupCount;
             player.groupIndex = show.groupIndex;
+            player.penlight = show.penlight;
+            player.penlightTransforms = AlpsPenlight.Transforms(show);
 
             var count = show.fixtures.Count;
             player.fixtureAdapter = new int[count];
@@ -270,12 +275,21 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Containers and fixture components only describe the show and place objects while
-        /// editing. VRChat runs none of them, and the transforms they left stay.
+        /// editing. VRChat runs none of them, and the transforms they left stay. A penlight
+        /// slot is nothing but its component, so its object goes too.
         /// </summary>
         private static void StripAuthoringComponents(Scene scene)
         {
             foreach (var root in scene.GetRootGameObjects())
             {
+                foreach (var slot in root.GetComponentsInChildren<AlpsPenlightSlot>(true))
+                {
+                    if (slot.transform.childCount == 0 && slot.GetComponents<Component>().Length == 2)
+                    {
+                        Object.DestroyImmediate(slot.gameObject);
+                    }
+                }
+
                 foreach (var target in root.GetComponentsInChildren<AlpsTarget>(true))
                 {
                     Object.DestroyImmediate(target);

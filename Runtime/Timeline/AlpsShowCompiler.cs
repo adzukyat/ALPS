@@ -47,6 +47,7 @@ namespace AdzukiSoft.ALPS
             }
 
             builder.Finish();
+            AlpsPenlight.Compile(show);
             show.clipInSignature = ClipInSignature(director);
             return show;
         }

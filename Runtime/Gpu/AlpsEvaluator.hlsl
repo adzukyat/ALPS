@@ -38,10 +38,23 @@ float _AlpsTime;
 #define ALPS_HEADER_GROUP_COLUMNS 18
 #define ALPS_HEADER_ROW_FIXTURES 19
 #define ALPS_HEADER_AIM 20
+#define ALPS_HEADER_PENLIGHT 21
+#define ALPS_HEADER_PENLIGHT_AREAS 22
 
 #define ALPS_FIXTURE_INFO_STRIDE 4
 #define ALPS_AIM_STRIDE 12
 #define ALPS_MAX_FIXTURES 118
+
+// The penlight areas, mirrored from AlpsShowPlayer.GpuPenlightAreaStride and what it holds.
+#define ALPS_PENLIGHT_AREAS 4
+#define ALPS_PENLIGHT_SLOTS 64
+#define ALPS_PENLIGHT_SLOT_COUNT 0
+#define ALPS_PENLIGHT_SHAPE 1
+#define ALPS_PENLIGHT_SIZE 2
+#define ALPS_PENLIGHT_MATRIX 4
+#define ALPS_PENLIGHT_FIRST_SLOT 16
+#define ALPS_PENLIGHT_STRIDE (ALPS_PENLIGHT_FIRST_SLOT + ALPS_PENLIGHT_SLOTS)
+#define ALPS_PENLIGHT_WIDTH (ALPS_PENLIGHT_SLOTS + 4)
 
 // --- Layout constants, mirrored from AlpsShowLayout -----------------------------------
 

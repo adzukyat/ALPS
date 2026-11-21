@@ -101,6 +101,17 @@ namespace AdzukiSoft.ALPS
                 { "container.keepLightOffPlayers", "プレイヤーに光を当てない" },
                 { "container.keepLightOffPlayers.tip", "ライトのプロジェクションがプレイヤーを照らさないようにします。シーン内のすべてのコンテナーで共通の設定です。オンの間は、ワールドの不透明マテリアルがプロジェクションより先に描画されるよう、ビルド時に Render Queue を下げます。" },
 
+                // --- Penlight area -----------------------------------------
+                { "penlight.shape.line", "直線" },
+                { "penlight.shape.radial", "放射" },
+                { "penlight.shape.angle", "角度" },
+                { "penlight.shape.tip", "ペンライトがスロットのどこを読むかの決め方です。直線：エリアの X 軸に沿った位置。放射：中心からの距離。角度：中心まわりの角度。クリップのディレイはこれに沿って流れます。" },
+                { "penlight.size.length", "長さ" },
+                { "penlight.size.tip", "直線の長さ、または円の半径です。端より外のペンライトは端の色になります。" },
+                { "penlight.slots", "スロット数" },
+                { "penlight.slots.tip", "形をいくつに区切るかです。クリップはそれぞれを灯体 1 つとして数え、2 つの間にあるペンライトは両方を混ぜます。" },
+                { "penlight.help", "ALPS Lighting Track をこのエリアにバインドしてください。明るさと色が、ALPS/Penlight シェーダーで描かれるすべてのペンライトに届きます。アバターのペンライトも同じです。ペンライトはショー内のエリアのうち最も明るいものを採ります。" },
+
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "VRSL 灯体の移行" },
                 { "migrate.help", "開いているシーン、または開いているプレハブの中で、VR Stage Lighting パッケージから作った灯体を ALPS 付属の灯体に置き換えます。ALPS の灯体はオブジェクト、設定、トラックをそのまま保ちます。それ以外の灯体はその場で置き換わり、名前、配置、見た目を引き継ぎます。AudioLink の設定など、元のスクリプトにしかない設定は引き継ぎません。" },

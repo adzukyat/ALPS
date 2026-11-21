@@ -101,6 +101,17 @@ namespace AdzukiSoft.ALPS
                 { "container.keepLightOffPlayers", "플레이어에게 빛을 비추지 않기" },
                 { "container.keepLightOffPlayers.tip", "라이트의 프로젝션이 플레이어를 비추지 않게 합니다. 씬의 모든 컨테이너에 공통인 설정입니다. 켜져 있는 동안에는 월드의 불투명 머티리얼이 프로젝션보다 먼저 그려지도록 빌드 시 Render Queue를 낮춥니다." },
 
+                // --- Penlight area -----------------------------------------
+                { "penlight.shape.line", "직선" },
+                { "penlight.shape.radial", "방사" },
+                { "penlight.shape.angle", "각도" },
+                { "penlight.shape.tip", "펜라이트가 슬롯의 어디를 읽을지 정하는 방법입니다. 직선: 영역의 X축을 따른 위치. 방사: 중심으로부터의 거리. 각도: 중심을 도는 각도. 클립의 딜레이는 이것을 따라 흐릅니다." },
+                { "penlight.size.length", "길이" },
+                { "penlight.size.tip", "직선의 길이 또는 원의 반지름입니다. 끝을 벗어난 펜라이트는 끝의 색이 됩니다." },
+                { "penlight.slots", "슬롯 수" },
+                { "penlight.slots.tip", "모양을 몇 단계로 나눌지입니다. 클립은 각각을 조명 하나로 세고, 둘 사이에 있는 펜라이트는 둘을 섞습니다." },
+                { "penlight.help", "ALPS Lighting Track을 이 영역에 바인딩하세요. 밝기와 색이 ALPS/Penlight 셰이더로 그려지는 모든 펜라이트에 전달됩니다. 아바타의 펜라이트도 마찬가지입니다. 펜라이트는 쇼의 영역 중 가장 밝은 것을 따릅니다." },
+
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "VRSL 조명 마이그레이션" },
                 { "migrate.help", "열려 있는 씬 또는 열려 있는 프리팹에서 VR Stage Lighting 패키지로 만든 조명을 ALPS에 포함된 조명으로 바꿉니다. ALPS 조명은 오브젝트, 설정, 트랙을 그대로 유지합니다. 그 밖의 조명은 제자리에서 교체되며 이름, 배치, 모양을 이어받습니다. AudioLink 설정처럼 원래 스크립트에만 있는 설정은 이어받지 않습니다." },

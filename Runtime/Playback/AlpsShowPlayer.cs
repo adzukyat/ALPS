@@ -30,6 +30,7 @@ namespace AdzukiSoft.ALPS
     {
         public const int AdapterNone = 0;
         public const int AdapterVRSLDmxStatic = 1;
+        public const int AdapterPenlight = 2;
 
         /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
@@ -79,6 +80,34 @@ namespace AdzukiSoft.ALPS
         /// <summary>Most users one show can track, one shader vector each.</summary>
         public const int GpuMaxTrackedUsers = 8;
 
+        /// <summary>Most penlight areas one show holds, one row of the penlight texture each.</summary>
+        public const int GpuMaxPenlightAreas = 4;
+
+        /// <summary>Most slots one penlight area is cut into, one texel each.</summary>
+        public const int GpuMaxPenlightSlots = 64;
+
+        /// <summary>
+        /// Floats per area in the penlight section of the show data: <see cref="PenlightSlotCount"/>,
+        /// <see cref="PenlightShape"/> and <see cref="PenlightSize"/>, the first three rows of
+        /// its world to area matrix from <see cref="PenlightMatrix"/>, then the show's fixture
+        /// on each slot from <see cref="PenlightSlots"/>.
+        /// </summary>
+        public const int GpuPenlightAreaStride = 16 + GpuMaxPenlightSlots;
+        public const int PenlightSlotCount = 0;
+        public const int PenlightShape = 1;
+        public const int PenlightSize = 2;
+        public const int PenlightMatrix = 4;
+        public const int PenlightSlots = 16;
+
+        /// <summary>
+        /// Width of the penlight texture: a texel per slot, then the three matrix rows and the
+        /// texel holding the slot count, the shape, the size and 1 for an area that is there.
+        /// </summary>
+        public const int GpuPenlightWidth = GpuMaxPenlightSlots + 4;
+
+        /// <summary>The global the penlight texture goes by, which avatars read too.</summary>
+        public const string PenlightTextureProperty = "_Udon_AlpsPenlight";
+
         public PlayableDirector director;
 
         public float[] clips = new float[0];
@@ -106,6 +135,13 @@ namespace AdzukiSoft.ALPS
         public int[] dmxRows = new int[0];
 
         /// <summary>
+        /// The show's penlight areas, <see cref="GpuPenlightAreaStride"/> floats each. Their
+        /// matrices are taken from <see cref="penlightTransforms"/> when the player starts.
+        /// </summary>
+        public float[] penlight = new float[0];
+        public Transform[] penlightTransforms = new Transform[0];
+
+        /// <summary>
         /// Tells this show's frames from the other shows' in the shared frames targets, so pan
         /// and tilt only carry on from a frame this show drew. Above 0, one per show of the scene.
         /// </summary>
@@ -113,12 +149,16 @@ namespace AdzukiSoft.ALPS
 
         public Material framesMaterial;
         public Material gridMaterial;
+        public Material penlightMaterial;
 
         /// <summary>Two frames targets taken in turn, so a head can carry on from the last frame.</summary>
         public RenderTexture frames;
         public RenderTexture framesPrevious;
         public RenderTexture grid;
         public RenderTexture spin;
+
+        /// <summary>What the penlights read, shared by every show of the scene like the grid.</summary>
+        public RenderTexture penlightTarget;
 
         private Texture2D _data;
         private bool _initialized;
@@ -193,10 +233,19 @@ namespace AdzukiSoft.ALPS
                 }
             }
 
+            for (var a = 0; a < penlightTransforms.Length; a++)
+            {
+                var at = a * GpuPenlightAreaStride + PenlightMatrix;
+                if (penlightTransforms[a] != null && at + GpuAimStride <= penlight.Length)
+                {
+                    WriteAim(penlightTransforms[a].worldToLocalMatrix, penlight, at);
+                }
+            }
+
             var data = PackShowData(
                 clips, effects, parameters, colors, gobos, positions,
                 bucketStart, bucketClips, bucketSeconds, groupCount, groupIndex,
-                count, defaults, info, dmxRows, aim);
+                count, defaults, info, dmxRows, aim, penlight);
             _data = CreateShowTexture(data);
 
             _idData = VRCShader.PropertyToID("_AlpsData");
@@ -215,6 +264,11 @@ namespace AdzukiSoft.ALPS
             _trackedPlayers = new VRCPlayerApi[userNames.Length];
             _players = new VRCPlayerApi[82];
             BindGrid(grid, spin);
+            if (penlightTarget != null)
+            {
+                BindPenlight(penlightTarget);
+            }
+
             _initialized = true;
         }
 
@@ -251,6 +305,11 @@ namespace AdzukiSoft.ALPS
             framesMaterial.SetFloat(_idShowToken, showToken);
             gridMaterial.SetTexture(_idData, _data);
             RenderPasses(_data, framesMaterial, gridMaterial, target, grid, spin);
+            if (penlightMaterial != null && penlightTarget != null)
+            {
+                penlightMaterial.SetTexture(_idData, _data);
+                RenderPenlight(target, penlightMaterial, penlightTarget);
+            }
         }
 
         /// <summary>The frames target the last evaluation drew, for tests and debugging.</summary>
@@ -265,6 +324,21 @@ namespace AdzukiSoft.ALPS
             VRCGraphics.Blit(data, frames, framesMaterial, 0);
             VRCGraphics.Blit(frames, grid, gridMaterial, 0);
             VRCGraphics.Blit(frames, spin, gridMaterial, 1);
+        }
+
+        /// <summary>
+        /// Lays the slots of the show's penlight areas out as the penlight texture, from the
+        /// frames <see cref="RenderPasses"/> drew. A show without an area leaves it empty.
+        /// </summary>
+        public static void RenderPenlight(RenderTexture frames, Material penlightMaterial, RenderTexture penlight)
+        {
+            VRCGraphics.Blit(frames, penlight, penlightMaterial, 0);
+        }
+
+        /// <summary>Hands every shader of the world, the avatars' included, the penlight texture.</summary>
+        public static void BindPenlight(RenderTexture penlight)
+        {
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID(PenlightTextureProperty), penlight);
         }
 
         /// <summary>Points VRSL's DMX textures at the grids.</summary>
@@ -410,8 +484,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Lays the compiled show out as the floats of the GPU evaluator's data texture: a
         /// header of section offsets, then every array in turn, then the fixture defaults,
-        /// the per fixture DMX info, which fixture sits on each DMX row, and the aim spaces.
-        /// The length is a whole number of texture rows.
+        /// the per fixture DMX info, which fixture sits on each DMX row, the aim spaces and
+        /// the penlight areas. The length is a whole number of texture rows.
         /// </summary>
         public static float[] PackShowData(
             float[] clips,
@@ -429,7 +503,8 @@ namespace AdzukiSoft.ALPS
             float[] defaults,
             float[] fixtureInfo,
             int[] dmxRows,
-            float[] aim)
+            float[] aim,
+            float[] penlight)
         {
             var clipsAt = GpuHeaderSize;
             var effectsAt = clipsAt + clips.Length;
@@ -445,7 +520,8 @@ namespace AdzukiSoft.ALPS
             var fixtureInfoAt = defaultsAt + defaults.Length;
             var rowFixturesAt = fixtureInfoAt + fixtureInfo.Length;
             var aimAt = rowFixturesAt + GpuMaxFixtures;
-            var size = aimAt + aim.Length;
+            var penlightAt = aimAt + aim.Length;
+            var size = penlightAt + penlight.Length;
             var rows = (size + GpuDataWidth - 1) / GpuDataWidth;
             var data = new float[rows * GpuDataWidth];
 
@@ -470,6 +546,8 @@ namespace AdzukiSoft.ALPS
             data[18] = groupCount.Length > 0 ? groupIndex.Length / groupCount.Length : 0;
             data[19] = rowFixturesAt;
             data[20] = aimAt;
+            data[21] = penlightAt;
+            data[22] = penlight.Length / GpuPenlightAreaStride;
 
             CopyFloats(clips, data, clipsAt);
             CopyFloats(effects, data, effectsAt);
@@ -484,6 +562,7 @@ namespace AdzukiSoft.ALPS
             CopyFloats(defaults, data, defaultsAt);
             CopyFloats(fixtureInfo, data, fixtureInfoAt);
             CopyFloats(aim, data, aimAt);
+            CopyFloats(penlight, data, penlightAt);
 
             // Which of the show's fixtures sits on each DMX row, -1 for rows it does not drive.
             for (var row = 0; row < GpuMaxFixtures; row++)

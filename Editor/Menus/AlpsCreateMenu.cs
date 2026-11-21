@@ -16,12 +16,14 @@ namespace AdzukiSoft.ALPS.Editor
     public static class AlpsCreateMenu
     {
         public const string ContainerName = "ALPS Container";
+        public const string PenlightAreaName = "ALPS Penlight Area";
 
         private const string Root = "GameObject/ALPS/";
 
         // Up to 49 the items also show in the Hierarchy's context menu. The gap between the
         // two groups draws a separator.
         private const int ContainerPriority = 10;
+        private const int PenlightAreaPriority = 11;
         private const int FixturePriority = 30;
 
         private const string PrefabFolder = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/";
@@ -59,6 +61,16 @@ namespace AdzukiSoft.ALPS.Editor
             var gameObject = new GameObject(ContainerName);
             gameObject.AddComponent<AlpsContainer>();
             Place(gameObject, context);
+            return gameObject;
+        }
+
+        /// <summary>An object with a penlight area and its slots, ready for a lighting track to be bound to.</summary>
+        public static GameObject CreatePenlightArea(GameObject context)
+        {
+            var gameObject = new GameObject(PenlightAreaName);
+            var area = gameObject.AddComponent<AlpsPenlightArea>();
+            Place(gameObject, context);
+            AlpsPenlightSlots.Sync(area, recordUndo: false);
             return gameObject;
         }
 
@@ -123,6 +135,9 @@ namespace AdzukiSoft.ALPS.Editor
 
         [MenuItem(Root + "Container", false, ContainerPriority)]
         private static void CreateContainerItem(MenuCommand command) => Select(CreateContainer(command.context as GameObject));
+
+        [MenuItem(Root + "Penlight Area", false, PenlightAreaPriority)]
+        private static void CreatePenlightAreaItem(MenuCommand command) => Select(CreatePenlightArea(command.context as GameObject));
 
         [MenuItem(Root + "Mover Spotlight", false, FixturePriority)]
         private static void CreateMoverSpotlight(MenuCommand command) => Select(CreateFixture(MoverSpotlight, command.context as GameObject));

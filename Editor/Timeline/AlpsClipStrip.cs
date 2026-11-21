@@ -181,7 +181,7 @@ namespace AdzukiSoft.ALPS.Editor
             var data = AlpsShowPlayer.CreateShowTexture(AlpsShowPlayer.PackShowData(
                 show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
                 show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                fixtureCount, defaults, info, rows, new float[fixtureCount * AlpsShowPlayer.GpuAimStride]));
+                fixtureCount, defaults, info, rows, new float[fixtureCount * AlpsShowPlayer.GpuAimStride], new float[0]));
             var material = new Material(shader);
             var target = AlpsPreviewDriver.CreateGpuTarget("ALPS Clip Strip", width, lanes);
             var readback = new Texture2D(width, lanes, TextureFormat.RGBAFloat, false, true);

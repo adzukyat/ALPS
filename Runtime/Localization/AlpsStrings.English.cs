@@ -101,6 +101,17 @@ namespace AdzukiSoft.ALPS
                 { "container.keepLightOffPlayers", "Keep Light Off Players" },
                 { "container.keepLightOffPlayers.tip", "Keeps the lights' projections from lighting players. One setting for every container in the scene. While on, the world's opaque materials are given lower render queues in the build, so they draw before the projections." },
 
+                // --- Penlight area -----------------------------------------
+                { "penlight.shape.line", "Line" },
+                { "penlight.shape.radial", "Radial" },
+                { "penlight.shape.angle", "Angle" },
+                { "penlight.shape.tip", "How a penlight finds its place along the slots. Line: along the area's X axis. Radial: by its distance from the middle. Angle: by its angle around the middle. A clip's delay runs along this." },
+                { "penlight.size.length", "Length" },
+                { "penlight.size.tip", "The line's length or the circle's radius. A penlight past the ends takes the end's colour." },
+                { "penlight.slots", "Slots" },
+                { "penlight.slots.tip", "How many steps the shape is cut into. A clip counts each as a fixture, and a penlight between two blends them." },
+                { "penlight.help", "Bind an ALPS Lighting Track to this area. Its brightness and colour reach every penlight drawn with the ALPS/Penlight shader, on avatars too. A penlight takes the brightest of the areas in a show." },
+
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "Migrate VRSL Fixtures" },
                 { "migrate.help", "Replaces fixtures made from the VR Stage Lighting package with the fixtures ALPS comes with, in the open scenes or the prefab that is open. ALPS fixtures keep their object, their settings and their tracks. Other fixtures are replaced in place: they keep their name, placement and look, and lose what only their own script had, such as AudioLink settings." },
