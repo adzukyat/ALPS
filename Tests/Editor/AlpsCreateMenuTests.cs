@@ -74,6 +74,50 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void CreateFixture_GivesAMultiLightBarItsSegments()
+        {
+            var container = AlpsCreateMenu.CreateContainer(null);
+            var mover = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, container);
+
+            var created = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MultiLightBar, mover);
+
+            Assert.AreSame(container.transform, created.transform.parent, "It goes next to the fixture it was made on.");
+            Assert.IsNull(created.GetComponent<AlpsFixture>(), "The bar is no fixture itself.");
+            var bar = created.GetComponent<AlpsVRSLMultiLightBar>();
+            Assert.NotNull(bar);
+            var segments = bar.Fixtures();
+            Assert.AreEqual(AlpsVRSLMultiLightBar.SegmentCount, segments.Count);
+            for (var i = 0; i < segments.Count; i++)
+            {
+                var segment = (AlpsVRSLMultiLightBarSegment)segments[i];
+                Assert.AreEqual(i, segment.index);
+                Assert.AreSame(bar, segment.Bar);
+                Assert.AreSame(bar, segment.DmxOwner);
+                Assert.IsTrue(segment.IsReady, "The segment finds the bar's VRSL target.");
+                Assert.AreEqual(HideFlags.HideInHierarchy, segment.gameObject.hideFlags & HideFlags.HideInHierarchy);
+            }
+
+            // A track bound to the container counts the mover and then the segments.
+            var driven = container.GetComponent<AlpsContainer>().Fixtures();
+            Assert.AreEqual(1 + AlpsVRSLMultiLightBar.SegmentCount, driven.Count);
+            Assert.AreSame(segments[0], driven[1]);
+
+            // A fixture made on the bar goes next to it, not below it.
+            var next = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, created);
+            Assert.AreSame(container.transform, next.transform.parent);
+
+            Assert.IsFalse(AlpsMultiLightBarSegments.Sync(bar, recordUndo: false), "Nothing is left to set up.");
+        }
+
+        [Test]
+        public void TheMultiLightBarsMaterial_ReadsADimmerAndAColourPerSegment()
+        {
+            var renderer = AlpsCreateMenu.MultiLightBar.Load().GetComponentInChildren<MeshRenderer>(true);
+
+            Assert.IsTrue(renderer.sharedMaterial.IsKeywordEnabled("_CHANNEL_MODE"), "The material is not in VRSL's 48 channel mode.");
+        }
+
+        [Test]
         public void Fixtures_AddTheirProjectionsAsLight()
         {
             var found = 0;

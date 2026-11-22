@@ -16,7 +16,9 @@ only what keeps the copy apart from a VRSL package in the same project:
 - references to VRSL's own DMX render textures, which ALPS replaces, are cleared,
 - the volumetric materials have cone length via DMX on, which is how ALPS sets the length,
 - the projections are drawn as added light (Blend One One), with the intensity of their
-  materials scaled to match, so overlapping ones add up instead of multiplying.
+  materials scaled to match, so overlapping ones add up instead of multiplying,
+- the multi light bar's material is in its 48 channel mode, a dimmer and a colour for each
+  of its twelve segments, which ALPS drives as a fixture each.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -62,6 +64,11 @@ PROJECTION_BLEND = re.compile(r"Blend\s+DstColor\s+\[_BlendDst\]")
 # did. A darker floor gets more light than it did, a brighter one less.
 PROJECTION_INTENSITY_SCALE = 0.1
 PROJECTION_INTENSITY = re.compile(r"(- _Projection(?:Max)?Intensity: )([0-9.eE+-]+)")
+# The multi light bar reads one colour and twelve dimmers until its material asks for the 48
+# channel mode, which takes the keyword as well as the property.
+BAR_CHANNEL_MODE = "- _ChannelMode: 0"
+BAR_KEYWORD = "_CHANNEL_MODE"
+KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -210,6 +217,9 @@ def main():
                 text = remap_references(text, relative)
             if relative.endswith(".mat"):
                 text = text.replace("- _EnableExtraChannels: 0", "- _EnableExtraChannels: 1")
+                if BAR_CHANNEL_MODE in text:
+                    text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
+                    text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
                 shader = re.search(r"m_Shader: \{fileID: \d+, guid: ([0-9a-f]{32})", read(source))
                 if shader and by_guid.get(shader.group(1)) in light_shaders:
                     text = PROJECTION_INTENSITY.sub(scale_intensity, text)

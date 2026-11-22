@@ -47,7 +47,8 @@ namespace AdzukiSoft.ALPS.Editor
             "Light Bar", "fixture.lightBar", "220324829ef5ebbe155cbec7bbba8951", PrefabFolder + "VRSL-DMX-Static-LightBar-H-13CH.prefab");
 
         public static readonly AlpsVrslPrefab MultiLightBar = new AlpsVrslPrefab(
-            "Multi Light Bar", "fixture.multiLightBar", "bf66b05d4625a9ff51c75ec1c75e1675", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab");
+            "Multi Light Bar", "fixture.multiLightBar", "bf66b05d4625a9ff51c75ec1c75e1675", PrefabFolder + "VRSL-DMX-Static-MultiLightBar-H-15CH.prefab",
+            segmented: true);
 
         public static readonly AlpsVrslPrefab Laser = new AlpsVrslPrefab(
             "Laser", "fixture.laser", "411e679ed1f72e7c2129a3d46442cb22", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
@@ -78,8 +79,9 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// An instance of the fixture's prefab with an ALPS VRSL Fixture on it. Null when the
-        /// prefab is missing.
+        /// An instance of the fixture's prefab with an ALPS VRSL Fixture on it, or for a
+        /// multi light bar with the bar and its twelve segments, which are the fixtures a
+        /// show drives. Null when the prefab is missing.
         /// </summary>
         public static GameObject CreateFixture(AlpsVrslPrefab fixture, GameObject context)
         {
@@ -91,13 +93,19 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             var gameObject = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            gameObject.AddComponent<AlpsVRSLFixture>();
+            var bar = fixture.Segmented ? gameObject.AddComponent<AlpsVRSLMultiLightBar>() : null;
+            if (bar == null)
+            {
+                gameObject.AddComponent<AlpsVRSLFixture>();
+            }
+
             if (fixture.Scale > 0f)
             {
                 gameObject.transform.localScale = Vector3.one * fixture.Scale;
             }
 
             Place(gameObject, context);
+            AlpsMultiLightBarSegments.Sync(bar, recordUndo: false);
             return gameObject;
         }
 
@@ -121,7 +129,7 @@ namespace AdzukiSoft.ALPS.Editor
 
             var parent = context;
             var after = -1;
-            if (context != null && context.GetComponent<AlpsFixture>() != null)
+            if (context != null && (context.GetComponent<AlpsFixture>() != null || context.GetComponent<AlpsVRSLMultiLightBar>() != null))
             {
                 parent = context.transform.parent != null ? context.transform.parent.gameObject : null;
                 after = context.transform.GetSiblingIndex();
@@ -204,9 +212,10 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     public sealed class AlpsVrslPrefab
     {
-        public AlpsVrslPrefab(string name, string labelKey, string guid, string path, float scale = 0f)
+        public AlpsVrslPrefab(string name, string labelKey, string guid, string path, float scale = 0f, bool segmented = false)
         {
             Scale = scale;
+            Segmented = segmented;
             Name = name;
             LabelKey = labelKey;
             Guid = guid;
@@ -225,6 +234,9 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>The scale a new fixture gets, or 0 for the prefab's own.</summary>
         public float Scale { get; }
+
+        /// <summary>True for the multi light bar, whose segments are the fixtures a show drives.</summary>
+        public bool Segmented { get; }
 
         public GameObject Load()
         {

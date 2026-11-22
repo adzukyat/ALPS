@@ -327,6 +327,101 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Grid_LaysAMultiLightBarOutOverFourRows()
+        {
+            const int segments = AlpsVRSLMultiLightBar.SegmentCount;
+            const int count = segments + 2;
+            const int barRow = 5;
+            var set = Set(0f);
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.hasSpread = true;
+            brightness.brightness.spreadRange = new Vector2(20f, 150f);
+            var show = AlpsShowCompiler.CompileStandalone(count, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+
+            // A mover on the row before the bar, the bar's twelve segments on its four rows,
+            // and a mover on the row after them. Rows 6 and 7 hold channels 91 and 104, which
+            // VRSL reads through its exceptions for the thirteenth channel.
+            var info = new List<float>(NeutralInfo());
+            var rows = new List<int> { barRow - 1 };
+            for (var s = 0; s < segments; s++)
+            {
+                var segment = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+                AlpsShowPlayer.WriteBarSegmentDmxInfo(segment, 0, s);
+                info.AddRange(segment);
+                rows.Add(barRow);
+            }
+
+            info.AddRange(NeutralInfo());
+            rows.Add(barRow + AlpsVRSLMultiLightBar.RowCount);
+            var gpu = Keep(new AlpsGpuShow(show, count, rows.ToArray(), info: info.ToArray()));
+            var frames = gpu.FramesAt(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+
+            // What VRSL's own getValueAtCoords reads for every channel of the first ten rows.
+            var probe = Keep(new Material(Shader.Find("Hidden/ALPS/Tests/VRSL Probe")));
+            const int channels = 13 * 10;
+            probe.SetFloat("_AlpsProbeChannels", channels);
+            Shader.SetGlobalTexture("_Udon_DMXGridRenderTexture", gpu.Grid);
+            Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", gpu.Spin);
+            Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / gpu.Grid.width, 1f / gpu.Grid.height, gpu.Grid.width, gpu.Grid.height));
+            var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", channels, 1));
+            Graphics.Blit(null, read, probe);
+            var values = Keep(AlpsGpuShow.ReadBackTexture(read));
+
+            float Level(int fixture) => frames[fixture * AlpsShowLayout.FrameStride + AlpsShowLayout.FrameBrightness]
+                                        * frames[fixture * AlpsShowLayout.FrameStride + AlpsShowLayout.FrameBrightnessScale] / 100f;
+            float Stored(int channel)
+            {
+                var texel = VrslTexel(channel + 1);
+                return grid.GetPixel(texel.x, texel.y).r;
+            }
+
+            var thirteenth = 0;
+            var failures = new List<string>();
+            for (var s = 0; s < segments; s++)
+            {
+                var fixture = 1 + s;
+                var level = Level(fixture);
+                Assert.Greater(level, 0f);
+                var colour = new[] { 0.2f, 0.4f, 1f };
+                for (var k = 0; k < AlpsShowPlayer.BarSegmentChannels; k++)
+                {
+                    var channel = barRow * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
+                    thirteenth += channel % 13 == 12 ? 1 : 0;
+                    var expected = k == 0 ? 1f : ToLinear(colour[k - 1] * Mathf.Max(level, 1f)) * Mathf.Pow(Mathf.Min(level, 1f), BarDimming);
+                    if (Mathf.Abs(expected - Stored(channel)) > 1e-4f)
+                    {
+                        failures.Add($"segment {s} channel {k}: expected {expected:0.####}, the grid holds {Stored(channel):0.####}");
+                    }
+
+                    if (Mathf.Abs(expected - values.GetPixel(channel, 0).r) > 1e-3f)
+                    {
+                        failures.Add($"segment {s} channel {k} (DMX {channel + 1}): expected {expected:0.####}, VRSL reads {values.GetPixel(channel, 0).r:0.####}");
+                    }
+                }
+            }
+
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.AreEqual(3, thirteenth, "The bar's channels cross three thirteenth columns.");
+            Assert.AreNotEqual(Level(1), Level(segments), "The spread runs along the bar.");
+
+            // The four channels the bar leaves of its last row stay dark, and the movers
+            // either side keep their own rows.
+            for (var channel = (barRow + 3) * 13 + 9; channel < (barRow + 4) * 13; channel++)
+            {
+                Assert.AreEqual(0f, Stored(channel), 1e-6f, $"Channel {channel + 1} past the bar's last.");
+            }
+
+            Assert.AreEqual(GridDimmer(Level(0)), Stored((barRow - 1) * 13 + 5), 1e-4f, "The mover before the bar.");
+            Assert.AreEqual(GridDimmer(Mathf.Min(Level(count - 1), 1f)), Stored((barRow + 4) * 13 + 5), 1e-4f, "The mover after the bar.");
+            Assert.AreEqual(0f, Stored((barRow - 1) * 13 + 12), 1e-6f, "A mover reads nothing from its thirteenth channel.");
+        }
+
+        /// <summary>The power of the level a segment of a multi light bar dims by, ALPS_BAR_DIMMING in the grid shader.</summary>
+        private const float BarDimming = 1.5f;
+
+        [Test]
         public void Laser_KeepsWhatItsMaterialSays()
         {
             var laser = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab));
@@ -737,11 +832,19 @@ namespace AdzukiSoft.ALPS.Tests
         /// The texel VRSL samples for absolute channel <paramref name="dmx"/>, as its
         /// getValueAtCoords and IndustryRead work it out on the 26 x 240 horizontal grid.
         /// IndustryRead takes the row as an int, so the fraction of dmx / 13 is dropped.
+        /// <see cref="Grid_LaysAMultiLightBarOutOverFourRows"/> holds it to VRSL's own read.
         /// </summary>
         private static Vector2Int VrslTexel(int dmx)
         {
             var x = dmx % 13;
-            var row = (int)(dmx / 13f + 1f);
+            var row = dmx / 13 + 1;
+            if (x == 0)
+            {
+                // The thirteenth channel of a row is read from that row's thirteenth column.
+                x = 13;
+                row -= 1;
+            }
+
             var resMultiplier = 26f / 13f;
             var u = x * resMultiplier * (1f / 26f) - 0.015f;
             var v = row * resMultiplier * (1f / 240f) - 0.001915f;

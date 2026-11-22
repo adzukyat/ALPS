@@ -31,6 +31,7 @@ public static class AlpsDemoCapture
             { "top", (new Vector3(0f, 12.5f, -3f), new Vector3(0f, 1.4f, 3.5f), 75f) },
             { "stage", (new Vector3(3f, 3.2f, 1.5f), new Vector3(-1f, 4.5f, 8f), 70f) },
             { "back", (new Vector3(0f, 5.5f, 9.5f), new Vector3(0f, 1.5f, -10f), 70f) },
+            { "riser", (new Vector3(0f, 2.3f, 1.6f), new Vector3(0f, 1.75f, 5.4f), 62f) },
         };
 
     [MenuItem(AlpsMainMenu.DebugRoot + "Demo/Capture Stills", false, AlpsMainMenu.DebugPriority + 1)]

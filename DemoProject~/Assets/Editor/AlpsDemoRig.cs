@@ -6,8 +6,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Hangs the demo's lighting rig on the venue: 96 fixtures in twelve containers below one
-/// container for the whole rig, and two penlight areas over the crowd.
+/// Hangs the demo's lighting rig on the venue: 96 fixtures and four multi light bars of
+/// twelve segments each in thirteen containers below one container for the whole rig, and
+/// two penlight areas over the crowd.
 ///
 /// How the heads are mounted decides what tilt and pan mean in a clip. Pan turns a head
 /// around the axis it is mounted on, and tilt leans the beam away from that axis:
@@ -21,6 +22,9 @@ using UnityEngine;
 ///   fan and a negative one lowers it onto the crowd, and pan rolls the fan around the way
 ///   it fires, clockwise seen from behind the laser, so 90 stands it on end. Its cone width
 ///   is half the angle the fan opens by.
+///
+/// The pixel bars are multi light bars, whose segments are the fixtures: a clip counts 48 of
+/// them from house left to house right, so a spread or a delay runs across the riser.
 /// </summary>
 public static class AlpsDemoRig
 {
@@ -37,13 +41,14 @@ public static class AlpsDemoRig
     public const string CycPars = "Cyc Pars";
     public const string ApronBars = "Apron Bars";
     public const string Lasers = "Lasers";
+    public const string PixelBars = "Pixel Bars";
     public const string PenlightSweep = "Penlight Sweep";
     public const string PenlightRipple = "Penlight Ripple";
 
     /// <summary>The containers in the order their tracks come in the timeline, lowest layer first.</summary>
     public static readonly string[] Containers =
     {
-        CycPars, ApronBars, TotemBars, FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Lasers, Blinders,
+        CycPars, ApronBars, PixelBars, TotemBars, FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Lasers, Blinders,
     };
 
     private const string LaserMaterialPath = AlpsDemoVenue.Folder + "/Materials/Laser Fan.mat";
@@ -173,6 +178,18 @@ public static class AlpsDemoRig
             bar.transform.localPosition = new Vector3(apronX[i], AlpsDemoVenue.DeckHeight - 0.3f, -0.08f) - rotation * LightBarCenter;
         }
 
+        // --- Multi light bars across the front of the drum riser, twelve pixels each ------------
+        var pixels = Container(rig, PixelBars, targets);
+        var riserY = (AlpsDemoVenue.DrumRiserMin.y + AlpsDemoVenue.DrumRiserMax.y) * 0.5f;
+        for (var i = 0; i < 4; i++)
+        {
+            // A multi light bar shines along its own +Z and counts its segments from its +X end,
+            // so turned half round it faces the audience and counts from house left.
+            var bar = MultiLightBar(pixels, "Pixel Bar", i);
+            bar.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            bar.transform.localPosition = new Vector3((i - 1.5f) * 1.05f, riserY, AlpsDemoVenue.DrumRiserMin.z - 0.14f);
+        }
+
         // --- Lasers on the back truss, turned round to fire over the crowd -----------------------
         var lasers = Container(rig, Lasers, targets);
         var fan = LaserFan();
@@ -230,6 +247,23 @@ public static class AlpsDemoRig
         fixture.transform.localScale = Vector3.one;
         fixture.AddComponent<AlpsVRSLFixture>().target = fixture.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
         return fixture;
+    }
+
+    /// <summary>A multi light bar at its prefab's own size, with the segments a show drives.</summary>
+    private static GameObject MultiLightBar(AlpsContainer container, string name, int index)
+    {
+        var source = AlpsCreateMenu.MultiLightBar.Load();
+        if (source == null)
+        {
+            throw new System.InvalidOperationException($"The prefab for {AlpsCreateMenu.MultiLightBar.Name} was not found at {AlpsCreateMenu.MultiLightBar.Path}.");
+        }
+
+        var instance = (GameObject)PrefabUtility.InstantiatePrefab(source, container.transform);
+        instance.name = $"{name} {index + 1}";
+        var bar = instance.AddComponent<AlpsVRSLMultiLightBar>();
+        bar.target = instance.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
+        AlpsMultiLightBarSegments.Sync(bar, recordUndo: false);
+        return instance;
     }
 
     /// <summary>

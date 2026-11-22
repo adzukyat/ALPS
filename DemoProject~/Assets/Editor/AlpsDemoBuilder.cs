@@ -77,8 +77,10 @@ public static class AlpsDemoBuilder
             Debug.LogWarning("[ALPS Demo] " + warning);
         }
 
-        var dmx = show.fixtures.Count(fixture => fixture != null && fixture.UsesDmxRow);
-        Debug.Log($"[ALPS Demo] Rebuilt the example show: {show.fixtures.Count} fixtures ({dmx} on DMX rows), "
+        // A fixture takes a row of the DMX grid, and the segments of a multi light bar share four.
+        var rows = show.fixtures.Where(fixture => fixture != null && fixture.UsesDmxRow)
+            .GroupBy(fixture => fixture.DmxOwner).Sum(group => group.First().DmxRowCount);
+        Debug.Log($"[ALPS Demo] Rebuilt the example show: {show.fixtures.Count} fixtures on {rows} of the DMX grid's {AlpsShowPlayer.GpuMaxFixtures} rows, "
                   + $"{show.clips.Length / AlpsShowLayout.ClipStride} clips, {AlpsDemoShow.Duration:0} seconds.");
     }
 

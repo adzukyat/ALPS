@@ -75,6 +75,70 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(b.Count, b.Select(f => rows[f]).Distinct().Count());
         }
 
+        [Test]
+        public void Rows_AMultiLightBarsSegmentsShareFourRows()
+        {
+            var before = Fixtures(2);
+            var bar = Bar();
+            var after = Fixtures(1);
+            var show = before.Concat(bar).Concat(after).ToList();
+
+            var rows = Assign(out var errors, show);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(AlpsVRSLMultiLightBar.SegmentCount, bar.Count);
+            Assert.IsTrue(bar.All(segment => rows[segment] == 2), "Every segment names the bar's first row.");
+            Assert.AreEqual(2 + AlpsVRSLMultiLightBar.RowCount, rows[after[0]], "The next fixture comes after the bar's rows.");
+        }
+
+        [Test]
+        public void Rows_ABarInTwoShowsKeepsItsRowsFreeInBoth()
+        {
+            var bar = Bar();
+            var a = Fixtures(3);
+            var b = Fixtures(1);
+            a.AddRange(bar);
+            b.AddRange(bar);
+            var own = Fixtures(2);
+            b.AddRange(own);
+
+            var rows = Assign(out var errors, a, b);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(3, rows[bar[0]]);
+            Assert.AreEqual(1, rows[own[0]], "Rows below the bar's are still free in the second show.");
+            Assert.AreEqual(2, rows[own[1]]);
+        }
+
+        [Test]
+        public void Rows_BarsCountTheirFourRowsAgainstTheGrid()
+        {
+            // 29 bars take 116 rows, which leaves two.
+            var show = new List<AlpsFixture>();
+            for (var i = 0; i < 29; i++)
+            {
+                show.AddRange(Bar());
+            }
+
+            show.AddRange(Fixtures(2));
+            Assign(out var errors, show);
+            Assert.IsEmpty(errors, "348 segments and two fixtures take 118 rows.");
+
+            show.AddRange(Fixtures(1));
+            Assign(out errors, show);
+            Assert.AreEqual(1, errors.Count);
+        }
+
+        /// <summary>A multi light bar's twelve segments, in order.</summary>
+        private List<AlpsFixture> Bar()
+        {
+            var go = new GameObject("Bar");
+            _objects.Add(go);
+            var bar = go.AddComponent<AlpsVRSLMultiLightBar>();
+            AlpsMultiLightBarSegments.Sync(bar, recordUndo: false);
+            return bar.Fixtures();
+        }
+
         private static Dictionary<AlpsFixture, int> Assign(out List<string> errors, params List<AlpsFixture>[] shows)
         {
             errors = new List<string>();

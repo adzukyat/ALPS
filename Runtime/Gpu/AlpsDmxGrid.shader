@@ -1,7 +1,8 @@
-// Lays the evaluated frames out as the DMX grid VRSL's mover shaders read in DMX mode.
+// Lays the evaluated frames out as the DMX grid VRSL's shaders read in DMX mode.
 // The fixture on DMX row n starts on absolute DMX channel 13n + 1, one row of the 13 column
-// grid each. Rows are handed out across every show of a scene, and the show data says which
-// of its fixtures sits on which row. Rows it holds no fixture for stay dark.
+// grid each, and a multi light bar runs on over four rows, four channels per segment. Rows
+// are handed out across every show of a scene, and the show data says which of its fixtures
+// reads each channel. Channels it holds no fixture for stay dark.
 // Pass 0 is the grid VRSL reads its channels from, pass 1 the gobo spin phase grid.
 //
 // Which texel VRSL reads a channel from is worked out the way VRSL's getValueAtCoords
@@ -51,6 +52,14 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_LASER_MIN_STRETCH 0.5
     #define ALPS_LASER_MAX_STRETCH 6.0
 
+    // AlpsShowPlayer.DmxLayoutBarSegment and GpuChannelFixtureStep. A segment of a multi
+    // light bar dims by this power of the level, which is about how the 13 channel light
+    // bar beside it dims under the dimmer and the colour above. 100% is the most the bar's
+    // material shines.
+    #define ALPS_LAYOUT_BAR_SEGMENT 2
+    #define ALPS_CHANNEL_FIXTURE_STEP 16
+    #define ALPS_BAR_DIMMING 1.5
+
     float AlpsFrameChannel(int fixture, int channel)
     {
         return _MainTex.Load(int3(channel / 4, fixture, 0))[channel % 4];
@@ -87,13 +96,20 @@ Shader "Hidden/ALPS/DMX Grid"
     }
 
     // The texel VRSL samples for absolute channel <dmx> on a 26 x 240 grid, following
-    // getValueAtCoords and IndustryRead for channels 1 to 12 of a row. IndustryRead takes
-    // its row as an int, which drops the fraction of dmx / 13, so a whole row of channels
-    // shares one texel row.
+    // getValueAtCoords and IndustryRead. IndustryRead takes its row as an int, which drops
+    // the fraction of dmx / 13, so a whole row of channels shares one texel row. The
+    // thirteenth channel of a row, where dmx / 13 has no fraction, is read from the
+    // thirteenth column of that same row.
     int2 AlpsVrslTexel(uint dmx)
     {
         uint x = dmx % 13;
-        int row = (int)(dmx / 13.0 + 1.0);
+        int row = (int)(dmx / 13) + 1;
+        if (x == 0)
+        {
+            x = 13;
+            row -= 1;
+        }
+
         float2 texel = float2(1.0 / ALPS_GRID_WIDTH, 1.0 / ALPS_GRID_HEIGHT);
         float resMultiplier = ALPS_GRID_WIDTH / 13;
         float2 uv;
@@ -114,12 +130,12 @@ Shader "Hidden/ALPS/DMX Grid"
 
         // Only odd columns are read, column 2x - 1 for channel x of a row.
         int x = (p.x + 1) / 2;
-        if (x < 1 || x > 12)
+        if (x < 1 || x > 13)
         {
             return false;
         }
 
-        // Fixture n's row is read from texel row 2n + 1. Checked against VRSL's own maths.
+        // Row n is read from texel row 2n + 1. Checked against VRSL's own maths.
         if ((p.y & 1) == 0)
         {
             return false;
@@ -137,14 +153,40 @@ Shader "Hidden/ALPS/DMX Grid"
             return false;
         }
 
-        fixture = AlpsReadInt(show.rowFixtures + n);
-        if (fixture < 0 || fixture >= show.fixtureCount)
+        // The channel map names the fixture and which of its channels this is.
+        int cell = AlpsReadInt(show.channelFixtures + 13 * n + x - 1);
+        if (cell < 0)
         {
             return false;
         }
 
-        offset = x - 1;
-        return true;
+        fixture = cell / ALPS_CHANNEL_FIXTURE_STEP;
+        offset = cell - fixture * ALPS_CHANNEL_FIXTURE_STEP;
+        return fixture < show.fixtureCount;
+    }
+
+    // What a segment of VRSL's multi light bar reads in its 48 channel mode
+    // (GetDMX12CHRGB in VRSL-StandardSurface-Functions.cginc): a dimmer, then the colour.
+    // The bar raises the dimmer to the fifth power and more, so it only says whether the
+    // segment is lit, and the colour carries the level.
+    float AlpsBarSegmentValue(int fixture, int offset)
+    {
+        float level = AlpsLevel(fixture);
+        if (level <= 0.0)
+        {
+            return 0.0;
+        }
+
+        if (offset == 0)
+        {
+            return 1.0;
+        }
+
+        float tint = AlpsFrameChannel(fixture, FrameRed + offset - 1) * max(level, 1.0);
+        #ifndef UNITY_COLORSPACE_GAMMA
+        tint = GammaToLinearSpaceExact(tint);
+        #endif
+        return tint * pow(min(level, 1.0), ALPS_BAR_DIMMING);
     }
 
     // What VRSL's laser (VRSL-BasicLaser-DMX.shader) reads from its row, which is laid out
@@ -233,9 +275,15 @@ Shader "Hidden/ALPS/DMX Grid"
     float AlpsDmxValue(int fixture, int offset, AlpsShow show)
     {
         int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
-        if (AlpsReadInt(info + ALPS_INFO_LAYOUT) == ALPS_LAYOUT_LASER)
+        int layout = AlpsReadInt(info + ALPS_INFO_LAYOUT);
+        if (layout == ALPS_LAYOUT_LASER)
         {
             return AlpsLaserValue(fixture, offset, info);
+        }
+
+        if (layout == ALPS_LAYOUT_BAR_SEGMENT)
+        {
+            return AlpsBarSegmentValue(fixture, offset);
         }
 
         if (offset == 0)

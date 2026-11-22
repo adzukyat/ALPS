@@ -14,6 +14,7 @@ namespace AdzukiSoft.ALPS.Tests
     {
         private const string PackagePrefabs = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/";
         private const string DmxMover = PackagePrefabs + "DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string DmxMultiLightBar = PackagePrefabs + "DMX/Horizontal Mode/VRSL-DMX-Static-MultiLightBar-H-15CH.prefab";
         private const string AudioLinkMover = PackagePrefabs + "AudioLink/VRSL-AudioLink-Mover-Spotlight.prefab";
 
         [SetUp]
@@ -62,6 +63,35 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             Assert.AreEqual(AlpsCreateMenu.MoverSpotlight.Guid, AlpsVrslMigration.CopyGuid(guid));
+        }
+
+        [Test]
+        public void MultiLightBar_IsDrivenBySegmentsAfterwards()
+        {
+            var rig = new GameObject("Rig");
+            var old = Instantiate(DmxMultiLightBar, rig.transform);
+            old.name = "Bar 1";
+            var fixture = old.AddComponent<AlpsVRSLFixture>();
+
+            // A track bound to the one fixture older versions put on a bar.
+            var timeline = ScriptableObject.CreateInstance<UnityEngine.Timeline.TimelineAsset>();
+            var director = new GameObject("Show").AddComponent<UnityEngine.Playables.PlayableDirector>();
+            director.playableAsset = timeline;
+            var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Bar");
+            director.SetGenericBinding(track, fixture);
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            var converted = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.AreEqual(AlpsCreateMenu.MultiLightBar.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(converted));
+            Assert.IsNull(converted.GetComponent<AlpsFixture>(), "The single fixture gave way to the bar.");
+            var bar = converted.GetComponent<AlpsVRSLMultiLightBar>();
+            Assert.NotNull(bar);
+            Assert.NotNull(bar.ResolveTarget());
+            Assert.AreEqual(AlpsVRSLMultiLightBar.SegmentCount, bar.Fixtures().Count);
+            Assert.AreSame(bar, director.GetGenericBinding(track), "The track drives the bar's segments now.");
+            Object.DestroyImmediate(timeline);
         }
 
         [Test]

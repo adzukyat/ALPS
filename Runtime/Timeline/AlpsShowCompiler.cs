@@ -292,6 +292,12 @@ namespace AdzukiSoft.ALPS
                         _show.errors.Add($"Fixture '{fixture.name}' in '{group.name}' has nothing to drive. Assign its target.");
                     }
 
+                    var warning = fixture.SetupWarning;
+                    if (!string.IsNullOrEmpty(warning) && !_show.warnings.Contains(warning))
+                    {
+                        _show.warnings.Add(warning);
+                    }
+
                     var index = _show.fixtures.IndexOf(fixture);
                     if (index < 0)
                     {

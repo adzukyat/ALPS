@@ -36,7 +36,7 @@ float _AlpsTime;
 #define ALPS_HEADER_DEFAULTS 16
 #define ALPS_HEADER_FIXTURE_INFO 17
 #define ALPS_HEADER_GROUP_COLUMNS 18
-#define ALPS_HEADER_ROW_FIXTURES 19
+#define ALPS_HEADER_CHANNEL_FIXTURES 19
 #define ALPS_HEADER_AIM 20
 #define ALPS_HEADER_PENLIGHT 21
 #define ALPS_HEADER_PENLIGHT_AREAS 22
@@ -206,7 +206,7 @@ struct AlpsShow
     int defaults;
     int fixtureInfo;
     int groupColumns;
-    int rowFixtures;
+    int channelFixtures;
     int aim;
 };
 
@@ -231,7 +231,7 @@ AlpsShow AlpsLoadShow()
     show.defaults = AlpsReadInt(ALPS_HEADER_DEFAULTS);
     show.fixtureInfo = AlpsReadInt(ALPS_HEADER_FIXTURE_INFO);
     show.groupColumns = AlpsReadInt(ALPS_HEADER_GROUP_COLUMNS);
-    show.rowFixtures = AlpsReadInt(ALPS_HEADER_ROW_FIXTURES);
+    show.channelFixtures = AlpsReadInt(ALPS_HEADER_CHANNEL_FIXTURES);
     show.aim = AlpsReadInt(ALPS_HEADER_AIM);
     return show;
 }

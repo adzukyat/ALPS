@@ -211,7 +211,13 @@ namespace AdzukiSoft.ALPS.Editor
                     continue;
                 }
 
-                converted.Add(item.KeepsObject ? Swap(item, prefab) : Replace(item, prefab));
+                var root = item.KeepsObject ? Swap(item, prefab) : Replace(item, prefab);
+                if (item.Target.Segmented)
+                {
+                    UseSegments(root);
+                }
+
+                converted.Add(root);
             }
 
             Undo.CollapseUndoOperations(group);
@@ -348,7 +354,32 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>Hands the tracks bound to a fixture that is going away to the one taking its place.</summary>
-        private static void Rebind(AlpsFixture from, AlpsFixture to)
+        /// <summary>
+        /// A multi light bar is driven segment by segment, so the single fixture an older
+        /// version put on it gives way to the bar and its segments. Tracks bound to that
+        /// fixture are bound to the bar, and drive its twelve segments from then on.
+        /// </summary>
+        private static void UseSegments(GameObject root)
+        {
+            var bar = root.GetComponent<AlpsVRSLMultiLightBar>();
+            if (bar == null)
+            {
+                bar = Undo.AddComponent<AlpsVRSLMultiLightBar>(root);
+            }
+
+            bar.target = root.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
+            AlpsMultiLightBarSegments.Sync(bar, recordUndo: true);
+            var fixture = root.GetComponent<AlpsVRSLFixture>();
+            if (fixture != null)
+            {
+                Rebind(fixture, bar);
+                Undo.DestroyObjectImmediate(fixture);
+            }
+
+            EditorUtility.SetDirty(bar);
+        }
+
+        private static void Rebind(AlpsTarget from, AlpsTarget to)
         {
             foreach (var director in UnityEngine.Object.FindObjectsOfType<PlayableDirector>(true))
             {

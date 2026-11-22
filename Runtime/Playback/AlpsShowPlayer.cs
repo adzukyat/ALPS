@@ -32,6 +32,9 @@ namespace AdzukiSoft.ALPS
         public const int AdapterVRSLDmxStatic = 1;
         public const int AdapterPenlight = 2;
 
+        /// <summary>A segment of a VRSL multi light bar, which shares the bar's rows with the other segments.</summary>
+        public const int AdapterVRSLBarSegment = 3;
+
         /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
         /// <summary>
@@ -64,7 +67,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Floats per fixture in the fixture info section: the pan and tilt ranges, which way
         /// the gobo turns and the DMX step between gobos, then which channels the fixture
-        /// reads (<see cref="InfoLayout"/>) and what a laser keeps from its material.
+        /// reads (<see cref="InfoLayout"/>), then what a laser keeps from its material or which
+        /// segment of its bar a bar segment is.
         /// </summary>
         public const int GpuFixtureInfoStride = 8;
         public const int InfoPanRange = 0;
@@ -73,6 +77,7 @@ namespace AdzukiSoft.ALPS
         public const int InfoGoboStep = 3;
         public const int InfoLayout = 4;
         public const int InfoLaserFlatness = 5;
+        public const int InfoBarSegment = 5;
         public const int InfoLaserBeams = 6;
         public const int InfoLaserThickness = 7;
 
@@ -84,6 +89,23 @@ namespace AdzukiSoft.ALPS
         /// beam count, spin, the colour, the intensity and the beam thickness.
         /// </summary>
         public const int DmxLayoutLaser = 1;
+
+        /// <summary>
+        /// The 4 channels a segment of VRSL's multi light bar reads in its 48 channel mode:
+        /// the dimmer and the colour, <see cref="InfoBarSegment"/> times four past the bar's
+        /// first channel.
+        /// </summary>
+        public const int DmxLayoutBarSegment = 2;
+        public const int BarSegmentChannels = 4;
+
+        /// <summary>The channels of a row of the grid, the thirteenth of which only a multi light bar reads.</summary>
+        public const int GpuRowChannels = 13;
+
+        /// <summary>
+        /// What the channel map multiplies a fixture by, leaving room below it for which of
+        /// its channels a cell is.
+        /// </summary>
+        public const int GpuChannelFixtureStep = 16;
 
         /// <summary>The material property only VRSL's laser shader has, which tells a laser from the other fixtures.</summary>
         public const string LaserBeamsProperty = "_LaserCount";
@@ -118,7 +140,10 @@ namespace AdzukiSoft.ALPS
         /// <summary>Floats per fixture in the aim section, the first three rows of its world to aim matrix.</summary>
         public const int GpuAimStride = 12;
 
-        /// <summary>Most fixtures VRSL's 26 x 240 grid holds, one 13 channel row each within three universes.</summary>
+        /// <summary>
+        /// The rows VRSL's 26 x 240 grid holds within three universes, 13 channels each. A
+        /// fixture takes one, and a multi light bar four for its twelve segments.
+        /// </summary>
         public const int GpuMaxFixtures = 118;
 
         /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels, the aim flag and the show token.</summary>
@@ -177,11 +202,15 @@ namespace AdzukiSoft.ALPS
 
         public int[] fixtureAdapter = new int[0];
         public VRStageLighting_DMX_Static[] vrslFixtures = new VRStageLighting_DMX_Static[0];
+
+        /// <summary>Which segment of its bar a fixture is, for the ones that are bar segments.</summary>
+        public int[] fixtureSegment = new int[0];
         public Transform[] aimTransforms = new Transform[0];
 
         /// <summary>
         /// The DMX grid row of every fixture. Rows are counted per show, so fixtures of other
-        /// shows of the scene read the same rows.
+        /// shows of the scene read the same rows. The segments of a bar all name the bar's
+        /// first row.
         /// </summary>
         public int[] dmxRows = new int[0];
 
@@ -265,7 +294,15 @@ namespace AdzukiSoft.ALPS
                 if (IsVRSL(i))
                 {
                     CaptureVRSL(vrslFixtures[i], defaults, offset);
-                    CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
+                    if (fixtureAdapter[i] == AdapterVRSLBarSegment)
+                    {
+                        WriteBarSegmentDmxInfo(info, i * GpuFixtureInfoStride, i < fixtureSegment.Length ? fixtureSegment[i] : 0);
+                    }
+                    else
+                    {
+                        CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
+                    }
+
                     ConfigureVRSLDmx(vrslFixtures[i], row, defaults[offset + AlpsShowLayout.FrameConeMeshLength]);
                 }
                 else
@@ -277,7 +314,7 @@ namespace AdzukiSoft.ALPS
                 if (i < aimTransforms.Length && aimTransforms[i] != null)
                 {
                     WriteAim(aimTransforms[i].worldToLocalMatrix, aim, i * GpuAimStride);
-                    if (IsVRSL(i))
+                    if (fixtureAdapter[i] == AdapterVRSLDmxStatic && IsVRSL(i))
                     {
                         OrientVRSLAim(vrslFixtures[i], aim, i * GpuAimStride);
                     }
@@ -549,8 +586,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Lays the compiled show out as the floats of the GPU evaluator's data texture: a
         /// header of section offsets, then every array in turn, then the fixture defaults,
-        /// the per fixture DMX info, which fixture sits on each DMX row, the aim spaces and
-        /// the penlight areas. The length is a whole number of texture rows.
+        /// the per fixture DMX info, which fixture reads each channel of the DMX grid, the aim
+        /// spaces and the penlight areas. The length is a whole number of texture rows.
         /// </summary>
         public static float[] PackShowData(
             float[] clips,
@@ -583,8 +620,9 @@ namespace AdzukiSoft.ALPS
             var groupIndexAt = groupCountAt + groupCount.Length;
             var defaultsAt = groupIndexAt + groupIndex.Length;
             var fixtureInfoAt = defaultsAt + defaults.Length;
-            var rowFixturesAt = fixtureInfoAt + fixtureInfo.Length;
-            var aimAt = rowFixturesAt + GpuMaxFixtures;
+            var channelFixturesAt = fixtureInfoAt + fixtureInfo.Length;
+            var channels = GpuMaxFixtures * GpuRowChannels;
+            var aimAt = channelFixturesAt + channels;
             var penlightAt = aimAt + aim.Length;
             var size = penlightAt + penlight.Length;
             var rows = (size + GpuDataWidth - 1) / GpuDataWidth;
@@ -609,7 +647,7 @@ namespace AdzukiSoft.ALPS
             data[16] = defaultsAt;
             data[17] = fixtureInfoAt;
             data[18] = groupCount.Length > 0 ? groupIndex.Length / groupCount.Length : 0;
-            data[19] = rowFixturesAt;
+            data[19] = channelFixturesAt;
             data[20] = aimAt;
             data[21] = penlightAt;
             data[22] = penlight.Length / GpuPenlightAreaStride;
@@ -629,18 +667,33 @@ namespace AdzukiSoft.ALPS
             CopyFloats(aim, data, aimAt);
             CopyFloats(penlight, data, penlightAt);
 
-            // Which of the show's fixtures sits on each DMX row, -1 for rows it does not drive.
-            for (var row = 0; row < GpuMaxFixtures; row++)
+            // Which of the show's fixtures reads each channel of the grid and which of its
+            // channels that is, as fixture * GpuChannelFixtureStep + channel, or -1 for the
+            // channels the show does not drive. A fixture reads the first twelve of its row,
+            // and a segment of a bar four of the channels that run on from the bar's first row.
+            for (var channel = 0; channel < channels; channel++)
             {
-                data[rowFixturesAt + row] = -1f;
+                data[channelFixturesAt + channel] = -1f;
             }
 
             for (var i = 0; i < fixtureCount; i++)
             {
                 var row = i < dmxRows.Length ? dmxRows[i] : i;
-                if (row >= 0 && row < GpuMaxFixtures)
+                if (row < 0 || row >= GpuMaxFixtures)
                 {
-                    data[rowFixturesAt + row] = i;
+                    continue;
+                }
+
+                var at = i * GpuFixtureInfoStride;
+                var isSegment = at + InfoBarSegment < fixtureInfo.Length && Mathf.RoundToInt(fixtureInfo[at + InfoLayout]) == DmxLayoutBarSegment;
+                var first = row * GpuRowChannels + (isSegment ? Mathf.RoundToInt(fixtureInfo[at + InfoBarSegment]) * BarSegmentChannels : 0);
+                var count = isSegment ? BarSegmentChannels : GpuRowChannels - 1;
+                for (var channel = 0; channel < count; channel++)
+                {
+                    if (first + channel < channels)
+                    {
+                        data[channelFixturesAt + first + channel] = i * GpuChannelFixtureStep + channel;
+                    }
                 }
             }
 
@@ -681,7 +734,8 @@ namespace AdzukiSoft.ALPS
 
         private bool IsVRSL(int fixture)
         {
-            return fixtureAdapter[fixture] == AdapterVRSLDmxStatic && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null;
+            var adapter = fixtureAdapter[fixture];
+            return (adapter == AdapterVRSLDmxStatic || adapter == AdapterVRSLBarSegment) && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null;
         }
 
         // ==================================================================================
@@ -824,6 +878,14 @@ namespace AdzukiSoft.ALPS
             info[offset + InfoTiltRange] = fixture.maxMinTilt / 2f;
             info[offset + InfoPanSign] = fixture.invertPan ? -1f : 1f;
             info[offset + InfoGoboStep] = fixture.legacyGoboRange ? 42.5f : 30f;
+        }
+
+        /// <summary>What the DMX grid needs to know about a segment of a multi light bar: which one it is.</summary>
+        public static void WriteBarSegmentDmxInfo(float[] info, int offset, int segment)
+        {
+            WriteNeutralDmxInfo(info, offset);
+            info[offset + InfoLayout] = DmxLayoutBarSegment;
+            info[offset + InfoBarSegment] = segment;
         }
 
         public static void WriteNeutralDmxInfo(float[] info, int offset)

@@ -106,12 +106,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// show and fixtures of different shows share them: a show that is not playing keeps
         /// its fixtures inactive, or they would show the playing one. A fixture in several shows
         /// keeps one row, free in each of them. A fixture that reads nothing from the grid,
-        /// a penlight slot, takes no row.
+        /// a penlight slot, takes no row. The segments of a multi light bar share the rows
+        /// handed to their bar (<see cref="AlpsFixture.DmxOwner"/>), four in a row, and each
+        /// is given the first of them.
         /// </summary>
         public static Dictionary<AlpsFixture, int> AssignDmxRows(List<List<AlpsFixture>> shows, List<string> names, List<string> errors)
         {
-            var showsOf = new Dictionary<AlpsFixture, List<int>>();
-            var order = new List<AlpsFixture>();
+            var showsOf = new Dictionary<Object, List<int>>();
+            var rowsOf = new Dictionary<Object, int>();
+            var order = new List<Object>();
             for (var s = 0; s < shows.Count; s++)
             {
                 var count = 0;
@@ -122,23 +125,25 @@ namespace AdzukiSoft.ALPS.Editor
                         continue;
                     }
 
-                    if (!showsOf.TryGetValue(fixture, out var of))
+                    var owner = fixture.DmxOwner;
+                    if (!showsOf.TryGetValue(owner, out var of))
                     {
                         of = new List<int>();
-                        showsOf.Add(fixture, of);
-                        order.Add(fixture);
+                        showsOf.Add(owner, of);
+                        rowsOf.Add(owner, Mathf.Max(1, fixture.DmxRowCount));
+                        order.Add(owner);
                     }
 
                     if (!of.Contains(s))
                     {
                         of.Add(s);
-                        count++;
+                        count += rowsOf[owner];
                     }
                 }
 
                 if (count > AlpsShowPlayer.GpuMaxFixtures)
                 {
-                    errors.Add($"A show drives {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, which is what VRSL's DMX grid holds. {names[s]} drives {count}.");
+                    errors.Add($"A show's fixtures take {AlpsShowPlayer.GpuMaxFixtures} rows of VRSL's DMX grid at most, one each and {AlpsVRSLMultiLightBar.RowCount} for a multi light bar. {names[s]} takes {count}.");
                 }
             }
 
@@ -148,32 +153,61 @@ namespace AdzukiSoft.ALPS.Editor
                 used.Add(new HashSet<int>());
             }
 
-            var rows = new Dictionary<AlpsFixture, int>();
+            var first = new Dictionary<Object, int>();
             var overflow = false;
-            foreach (var fixture in order)
+            foreach (var owner in order)
             {
+                var size = rowsOf[owner];
                 var row = 0;
-                while (showsOf[fixture].Exists(s => used[s].Contains(row)))
+                while (showsOf[owner].Exists(s => Taken(used[s], row, size)))
                 {
                     row++;
                 }
 
-                foreach (var s in showsOf[fixture])
+                foreach (var s in showsOf[owner])
                 {
-                    used[s].Add(row);
+                    for (var i = 0; i < size; i++)
+                    {
+                        used[s].Add(row + i);
+                    }
                 }
 
-                rows.Add(fixture, row);
-                overflow |= row >= AlpsShowPlayer.GpuMaxFixtures;
+                first.Add(owner, row);
+                overflow |= row + size > AlpsShowPlayer.GpuMaxFixtures;
             }
 
             // Every show fits on its own, but the fixtures they share pushed a row past the grid.
             if (overflow && used.TrueForAll(u => u.Count <= AlpsShowPlayer.GpuMaxFixtures))
             {
-                errors.Add($"The fixtures the shows share leave no room for the others in VRSL's DMX grid, which holds {AlpsShowPlayer.GpuMaxFixtures}.");
+                errors.Add($"The fixtures the shows share leave no room for the others in VRSL's DMX grid, which holds {AlpsShowPlayer.GpuMaxFixtures} rows.");
+            }
+
+            var rows = new Dictionary<AlpsFixture, int>();
+            foreach (var show in shows)
+            {
+                foreach (var fixture in show)
+                {
+                    if (fixture != null && fixture.UsesDmxRow && !rows.ContainsKey(fixture))
+                    {
+                        rows.Add(fixture, first[fixture.DmxOwner]);
+                    }
+                }
             }
 
             return rows;
+        }
+
+        private static bool Taken(HashSet<int> used, int row, int size)
+        {
+            for (var i = 0; i < size; i++)
+            {
+                if (used.Contains(row + i))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ApplyDirector(PlayableDirector director, int showToken, bool generateTimelines,
@@ -255,6 +289,7 @@ namespace AdzukiSoft.ALPS.Editor
             var count = show.fixtures.Count;
             player.fixtureAdapter = new int[count];
             player.vrslFixtures = new VRStageLighting_DMX_Static[count];
+            player.fixtureSegment = new int[count];
             player.aimTransforms = new Transform[count];
             for (var i = 0; i < count; i++)
             {
@@ -270,23 +305,32 @@ namespace AdzukiSoft.ALPS.Editor
                 {
                     player.vrslFixtures[i] = vrslFixture.ResolveTarget();
                 }
+                else if (fixture is AlpsVRSLMultiLightBarSegment segment)
+                {
+                    // The player sets the bar up once per segment, which comes to the same.
+                    var bar = segment.Bar;
+                    player.vrslFixtures[i] = bar != null ? bar.ResolveTarget() : null;
+                    player.fixtureSegment[i] = segment.index;
+                }
             }
         }
 
         /// <summary>
         /// Containers and fixture components only describe the show and place objects while
         /// editing. VRChat runs none of them, and the transforms they left stay. A penlight
-        /// slot is nothing but its component, so its object goes too.
+        /// slot and a segment of a multi light bar are nothing but their component, so their
+        /// objects go too.
         /// </summary>
         private static void StripAuthoringComponents(Scene scene)
         {
             foreach (var root in scene.GetRootGameObjects())
             {
-                foreach (var slot in root.GetComponentsInChildren<AlpsPenlightSlot>(true))
+                foreach (var fixture in root.GetComponentsInChildren<AlpsFixture>(true))
                 {
-                    if (slot.transform.childCount == 0 && slot.GetComponents<Component>().Length == 2)
+                    var isSlot = fixture is AlpsPenlightSlot || fixture is AlpsVRSLMultiLightBarSegment;
+                    if (isSlot && fixture.transform.childCount == 0 && fixture.GetComponents<Component>().Length == 2)
                     {
-                        Object.DestroyImmediate(slot.gameObject);
+                        Object.DestroyImmediate(fixture.gameObject);
                     }
                 }
 

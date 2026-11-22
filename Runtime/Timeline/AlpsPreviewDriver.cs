@@ -222,6 +222,12 @@ namespace AdzukiSoft.ALPS
             return director != null && States.TryGetValue(director, out var state) ? state.gpuFrames : null;
         }
 
+        /// <summary>The DMX grid a director's preview last drew, for tests and debugging.</summary>
+        public static RenderTexture GetGrid(PlayableDirector director)
+        {
+            return director != null && States.TryGetValue(director, out var state) ? state.gpuGrid : null;
+        }
+
         private static void PurgeDestroyedDirectors()
         {
             List<PlayableDirector> destroyed = null;
@@ -305,18 +311,40 @@ namespace AdzukiSoft.ALPS
             }
 
             // Only the fixtures that read VRSL's grid take a row of it, in their own order,
-            // since the preview plays one director.
+            // since the preview plays one director. The segments of a multi light bar share
+            // the rows of their bar.
             var rows = new int[count];
+            var owned = new Dictionary<Object, int>();
             var dmxCount = 0;
             for (var i = 0; i < count; i++)
             {
                 var fixture = show.fixtures[i];
-                rows[i] = fixture == null || fixture.UsesDmxRow ? dmxCount++ : -1;
+                if (fixture == null)
+                {
+                    rows[i] = dmxCount++;
+                    continue;
+                }
+
+                if (!fixture.UsesDmxRow)
+                {
+                    rows[i] = -1;
+                    continue;
+                }
+
+                var owner = fixture.DmxOwner;
+                if (!owned.TryGetValue(owner, out var row))
+                {
+                    row = dmxCount;
+                    dmxCount += Mathf.Max(1, fixture.DmxRowCount);
+                    owned.Add(owner, row);
+                }
+
+                rows[i] = row;
             }
 
             if (dmxCount > AlpsShowPlayer.GpuMaxFixtures)
             {
-                Debug.LogWarning($"[ALPS] A show drives {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, this one has {dmxCount}. It is not previewed.");
+                Debug.LogWarning($"[ALPS] A show's fixtures take {AlpsShowPlayer.GpuMaxFixtures} rows of VRSL's DMX grid at most, this one's take {dmxCount}. It is not previewed.");
                 return;
             }
 
