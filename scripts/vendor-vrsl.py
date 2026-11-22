@@ -6,8 +6,9 @@ ALPS does not depend on the VRSL package a world has installed.
     python scripts/vendor-vrsl.py [path to com.acchosen.vr-stage-lighting]
 
 It takes the DMX prefabs of the create menu and everything they reference (meshes,
-materials, textures, shaders and their includes, and the DMX Static script), and changes
-only what keeps the copy apart from a VRSL package in the same project:
+materials, textures, shaders and their includes, and the DMX Static script), and the
+material a mesh of the world's own is made to glow with, and changes only what keeps the
+copy apart from a VRSL package in the same project:
 
 - every GUID becomes md5("alps-vrsl:" + the original), which the migration tool relies on
   to find the copy of a VRSL asset,
@@ -19,13 +20,18 @@ only what keeps the copy apart from a VRSL package in the same project:
   materials scaled to match, so overlapping ones add up instead of multiplying,
 - the multi light bar's material is in its 48 channel mode, a dimmer and a colour for each
   of its twelve segments, which ALPS drives as a fixture each,
+- the material a mesh glows with reads its row as the thirteen channels of a fixture, where
+  VRSL's example of it reads five,
 - the lit faces shine about as much on every fixture, and far less than VRSL makes them,
 - the smoke in a mover's cone thins the light by half at most, where VRSL's leaves holes,
 - a cone and a projection are drawn down to a far darker colour, since ALPS dims a fixture
   by its colour,
 - a static light throws no more light on what is right in front of it than on what is 25 cm
   away, and none on its own face,
-- a laser's beams stand where the spin grid says, where VRSL moves them on by its own clock.
+- a laser's beams stand where the spin grid says, where VRSL moves them on by its own clock,
+- the flasher and the strobe panel read the 13 channel row the other static lights read,
+- the mirror ball reads the dimmer and the colour of that row, turns by the spin grid, which
+  follows the show's time, and adds its light without dithering it.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -51,7 +57,14 @@ PREFABS = [
     "Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-LightBar-H-13CH.prefab",
     "Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-MultiLightBar-H-15CH.prefab",
     "Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-Laser-H-13CH.prefab",
+    "Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-Flasher-H-1CH.prefab",
+    "Runtime/Prefabs/DMX/Horizontal Mode/5-Channel Statics/VRSL-DMX-Static-6x4StrobeLight-H-5CH.prefab",
+    "Runtime/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-DiscoBall-H-1CH.prefab",
 ]
+# The material a mesh of the world's own is drawn with to glow as a fixture: VRSL's example of
+# its surface shader, the shader of the lit faces. No prefab holds it, since the mesh it goes
+# on is the world's.
+MATERIALS = ["Runtime/Materials/Lights/DMX/VRSL-Horizontal-ExampleSurfaceShader-Cube.mat"]
 # The gobo thumbnails the inspector shows.
 EXTRA_FOLDERS = ["Runtime/Textures/MoverLightTextures/GOBO/IndividualGobos"]
 # VRSL's own DMX reader, which ALPS replaces. References to these are cleared.
@@ -78,6 +91,24 @@ BAR_MATERIAL = "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat"
 BAR_CHANNEL_MODE = "- _ChannelMode: 0"
 BAR_KEYWORD = "_CHANNEL_MODE"
 KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
+# VRSL's example of the surface shader reads five channels from the start of its row, a
+# dimmer, a colour and a strobe. ALPS lays a row out as the thirteen channels of a fixture,
+# which the shader reads in its 13 channel mode, the mode of the other lit faces. Like the
+# multi light bar's, the mode is a property and a keyword.
+MESH_MATERIAL = "VRSL-Horizontal-ExampleSurfaceShader-Cube.mat"
+MESH_CHANNEL_MODE = ("- _ChannelMode: 2", "- _ChannelMode: 3")
+MESH_KEYWORD = ("_5CH_MODE", "_13CH_MODE")
+# The flasher reads one channel and the strobe panel five, a dimmer, the colour and a strobe,
+# from a channel layout of their own. Their shaders have the 13 channel mode the light bar
+# and the par light are in, a dimmer on the sixth channel and the colour on the eighth to
+# tenth, which is what ALPS writes on every row, so their materials are switched to it: the
+# property and the keyword in their list of valid keywords. Each is the mode it leaves.
+STATIC_13CH = {
+    "VRSL-Flasher-FixtureMat-Horizontal.mat": "_1CH_MODE",
+    "VRSL-LensFlareBase-Flasher-Horizontal.mat": "_1CH_MODE",
+    "VRSL-Blinder-FixtureMat-Horizontal-5CH.mat": "_5CH_MODE",
+}
+STATIC_13CH_MODE = re.compile(r"(- _ChannelMode: )[0-9]+")
 # VRSL lights the face of a fixture hundreds of times past white at full, 1450 on a light
 # bar and 4300 on the spotlight's lens, which bloom turns into a glare and which washes
 # every colour out to white. These are the values at which a face comes out about four
@@ -88,8 +119,13 @@ KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
 # lens brightness on top of the cone's own light there. The blinder's lens flare, which is
 # drawn over its face, peaks near white, and its curve modifier is 0: VRSL's 5 holds the
 # flare back until the dimmer is up, and ALPS keeps the dimmer up and dims by the colour,
-# which the flare follows at 0.
+# which the flare follows at 0. A mesh made to glow is all face, so it shines as much. The
+# strobe panel takes the blinder's value, whose shader, curve modifier and emission mask it
+# shares. The flasher's face comes out four times as bright as the light bar's at the same
+# value, so it takes a quarter of it. The flasher's flare takes the blinder's flare's, the
+# same shader and texture, which no test measures. AlpsFaceBrightnessTests holds the faces.
 FACE = {
+    "VRSL-Horizontal-ExampleSurfaceShader-Cube.mat": {"_FixtureMaxIntensity": 1.247},
     "VRSL-LightBar-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0413},
     "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": {"_FixtureMaxIntensity": 4},
     "VRSL-ParLight-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0307},
@@ -97,6 +133,9 @@ FACE = {
     "VRSL-Blinder-LensFlareMat-Horizontal.mat": {"_FixtureMaxIntensity": 3, "_CurveMod": 0},
     "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0179},
     "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": {"_LensMaxBrightness": 0.0063},
+    "VRSL-Flasher-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0103},
+    "VRSL-LensFlareBase-Flasher-Horizontal.mat": {"_FixtureMaxIntensity": 3, "_CurveMod": 0},
+    "VRSL-Blinder-FixtureMat-Horizontal-5CH.mat": {"_FixtureMaxIntensity": 0.0413},
 }
 # The smoke in a mover's cone is a noise that darkens it by this share at its thinnest.
 # VRSL's 0.85 and 0.887 leave about a seventh of the light there, which reads as holes in
@@ -138,6 +177,57 @@ LASER_SPIN = re.compile(r"(GetSpin\(dmx\s*\+\s*\(uint\)\s*6\))\s*\*\s*_ScrollOff
 LASER_SCROLL = re.compile(r"laserUV\.x \+= _Time\.y \* scroll;")
 LASER_SCROLL_PLACED = "laserUV.x += IF(isDMX() > 0, scroll, _Time.y * scroll);"
 LASER_PASSES = 2
+# VRSL's mirror ball reads its first channel as how bright it is, takes its colour from the
+# script's tint and turns by the shader's own time. In DMX mode the copy reads the row the
+# way the other fixtures do: the dimmer only says whether it is lit, the colour carries the
+# level, and the spin grid on the gobo's channel says how far it has turned, as an angle of
+# four times the phase, turned back for an inverted pan the way VRSL reads a gobo's, so a
+# show turns it by its own time. Each of its two SubShaders reads the row, turns the ball
+# and lights it.
+BALL_INTERPOLATOR = re.compile(r"^([ \t]*)float2 dmxIntensity: TEXCOORD7;[ \t]*(\r?\n)", re.M)
+BALL_INTERPOLATOR_ADDED = r"\1float2 dmxIntensity: TEXCOORD7;\2\1float4 dmxLight: TEXCOORD8;\2"
+BALL_READ = re.compile(r"^([ \t]*)o\.dmxIntensity = IF\(_EnableCompatibilityMode == 1,[^\r\n]*\);[ \t]*(\r?\n)", re.M)
+BALL_READ_ROW = (
+    r"\1o.dmxIntensity = float2(dmx, getValueAtCoords(dmx + 5, _Udon_DMXGridRenderTexture));\2"
+    r"\1o.dmxLight = float4(getValueAtCoords(dmx + 7, _Udon_DMXGridRenderTexture), getValueAtCoords(dmx + 8, _Udon_DMXGridRenderTexture), "
+    r"getValueAtCoords(dmx + 9, _Udon_DMXGridRenderTexture), getValueAtCoordsRaw(dmx + 10, _Udon_DMXGridSpinTimer) * (checkPanInvertY() == 1 ? -4.0 : 4.0));\2")
+BALL_ROTATION = re.compile(r"float4 Rotation\(float4 vertPos\)")
+BALL_ROTATION_TURNED = "float4 Rotation(float4 vertPos, float turn)"
+BALL_ANGLE = re.compile(r"float angleY = radians\(_Time\.y \* _RotationSpeed\);")
+BALL_ANGLE_PLACED = "float angleY = _EnableDMX == 1 ? turn : radians(_Time.y * _RotationSpeed);"
+BALL_TURN = re.compile(r"Rotation\(float4\(projPos, 0\)\)")
+BALL_TURN_PLACED = "Rotation(float4(projPos, 0), i.dmxLight.w)"
+# VRSL squares the ball's light, its colour and its intensity with it, which would dim the
+# ball by the level to the power of 4.4. The copy squares the pattern and how it falls off
+# with the distance, which is the look of VRSL's ball, and takes the colour once, so the ball
+# dims by the curve of every other fixture. The light grows toward the ball without end and
+# lands on the ball itself, so nearer than a share of its cube it stays what it is there and
+# fades, to none just outside the ball, in DMX mode and out of it. The distances are in the
+# cube's own space, where the prefab's 25 m cube puts 1 m at 0.04 and the ball's surface at
+# 0.0095.
+BALL_LIGHT = re.compile(
+    r"^([ \t]*)col = IF\(_EnableDMX == 1, col \* i\.dmxIntensity\.y, col\);[ \t]*\r?\n"
+    r"[ \t]*col = \(col \* _Multiplier\)\*\(\(col \* getGlobalIntensity\(\)\) \* getFinalIntensity\(\)\);[ \t]*(\r?\n)", re.M)
+BALL_CLOSE_DISTANCE = 0.04
+BALL_CLOSE_NONE = 0.012
+BALL_LIGHT_ADDED = (
+    r"\1float ballNear = length(projPos);\2"
+    r"\1float ballHeld = saturate(ballNear / {0});\2"
+    r"\1col = (_EnableDMX == 1\2"
+    r"\1    ? (col * col) * float4(i.dmxLight.rgb, 1) * (_Multiplier * getGlobalIntensity() * getFinalIntensity())\2"
+    r"\1    : (col * _Multiplier) * ((col * getGlobalIntensity()) * getFinalIntensity()))\2"
+    r"\1    * (ballHeld * ballHeld * smoothstep({1}, {0}, ballNear));\2").format(BALL_CLOSE_DISTANCE, BALL_CLOSE_NONE)
+BALL_PASSES = 2
+# The mirror ball's material, drawn as added light like the static projections: no dither
+# that let the colour drawn show through where the multiplied light was dark, no alpha to
+# coverage and the static projections' queue. VRSL's multiplier squared a tint of 2 and
+# scaled the colour drawn, so its 4.55 comes to 4.55 * 4 / 2.02 * PROJECTION_INTENSITY_SCALE
+# with ALPS's colour of 2.02 for white at 100%, taken once.
+BALL_MATERIAL = "VRSL-Discoball-Horizontal.mat"
+BALL_VALUES = {"_Multiplier": 0.9, "_AlphaToCoverage": 0, "_RenderMode": 1, "_BlendDst": 1}
+BALL_DITHER = re.compile(r"m_ValidKeywords:[ \t]*(\r?\n)[ \t]*- _ALPHATEST_ON[ \t]*\r?\n")
+BALL_QUEUE = re.compile(r"m_CustomRenderQueue: -?[0-9]+")
+BALL_QUEUE_ADDED = "m_CustomRenderQueue: 3001"
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -192,7 +282,7 @@ def main():
                     by_guid[match.group(1)] = rel(path[:-5])
     guid_of = {path: guid for guid, path in by_guid.items()}
 
-    queue = list(PREFABS)
+    queue = list(PREFABS) + list(MATERIALS)
     for folder in EXTRA_FOLDERS:
         for name in sorted(os.listdir(os.path.join(SOURCE, folder))):
             if not name.endswith(".meta"):
@@ -233,6 +323,7 @@ def main():
     close_lights = []
     laser_spins = []
     laser_scrolls = []
+    balls = {name: [] for name in ("interpolator", "read", "rotation", "angle", "turn", "light")}
     cleared = set()
 
     def remap_references(text, relative):
@@ -267,9 +358,15 @@ def main():
         laser_spins.append(found)
         text, found = LASER_SCROLL.subn(LASER_SCROLL_PLACED, text)
         laser_scrolls.append(found)
+        for name, pattern, replacement in (
+                ("interpolator", BALL_INTERPOLATOR, BALL_INTERPOLATOR_ADDED), ("read", BALL_READ, BALL_READ_ROW),
+                ("rotation", BALL_ROTATION, BALL_ROTATION_TURNED), ("angle", BALL_ANGLE, BALL_ANGLE_PLACED),
+                ("turn", BALL_TURN, BALL_TURN_PLACED), ("light", BALL_LIGHT, BALL_LIGHT_ADDED)):
+            text, found = pattern.subn(replacement, text)
+            balls[name].append(found)
         text = re.sub(r'^(﻿?\s*Shader\s+")VRSL/', r"\1ALPS/VRSL/", text, count=1)
-        # VRSL's material inspector lives in its editor assembly, which may not be there.
-        return re.sub(r'^[ \t]*CustomEditor\s+"VRSLInspector"[ \t]*\r?\n', "", text, flags=re.M)
+        # VRSL's material inspectors live in its editor assembly, which may not be there.
+        return re.sub(r'^[ \t]*CustomEditor\s+"VRSL[^"]*"[ \t]*\r?\n', "", text, flags=re.M)
 
     def convert_script(text):
         # The script names editor assemblies it never uses, which the ALPS runtime assembly
@@ -289,6 +386,7 @@ def main():
 
     folders = set()
     faces = set(FACE) | set(SMOKE)
+    statics = set(STATIC_13CH) | {BALL_MATERIAL}
     size = 0
     for relative in sorted(taken):
         source = os.path.join(SOURCE, relative)
@@ -305,7 +403,26 @@ def main():
                         sys.exit(f"{relative} has no channel mode to set")
                     text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
                     text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
+                if os.path.basename(relative) == MESH_MATERIAL:
+                    for old, new in (MESH_CHANNEL_MODE, MESH_KEYWORD):
+                        if text.count(old) != 1:
+                            sys.exit(f"{relative} has no {old} to replace")
+                        text = text.replace(old, new)
+                mode = STATIC_13CH.get(os.path.basename(relative))
+                if mode:
+                    text, found = STATIC_13CH_MODE.subn(r"\g<1>3", text)
+                    text, keywords = re.subn(r"^([ \t]*- )" + mode + r"([ \t]*\r?\n)", r"\g<1>_13CH_MODE\2", text, flags=re.M)
+                    if found != 1 or keywords != 1:
+                        sys.exit(f"{relative} has {found} channel modes and {keywords} {mode} keywords to set, not one of each")
+                    statics.discard(os.path.basename(relative))
                 values = dict(FACE.get(os.path.basename(relative), {}), **SMOKE.get(os.path.basename(relative), {}))
+                if os.path.basename(relative) == BALL_MATERIAL:
+                    values.update(BALL_VALUES)
+                    text, dithers = BALL_DITHER.subn(r"m_ValidKeywords: []\1", text)
+                    text, queues = BALL_QUEUE.subn(BALL_QUEUE_ADDED, text)
+                    if dithers != 1 or queues != 1:
+                        sys.exit(f"{relative} has {dithers} dither keywords and {queues} queues to set, not one of each")
+                    statics.discard(BALL_MATERIAL)
                 for name, value in values.items():
                     text, found = re.subn(r"(- " + name + r": )[0-9.eE+-]+", lambda match: match.group(1) + format(value, ".7g"), text)
                     if found != 1:
@@ -337,14 +454,17 @@ def main():
               f"fileFormatVersion: 2\nguid: {guid}\nfolderAsset: yes\nDefaultImporter:\n"
               "  externalObjects: {}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n")
 
-    if faces:
-        sys.exit("No material named " + ", ".join(sorted(faces)))
+    if faces or statics:
+        sys.exit("No material named " + ", ".join(sorted(faces | statics)))
     if sum(cutoffs) != DARK_CUTOFFS:
         sys.exit(f"Found {sum(cutoffs)} dark cut offs in the shaders, not {DARK_CUTOFFS}")
     if sum(close_lights) != 1:
         sys.exit(f"Found {sum(close_lights)} static projections to keep off their own face, not 1")
     if sum(laser_spins) != LASER_PASSES or sum(laser_scrolls) != LASER_PASSES:
         sys.exit(f"Found {sum(laser_spins)} laser spin phases and {sum(laser_scrolls)} scrolls to place, not {LASER_PASSES} of each")
+    for name, found in balls.items():
+        if sum(found) != BALL_PASSES:
+            sys.exit(f"Found {sum(found)} places for the mirror ball's {name} in the shaders, not {BALL_PASSES}")
 
     version = re.search(r'"version":\s*"([^"]+)"', read(os.path.join(SOURCE, "package.json"))).group(1)
     license_text = read(os.path.join(SOURCE, "LICENSE"))
@@ -359,7 +479,7 @@ def main():
           "  externalObjects: {}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n")
 
     print(f"Copied {len(taken)} files, {size / 1e6:.1f} MB, from VRSL {version} into {TARGET}")
-    for relative in PREFABS:
+    for relative in PREFABS + MATERIALS:
         print(f"  {new_guid(guid_of[relative])}  {os.path.basename(relative)}")
     for source, target in sorted(cleared):
         print(f"  cleared in {source}: {target}")

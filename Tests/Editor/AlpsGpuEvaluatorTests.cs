@@ -848,6 +848,67 @@ namespace AdzukiSoft.ALPS.Tests
             Debug.Log(text.ToString());
         }
 
+        // ------------------------------------------------------------------ mirror ball
+
+        private const string MirrorBallPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-DiscoBall-H-1CH.prefab";
+
+        [Test]
+        public void MirrorBall_TurnsByTheShowsTimeWhereNoGoboTurnsIt()
+        {
+            var ball = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MirrorBallPrefab));
+            _created.Add(ball);
+            var fixture = ball.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var material = AlpsShowPlayer.GetVRSLMirrorBallMaterial(fixture);
+            Assert.NotNull(material, "The mirror ball prefab is drawn with VRSL's mirror ball shader.");
+            Assert.IsNull(AlpsShowPlayer.GetVRSLLaserMaterial(fixture), "A mirror ball is no laser.");
+
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            var moverInfo = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>(), moverInfo, 0);
+            Assert.AreEqual(0f, moverInfo[AlpsShowPlayer.InfoIdleSpin], "A gobo stands still where no gobo effect turns it.");
+
+            // The ball reads the row the other fixtures read, and turns by the gobo angle.
+            var info = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, 0);
+            var speed = material.GetFloat(AlpsShowPlayer.MirrorBallSpinProperty);
+            Assert.AreEqual(AlpsShowPlayer.DmxLayoutStandard, info[AlpsShowPlayer.InfoLayout]);
+            Assert.AreEqual(speed, info[AlpsShowPlayer.InfoIdleSpin], 1e-5f);
+            Assert.AreNotEqual(0f, speed, "VRSL's ball turns on its own.");
+
+            var frame = new float[AlpsShowLayout.FrameStride];
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+
+            // Lit for the first ten seconds, then a gobo effect turns it once every 4 beats.
+            var lit = Set();
+            lit.Add(AlpsEffectKind.Brightness);
+            var turned = Set();
+            var gobo = turned.Add(AlpsEffectKind.Gobo);
+            gobo.goboStops.Add(new AlpsGoboStop(1));
+            gobo.goboRotationBeats = 4f;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm,
+                new AlpsStandaloneClip { set = lit, start = 0f, end = 10f },
+                new AlpsStandaloneClip { set = turned, start = 10f, end = 20f, layer = 1 });
+            var gpu = Keep(new AlpsGpuShow(show, 1, info: info, defaults: frame));
+            var texel = VrslTexel(1 + 10);
+            float Spin(float time)
+            {
+                gpu.Render(time);
+                return gpu.ReadBack(gpu.Spin).GetPixel(texel.x, texel.y).r;
+            }
+
+            foreach (var time in new[] { 0.5f, 3f, 7.25f, 25f })
+            {
+                var angle = Mathf.Repeat(time * speed, 360f);
+                Assert.AreEqual(angle, gpu.Evaluate(0, time)[AlpsShowLayout.FrameGoboRotation], 1e-2f, $"The ball's own turn at {time} s.");
+                Assert.AreEqual(SpinPhase(angle), Spin(time), 1e-4f, $"The spin grid at {time} s.");
+            }
+
+            // Two beats into the gobo clip at 60 BPM is half a turn.
+            Assert.AreEqual(180f, gpu.Evaluate(0, 12f)[AlpsShowLayout.FrameGoboRotation], 1e-2f, "A gobo effect turns the ball instead.");
+            Assert.AreEqual(SpinPhase(180f), Spin(12f), 1e-4f);
+        }
+
         // ------------------------------------------------------------------ shows
 
         private static AlpsClipEffectSet Set(float spread = 0.5f)

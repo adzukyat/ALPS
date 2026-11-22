@@ -42,6 +42,8 @@ float _AlpsTime;
 #define ALPS_HEADER_PENLIGHT_AREAS 22
 
 #define ALPS_FIXTURE_INFO_STRIDE 8
+// AlpsShowPlayer.InfoIdleSpin, how fast a mirror ball's gobo angle turns where no gobo turns it.
+#define ALPS_INFO_IDLE_SPIN 6
 #define ALPS_AIM_STRIDE 12
 #define ALPS_MAX_FIXTURES 348
 
@@ -1044,6 +1046,11 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
     }
 
     result[FrameBrightness] = 0.0;
+
+    // A mirror ball turns all the time, by the show's time alone, so every visitor and a seek
+    // see it where it is. A gobo effect's turn covers it.
+    float idle = result[FrameGoboRotation] + time * AlpsRead(show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE + ALPS_INFO_IDLE_SPIN);
+    result[FrameGoboRotation] = idle - floor(idle / 360.0) * 360.0;
     if (show.bucketCount <= 0 || show.bucketSeconds <= 0.0) return;
 
     int bucket = clamp((int)floor(time / show.bucketSeconds), 0, show.bucketCount - 1);

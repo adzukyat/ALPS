@@ -53,10 +53,20 @@ namespace AdzukiSoft.ALPS.Editor
         public static readonly AlpsVrslPrefab Laser = new AlpsVrslPrefab(
             "Laser", "fixture.laser", "411e679ed1f72e7c2129a3d46442cb22", PrefabFolder + "VRSL-DMX-Static-Laser-H-13CH.prefab");
 
+        public static readonly AlpsVrslPrefab Flasher = new AlpsVrslPrefab(
+            "Flasher", "fixture.flasher", "d96f8e7d1bbad9e865fdef616329fbfa", PrefabFolder + "VRSL-DMX-Static-Flasher-H-1CH.prefab");
+
+        public static readonly AlpsVrslPrefab StrobePanel = new AlpsVrslPrefab(
+            "Strobe Panel", "fixture.strobePanel", "6759aaefb3ad09258c2a4f61448cc3a8", PrefabFolder + "5-Channel Statics/VRSL-DMX-Static-6x4StrobeLight-H-5CH.prefab");
+
+        public static readonly AlpsVrslPrefab MirrorBall = new AlpsVrslPrefab(
+            "Mirror Ball", "fixture.mirrorBall", "762f5dd7e916bed8acb04514d672190b", PrefabFolder + "VRSL-DMX-Static-DiscoBall-H-1CH.prefab");
+
         /// <summary>Every fixture the menu offers, in menu order.</summary>
         public static IReadOnlyList<AlpsVrslPrefab> Fixtures { get; } = new[]
         {
             MoverSpotlight, MoverWashLight, ParLight, Blinder, LightBar, MultiLightBar, Laser,
+            Flasher, StrobePanel, MirrorBall,
         };
 
         /// <summary>An object with a container, ready for fixtures to be added under it.</summary>
@@ -122,7 +132,7 @@ namespace AdzukiSoft.ALPS.Editor
         /// it is created. A container that arranges its children writes their rotation
         /// afterwards, and the first layout keeps the one they share.
         /// </summary>
-        private static void Place(GameObject gameObject, GameObject context)
+        internal static void Place(GameObject gameObject, GameObject context)
         {
             var rotation = gameObject.transform.localRotation;
             var scale = gameObject.transform.localScale;
@@ -204,6 +214,24 @@ namespace AdzukiSoft.ALPS.Editor
 
         [MenuItem(Root + "Laser", true)]
         private static bool CanCreateLaser() => Laser.Load() != null;
+
+        [MenuItem(Root + "Flasher", false, FixturePriority + 7)]
+        private static void CreateFlasher(MenuCommand command) => Select(CreateFixture(Flasher, command.context as GameObject));
+
+        [MenuItem(Root + "Flasher", true)]
+        private static bool CanCreateFlasher() => Flasher.Load() != null;
+
+        [MenuItem(Root + "Strobe Panel", false, FixturePriority + 8)]
+        private static void CreateStrobePanel(MenuCommand command) => Select(CreateFixture(StrobePanel, command.context as GameObject));
+
+        [MenuItem(Root + "Strobe Panel", true)]
+        private static bool CanCreateStrobePanel() => StrobePanel.Load() != null;
+
+        [MenuItem(Root + "Mirror Ball", false, FixturePriority + 9)]
+        private static void CreateMirrorBall(MenuCommand command) => Select(CreateFixture(MirrorBall, command.context as GameObject));
+
+        [MenuItem(Root + "Mirror Ball", true)]
+        private static bool CanCreateMirrorBall() => MirrorBall.Load() != null;
     }
 
     /// <summary>

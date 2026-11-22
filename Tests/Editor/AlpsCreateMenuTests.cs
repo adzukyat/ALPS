@@ -118,6 +118,45 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void TheFlasherAndTheStrobePanel_ReadTheRowOfTheOtherStaticLights()
+        {
+            foreach (var fixture in new[] { AlpsCreateMenu.Flasher, AlpsCreateMenu.StrobePanel })
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    var material = renderer.sharedMaterial;
+                    Assert.IsTrue(material.IsKeywordEnabled("_13CH_MODE"), $"{material.name} of {fixture.Name} is not in VRSL's 13 channel mode.");
+                    Assert.AreEqual(3f, material.GetFloat("_ChannelMode"), $"{material.name} of {fixture.Name}.");
+                }
+            }
+        }
+
+        [Test]
+        public void TheMirrorBall_AddsItsLightWhereItsDmxRowSays()
+        {
+            Renderer light = null;
+            foreach (var renderer in AlpsCreateMenu.MirrorBall.Load().GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.sharedMaterial != null && renderer.sharedMaterial.shader.name == "ALPS/VRSL/Other/Discoball")
+                {
+                    light = renderer;
+                }
+            }
+
+            Assert.NotNull(light, "The mirror ball has no light.");
+            var material = light.sharedMaterial;
+            Assert.IsFalse(material.IsKeywordEnabled("_ALPHATEST_ON"), "The light is dithered.");
+            Assert.AreEqual(3001, material.renderQueue);
+            var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(AssetDatabase.GetAssetPath(material.shader)));
+            StringAssert.Contains("Blend One One", source, "The mirror ball does not add its light.");
+            StringAssert.DoesNotContain("DstColor", source.Substring(source.IndexOf("SubShader", System.StringComparison.Ordinal)), "The mirror ball still multiplies.");
+            StringAssert.Contains("_Udon_DMXGridSpinTimer", source, "The mirror ball does not turn by the spin grid.");
+            StringAssert.Contains("dmx + 5", source, "The mirror ball is not lit by its dimmer.");
+            // A prefab's objects are not active, which the search leaves out unless told.
+            Assert.IsNotNull(AlpsShowPlayer.GetVRSLMirrorBallMaterial(light.GetComponentInParent<VRStageLighting_DMX_Static>(true)));
+        }
+
+        [Test]
         public void Fixtures_AddTheirProjectionsAsLight()
         {
             var found = 0;

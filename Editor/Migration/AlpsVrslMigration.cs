@@ -72,6 +72,9 @@ namespace AdzukiSoft.ALPS.Editor
             new KeyValuePair<string, AlpsVrslPrefab>("multilightbar", AlpsCreateMenu.MultiLightBar),
             new KeyValuePair<string, AlpsVrslPrefab>("lightbar", AlpsCreateMenu.LightBar),
             new KeyValuePair<string, AlpsVrslPrefab>("laser", AlpsCreateMenu.Laser),
+            new KeyValuePair<string, AlpsVrslPrefab>("flasher", AlpsCreateMenu.Flasher),
+            new KeyValuePair<string, AlpsVrslPrefab>("strobelight", AlpsCreateMenu.StrobePanel),
+            new KeyValuePair<string, AlpsVrslPrefab>("discoball", AlpsCreateMenu.MirrorBall),
         };
 
         /// <summary>The GUID of the copy ALPS comes with of the package asset with <paramref name="guid"/>.</summary>

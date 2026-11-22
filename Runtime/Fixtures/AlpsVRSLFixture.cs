@@ -92,7 +92,11 @@ namespace AdzukiSoft.ALPS
             }
         }
 
-        /// <summary>The fixture's renderers drawn with one of VRSL's projection shaders.</summary>
+        /// <summary>
+        /// The fixture's renderers drawn with one of VRSL's projection shaders, which the gobo's
+        /// projection switch hides. A mirror ball's light is not one of them: the ball has no
+        /// gobo, and its light is all it throws, which its brightness dims.
+        /// </summary>
         public override void CollectProjectionRenderers(List<Renderer> into)
         {
             var fixture = ResolveTarget();

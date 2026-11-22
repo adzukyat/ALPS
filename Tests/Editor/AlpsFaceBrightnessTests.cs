@@ -18,7 +18,8 @@ namespace AdzukiSoft.ALPS.Tests
     /// looks about the same on every fixture.
     ///
     /// The spotlight's lens is the end of its cone, which its cone material lights. The laser
-    /// has no lit face: its light is its beams.
+    /// has no lit face: its light is its beams. Nor has the mirror ball, whose light is the
+    /// flecks it throws (<see cref="AlpsMirrorBallTests"/>).
     /// </summary>
     public class AlpsFaceBrightnessTests
     {
@@ -31,7 +32,14 @@ namespace AdzukiSoft.ALPS.Tests
         private static readonly AlpsVrslPrefab[] Fixtures =
         {
             AlpsCreateMenu.MoverSpotlight, AlpsCreateMenu.MoverWashLight, AlpsCreateMenu.ParLight, AlpsCreateMenu.Blinder, AlpsCreateMenu.LightBar,
-            AlpsCreateMenu.MultiLightBar,
+            AlpsCreateMenu.MultiLightBar, AlpsCreateMenu.Flasher, AlpsCreateMenu.StrobePanel,
+        };
+
+        /// <summary>A fixture turned so that each of its own axes looks straight down in turn.</summary>
+        private static readonly Quaternion[] EverySide =
+        {
+            Quaternion.identity, Quaternion.Euler(180f, 0f, 0f), Quaternion.Euler(90f, 0f, 0f),
+            Quaternion.Euler(-90f, 0f, 0f), Quaternion.Euler(0f, 0f, 90f), Quaternion.Euler(0f, 0f, -90f),
         };
 
         private readonly List<Object> _created = new List<Object>();
@@ -140,12 +148,7 @@ namespace AdzukiSoft.ALPS.Tests
                 var fixture = AlpsCreateMenu.CreateFixture(Fixtures[i], container);
                 Assert.NotNull(fixture, Fixtures[i].Path);
                 fixture.transform.position = new Vector3(i * Spacing, Distance, 0f);
-                // Every face looks straight down: a hung mover's, a static light's along its
-                // own -Y, and the multi light bar's along its own +Z.
-                var mover = Fixtures[i] == AlpsCreateMenu.MoverSpotlight || Fixtures[i] == AlpsCreateMenu.MoverWashLight;
-                fixture.transform.rotation = mover ? Quaternion.Euler(90f, 180f, 0f)
-                    : Fixtures[i] == AlpsCreateMenu.MultiLightBar ? Quaternion.Euler(90f, 0f, 0f)
-                    : Quaternion.identity;
+                fixture.transform.rotation = Sides(Fixtures[i])[0];
 
                 // The face alone, without the light it throws and the blinder's flare, which are
                 // drawn over it. A mover keeps its cone, whose end is the spotlight's lens.
@@ -197,19 +200,49 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 camera.transform.position = new Vector3(i * Spacing, Distance - from, 0f);
                 camera.transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
-                camera.Render();
-                RenderTexture.active = target;
-                image.ReadPixels(new Rect(0, 0, Size, Size), 0, 0);
-                image.Apply();
-                RenderTexture.active = null;
-                foreach (var pixel in image.GetPixels())
+                foreach (var side in Sides(Fixtures[i]))
                 {
-                    faces[i] = Mathf.Max(faces[i], pixel.r * 0.2126f + pixel.g * 0.7152f + pixel.b * 0.0722f);
+                    fixtures[i].transform.rotation = side;
+                    camera.Render();
+                    RenderTexture.active = target;
+                    image.ReadPixels(new Rect(0, 0, Size, Size), 0, 0);
+                    image.Apply();
+                    RenderTexture.active = null;
+                    foreach (var pixel in image.GetPixels())
+                    {
+                        faces[i] = Mathf.Max(faces[i], pixel.r * 0.2126f + pixel.g * 0.7152f + pixel.b * 0.0722f);
+                    }
                 }
             }
 
             camera.targetTexture = null;
             return faces;
+        }
+
+        /// <summary>
+        /// The rotations at which a fixture's face looks straight down: a hung mover's, a static
+        /// light's along its own -Y, and the multi light bar's along its own +Z. Which way the
+        /// faces of the flasher's and the strobe panel's meshes look is their own, so they are
+        /// seen from every side and the brightest counts.
+        /// </summary>
+        private static Quaternion[] Sides(AlpsVrslPrefab fixture)
+        {
+            if (fixture == AlpsCreateMenu.MoverSpotlight || fixture == AlpsCreateMenu.MoverWashLight)
+            {
+                return new[] { Quaternion.Euler(90f, 180f, 0f) };
+            }
+
+            if (fixture == AlpsCreateMenu.MultiLightBar)
+            {
+                return new[] { Quaternion.Euler(90f, 0f, 0f) };
+            }
+
+            if (fixture == AlpsCreateMenu.Flasher || fixture == AlpsCreateMenu.StrobePanel)
+            {
+                return EverySide;
+            }
+
+            return new[] { Quaternion.identity };
         }
 
         private T Keep<T>(T created) where T : Object

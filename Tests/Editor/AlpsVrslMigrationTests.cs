@@ -1,3 +1,4 @@
+using System.Linq;
 using AdzukiSoft.ALPS.Editor;
 using NUnit.Framework;
 using UnityEditor;
@@ -142,6 +143,49 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+        }
+
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Static-Flasher-H-1CH.prefab", "Flasher")]
+        [TestCase("DMX/Horizontal Mode/5-Channel Statics/VRSL-DMX-Static-6x4StrobeLight-H-5CH.prefab", "Strobe Panel")]
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Static-DiscoBall-H-1CH.prefab", "Mirror Ball")]
+        public void StaticFixture_SwapsToTheCopyOfItsPrefab(string path, string fixture)
+        {
+            var expected = AlpsCreateMenu.Fixtures.First(candidate => candidate.Name == fixture);
+            var rig = new GameObject("Rig");
+            var old = Instantiate(PackagePrefabs + path, rig.transform);
+            var alps = old.AddComponent<AlpsVRSLFixture>();
+            Assert.AreEqual(expected.Guid, AlpsVrslMigration.CopyGuid(AssetDatabase.AssetPathToGUID(PackagePrefabs + path)));
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreSame(expected, items[0].Target);
+            Assert.IsTrue(items[0].KeepsObject, "An instance of the prefab the copy was made from only swaps its prefab.");
+
+            var converted = AlpsVrslMigration.Convert(items);
+
+            Assert.AreSame(old, converted[0]);
+            Assert.AreSame(alps, old.GetComponent<AlpsVRSLFixture>());
+            Assert.AreEqual(expected.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(old));
+            Assert.IsTrue(alps.IsReady);
+            Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+        }
+
+        [TestCase("AudioLink/VRSL-AudioLink-Static-Flasher.prefab", "Flasher")]
+        [TestCase("AudioLink/VRSL-AudioLink-DiscoBall.prefab", "Mirror Ball")]
+        public void AudioLinkStaticFixture_BecomesItsDmxCopy(string path, string fixture)
+        {
+            var expected = AlpsCreateMenu.Fixtures.First(candidate => candidate.Name == fixture);
+            Instantiate(PackagePrefabs + path, new GameObject("Rig").transform);
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreSame(expected, items[0].Target);
+            Assert.AreEqual(AlpsVrslMigrationSource.AudioLinkFixture, items[0].Source);
+
+            var created = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.AreEqual(expected.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(created));
+            Assert.IsTrue(created.GetComponent<AlpsVRSLFixture>().IsReady);
         }
 
         [Test]

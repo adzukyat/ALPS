@@ -67,7 +67,9 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Floats per fixture in the fixture info section: the pan and tilt ranges, which way
         /// the gobo turns and the DMX step between gobos, then which channels the fixture
-        /// reads (<see cref="InfoLayout"/>), then which segment of its bar a bar segment is.
+        /// reads (<see cref="InfoLayout"/>), then which segment of its bar a bar segment is,
+        /// then how fast its gobo turns where no gobo effect turns it
+        /// (<see cref="InfoIdleSpin"/>).
         /// </summary>
         public const int GpuFixtureInfoStride = 8;
         public const int InfoPanRange = 0;
@@ -76,6 +78,13 @@ namespace AdzukiSoft.ALPS
         public const int InfoGoboStep = 3;
         public const int InfoLayout = 4;
         public const int InfoBarSegment = 5;
+
+        /// <summary>
+        /// Degrees per second of the show's time that the gobo angle turns by where no gobo
+        /// effect covers it, 0 on every fixture but a mirror ball, which VRSL turns all the
+        /// time and which turns by its gobo angle (<see cref="MirrorBallSpinProperty"/>).
+        /// </summary>
+        public const int InfoIdleSpin = 6;
 
         /// <summary>The 13 channels VRSL's movers and static lights read.</summary>
         public const int DmxLayoutStandard = 0;
@@ -112,6 +121,14 @@ namespace AdzukiSoft.ALPS
         public const string LaserPanProperty = "_YRotation";
         public const string LaserConeWidthProperty = "_VertexConeWidth";
         public const string LaserConeLengthProperty = "_VertexConeLength";
+
+        /// <summary>
+        /// The material property only VRSL's mirror ball shader has, how many degrees a second
+        /// it turns, which tells a mirror ball from the other fixtures. In DMX mode the ball
+        /// turns by the gobo angle the spin grid holds, which turns at this speed where no
+        /// gobo effect turns it.
+        /// </summary>
+        public const string MirrorBallSpinProperty = "_RotationSpeed";
 
         /// <summary>
         /// The ends of the laser's cone width. At the lower one its beams run in one line, and
@@ -867,6 +884,21 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public static Material GetVRSLLaserMaterial(VRStageLighting_DMX_Static fixture)
         {
+            return GetVRSLMaterialWith(fixture, LaserBeamsProperty);
+        }
+
+        /// <summary>
+        /// The material of a VRSL mirror ball's light, or null for any other fixture. The ball
+        /// reads the standard row and turns by the gobo angle (<see cref="InfoIdleSpin"/>).
+        /// </summary>
+        public static Material GetVRSLMirrorBallMaterial(VRStageLighting_DMX_Static fixture)
+        {
+            return GetVRSLMaterialWith(fixture, MirrorBallSpinProperty);
+        }
+
+        /// <summary>The first material of the fixture's renderers that has <paramref name="property"/>.</summary>
+        private static Material GetVRSLMaterialWith(VRStageLighting_DMX_Static fixture, string property)
+        {
             if (fixture == null)
             {
                 return null;
@@ -887,7 +919,7 @@ namespace AdzukiSoft.ALPS
                 }
 
                 var material = renderer.sharedMaterial;
-                if (material != null && material.HasProperty(LaserBeamsProperty))
+                if (material != null && material.HasProperty(property))
                 {
                     return material;
                 }
@@ -898,7 +930,8 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// What the DMX grid needs to know about a fixture: its pan and tilt ranges, which way
-        /// its gobo turns, and the DMX step between gobos, or that it is a laser.
+        /// its gobo turns, and the DMX step between gobos, or that it is a laser. A mirror
+        /// ball also says how fast it turns where no gobo effect turns it.
         /// </summary>
         public static void CaptureVRSLDmxInfo(VRStageLighting_DMX_Static fixture, float[] info, int offset)
         {
@@ -916,6 +949,12 @@ namespace AdzukiSoft.ALPS
             info[offset + InfoTiltRange] = fixture.maxMinTilt / 2f;
             info[offset + InfoPanSign] = fixture.invertPan ? -1f : 1f;
             info[offset + InfoGoboStep] = fixture.legacyGoboRange ? 42.5f : 30f;
+
+            var ball = GetVRSLMirrorBallMaterial(fixture);
+            if (ball != null)
+            {
+                info[offset + InfoIdleSpin] = ball.GetFloat(MirrorBallSpinProperty);
+            }
         }
 
         /// <summary>What the DMX grid needs to know about a segment of a multi light bar: which one it is.</summary>
@@ -934,6 +973,7 @@ namespace AdzukiSoft.ALPS
             info[offset + InfoGoboStep] = 30f;
             info[offset + InfoLayout] = DmxLayoutStandard;
             info[offset + InfoBarSegment] = 0f;
+            info[offset + InfoIdleSpin] = 0f;
         }
 
         /// <summary>

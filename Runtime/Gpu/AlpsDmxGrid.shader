@@ -6,7 +6,8 @@
 // The fixtures read in VRSL's nine universe mode, where rows 0, 120 and 240 on are three
 // bands laid over the same texels in red, green and blue.
 // Pass 0 is the grid VRSL reads its channels from, pass 1 the spin phase grid, which holds
-// how far a gobo has turned and how far a laser's beams have gone round its cone.
+// how far a gobo has turned, which is also how far a mirror ball has turned, and how far a
+// laser's beams have gone round its cone.
 //
 // Which texel VRSL reads a channel from is worked out the way VRSL's getValueAtCoords
 // does (VRSL-DMXFunctions.cginc), so each channel lands exactly where it is read.
