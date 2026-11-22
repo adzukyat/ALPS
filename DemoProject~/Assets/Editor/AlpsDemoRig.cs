@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Hangs the demo's lighting rig on the venue: 90 fixtures in eleven containers below one
+/// Hangs the demo's lighting rig on the venue: 96 fixtures in twelve containers below one
 /// container for the whole rig, and two penlight areas over the crowd.
 ///
 /// How the heads are mounted decides what tilt and pan mean in a clip. Pan turns a head
@@ -17,6 +17,10 @@ using UnityEngine;
 ///   outward and a negative one into the ring.
 /// - Standing movers (floor and totem spots): tilt 0 is straight up, a positive tilt leans
 ///   at the audience and a negative one upstage.
+/// - The lasers fire level at the back of the hall at tilt 0. A positive tilt raises the
+///   fan and a negative one lowers it onto the crowd, and pan rolls the fan around the way
+///   it fires, clockwise seen from behind the laser, so 90 stands it on end. Its cone width
+///   is half the angle the fan opens by.
 /// </summary>
 public static class AlpsDemoRig
 {
@@ -32,14 +36,17 @@ public static class AlpsDemoRig
     public const string TotemBars = "Totem Bars";
     public const string CycPars = "Cyc Pars";
     public const string ApronBars = "Apron Bars";
+    public const string Lasers = "Lasers";
     public const string PenlightSweep = "Penlight Sweep";
     public const string PenlightRipple = "Penlight Ripple";
 
     /// <summary>The containers in the order their tracks come in the timeline, lowest layer first.</summary>
     public static readonly string[] Containers =
     {
-        CycPars, ApronBars, TotemBars, FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Blinders,
+        CycPars, ApronBars, TotemBars, FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Lasers, Blinders,
     };
+
+    private const string LaserMaterialPath = AlpsDemoVenue.Folder + "/Materials/Laser Fan.mat";
 
     /// <summary>Where a light bar's body sits from its origin, which is on one of its long edges.</summary>
     private static readonly Vector3 LightBarCenter = new Vector3(0f, 0.01f, 0.13f);
@@ -166,6 +173,21 @@ public static class AlpsDemoRig
             bar.transform.localPosition = new Vector3(apronX[i], AlpsDemoVenue.DeckHeight - 0.3f, -0.08f) - rotation * LightBarCenter;
         }
 
+        // --- Lasers on the back truss, turned round to fire over the crowd -----------------------
+        var lasers = Container(rig, Lasers, targets);
+        var fan = LaserFan();
+        for (var i = 0; i < AlpsDemoVenue.LaserX.Length; i++)
+        {
+            var laser = Fixture(AlpsCreateMenu.Laser, lasers, "Laser", i);
+            // The prefab's own rotation fires along +Z with a positive tilt raising the fan.
+            laser.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * AlpsCreateMenu.Laser.Load().transform.localRotation;
+            laser.transform.localPosition = new Vector3(AlpsDemoVenue.LaserX[i], AlpsDemoVenue.LaserY, AlpsDemoVenue.LaserZ - AlpsDemoVenue.LaserDepth * 0.5f - 0.01f);
+            foreach (var renderer in laser.GetComponentInChildren<VRStageLighting_DMX_Static>(true).objRenderers)
+            {
+                renderer.sharedMaterial = fan;
+            }
+        }
+
         // --- Penlights: one area across the crowd, one spreading out from the thrust ------------
         var crowdMiddle = (AlpsDemoVenue.CrowdFront + AlpsDemoVenue.CrowdBack) * 0.5f;
         targets[PenlightSweep] = Penlight(parent, PenlightSweep, new Vector3(0f, 1.9f, crowdMiddle), AlpsPenlightShape.Line, AlpsDemoVenue.CrowdHalfWidth * 2f + 1f, 24);
@@ -204,10 +226,28 @@ public static class AlpsDemoRig
         fixture.name = $"{name} {index + 1}";
         fixture.transform.localPosition = Vector3.zero;
         fixture.transform.localRotation = Quaternion.identity;
-        // The create menu gives every fixture this scale too.
+        // The rig is measured out for fixtures at this scale, whatever their prefabs come with.
         fixture.transform.localScale = Vector3.one;
         fixture.AddComponent<AlpsVRSLFixture>().target = fixture.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
         return fixture;
+    }
+
+    /// <summary>
+    /// The material of the demo's lasers. No effect drives how flat a laser's cone is, how
+    /// many beams it has or how thick they are, so a show takes them from the material: this
+    /// one flattens VRSL's cone into a fan of sixteen thin beams.
+    /// </summary>
+    private static Material LaserFan()
+    {
+        var source = AlpsCreateMenu.Laser.Load().GetComponentInChildren<MeshRenderer>(true).sharedMaterial;
+        var material = AlpsDemoVenue.Asset(LaserMaterialPath, () => new Material(source));
+        material.shader = source.shader;
+        material.CopyPropertiesFromMaterial(source);
+        material.SetFloat(AlpsShowPlayer.LaserFlatnessProperty, 1.999f);
+        material.SetFloat(AlpsShowPlayer.LaserBeamsProperty, 16f);
+        material.SetFloat(AlpsShowPlayer.LaserThicknessProperty, 0.008f);
+        EditorUtility.SetDirty(material);
+        return material;
     }
 
     /// <summary>Lays the container's children out the way its inspector does once a shape is picked.</summary>

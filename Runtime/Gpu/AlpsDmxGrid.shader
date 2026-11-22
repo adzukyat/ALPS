@@ -38,6 +38,19 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_COLOUR_AT_FULL 2.02
     #define ALPS_DIMMER_SHARE (1.0 / 3.0)
 
+    // AlpsShowPlayer.InfoLayout and what follows it, DmxLayoutLaser and the laser's ranges.
+    #define ALPS_INFO_LAYOUT 4
+    #define ALPS_INFO_LASER_FLATNESS 5
+    #define ALPS_INFO_LASER_BEAMS 6
+    #define ALPS_INFO_LASER_THICKNESS 7
+    #define ALPS_LAYOUT_LASER 1
+    #define ALPS_LASER_ANGLE_RANGE 90.0
+    #define ALPS_LASER_MIN_WIDTH (-3.75)
+    #define ALPS_LASER_MAX_WIDTH 20.0
+    #define ALPS_LASER_MESH_SLOPE 0.511
+    #define ALPS_LASER_MIN_STRETCH 0.5
+    #define ALPS_LASER_MAX_STRETCH 6.0
+
     float AlpsFrameChannel(int fixture, int channel)
     {
         return _MainTex.Load(int3(channel / 4, fixture, 0))[channel % 4];
@@ -134,11 +147,97 @@ Shader "Hidden/ALPS/DMX Grid"
         return true;
     }
 
+    // What VRSL's laser (VRSL-BasicLaser-DMX.shader) reads from its row, which is laid out
+    // another way than the other fixtures' rows.
+    float AlpsLaserValue(int fixture, int offset, int info)
+    {
+        if (offset <= 1)
+        {
+            // Tilt leans the cone away from where it rests and pan turns it around that rest
+            // axis, each by up to 90 degrees to either side. A pan past that is the pan
+            // across from it with the tilt the other way, which points the same way. The
+            // laser reads the tilt the other way round than the model.
+            float pan = AlpsFrameChannel(fixture, FramePan);
+            float tilt = AlpsFrameChannel(fixture, FrameTilt);
+            pan -= 360.0 * round(pan / 360.0);
+            if (abs(pan) > ALPS_LASER_ANGLE_RANGE)
+            {
+                pan -= pan > 0.0 ? 180.0 : -180.0;
+                tilt = -tilt;
+            }
+
+            return ((offset == 0 ? -tilt : pan) + ALPS_LASER_ANGLE_RANGE) / (2.0 * ALPS_LASER_ANGLE_RANGE);
+        }
+
+        // The laser stretches its mesh by 1 plus lerp(-0.5, 5, v), and the model length is a
+        // share of the mesh at ModelConeLengthLimit.
+        float stretch = clamp(AlpsFrameChannel(fixture, FrameConeLength) / ALPS_CONE_LENGTH_LIMIT, ALPS_LASER_MIN_STRETCH, ALPS_LASER_MAX_STRETCH);
+        if (offset == 2)
+        {
+            return (stretch - ALPS_LASER_MIN_STRETCH) / (ALPS_LASER_MAX_STRETCH - ALPS_LASER_MIN_STRETCH);
+        }
+
+        if (offset == 3)
+        {
+            // The width is lerp(-3.75, 20, v), which moves the far end of the cone out by the
+            // same amount per unit however long the cone is. The model width is half the
+            // opening angle, so a longer cone takes more of it to open as far.
+            float opening = tan(radians(clamp(AlpsFrameChannel(fixture, FrameConeWidth), 0.0, 89.0))) * stretch / ALPS_LASER_MESH_SLOPE;
+            return opening * -ALPS_LASER_MIN_WIDTH / (ALPS_LASER_MAX_WIDTH - ALPS_LASER_MIN_WIDTH);
+        }
+
+        if (offset == 4)
+        {
+            return AlpsRead(info + ALPS_INFO_LASER_FLATNESS) / 1.999;
+        }
+
+        if (offset == 5)
+        {
+            return (AlpsRead(info + ALPS_INFO_LASER_BEAMS) - 4.0) / 64.0;
+        }
+
+        if (offset >= 7 && offset <= 9)
+        {
+            // The colour over a white tint, brightness past 100% included, turned into
+            // linear the way Unity turned the tint.
+            float level = AlpsLevel(fixture);
+            if (level <= 0.0)
+            {
+                return 0.0;
+            }
+
+            float tint = AlpsFrameChannel(fixture, FrameRed + offset - 7) * max(level, 1.0);
+            #ifndef UNITY_COLORSPACE_GAMMA
+            tint = GammaToLinearSpaceExact(tint);
+            #endif
+            return tint;
+        }
+
+        if (offset == 10)
+        {
+            // The laser multiplies its beams by the intensity twice.
+            return sqrt(min(AlpsLevel(fixture), 1.0));
+        }
+
+        if (offset == 11)
+        {
+            return (AlpsRead(info + ALPS_INFO_LASER_THICKNESS) - 0.0005) / 0.0495;
+        }
+
+        // The spin stays at 0, so the beams stand still around the cone.
+        return 0.0;
+    }
+
     // Model units to the 0..1 DMX value VRSL turns back into them. Values past the ends are
     // kept, since the grid holds floats.
     float AlpsDmxValue(int fixture, int offset, AlpsShow show)
     {
         int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
+        if (AlpsReadInt(info + ALPS_INFO_LAYOUT) == ALPS_LAYOUT_LASER)
+        {
+            return AlpsLaserValue(fixture, offset, info);
+        }
+
         if (offset == 0)
         {
             // Pan: VRSL adds the DMX angle to a base rotation of 0 and mirrors the model's sign.
@@ -244,9 +343,16 @@ Shader "Hidden/ALPS/DMX Grid"
                     return 0;
                 }
 
+                // A laser has no gobo, and its own spin stays at 0.
+                int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
+                if (AlpsReadInt(info + ALPS_INFO_LAYOUT) == ALPS_LAYOUT_LASER)
+                {
+                    return 0;
+                }
+
                 // VRSL turns the phase into an angle of degrees(phase * 4) and flips it for an
                 // inverted pan, so the gobo angle goes in as that phase.
-                float sign = AlpsRead(show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE + 2);
+                float sign = AlpsRead(info + 2);
                 float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
                 return float4(phase, 0, 0, 1);
             }

@@ -48,6 +48,12 @@ public static class AlpsDemoVenue
     public static readonly float[] TotemHeight = { 3.8f, 3f, 2.2f, 2.2f, 3f, 3.8f };
     public const float TotemZ = 9.3f;
 
+    // The lasers clamp onto the downstage side of the back truss, between its spots.
+    public static readonly float[] LaserX = { -5.4f, -3.6f, -1.8f, 1.8f, 3.6f, 5.4f };
+    public const float LaserY = RoofY - 0.12f;
+    public const float LaserZ = BackTrussZ - TrussWidth * 0.5f - 0.22f;
+    public const float LaserDepth = 0.4f;
+
     // --- Audience -------------------------------------------------------------------------
     public const float BarricadeZ = -6.8f;
     public const float CrowdFront = -8f;
@@ -91,6 +97,7 @@ public static class AlpsDemoVenue
         Part(venue, "Stairs", Stairs(), deck, true);
         Part(venue, "Truss", TrussRoof(), truss, false);
         Part(venue, "Rigging", Rigging(), steel, false);
+        Part(venue, "Laser Housings", LaserHousings(), speaker, false);
         Part(venue, "Cyclorama", Cyc(), cyc, true);
         Part(venue, "PA", Pa(false), speaker, false);
         Part(venue, "PA Grilles", Pa(true), grille, false);
@@ -249,6 +256,19 @@ public static class AlpsDemoVenue
             mesh.Box(new Vector3(x, 10.1f, -0.4f), new Vector3(1.3f, 0.12f, 0.9f));
             mesh.Cylinder(new Vector3(x, 10.1f, -0.7f), new Vector3(x, HallHeight, -0.7f), 0.012f, 6);
             mesh.Cylinder(new Vector3(x, 10.1f, -0.1f), new Vector3(x, HallHeight, -0.1f), 0.012f, 6);
+        }
+
+        return mesh;
+    }
+
+    /// <summary>A box for every laser, which is only its beams, and the arm that holds it off the back truss.</summary>
+    private static AlpsDemoMesh LaserHousings()
+    {
+        var mesh = new AlpsDemoMesh();
+        foreach (var x in LaserX)
+        {
+            mesh.Box(new Vector3(x, LaserY, LaserZ), new Vector3(0.3f, 0.2f, LaserDepth));
+            mesh.Box(new Vector3(x, LaserY, BackTrussZ - TrussWidth * 0.5f), new Vector3(0.08f, 0.08f, 0.12f));
         }
 
         return mesh;

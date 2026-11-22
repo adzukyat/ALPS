@@ -61,8 +61,59 @@ namespace AdzukiSoft.ALPS
         /// <summary>Floats before the first section of the show data, see AlpsEvaluator.hlsl.</summary>
         public const int GpuHeaderSize = 32;
 
-        /// <summary>Floats per fixture in the fixture info section.</summary>
-        public const int GpuFixtureInfoStride = 4;
+        /// <summary>
+        /// Floats per fixture in the fixture info section: the pan and tilt ranges, which way
+        /// the gobo turns and the DMX step between gobos, then which channels the fixture
+        /// reads (<see cref="InfoLayout"/>) and what a laser keeps from its material.
+        /// </summary>
+        public const int GpuFixtureInfoStride = 8;
+        public const int InfoPanRange = 0;
+        public const int InfoTiltRange = 1;
+        public const int InfoPanSign = 2;
+        public const int InfoGoboStep = 3;
+        public const int InfoLayout = 4;
+        public const int InfoLaserFlatness = 5;
+        public const int InfoLaserBeams = 6;
+        public const int InfoLaserThickness = 7;
+
+        /// <summary>The 13 channels VRSL's movers and static lights read.</summary>
+        public const int DmxLayoutStandard = 0;
+
+        /// <summary>
+        /// The 12 channels VRSL's laser reads: tilt, pan, cone length, cone width, flatness,
+        /// beam count, spin, the colour, the intensity and the beam thickness.
+        /// </summary>
+        public const int DmxLayoutLaser = 1;
+
+        /// <summary>The material property only VRSL's laser shader has, which tells a laser from the other fixtures.</summary>
+        public const string LaserBeamsProperty = "_LaserCount";
+        public const string LaserFlatnessProperty = "_ZConeFlatness";
+        public const string LaserThicknessProperty = "_LaserThickness";
+        public const string LaserTiltProperty = "_XRotation";
+        public const string LaserPanProperty = "_YRotation";
+        public const string LaserConeWidthProperty = "_VertexConeWidth";
+        public const string LaserConeLengthProperty = "_VertexConeLength";
+
+        /// <summary>
+        /// The ends of the laser's cone width. At the lower one its beams run in one line, and
+        /// each unit above it opens the cone by the same amount again.
+        /// </summary>
+        public const float LaserMinConeWidth = -3.75f;
+        public const float LaserMaxConeWidth = 20f;
+
+        /// <summary>
+        /// The radius of the laser's own mesh at its far end over its length, which is how far
+        /// the cone opens at a width of 0 and a length of 0. The model width of a laser is half
+        /// its opening angle in degrees, whatever its length.
+        /// </summary>
+        public const float LaserMeshSlope = 0.511f;
+
+        /// <summary>The shortest and the longest the laser's length channel makes its mesh, as shares of it.</summary>
+        public const float LaserMinStretch = 0.5f;
+        public const float LaserMaxStretch = 6f;
+
+        /// <summary>The angle the laser's pan and tilt channels reach to either side.</summary>
+        public const float LaserAngleRange = 90f;
 
         /// <summary>Floats per fixture in the aim section, the first three rows of its world to aim matrix.</summary>
         public const int GpuAimStride = 12;
@@ -460,6 +511,20 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public static void OrientVRSLAim(VRStageLighting_DMX_Static fixture, float[] aim, int offset)
         {
+            // A laser's cone rests along its mesh's -Y axis and a positive tilt leans it
+            // toward the mesh's +Z, so the mesh's Z row becomes Y and its Y row, negated, Z.
+            if (GetVRSLLaserMaterial(fixture) != null)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    var y = aim[offset + 4 + i];
+                    aim[offset + 4 + i] = aim[offset + 8 + i];
+                    aim[offset + 8 + i] = -y;
+                }
+
+                return;
+            }
+
             if (fixture.invertPan)
             {
                 for (var i = 0; i < 4; i++)
@@ -679,26 +744,98 @@ namespace AdzukiSoft.ALPS
                 Mathf.InverseLerp(VrslMinConeLength, VrslMaxConeLength, fixture.coneLength) * ModelConeLengthLimit;
             frame[offset + AlpsShowLayout.FrameConeMeshLength] = fixture.maxConeLength;
             frame[offset + AlpsShowLayout.FrameGobo] = fixture.selectGOBO;
+
+            // A laser keeps its pose and its cone on the material, not on the script. Its tilt
+            // is read the other way round, so a positive one raises the cone of a laser that
+            // stands the way its prefab does.
+            var laser = GetVRSLLaserMaterial(fixture);
+            if (laser != null)
+            {
+                // The laser's length is what it adds to its own mesh, as a share of it.
+                var stretch = Mathf.Clamp(1f + laser.GetFloat(LaserConeLengthProperty), LaserMinStretch, LaserMaxStretch);
+                var opening = Mathf.Max(0f, laser.GetFloat(LaserConeWidthProperty) - LaserMinConeWidth) / -LaserMinConeWidth;
+                frame[offset + AlpsShowLayout.FramePan] = laser.GetFloat(LaserPanProperty);
+                frame[offset + AlpsShowLayout.FrameTilt] = -laser.GetFloat(LaserTiltProperty);
+                frame[offset + AlpsShowLayout.FrameConeWidth] = Mathf.Atan(LaserMeshSlope * opening / stretch) * Mathf.Rad2Deg;
+                frame[offset + AlpsShowLayout.FrameConeLength] = stretch * ModelConeLengthLimit;
+                frame[offset + AlpsShowLayout.FrameConeMeshLength] = 1f;
+                frame[offset + AlpsShowLayout.FrameGobo] = AlpsShowLayout.GoboOff;
+            }
+        }
+
+        /// <summary>
+        /// The material of a VRSL laser, or null for any other fixture. The laser reads
+        /// channels of its own, so the grid lays its row out another way
+        /// (<see cref="DmxLayoutLaser"/>).
+        /// </summary>
+        public static Material GetVRSLLaserMaterial(VRStageLighting_DMX_Static fixture)
+        {
+            if (fixture == null)
+            {
+                return null;
+            }
+
+            var renderers = fixture.objRenderers;
+            if (renderers == null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var material = renderer.sharedMaterial;
+                if (material != null && material.HasProperty(LaserBeamsProperty))
+                {
+                    return material;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
         /// What the DMX grid needs to know about a fixture: its pan and tilt ranges, which way
-        /// its gobo turns, and the DMX step between gobos.
+        /// its gobo turns, and the DMX step between gobos. A laser reads how flat its cone is,
+        /// how many beams it has and how thick they are from DMX too, which no effect drives,
+        /// so the grid hands it back what its material says.
         /// </summary>
         public static void CaptureVRSLDmxInfo(VRStageLighting_DMX_Static fixture, float[] info, int offset)
         {
-            info[offset] = fixture.maxMinPan / 2f;
-            info[offset + 1] = fixture.maxMinTilt / 2f;
-            info[offset + 2] = fixture.invertPan ? -1f : 1f;
-            info[offset + 3] = fixture.legacyGoboRange ? 42.5f : 30f;
+            WriteNeutralDmxInfo(info, offset);
+            var laser = GetVRSLLaserMaterial(fixture);
+            if (laser != null)
+            {
+                info[offset + InfoPanRange] = LaserAngleRange;
+                info[offset + InfoTiltRange] = LaserAngleRange;
+                info[offset + InfoLayout] = DmxLayoutLaser;
+                info[offset + InfoLaserFlatness] = laser.GetFloat(LaserFlatnessProperty);
+                info[offset + InfoLaserBeams] = laser.GetFloat(LaserBeamsProperty);
+                info[offset + InfoLaserThickness] = laser.GetFloat(LaserThicknessProperty);
+                return;
+            }
+
+            info[offset + InfoPanRange] = fixture.maxMinPan / 2f;
+            info[offset + InfoTiltRange] = fixture.maxMinTilt / 2f;
+            info[offset + InfoPanSign] = fixture.invertPan ? -1f : 1f;
+            info[offset + InfoGoboStep] = fixture.legacyGoboRange ? 42.5f : 30f;
         }
 
         public static void WriteNeutralDmxInfo(float[] info, int offset)
         {
-            info[offset] = 90f;
-            info[offset + 1] = -90f;
-            info[offset + 2] = 1f;
-            info[offset + 3] = 30f;
+            info[offset + InfoPanRange] = 90f;
+            info[offset + InfoTiltRange] = -90f;
+            info[offset + InfoPanSign] = 1f;
+            info[offset + InfoGoboStep] = 30f;
+            info[offset + InfoLayout] = DmxLayoutStandard;
+            info[offset + InfoLaserFlatness] = 0f;
+            info[offset + InfoLaserBeams] = 0f;
+            info[offset + InfoLaserThickness] = 0f;
         }
 
         /// <summary>

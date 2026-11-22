@@ -38,14 +38,18 @@ namespace AdzukiSoft.ALPS.Tests
         /// <param name="rows">The DMX row of each fixture, its own index when left out.</param>
         /// <param name="aim">Each fixture's world to aim space, all zero when left out.</param>
         /// <param name="penlight">The penlight section of the show data, the show's own when left out.</param>
-        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null, float[] penlight = null)
+        /// <param name="info">Each fixture's DMX info, that of a fixture nothing is known about when left out.</param>
+        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null, float[] penlight = null, float[] info = null)
         {
             RequireGraphics();
             FixtureCount = fixtureCount >= 0 ? fixtureCount : Mathf.Max(show.fixtureCount, show.FixtureCount);
-            var info = new float[FixtureCount * AlpsShowPlayer.GpuFixtureInfoStride];
-            for (var i = 0; i < FixtureCount; i++)
+            if (info == null)
             {
-                AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                info = new float[FixtureCount * AlpsShowPlayer.GpuFixtureInfoStride];
+                for (var i = 0; i < FixtureCount; i++)
+                {
+                    AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                }
             }
 
             if (rows == null)

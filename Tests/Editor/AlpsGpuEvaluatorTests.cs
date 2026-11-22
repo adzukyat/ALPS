@@ -204,13 +204,250 @@ namespace AdzukiSoft.ALPS.Tests
                 return 0f;
             }
 
-            var tint = channel * Mathf.Max(level, 1f);
-            if (QualitySettings.activeColorSpace == ColorSpace.Linear)
+            return ToLinear(channel * Mathf.Max(level, 1f)) * 2.02f * Mathf.Pow(Mathf.Min(level, 1f), 2f / 3f);
+        }
+
+        /// <summary>A tint the way Unity hands it to a shader in a linear project.</summary>
+        private static float ToLinear(float tint)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear)
             {
-                tint = tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+                return tint;
             }
 
-            return tint * 2.02f * Mathf.Pow(Mathf.Min(level, 1f), 2f / 3f);
+            return tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+        }
+
+        // ------------------------------------------------------------------ laser
+
+        private const string LaserPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-Laser-H-13CH.prefab";
+
+        /// <summary>The pan and tilt the grid hands a laser, which reaches 90 degrees to either side.</summary>
+        private static void LaserFold(ref float pan, ref float tilt)
+        {
+            pan -= 360f * Mathf.Round(pan / 360f);
+            if (Mathf.Abs(pan) > AlpsShowPlayer.LaserAngleRange)
+            {
+                pan -= pan > 0f ? 180f : -180f;
+                tilt = -tilt;
+            }
+        }
+
+        private static float LaserStretch(float length)
+        {
+            return Mathf.Clamp(length / AlpsShowPlayer.ModelConeLengthLimit, AlpsShowPlayer.LaserMinStretch, AlpsShowPlayer.LaserMaxStretch);
+        }
+
+        /// <summary>The width channel that opens a laser's cone to twice <paramref name="width"/> degrees.</summary>
+        private static float LaserWidth(float width, float length)
+        {
+            var opening = Mathf.Tan(Mathf.Clamp(width, 0f, 89f) * Mathf.Deg2Rad) * LaserStretch(length) / AlpsShowPlayer.LaserMeshSlope;
+            return opening * -AlpsShowPlayer.LaserMinConeWidth / (AlpsShowPlayer.LaserMaxConeWidth - AlpsShowPlayer.LaserMinConeWidth);
+        }
+
+        private static float[] LaserInfo(float flatness, float beams, float thickness)
+        {
+            var info = NeutralInfo();
+            info[AlpsShowPlayer.InfoLayout] = AlpsShowPlayer.DmxLayoutLaser;
+            info[AlpsShowPlayer.InfoLaserFlatness] = flatness;
+            info[AlpsShowPlayer.InfoLaserBeams] = beams;
+            info[AlpsShowPlayer.InfoLaserThickness] = thickness;
+            return info;
+        }
+
+        [Test]
+        public void Grid_LaysALaserOutOnItsOwnChannels()
+        {
+            var set = Set(0f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.value = 30f;
+            move.pan.hasSpread = true;
+            move.pan.spreadRange = new Vector2(40f, 120f);
+            var cone = set.Add(AlpsEffectKind.Cone);
+            cone.coneWidth.value = 30f;
+            cone.coneLength.value = 100f;
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.hasSpread = true;
+            brightness.brightness.spreadRange = new Vector2(50f, 150f);
+            var show = AlpsShowCompiler.CompileStandalone(3, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+
+            // The first fixture is a mover, the other two are lasers.
+            const float flatness = 1.2f;
+            const float beams = 12f;
+            const float thickness = 0.03f;
+            var info = new List<float>(NeutralInfo());
+            info.AddRange(LaserInfo(flatness, beams, thickness));
+            info.AddRange(LaserInfo(flatness, beams, thickness));
+            var gpu = Keep(new AlpsGpuShow(show, 3, info: info.ToArray()));
+            var frames = gpu.FramesAt(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+            var spin = gpu.ReadBack(gpu.Spin);
+
+            float Channel(int fixture, int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+            float Read(Texture2D texture, int fixture, int offset)
+            {
+                var texel = VrslTexel(13 * fixture + 1 + offset);
+                return texture.GetPixel(texel.x, texel.y).r;
+            }
+
+            Assert.AreEqual(GridDimmer(0.5f), Read(grid, 0, 5), 1e-4f, "The mover keeps its own channels.");
+            Assert.AreEqual(GridColour(1f, 0.5f), Read(grid, 0, 9), 1e-4f);
+
+            var folded = 0;
+            for (var fixture = 1; fixture < 3; fixture++)
+            {
+                var level = Channel(fixture, AlpsShowLayout.FrameBrightness) * Channel(fixture, AlpsShowLayout.FrameBrightnessScale) / 100f;
+                var pan = Channel(fixture, AlpsShowLayout.FramePan);
+                var tilt = Channel(fixture, AlpsShowLayout.FrameTilt);
+                Assert.AreEqual(30f, tilt, 1e-3f);
+                LaserFold(ref pan, ref tilt);
+                folded += tilt < 0f ? 1 : 0;
+                var range = AlpsShowPlayer.LaserAngleRange;
+                var diagnostics = $"fixture {fixture}";
+                Assert.AreEqual((-tilt + range) / (2f * range), Read(grid, fixture, 0), 1e-4f, "Tilt. " + diagnostics);
+                Assert.AreEqual((pan + range) / (2f * range), Read(grid, fixture, 1), 1e-4f, "Pan. " + diagnostics);
+                Assert.AreEqual((2f - 0.5f) / 5.5f, Read(grid, fixture, 2), 1e-4f, "Twice the mesh. " + diagnostics);
+                Assert.AreEqual(LaserWidth(30f, 100f), Read(grid, fixture, 3), 1e-4f, "Cone width. " + diagnostics);
+                Assert.AreEqual(flatness / 1.999f, Read(grid, fixture, 4), 1e-4f, "Flatness. " + diagnostics);
+                Assert.AreEqual((beams - 4f) / 64f, Read(grid, fixture, 5), 1e-4f, "Beams. " + diagnostics);
+                Assert.AreEqual(0f, Read(grid, fixture, 6), 1e-4f, "Spin. " + diagnostics);
+                Assert.AreEqual(ToLinear(0.2f * Mathf.Max(level, 1f)), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
+                Assert.AreEqual(ToLinear(0.4f * Mathf.Max(level, 1f)), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
+                Assert.AreEqual(ToLinear(Mathf.Max(level, 1f)), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
+                Assert.AreEqual(Mathf.Sqrt(Mathf.Min(level, 1f)), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
+                Assert.AreEqual((thickness - 0.0005f) / 0.0495f, Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
+                Assert.AreEqual(0f, Read(spin, fixture, 6), 1e-6f, "The beams stand still. " + diagnostics);
+                Assert.AreEqual(0f, Read(spin, fixture, 10), 1e-6f, "A laser has no gobo to turn. " + diagnostics);
+            }
+
+            Assert.AreEqual(1, folded, "The pan of 120 is the one of -60 with the tilt the other way.");
+            Assert.AreEqual(100f, Channel(1, AlpsShowLayout.FrameBrightness), 1e-3f);
+            Assert.AreEqual(1f, Read(grid, 1, 10), 1e-4f, "100% is the whole intensity.");
+        }
+
+        [Test]
+        public void Laser_KeepsWhatItsMaterialSays()
+        {
+            var laser = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab));
+            _created.Add(laser);
+            var fixture = laser.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var material = AlpsShowPlayer.GetVRSLLaserMaterial(fixture);
+            Assert.NotNull(material, "The laser prefab is drawn with VRSL's laser shader.");
+
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            Assert.IsNull(AlpsShowPlayer.GetVRSLLaserMaterial(mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>()));
+
+            var info = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, 0);
+            Assert.AreEqual(AlpsShowPlayer.DmxLayoutLaser, info[AlpsShowPlayer.InfoLayout]);
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserFlatnessProperty), info[AlpsShowPlayer.InfoLaserFlatness]);
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserBeamsProperty), info[AlpsShowPlayer.InfoLaserBeams]);
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserThicknessProperty), info[AlpsShowPlayer.InfoLaserThickness]);
+            Assert.Greater(info[AlpsShowPlayer.InfoLaserBeams], 3f);
+
+            var frame = new float[AlpsShowLayout.FrameStride];
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserPanProperty), frame[AlpsShowLayout.FramePan], 1e-4f);
+            Assert.AreEqual(-material.GetFloat(AlpsShowPlayer.LaserTiltProperty), frame[AlpsShowLayout.FrameTilt], 1e-4f);
+
+            // What the grid hands back for the captured cone is the material's own.
+            var width = material.GetFloat(AlpsShowPlayer.LaserConeWidthProperty);
+            var length = material.GetFloat(AlpsShowPlayer.LaserConeLengthProperty);
+            var range = AlpsShowPlayer.LaserMaxConeWidth - AlpsShowPlayer.LaserMinConeWidth;
+            Assert.AreEqual((width - AlpsShowPlayer.LaserMinConeWidth) / range, LaserWidth(frame[AlpsShowLayout.FrameConeWidth], frame[AlpsShowLayout.FrameConeLength]), 1e-4f);
+            Assert.AreEqual(1f + length, LaserStretch(frame[AlpsShowLayout.FrameConeLength]), 1e-4f);
+        }
+
+        [Test]
+        public void Laser_OpensItsConeByTwiceTheModelWidth()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab);
+            var mesh = prefab.GetComponentInChildren<MeshFilter>().sharedMesh;
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            var uv2 = mesh.uv2;
+            foreach (var length in new[] { 50f, 120f })
+            {
+                foreach (var width in new[] { 10f, 30f, 55f })
+                {
+                    // VRSL's own vertex maths (VRSL-BasicLaser-DMX.shader) on the far end of the cone.
+                    var dmxLength = Mathf.Lerp(-0.5f, 5f, (LaserStretch(length) - 0.5f) / 5.5f);
+                    var dmxWidth = Mathf.LerpUnclamped(AlpsShowPlayer.LaserMinConeWidth, AlpsShowPlayer.LaserMaxConeWidth, LaserWidth(width, length));
+                    var widest = 0f;
+                    var far = 0;
+                    for (var i = 0; i < vertices.Length; i++)
+                    {
+                        if (uv2[i].y < 0.99f)
+                        {
+                            continue;
+                        }
+
+                        var y = Mathf.LerpUnclamped(vertices[i].y, vertices[i].y * 2f, dmxLength);
+                        var moved = vertices[i] + normals[i] * dmxWidth;
+                        widest = Mathf.Max(widest, Mathf.Atan2(new Vector2(moved.x, moved.z).magnitude, Mathf.Abs(y)) * Mathf.Rad2Deg);
+                        far++;
+                    }
+
+                    Assert.Greater(far, 8, "The far end of the laser's mesh.");
+                    Assert.AreEqual(width, widest, 0.75f, $"Half the opening angle at a width of {width} and a length of {length}.");
+                }
+            }
+        }
+
+        [Test]
+        public void Tracking_PointsTheLasersConeAtTheUser()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab);
+            var laser = (GameObject)Object.Instantiate(prefab);
+            _created.Add(laser);
+            var fixture = laser.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var head = AlpsShowPlayer.GetVRSLAimTransform(fixture);
+
+            // A laser that stands the way its prefab does fires along +Z and tilts up.
+            laser.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.rotation);
+            var upright = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(head.worldToLocalMatrix, upright, 0);
+            AlpsShowPlayer.OrientVRSLAim(fixture, upright, 0);
+            Assert.AreEqual(1f, upright[0], 1e-4f, "Aim space is the world for a laser at its prefab's rotation.");
+            Assert.AreEqual(1f, upright[5], 1e-4f);
+            Assert.AreEqual(1f, upright[10], 1e-4f);
+
+            laser.transform.SetPositionAndRotation(new Vector3(2f, 3f, -1f), Quaternion.Euler(-70f, 30f, 15f));
+            var aim = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(head.worldToLocalMatrix, aim, 0);
+            AlpsShowPlayer.OrientVRSLAim(fixture, aim, 0);
+            var reached = 0;
+            foreach (var user in new[] { new Vector3(3f, -8f, 2f), new Vector3(-6f, -1f, -4f), new Vector3(1f, 5f, 7f), new Vector3(-2f, 3f, -9f), new Vector3(4f, 6f, 1f) })
+            {
+                var target = head.position + user;
+                var local = new Vector3(
+                    aim[0] * target.x + aim[1] * target.y + aim[2] * target.z + aim[3],
+                    aim[4] * target.x + aim[5] * target.y + aim[6] * target.z + aim[7],
+                    aim[8] * target.x + aim[9] * target.y + aim[10] * target.z + aim[11]);
+                var pan = AimPan(local);
+                var tilt = AimTilt(local);
+                LaserFold(ref pan, ref tilt);
+                if (Mathf.Abs(tilt) > AlpsShowPlayer.LaserAngleRange)
+                {
+                    // Behind the laser, where its tilt does not reach.
+                    continue;
+                }
+
+                // VRSL's own rotation of the cone, which rests along the mesh's -Y: the tilt
+                // around X, then the pan around Y. The grid hands it the tilt negated.
+                var x = -tilt * Mathf.Deg2Rad;
+                var y = pan * Mathf.Deg2Rad;
+                var rest = Vector3.down;
+                var tilted = new Vector3(rest.x, Mathf.Cos(x) * rest.y - Mathf.Sin(x) * rest.z, Mathf.Sin(x) * rest.y + Mathf.Cos(x) * rest.z);
+                var cone = new Vector3(Mathf.Cos(y) * tilted.x + Mathf.Sin(y) * tilted.z, tilted.y, -Mathf.Sin(y) * tilted.x + Mathf.Cos(y) * tilted.z);
+
+                Assert.Less(Vector3.Angle(head.TransformDirection(cone), user), 1f, $"The cone points at a user at {user}.");
+                reached++;
+            }
+
+            Assert.Greater(reached, 1, "Users in front of the laser.");
         }
 
         [Test]

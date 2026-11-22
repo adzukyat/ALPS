@@ -18,7 +18,8 @@ using static AlpsDemoRig;
 ///
 /// Read <see cref="AlpsDemoRig"/> for what tilt and pan mean on each group. Where a clip is
 /// symmetric, a pan spread opens outward with a negative pan on the hung movers and with a
-/// positive one on the standing ones, since the two are mounted the other way up.
+/// positive one on the standing ones, since the two are mounted the other way up. The lasers
+/// are fans: tilt lifts and lowers the sheet of beams, and pan rolls it.
 /// </summary>
 public sealed class AlpsDemoShow
 {
@@ -33,6 +34,9 @@ public sealed class AlpsDemoShow
     public const string Dimmer = "Dimmer";
     public const string Fx = "FX";
     public const string Accent = "Accent";
+
+    /// <summary>The cone length that takes a laser's beams from the back truss to the back of the hall.</summary>
+    private const float LaserReach = 240f;
 
     /// <summary>The song: each section's name, its first bar and how many bars it lasts.</summary>
     public static readonly (string name, int bar, int bars)[] Sections =
@@ -52,7 +56,7 @@ public sealed class AlpsDemoShow
         ("Outro", 105, 8),
     };
 
-    private static readonly string[] Movers = { FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots };
+    private static readonly string[] Movers = { FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Lasers };
     private static readonly string[] Spots = { BackSpots, MidSpots, FloorSpots, TotemSpots };
 
     private readonly TimelineAsset _timeline;
@@ -434,6 +438,11 @@ public sealed class AlpsDemoShow
         C(FrontWash, b, 8, "Blue", Ink.Blue);
         D(FrontWash, b, 8, 45);
 
+        B(Lasers, b, 8, "Wide Fan", Cue.On().Cone(34, LaserReach));
+        M(Lasers, b, 8, "Liquid Sky", Cue.On(P.Wave(4).Spread(1)).Sym().Move(V.R(-24, 4), 0));
+        C(Lasers, b, 8, "Cyan", Ink.Cyan);
+        D(Lasers, b, 8, "Kick", Kick(35, 100));
+
         C(CycPars, b, 8, "Magenta / Cyan / Blue", Cue.On(P.Saw(2).Spread(0.5f)).ColorSteps(Ink.Magenta, Ink.Cyan, Ink.Blue));
         D(CycPars, b, 8, "Kick", Kick(35, 90));
 
@@ -487,6 +496,11 @@ public sealed class AlpsDemoShow
         FrontOverCrowd(b, 8, 4);
         C(FrontWash, b, 8, "Amber", Ink.Amber);
         D(FrontWash, b, 8, 45);
+
+        B(Lasers, b, 8, "Blade", Cue.On().Cone(22, LaserReach));
+        M(Lasers, b, 8, "Blades, On End", Cue.On(P.Wave(2).Spread(0.5f)).Sym().Move(V.R(-28, 28), 90));
+        C(Lasers, b, 8, "Red", Ink.Red);
+        D(Lasers, b, 8, 100);
 
         C(CycPars, b, 8, "Red / Amber", Cue.On(P.Saw(2).Spread(0.5f)).ColorSteps(Ink.Red, Ink.Amber));
         D(CycPars, b, 8, "Kick", Kick(35, 90));
@@ -626,6 +640,10 @@ public sealed class AlpsDemoShow
         F(MidSpots, b + 6, 2, "Flicker", Cue.On().Flicker(22, 0.6f));
         F(BackSpots, b + 6, 2, "Flicker", Cue.On().Flicker(22, 0.6f));
 
+        B(Lasers, b, 8, "Close Up", Cue.On(P.In(32)).Cone(V.R(40, 3), LaserReach));
+        M(Lasers, b, 8, "Climb", Cue.On(P.In(32, AlpsEaseType.InQuad)).Move(V.R(-22, 8), 0));
+        C(Lasers, b, 8, "Blue To White", Cue.On(P.In(32)).Gradient(Ink.Blue, Ink.Ice, Ink.White));
+
         B(Halo, b, 8, "Medium", Cue.On().Cone(12, 110));
         M(Halo, b, 8, "Lift", Cue.On(P.In(32)).Move(V.R(10, 55), 0));
         C(Halo, b, 8, "Blue To White", Cue.On(P.In(32)).Gradient(Ink.Blue, Ink.Ice, Ink.White));
@@ -634,6 +652,7 @@ public sealed class AlpsDemoShow
             var bar = b + i * 2;
             D(Halo, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.05f, 0.2f, 0.3f).Spread(1)).Dim(V.R(5, 100)));
             D(TotemBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(0, 80)));
+            D(Lasers, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(15, 100)));
             D(ApronBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 80)));
             D(PenlightSweep, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.1f, 0.2f, 0.4f).Spread(1)).Dim(V.R(10, 100)));
         }
@@ -701,6 +720,11 @@ public sealed class AlpsDemoShow
         C(FrontWash, b, 8, "Red", Ink.Red);
         D(FrontWash, b, 8, 50);
 
+        B(Lasers, b, 8, "Snap Open", Cue.On(P.Hit(1, 0.1f, 0.6f)).Cone(V.R(8, 42), LaserReach));
+        M(Lasers, b, 8, "Rock", Cue.On(P.Wave(4).Spread(1)).Move(-12, V.R(-28, 28)));
+        C(Lasers, b, 8, "White / Red", Cue.On(P.Saw(2)).ColorSteps(Ink.White, Ink.Red));
+        D(Lasers, b, 8, 100);
+
         C(CycPars, b, 8, "Red / White", Cue.On(P.Saw(1).Spread(0.5f)).ColorSteps(Ink.Red, Ink.White));
         D(CycPars, b, 8, "Kick", Kick(35, 90));
 
@@ -757,6 +781,12 @@ public sealed class AlpsDemoShow
         C(FrontWash, b, 8, "Rainbow", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Rainbow));
         D(FrontWash, b, 8, 55);
 
+        // A fan is the same one a half turn on, so a pan that runs from -90 to 90 turns it for good.
+        B(Lasers, b, 8, "Wide Fan", Cue.On().Cone(38, LaserReach));
+        M(Lasers, b, 8, "Propellers", Cue.On(P.Saw(8).Spread(1)).Sym().Move(0, V.R(-90, 90)));
+        C(Lasers, b, 8, "Rainbow", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Rainbow));
+        D(Lasers, b, 8, 100);
+
         C(CycPars, b, 8, "Rainbow", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Rainbow));
         D(CycPars, b, 8, "Kick", Kick(40, 100));
 
@@ -798,6 +828,11 @@ public sealed class AlpsDemoShow
 
         C(CycPars, b, 8, "Violet", Ink.Violet);
         D(CycPars, b, 8, 25);
+
+        B(Lasers, b, 8, "Breathing Fan", Cue.On(P.Wave(8)).Tempo(half).Cone(V.R(26, 44), LaserReach));
+        M(Lasers, b, 8, "Ceiling Comes Down", Cue.On(P.Wave(8).Delay(0.5f)).Sym().Tempo(half).Move(V.R(2, -24), 0));
+        C(Lasers, b, 8, "Azure", Ink.Azure);
+        D(Lasers, b, 8, "Glow", Cue.On().Dim(80, fadeIn: 4, fadeOut: 2));
 
         C(TotemBars, b, 8, "Blue", Ink.Blue);
         D(TotemBars, b, 8, "Slow Hits", Cue.On(P.Hit(2, 0.05f, 0.6f)).Tempo(half).Dim(V.R(0, 45)));
@@ -850,6 +885,11 @@ public sealed class AlpsDemoShow
         M(Halo, b, 8, "Straight Down", Cue.On().Move(0, 0));
         C(Halo, b, 8, "Deep Blue", Ink.DeepBlue);
         D(Halo, b, 8, "Slow Chase, Fading", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(10, 50), fadeOut: 16));
+
+        B(Lasers, b, 6, "Close Up", Cue.On(P.In(20)).Cone(V.R(40, 2), LaserReach));
+        M(Lasers, b, 6, "Lift Away", Cue.On(P.In(20)).Move(V.R(-16, 12), 0));
+        C(Lasers, b, 6, "Blue", Ink.Blue);
+        D(Lasers, b, 6, "Fade", Cue.On().Dim(70, fadeOut: 12));
 
         C(CycPars, b, 8, "Violet To Deep Blue", Cue.On(P.In(24)).Color(Ink.Violet, Ink.DeepBlue));
         D(CycPars, b, 8, "Fade", Cue.On().Dim(35, fadeOut: 24));
