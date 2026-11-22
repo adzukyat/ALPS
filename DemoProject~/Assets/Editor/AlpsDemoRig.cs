@@ -67,6 +67,8 @@ public static class AlpsDemoRig
         var targets = new Dictionary<string, AlpsTarget>();
         var rig = new GameObject(All).AddComponent<AlpsContainer>();
         rig.transform.SetParent(parent, false);
+        // One switch per scene, which the inspector sets on every container, so here too.
+        rig.keepLightOffPlayers = true;
         targets[All] = rig;
 
         // --- Front truss: wash movers laid out by the container, blinders between them ---------
@@ -228,6 +230,7 @@ public static class AlpsDemoRig
     {
         var container = new GameObject(name).AddComponent<AlpsContainer>();
         container.transform.SetParent(rig.transform, false);
+        container.keepLightOffPlayers = true;
         targets[name] = container;
         return container;
     }

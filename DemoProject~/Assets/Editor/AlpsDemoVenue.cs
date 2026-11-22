@@ -126,6 +126,17 @@ public static class AlpsDemoVenue
         Penlights(venue, hands);
         WorkLights(venue);
 
+        // The crowd stands in for the visitors: on VRChat's layer for players it is drawn in
+        // their place in the order, so it shows what keeping the light off players does.
+        var players = LayerMask.NameToLayer("Player");
+        foreach (var name in new[] { "Crowd", "Penlights" })
+        {
+            foreach (var child in venue.transform.Find(name).GetComponentsInChildren<Transform>(true))
+            {
+                child.gameObject.layer = players;
+            }
+        }
+
         AssetDatabase.SaveAssets();
         return venue;
     }
