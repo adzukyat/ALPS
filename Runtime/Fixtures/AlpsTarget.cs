@@ -23,5 +23,19 @@ namespace AdzukiSoft.ALPS
             CollectFixtures(fixtures);
             return fixtures;
         }
+
+        /// <summary>Whether one of the fixtures a track bound here drives is a laser.</summary>
+        public bool HasLaser()
+        {
+            foreach (var fixture in Fixtures())
+            {
+                if (fixture != null && fixture.IsLaser)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

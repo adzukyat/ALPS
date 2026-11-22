@@ -242,7 +242,10 @@ namespace AdzukiSoft.ALPS.Editor
                     }
                 }
 
-                var view = new AlpsClipInspectorView(set, mixed, showBpm, tracks.Length > 0, FixtureCountOf(clips[0]));
+                // An add reaches every selected clip, so the laser effect is offered only
+                // where none of them is known to play on no laser.
+                var offerLaser = clips.All(clip => OffersLaser(TargetOf(clip)));
+                var view = new AlpsClipInspectorView(set, mixed, showBpm, tracks.Length > 0, FixtureCountOf(clips[0]), offerLaser);
                 view.RegisterCallback<PointerDownEvent>(
                     _ => Undo.RegisterCompleteObjectUndo(undoTargets, "Edit Clip Effects"),
                     TrickleDown.TrickleDown);
@@ -338,23 +341,41 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         private static int FixtureCountOf(AlpsLightingClip clip)
         {
+            var target = TargetOf(clip);
+            return target != null ? target.Fixtures().Count : 0;
+        }
+
+        /// <summary>
+        /// Whether a clip playing on <paramref name="target"/> can take the laser effect: one
+        /// of its fixtures is a laser, or it is not known what the clip plays on.
+        /// </summary>
+        internal static bool OffersLaser(AlpsTarget target)
+        {
+            return target == null || target.HasLaser();
+        }
+
+        /// <summary>
+        /// What the track holding <paramref name="clip"/> is bound to in the director the
+        /// Timeline window inspects, or null when that is not known.
+        /// </summary>
+        private static AlpsTarget TargetOf(AlpsLightingClip clip)
+        {
             var director = TimelineEditor.inspectedDirector;
             var timeline = TimelineOf(clip);
             if (director == null || timeline == null || director.playableAsset != timeline)
             {
-                return 0;
+                return null;
             }
 
             foreach (var track in AlpsShowCompiler.CollectTracks(timeline))
             {
                 if (track.GetClips().Any(timelineClip => timelineClip.asset == clip))
                 {
-                    var target = director.GetGenericBinding(track.RootTrack) as AlpsTarget;
-                    return target != null ? target.Fixtures().Count : 0;
+                    return director.GetGenericBinding(track.RootTrack) as AlpsTarget;
                 }
             }
 
-            return 0;
+            return null;
         }
 
         private static Object EditedObject(AlpsLightingClip clip)

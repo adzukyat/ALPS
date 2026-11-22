@@ -39,6 +39,9 @@ namespace AdzukiSoft.ALPS
         /// <summary>What is wrong with how the fixture is set up, which compiling a show warns about, or null.</summary>
         public virtual string SetupWarning => null;
 
+        /// <summary>Whether the fixture is a laser, the only one a laser effect drives.</summary>
+        public virtual bool IsLaser => false;
+
         /// <summary>The Transform used to aim at a tracked user.</summary>
         public abstract Transform AimTransform { get; }
 

@@ -12,16 +12,22 @@ namespace AdzukiSoft.ALPS.Editor
     /// An effect already on the clip stays in the list, retitled with an odd suffix. Picking it
     /// is what splits the existing card into even / odd. A kind disappears from the list
     /// only once both halves exist.
+    ///
+    /// The laser effect is listed only where a laser can play it, since it drives nothing on
+    /// any other fixture.
     /// </summary>
     public class AlpsAddEffectCatalog : VisualElement
     {
         private readonly AlpsClipEffectSet _set;
+        private readonly bool _offerLaser;
         private readonly VisualElement _divider;
         private readonly VisualElement _list;
 
-        public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd)
+        /// <param name="offerLaser">False when the clip is known to play on no laser.</param>
+        public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd, bool offerLaser = true)
         {
             _set = set;
+            _offerLaser = offerLaser;
             OnAdd = onAdd;
             AddToClassList("alps-add");
 
@@ -35,13 +41,22 @@ namespace AdzukiSoft.ALPS.Editor
 
         private Action<AlpsEffectKind> OnAdd { get; }
 
-        /// <summary>Adds <paramref name="kind"/>, the same entry point a list item uses. Does nothing while the kind is used up.</summary>
+        /// <summary>
+        /// Adds <paramref name="kind"/>, the same entry point a list item uses. Does nothing
+        /// while the kind is used up or not offered.
+        /// </summary>
         public void RequestAdd(AlpsEffectKind kind)
         {
-            if (_set.CanAdd(kind))
+            if (Offers(kind))
             {
                 OnAdd?.Invoke(kind);
             }
+        }
+
+        /// <summary>Whether the list holds <paramref name="kind"/>.</summary>
+        public bool Offers(AlpsEffectKind kind)
+        {
+            return (kind != AlpsEffectKind.Laser || _offerLaser) && _set.CanAdd(kind);
         }
 
         public void Rebuild()
@@ -53,11 +68,12 @@ namespace AdzukiSoft.ALPS.Editor
 
             foreach (var kind in AlpsEffectCatalog.Order)
             {
-                var label = _set.GetAddLabel(kind);
-                if (label == null)
+                if (!Offers(kind))
                 {
                     continue;
                 }
+
+                var label = _set.GetAddLabel(kind);
 
                 var captured = kind;
                 var item = AlpsCatalogPanel.Item(AlpsEffectThumbnail.Build(kind), label, AlpsEffectCatalog.GetDescription(kind));

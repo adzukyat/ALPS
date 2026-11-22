@@ -20,7 +20,9 @@ namespace AdzukiSoft.ALPS
 
         public override bool IsReady => ResolveTarget() != null;
 
-        public override Transform AimTransform => AlpsShowPlayer.GetVRSLAimTransform(ResolveTarget());
+        public override bool IsLaser => AlpsShowPlayer.GetVRSLLaserMaterial(ResolveTarget()) != null;
+
+        public override Transform AimTransform =>AlpsShowPlayer.GetVRSLAimTransform(ResolveTarget());
 
         /// <summary>
         /// A multi light bar reads a dimmer and a colour per segment over four rows of the
