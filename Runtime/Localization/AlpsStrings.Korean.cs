@@ -129,6 +129,10 @@ namespace AdzukiSoft.ALPS
                 { "migrate.source.audioLink", "VRSL AudioLink 조명" },
                 { "migrate.none", "VRSL 패키지의 조명이 없습니다." },
                 { "migrate.convert", "조명 {0}개 변환" },
+                { "migrate.blocked", "변환할 수 없는 조명 ({0})" },
+                { "migrate.blocked.nested", "프리팹 안에 있습니다. 해당 프리팹을 열어서 변환하세요." },
+                { "migrate.blocked.root", "열려 있는 프리팹의 루트입니다. 직접 교체하세요." },
+                { "migrate.blocked.unknown", "조명의 종류를 판별할 수 없습니다. 직접 교체하세요." },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM 오버라이드" },
