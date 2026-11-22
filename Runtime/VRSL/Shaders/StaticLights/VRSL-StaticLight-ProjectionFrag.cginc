@@ -166,7 +166,7 @@
 
 
                 
-                float4 result = ((col * UVscale  * _ProjectionMaxIntensity) * emissionTint) * strobe;
+                float4 result = ((col * (min(UVscale, 1/(_ProjectionDistanceFallOff + (0.25 * _ProjectionUVMod) + (_FeatherOffset * (0.25 * 0.25)))) * smoothstep(0.1, 0.25, distanceFromOrigin)) * _ProjectionMaxIntensity) * emissionTint) * strobe;
                 float fadeRange = (saturate(1-(pow(10, distanceFromOrigin - 2))));
                 col = (((lerp(result,float4(0,0,0,0), smoothstep(distanceFromOrigin, 0, f))) * gi) * fi) * _UniversalIntensity;
                 

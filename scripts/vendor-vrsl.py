@@ -21,7 +21,9 @@ only what keeps the copy apart from a VRSL package in the same project:
   of its twelve segments, which ALPS drives as a fixture each,
 - the lit faces shine about as much on every fixture, and far less than VRSL makes them,
 - a cone and a projection are drawn down to a far darker colour, since ALPS dims a fixture
-  by its colour.
+  by its colour,
+- a static light throws no more light on what is right in front of it than on what is 25 cm
+  away, and none on its own face.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -101,6 +103,18 @@ FACE = {
 DARK_CUTOFF = re.compile(r"(all\(\s*[io]\.rgbColor\s*<=\s*(?:half4|float4)\()[0-9.]+\s*,\s*[0-9.]+\s*,\s*[0-9.]+(\s*,\s*1\s*\))")
 DARK_CUTOFF_COLOUR = "0.0001"
 DARK_CUTOFFS = 9
+# A par or a blinder throws light that grows by one over the distance to where it starts,
+# without end, and a par's starts 5 cm behind its own face, the middle of which came out over
+# a hundred times past white. At 25 cm a par still throws six times what its face shines, so
+# holding the light there is not enough: nearer than that it stays what it is there and
+# fades, to none at 10 cm, which the face is inside of. The distances are metres. The same
+# scale also sizes the beam, which keeps VRSL's.
+CLOSE_LIGHT = re.compile(r"col \* UVscale\s*\* _ProjectionMaxIntensity")
+CLOSE_LIGHT_DISTANCE = 0.25
+CLOSE_LIGHT_NONE = 0.1
+CLOSE_LIGHT_SCALE = (
+    "col * (min(UVscale, 1/(_ProjectionDistanceFallOff + ({0} * _ProjectionUVMod) + (_FeatherOffset * ({0} * {0}))))"
+    " * smoothstep({1}, {0}, distanceFromOrigin)) * _ProjectionMaxIntensity").format(CLOSE_LIGHT_DISTANCE, CLOSE_LIGHT_NONE)
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -193,6 +207,7 @@ def main():
 
     remap = {guid_of[relative]: new_guid(guid_of[relative]) for relative in taken}
     cutoffs = []
+    close_lights = []
     cleared = set()
 
     def remap_references(text, relative):
@@ -221,6 +236,8 @@ def main():
         text, found = DARK_CUTOFF.subn(
             lambda match: match.group(1) + ", ".join([DARK_CUTOFF_COLOUR] * 3) + match.group(2), text)
         cutoffs.append(found)
+        text, found = CLOSE_LIGHT.subn(CLOSE_LIGHT_SCALE, text)
+        close_lights.append(found)
         text = re.sub(r'^(﻿?\s*Shader\s+")VRSL/', r"\1ALPS/VRSL/", text, count=1)
         # VRSL's material inspector lives in its editor assembly, which may not be there.
         return re.sub(r'^[ \t]*CustomEditor\s+"VRSLInspector"[ \t]*\r?\n', "", text, flags=re.M)
@@ -294,6 +311,8 @@ def main():
         sys.exit("No material named " + ", ".join(sorted(faces)))
     if sum(cutoffs) != DARK_CUTOFFS:
         sys.exit(f"Found {sum(cutoffs)} dark cut offs in the shaders, not {DARK_CUTOFFS}")
+    if sum(close_lights) != 1:
+        sys.exit(f"Found {sum(close_lights)} static projections to keep off their own face, not 1")
 
     version = re.search(r'"version":\s*"([^"]+)"', read(os.path.join(SOURCE, "package.json"))).group(1)
     license_text = read(os.path.join(SOURCE, "LICENSE"))

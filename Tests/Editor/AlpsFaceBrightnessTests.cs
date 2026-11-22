@@ -90,6 +90,24 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
+        [Test]
+        public void AStaticLight_ThrowsNoLightOnItsOwnFace()
+        {
+            // A par's light starts 5 cm behind its face and grows toward where it starts, which
+            // lit the middle of the face over a hundred times past white. Seen from 1 m, where
+            // that middle is several pixels.
+            var faces = Measure(100f, true, 1f);
+            var report = Describe(faces);
+            Debug.Log("[ALPS Face Brightness] with its own light on it: " + report);
+            for (var i = 0; i < Fixtures.Length; i++)
+            {
+                if (Fixtures[i] == AlpsCreateMenu.ParLight || Fixtures[i] == AlpsCreateMenu.Blinder)
+                {
+                    Assert.AreEqual(Face, faces[i], Face * 0.1f, $"{Fixtures[i].Name}. {report}");
+                }
+            }
+        }
+
         private static string Describe(float[] faces)
         {
             var parts = new List<string>();
@@ -101,8 +119,12 @@ namespace AdzukiSoft.ALPS.Tests
             return string.Join(", ", parts);
         }
 
-        /// <summary>The brightest point of each fixture's face at a level, white, seen from in front.</summary>
-        private float[] Measure(float level)
+        /// <summary>
+        /// The brightest point of each fixture's face at a level, white, seen from in front.
+        /// With <paramref name="projections"/> the light the fixture throws is drawn too,
+        /// which lands on the face itself where the face is in its way.
+        /// </summary>
+        private float[] Measure(float level, bool projections = false, float from = Distance)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = null;
@@ -130,7 +152,7 @@ namespace AdzukiSoft.ALPS.Tests
                 foreach (var renderer in fixture.GetComponentsInChildren<Renderer>(true))
                 {
                     var shader = renderer.sharedMaterial != null ? renderer.sharedMaterial.shader.name : string.Empty;
-                    if (shader.EndsWith("/Projection") || shader.EndsWith("/Lens Flare"))
+                    if ((shader.EndsWith("/Projection") && !projections) || shader.EndsWith("/Lens Flare"))
                     {
                         renderer.enabled = false;
                     }
@@ -164,6 +186,8 @@ namespace AdzukiSoft.ALPS.Tests
             camera.allowHDR = true;
             camera.fieldOfView = 20f;
             camera.nearClipPlane = 0.05f;
+            // A projection finds what it lands on in the depth texture.
+            camera.depthTextureMode = projections ? DepthTextureMode.Depth : DepthTextureMode.None;
             var target = Keep(new RenderTexture(Size, Size, 24, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear));
             var image = Keep(new Texture2D(Size, Size, TextureFormat.RGBAFloat, false, true));
             camera.targetTexture = target;
@@ -171,7 +195,7 @@ namespace AdzukiSoft.ALPS.Tests
             var faces = new float[Fixtures.Length];
             for (var i = 0; i < Fixtures.Length; i++)
             {
-                camera.transform.position = new Vector3(i * Spacing, 0f, 0f);
+                camera.transform.position = new Vector3(i * Spacing, Distance - from, 0f);
                 camera.transform.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
                 camera.Render();
                 RenderTexture.active = target;
