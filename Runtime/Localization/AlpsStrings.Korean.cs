@@ -123,7 +123,7 @@ namespace AdzukiSoft.ALPS
 
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "VRSL 조명 마이그레이션" },
-                { "migrate.help", "열려 있는 씬 또는 열려 있는 프리팹에서 VR Stage Lighting 패키지로 만든 조명을 ALPS에 포함된 조명으로 바꿉니다. ALPS 조명은 오브젝트, 설정, 트랙을 그대로 유지합니다. 그 밖의 조명은 제자리에서 교체되며 이름, 배치, 모양을 이어받습니다. AudioLink 설정처럼 원래 스크립트에만 있는 설정은 이어받지 않습니다." },
+                { "migrate.help", "열려 있는 씬 또는 열려 있는 프리팹에서 VR Stage Lighting 패키지로 만든 조명을 ALPS에 포함된 조명으로 바꿉니다. ALPS 조명은 오브젝트, 설정, 트랙을 그대로 유지합니다. 그 밖의 조명은 제자리에서 교체되며 이름, 배치, 모양을 이어받습니다. AudioLink 설정처럼 원래 스크립트에만 있는 설정은 이어받지 않습니다. 프리팹 인스턴스가 아닌 조명은 VRSL 스크립트로 찾고 메시로 종류를 정합니다. 자체 메시를 쓰는 조명은 오브젝트를 그대로 유지하고 발광 메시가 됩니다." },
                 { "migrate.source.alps", "VRSL 패키지로 만든 ALPS 조명" },
                 { "migrate.source.dmx", "VRSL DMX 조명" },
                 { "migrate.source.audioLink", "VRSL AudioLink 조명" },

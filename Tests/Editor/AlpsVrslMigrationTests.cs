@@ -218,5 +218,99 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.NotNull(fixture);
             Assert.IsTrue(fixture.IsReady);
         }
+
+        private static GameObject Unpacked(string path, Transform parent, string name)
+        {
+            var loose = Instantiate(path, parent);
+            PrefabUtility.UnpackPrefabInstance(loose, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            loose.name = name;
+            return loose;
+        }
+
+        [Test]
+        public void UnpackedFixture_IsFoundByItsScriptAndToldByItsMeshes()
+        {
+            var rig = new GameObject("Rig");
+            var old = Unpacked(AudioLinkMover, rig.transform, "Mover_Bot");
+            old.transform.localPosition = new Vector3(1f, 2f, 3f);
+            Assert.IsFalse(PrefabUtility.IsPartOfPrefabInstance(old));
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count, "Only the object with the script is a fixture, not the meshes below it.");
+            Assert.AreSame(AlpsCreateMenu.MoverSpotlight, items[0].Target);
+            Assert.AreEqual(AlpsVrslMigrationSource.AudioLinkFixture, items[0].Source);
+            Assert.AreEqual(AudioLinkMover, AssetDatabase.GetAssetPath(items[0].SourcePrefab));
+            Assert.IsFalse(items[0].KeepsObject);
+
+            var created = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.IsTrue(old == null, "The unpacked fixture is removed.");
+            Assert.AreSame(rig.transform, created.transform.parent);
+            Assert.AreEqual("Mover_Bot", created.name);
+            Assert.AreEqual(new Vector3(1f, 2f, 3f), created.transform.localPosition);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load();
+            Assert.Less(Quaternion.Angle(prefab.transform.localRotation, created.transform.localRotation), 0.01f);
+            Assert.AreEqual(AlpsCreateMenu.MoverSpotlight.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(created));
+            Assert.IsTrue(created.GetComponent<AlpsVRSLFixture>().IsReady);
+            Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+        }
+
+        [Test]
+        public void UnpackedFixture_IsLinedUpByItsMeshes()
+        {
+            var rig = new GameObject("Rig");
+            var old = Unpacked(AudioLinkMover, rig.transform, "Mover");
+            // The root turned one way and the meshes back below it, as on a fixture put
+            // together by hand: it looks the way the prefab does at its own rotation.
+            var turn = Quaternion.Euler(20f, 70f, -35f);
+            var mesh = old.GetComponentInChildren<MeshFilter>(true).transform;
+            Assert.AreSame(old.transform, mesh.parent);
+            old.transform.localRotation *= turn;
+            mesh.localRotation = Quaternion.Inverse(turn) * mesh.localRotation;
+
+            var created = AlpsVrslMigration.Convert(AlpsVrslMigration.Find())[0];
+
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load();
+            Assert.Less(Quaternion.Angle(prefab.transform.localRotation, created.transform.localRotation), 0.01f,
+                "The new fixture's meshes point the way the old one's did.");
+        }
+
+        [Test]
+        public void FixtureOfTheWorldsOwnMesh_KeepsItsObjectAndGlows()
+        {
+            var rig = new GameObject("Rig");
+            var old = Unpacked(PackagePrefabs + "AudioLink/VRSL-AudioLink-Static-Lightbar.prefab", rig.transform, "LED");
+            // A mesh no fixture of the package has.
+            var filter = old.GetComponentInChildren<MeshFilter>(true);
+            var own = new Mesh { name = "LED" };
+            filter.sharedMesh = own;
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.IsTrue(items[0].Emissive);
+            Assert.IsNull(items[0].Target);
+            Assert.AreEqual(AlpsVrslMigrationSource.AudioLinkFixture, items[0].Source);
+
+            var converted = AlpsVrslMigration.Convert(items);
+
+            Assert.AreSame(old, converted[0]);
+            Assert.AreSame(own, filter.sharedMesh);
+            Assert.IsNull(PackageFixture(old), "The package's script is gone.");
+            Assert.AreEqual(1, old.GetComponents<VRC.Udon.UdonBehaviour>().Length, "The Udon behaviour of the package's script went with it.");
+            Assert.AreSame(AlpsEmissiveMesh.LoadMaterial(), filter.GetComponent<MeshRenderer>().sharedMaterial);
+            Assert.IsTrue(old.GetComponent<AlpsVRSLFixture>().IsReady);
+            Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+            Object.DestroyImmediate(own);
+        }
+
+        [Test]
+        public void ObjectWithoutThePackagesScript_IsNoFixture()
+        {
+            var rig = new GameObject("Rig");
+            GameObject.CreatePrimitive(PrimitiveType.Cube).transform.SetParent(rig.transform);
+            AlpsEmissiveMesh.Create(rig);
+
+            Assert.IsEmpty(AlpsVrslMigration.Find());
+        }
     }
 }
