@@ -41,7 +41,8 @@ namespace AdzukiSoft.ALPS.Editor
                     container.settings = new AlpsArrangementSettings();
                 }
 
-                _view = new AlpsArrangementView(container.settings);
+                var view = new AlpsArrangementView(container.settings);
+                _view = view;
                 _view.AddToClassList("alps-root--component");
                 _view.RegisterCallback<PointerDownEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
                 _view.RegisterCallback<FocusInEvent>(_ => Snapshot(container), TrickleDown.TrickleDown);
@@ -49,7 +50,18 @@ namespace AdzukiSoft.ALPS.Editor
 
                 // The next steps below the arrangement, inside its root so they take its styles.
                 var setup = new AlpsContainerSetupRow(container);
-                _view.Add(new AlpsAddFixtureCatalog(container, _ => setup.Refresh()));
+                _view.Add(new AlpsAddFixtureCatalog(container, _ =>
+                {
+                    // The first child of a container with a shape gives the layout its
+                    // rotation, which the view then has to show.
+                    if (AlpsArrangementLayout.CanRun)
+                    {
+                        AlpsArrangementLayout.Refresh(container, recordUndo: true);
+                        view.Reload();
+                    }
+
+                    setup.Refresh();
+                }));
                 _view.Add(setup);
                 _view.Add(BuildKeepLightOffPlayers(container));
                 host.Add(_view);

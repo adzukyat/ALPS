@@ -28,11 +28,14 @@ namespace AdzukiSoft.ALPS.Editor
 
         private const string PrefabFolder = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/";
 
+        // VRSL makes its movers at 1.25, which is a little large beside the other fixtures.
+        private const float MoverScale = 1f;
+
         public static readonly AlpsVrslPrefab MoverSpotlight = new AlpsVrslPrefab(
-            "Mover Spotlight", "fixture.moverSpotlight", "a6ed1d9204338028a4e8bf3f8b764097", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab");
+            "Mover Spotlight", "fixture.moverSpotlight", "a6ed1d9204338028a4e8bf3f8b764097", PrefabFolder + "VRSL-DMX-Mover-Spotlight-H-13CH.prefab", MoverScale);
 
         public static readonly AlpsVrslPrefab MoverWashLight = new AlpsVrslPrefab(
-            "Mover Wash Light", "fixture.moverWashLight", "da85438bbc9c4379fc29b28fc7fe825d", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab");
+            "Mover Wash Light", "fixture.moverWashLight", "da85438bbc9c4379fc29b28fc7fe825d", PrefabFolder + "VRSL-DMX-Mover-WashLight-H-13CH.prefab", MoverScale);
 
         public static readonly AlpsVrslPrefab ParLight = new AlpsVrslPrefab(
             "Par Light", "fixture.parLight", "e04a6d9f5d1bfd384330c455a80f6928", PrefabFolder + "VRSL-DMX-Static-ParLight-H-13CH.prefab");
@@ -89,6 +92,11 @@ namespace AdzukiSoft.ALPS.Editor
 
             var gameObject = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             gameObject.AddComponent<AlpsVRSLFixture>();
+            if (fixture.Scale > 0f)
+            {
+                gameObject.transform.localScale = Vector3.one * fixture.Scale;
+            }
+
             Place(gameObject, context);
             return gameObject;
         }
@@ -98,12 +106,19 @@ namespace AdzukiSoft.ALPS.Editor
         /// registers it for undo. A container above it lays it out when the creation is
         /// published.
         ///
-        /// Unity resets the scale only when it places the object under a parent, so one
-        /// placed at the scene root would keep the VRSL prefab's own scale (1.25 on the
-        /// movers). The scale is reset here too, so every place gets the same size.
+        /// Unity aligns an object it places under a parent to that parent, which would drop
+        /// the rotation and scale the object arrives with. On a VRSL prefab the rotation is
+        /// what hangs a mover with its pan axis upright and points a static light, and the
+        /// scale is the fixture's size (about 0.05 on the multi light bar, whose mesh is over
+        /// 20 m wide without it). Both are put back, so a fixture comes out the same wherever
+        /// it is created. A container that arranges its children writes their rotation
+        /// afterwards, and the first layout keeps the one they share.
         /// </summary>
         private static void Place(GameObject gameObject, GameObject context)
         {
+            var rotation = gameObject.transform.localRotation;
+            var scale = gameObject.transform.localScale;
+
             var parent = context;
             var after = -1;
             if (context != null && context.GetComponent<AlpsFixture>() != null)
@@ -113,7 +128,8 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             ObjectFactory.PlaceGameObject(gameObject, parent);
-            gameObject.transform.localScale = Vector3.one;
+            gameObject.transform.localRotation = rotation;
+            gameObject.transform.localScale = scale;
             if (after >= 0)
             {
                 gameObject.transform.SetSiblingIndex(after + 1);
@@ -188,8 +204,9 @@ namespace AdzukiSoft.ALPS.Editor
     /// </summary>
     public sealed class AlpsVrslPrefab
     {
-        public AlpsVrslPrefab(string name, string labelKey, string guid, string path)
+        public AlpsVrslPrefab(string name, string labelKey, string guid, string path, float scale = 0f)
         {
+            Scale = scale;
             Name = name;
             LabelKey = labelKey;
             Guid = guid;
@@ -205,6 +222,9 @@ namespace AdzukiSoft.ALPS.Editor
         public string Guid { get; }
 
         public string Path { get; }
+
+        /// <summary>The scale a new fixture gets, or 0 for the prefab's own.</summary>
+        public float Scale { get; }
 
         public GameObject Load()
         {

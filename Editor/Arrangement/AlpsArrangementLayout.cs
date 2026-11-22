@@ -144,9 +144,18 @@ namespace AdzukiSoft.ALPS.Editor
         /// The first layout of children that are already placed: the line starts on the first
         /// and last child, so a hand placed row stays where it is, and a rotation every child
         /// shares is kept too.
+        ///
+        /// A container without children waits for its first one, so a shape picked on an
+        /// empty container still takes the rotation of what is added to it: a mover's is what
+        /// hangs it with its pan axis upright.
         /// </summary>
         public static void Initialize(AlpsContainer container, bool recordUndo)
         {
+            if (container.transform.childCount == 0)
+            {
+                return;
+            }
+
             if (recordUndo)
             {
                 Undo.RecordObject(container, UndoName);

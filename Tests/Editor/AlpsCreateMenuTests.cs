@@ -98,17 +98,90 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void CreateFixture_HasTheSameScaleAtTheRootAsUnderAContainer()
+        public void CreateFixture_HasTheSamePoseEverywhere()
         {
             var rig = new GameObject("Rig");
+            var container = AlpsCreateMenu.CreateContainer(null);
             foreach (var fixture in AlpsCreateMenu.Fixtures)
             {
+                var prefab = fixture.Load().transform;
+                var scale = fixture.Scale > 0f ? Vector3.one * fixture.Scale : prefab.localScale;
                 var underRig = AlpsCreateMenu.CreateFixture(fixture, rig);
+                var underContainer = AlpsCreateMenu.CreateFixture(fixture, container);
+                var nextToIt = AlpsCreateMenu.CreateFixture(fixture, underContainer);
                 var atRoot = AlpsCreateMenu.CreateFixture(fixture, null);
 
-                Assert.AreEqual(Vector3.one, underRig.transform.localScale, $"{fixture.Name} under a parent.");
-                Assert.AreEqual(Vector3.one, atRoot.transform.localScale, $"{fixture.Name} at the scene root.");
+                AssertPose(prefab, scale, underRig.transform, $"{fixture.Name} under a parent");
+                AssertPose(prefab, scale, underContainer.transform, $"{fixture.Name} under a container");
+                AssertPose(prefab, scale, nextToIt.transform, $"{fixture.Name} next to a fixture");
+                AssertPose(prefab, scale, atRoot.transform, $"{fixture.Name} at the scene root");
+                Assert.AreEqual(Vector3.zero, underContainer.transform.localPosition, $"{fixture.Name} starts on its container.");
             }
+        }
+
+        [Test]
+        public void CreateFixture_KeepsTheMultiLightBarsOwnScale()
+        {
+            var created = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MultiLightBar, new GameObject("Rig"));
+
+            // Its mesh is over 20 m wide at a scale of 1.
+            Assert.AreEqual(AlpsCreateMenu.MultiLightBar.Load().transform.localScale.x, created.transform.localScale.x, 1e-6f);
+            Assert.Less(created.transform.localScale.x, 0.1f);
+        }
+
+        [Test]
+        public void CreateFixture_HangsAMoverWithItsPanAxisUpright()
+        {
+            var rig = new GameObject("Rig");
+            foreach (var fixture in new[] { AlpsCreateMenu.MoverSpotlight, AlpsCreateMenu.MoverWashLight })
+            {
+                var created = AlpsCreateMenu.CreateFixture(fixture, rig);
+
+                // A VRSL mover pans around its own +Z, which hangs straight down.
+                Assert.Less(Vector3.Angle(Vector3.down, created.transform.forward), 0.01f, $"{fixture.Name}'s pan axis.");
+                Assert.AreEqual(Vector3.one, created.transform.localScale, $"{fixture.Name}'s size.");
+            }
+        }
+
+        [Test]
+        public void TheFirstLayout_KeepsTheRotationNewFixturesShare()
+        {
+            var containerObject = AlpsCreateMenu.CreateContainer(null);
+            var container = containerObject.GetComponent<AlpsContainer>();
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, containerObject);
+            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, first);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load().transform;
+
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+
+            AssertPose(prefab, Vector3.one, first.transform, "The first mover once laid out");
+            AssertPose(prefab, Vector3.one, second.transform, "The second mover once laid out");
+        }
+
+        [Test]
+        public void AShapePickedOnAnEmptyContainer_StillHangsTheMoversAddedToIt()
+        {
+            var containerObject = AlpsCreateMenu.CreateContainer(null);
+            var container = containerObject.GetComponent<AlpsContainer>();
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load().transform;
+
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, containerObject);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, first);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+
+            AssertPose(prefab, Vector3.one, first.transform, "The first mover");
+            AssertPose(prefab, Vector3.one, second.transform, "The second mover");
+            Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The container lays them out.");
+        }
+
+        private static void AssertPose(Transform prefab, Vector3 scale, Transform created, string what)
+        {
+            Assert.Less(Quaternion.Angle(prefab.localRotation, created.localRotation), 0.01f, $"{what}: rotation {created.localEulerAngles}, the prefab's is {prefab.localEulerAngles}.");
+            Assert.Less((scale - created.localScale).magnitude, 1e-5f, $"{what}: scale {created.localScale}, expected {scale}.");
         }
 
         [Test]
