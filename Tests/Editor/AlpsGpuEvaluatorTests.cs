@@ -315,7 +315,7 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(ToLinear(0.2f * Mathf.Max(level, 1f)), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
                 Assert.AreEqual(ToLinear(0.4f * Mathf.Max(level, 1f)), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
                 Assert.AreEqual(ToLinear(Mathf.Max(level, 1f)), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
-                Assert.AreEqual(Mathf.Sqrt(Mathf.Min(level, 1f)), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
+                Assert.AreEqual(Mathf.Min(level, 1f), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
                 Assert.AreEqual((thickness - 0.0005f) / 0.0495f, Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
                 Assert.AreEqual(0f, Read(spin, fixture, 6), 1e-6f, "The beams stand still. " + diagnostics);
                 Assert.AreEqual(0f, Read(spin, fixture, 10), 1e-6f, "A laser has no gobo to turn. " + diagnostics);

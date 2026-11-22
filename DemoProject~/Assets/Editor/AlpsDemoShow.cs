@@ -330,10 +330,10 @@ public sealed class AlpsDemoShow
         D(CycPars, b, 8, "Breathe", Cue.On(P.Wave(16).Spread(0.5f)).Sym().Dim(V.R(6, 30), fadeIn: 4));
 
         C(TotemBars, b, 8, "Cyan", Ink.Cyan);
-        D(TotemBars, b, 8, "Rise From The Middle", Cue.On(P.InOut(8, 8).Delay(1.5f)).Sym().Dim(V.R(0, 22)));
+        D(TotemBars, b, 8, "Rise From The Middle", Cue.On(P.InOut(8, 8).Delay(1.5f)).Sym().Dim(V.R(0, 55)));
 
         C(ApronBars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 8, "Drift", Cue.On(P.Wave(8).Spread(1)).Dim(V.R(2, 12), fadeIn: 4));
+        D(ApronBars, b, 8, "Drift", Cue.On(P.Wave(8).Spread(1)).Dim(V.R(10, 45), fadeIn: 4));
 
         C(PixelBars, b, 8, "Deep Blue", Ink.DeepBlue);
         D(PixelBars, b, 8, "Comet", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 60), fadeIn: 8));
@@ -376,10 +376,10 @@ public sealed class AlpsDemoShow
         D(MidSpots, b, len, "Sparkle", Cue.On(P.Hit(1, 0.15f, 0.5f).Fire(0.22f)).Dim(V.R(0, 70)));
 
         C(TotemBars, b, len, "Cyan", Ink.Cyan);
-        D(TotemBars, b, len, "On The One", Cue.On(P.Hit(4, 0.03f, 0.3f)).Dim(V.R(0, 45)));
+        D(TotemBars, b, len, "On The One", Cue.On(P.Hit(4, 0.03f, 0.3f)).Dim(V.R(0, 70)));
 
         C(ApronBars, b, len, "Blue", Ink.Blue);
-        D(ApronBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 30)));
+        D(ApronBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 60)));
 
         C(PixelBars, b, len, "Blue Through Cyan", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Blue, Ink.Cyan, Ink.Blue));
         D(PixelBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.4f).Spread(1)).Sym().Dim(V.R(0, 70)));
@@ -547,10 +547,10 @@ public sealed class AlpsDemoShow
         D(CycPars, b, 8, "Low", Cue.On().Dim(22, fadeIn: 2, fadeOut: 2));
 
         C(TotemBars, b, 8, "Warm", Ink.Warm);
-        D(TotemBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 60)));
+        D(TotemBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 75)));
 
         C(ApronBars, b, 8, "Amber", Ink.Amber);
-        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(3, 14)));
+        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(12, 45)));
 
         C(PixelBars, b, 8, "Warm", Ink.Warm);
         D(PixelBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.1f)).Dim(V.R(0, 70)));
@@ -616,10 +616,10 @@ public sealed class AlpsDemoShow
         D(CycPars, b, 16, 40);
 
         C(TotemBars, b, 16, "Lavender", Ink.Lavender);
-        D(TotemBars, b, 16, "Off Beat", Cue.On(P.Hit(1, 0.1f, 0.4f)).Dim(V.R(0, 50), offset: 0.5f));
+        D(TotemBars, b, 16, "Off Beat", Cue.On(P.Hit(1, 0.1f, 0.4f)).Dim(V.R(0, 70), offset: 0.5f));
 
         C(ApronBars, b, 16, "Violet", Ink.Violet);
-        D(ApronBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(5, 35)));
+        D(ApronBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(15, 65)));
 
         C(PixelBars, b, 16, "Teal Through Violet", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Teal, Ink.Violet, Ink.Teal));
         D(PixelBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(10, 60)));
@@ -862,10 +862,10 @@ public sealed class AlpsDemoShow
         D(Lasers, b, 8, "Glow", Cue.On().Dim(80, fadeIn: 4, fadeOut: 2));
 
         C(TotemBars, b, 8, "Blue", Ink.Blue);
-        D(TotemBars, b, 8, "Slow Hits", Cue.On(P.Hit(2, 0.05f, 0.6f)).Tempo(half).Dim(V.R(0, 45)));
+        D(TotemBars, b, 8, "Slow Hits", Cue.On(P.Hit(2, 0.05f, 0.6f)).Tempo(half).Dim(V.R(0, 70)));
 
         C(ApronBars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(4).Spread(0.5f)).Sym().Tempo(half).Dim(V.R(3, 16)));
+        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(4).Spread(0.5f)).Sym().Tempo(half).Dim(V.R(12, 45)));
 
         C(PixelBars, b, 8, "Azure", Ink.Azure);
         D(PixelBars, b, 8, "Slow Comets", Cue.On(P.Wave(4, 0.08f, 0.02f, 0.5f).Spread(2)).Tempo(half).Dim(V.R(0, 70)));
@@ -925,10 +925,10 @@ public sealed class AlpsDemoShow
         D(CycPars, b, 8, "Fade", Cue.On().Dim(35, fadeOut: 24));
 
         C(TotemBars, b, 6, "Warm", Ink.Warm);
-        D(TotemBars, b, 6, "Twinkle, Fading", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 60), fadeOut: 8));
+        D(TotemBars, b, 6, "Twinkle, Fading", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 75), fadeOut: 8));
 
         C(ApronBars, b, 6, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 6, "Breathe, Fading", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(3, 14), fadeOut: 12));
+        D(ApronBars, b, 6, "Breathe, Fading", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(12, 45), fadeOut: 12));
 
         C(PixelBars, b, 6, "Blue", Ink.Blue);
         D(PixelBars, b, 6, "Comet, Fading", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 60), fadeOut: 12));

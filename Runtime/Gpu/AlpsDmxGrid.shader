@@ -257,8 +257,10 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset == 10)
         {
-            // The laser multiplies its beams by the intensity twice.
-            return sqrt(min(AlpsLevel(fixture), 1.0));
+            // The laser multiplies by the intensity twice and caps its beams in between, so
+            // the middle of a beam follows the level and the glow around it the square, which
+            // is about how the lit faces of the other fixtures dim.
+            return min(AlpsLevel(fixture), 1.0);
         }
 
         if (offset == 11)

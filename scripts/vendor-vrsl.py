@@ -18,7 +18,8 @@ only what keeps the copy apart from a VRSL package in the same project:
 - the projections are drawn as added light (Blend One One), with the intensity of their
   materials scaled to match, so overlapping ones add up instead of multiplying,
 - the multi light bar's material is in its 48 channel mode, a dimmer and a colour for each
-  of its twelve segments, which ALPS drives as a fixture each.
+  of its twelve segments, which ALPS drives as a fixture each,
+- the lit faces shine about as much on every fixture, and far less than VRSL makes them.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -65,10 +66,28 @@ PROJECTION_BLEND = re.compile(r"Blend\s+DstColor\s+\[_BlendDst\]")
 PROJECTION_INTENSITY_SCALE = 0.1
 PROJECTION_INTENSITY = re.compile(r"(- _Projection(?:Max)?Intensity: )([0-9.eE+-]+)")
 # The multi light bar reads one colour and twelve dimmers until its material asks for the 48
-# channel mode, which takes the keyword as well as the property.
+# channel mode, which takes the keyword as well as the property. Other materials carry a
+# channel mode of their own, which stays.
+BAR_MATERIAL = "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat"
 BAR_CHANNEL_MODE = "- _ChannelMode: 0"
 BAR_KEYWORD = "_CHANNEL_MODE"
 KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
+# VRSL lights the face of a fixture hundreds of times past white at full, 1450 on a light
+# bar, which bloom turns into a glare and which washes every colour out to white. These are
+# the intensities at which a face comes out about four times past white at 100%, measured
+# on each fixture in DMX mode with the dimmer and the colour ALPS writes, so the same level
+# looks about the same on all of them and a level past 100% still has somewhere to go. The
+# movers square it, the others scale by it. The blinder's lens flare, which is drawn over
+# its face, peaks near white.
+FACE_INTENSITY = {
+    "VRSL-LightBar-FixtureMat-Horizontal.mat": 0.0413,
+    "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": 4,
+    "VRSL-ParLight-FixtureMat-Horizontal.mat": 0.0307,
+    "VRSL-Blinder-FixtureMat-Horizontal.mat": 0.0413,
+    "VRSL-Blinder-LensFlareMat-Horizontal.mat": 3,
+    "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": 0.0179,
+}
+FACE_PROPERTY = re.compile(r"(- _FixtureMaxIntensity: )([0-9.eE+-]+)")
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -206,6 +225,7 @@ def main():
         return os.path.join(TARGET, relative[len("Runtime/"):])
 
     folders = set()
+    faces = set(FACE_INTENSITY)
     size = 0
     for relative in sorted(taken):
         source = os.path.join(SOURCE, relative)
@@ -217,9 +237,17 @@ def main():
                 text = remap_references(text, relative)
             if relative.endswith(".mat"):
                 text = text.replace("- _EnableExtraChannels: 0", "- _EnableExtraChannels: 1")
-                if BAR_CHANNEL_MODE in text:
+                if os.path.basename(relative) == BAR_MATERIAL:
+                    if BAR_CHANNEL_MODE not in text:
+                        sys.exit(f"{relative} has no channel mode to set")
                     text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
                     text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
+                face = FACE_INTENSITY.get(os.path.basename(relative))
+                if face is not None:
+                    text, found = FACE_PROPERTY.subn(lambda match: match.group(1) + format(face, ".7g"), text)
+                    if found != 1:
+                        sys.exit(f"{relative} has no intensity to set")
+                    faces.discard(os.path.basename(relative))
                 shader = re.search(r"m_Shader: \{fileID: \d+, guid: ([0-9a-f]{32})", read(source))
                 if shader and by_guid.get(shader.group(1)) in light_shaders:
                     text = PROJECTION_INTENSITY.sub(scale_intensity, text)
@@ -245,6 +273,9 @@ def main():
         write((out_path(folder) if folder else TARGET) + ".meta",
               f"fileFormatVersion: 2\nguid: {guid}\nfolderAsset: yes\nDefaultImporter:\n"
               "  externalObjects: {}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n")
+
+    if faces:
+        sys.exit("No material named " + ", ".join(sorted(faces)))
 
     version = re.search(r'"version":\s*"([^"]+)"', read(os.path.join(SOURCE, "package.json"))).group(1)
     license_text = read(os.path.join(SOURCE, "LICENSE"))
