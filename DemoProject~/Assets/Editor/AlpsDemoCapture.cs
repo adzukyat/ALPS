@@ -116,8 +116,9 @@ public static class AlpsDemoCapture
         camera.gameObject.hideFlags = HideFlags.HideAndDontSave;
         UnityEngine.Object.DestroyImmediate(camera.GetComponent<AudioListener>());
         var (position, target, fov) = Views[view];
-        camera.transform.position = position;
-        camera.transform.LookAt(target);
+        // The views are measured like the venue.
+        camera.transform.position = AlpsDemoVenue.World(position);
+        camera.transform.LookAt(AlpsDemoVenue.World(target));
         camera.fieldOfView = fov;
         camera.depthTextureMode = DepthTextureMode.Depth;
 

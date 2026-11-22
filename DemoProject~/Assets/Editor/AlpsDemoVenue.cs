@@ -16,6 +16,19 @@ public static class AlpsDemoVenue
     private const string MeshFolder = Folder + "/Meshes";
     private const string MaterialFolder = Folder + "/Materials";
 
+    /// <summary>
+    /// The scale of the demo's root. Everything below is measured for people about 1.7 m
+    /// tall, and avatars in VRChat are about 1.3 m on average, so the root shrinks the hall,
+    /// the rig and its fixtures alike and the show looks the same from an avatar's eyes.
+    /// </summary>
+    public const float Scale = 0.75f;
+
+    /// <summary>Where a point measured like the venue is in the world.</summary>
+    public static Vector3 World(Vector3 measured)
+    {
+        return measured * Scale;
+    }
+
     // --- Hall -----------------------------------------------------------------------------
     public const float HallHalfWidth = 20f;
     public const float HallFront = -24.5f;
@@ -595,7 +608,8 @@ public static class AlpsDemoVenue
         deck.type = LightType.Point;
         deck.color = new Color(1f, 0.8f, 0.6f);
         deck.intensity = 0.25f;
-        deck.range = 16f;
+        // A light's range is in the world's measure, whatever the scale above it.
+        deck.range = 16f * Scale;
         deck.shadows = LightShadows.None;
     }
 

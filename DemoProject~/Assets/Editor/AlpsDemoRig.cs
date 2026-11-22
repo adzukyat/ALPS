@@ -52,6 +52,7 @@ public static class AlpsDemoRig
     };
 
     private const string LaserMaterialPath = AlpsDemoVenue.Folder + "/Materials/Laser Fan.mat";
+    private const string StaticProjectionShader = "/Standard Static/Projection";
 
     /// <summary>Where a light bar's body sits from its origin, which is on one of its long edges.</summary>
     private static readonly Vector3 LightBarCenter = new Vector3(0f, 0.01f, 0.13f);
@@ -245,8 +246,35 @@ public static class AlpsDemoRig
         fixture.transform.localRotation = Quaternion.identity;
         // The rig is measured out for fixtures at this scale, whatever their prefabs come with.
         fixture.transform.localScale = Vector3.one;
-        fixture.AddComponent<AlpsVRSLFixture>().target = fixture.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
+        var vrsl = fixture.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
+        fixture.AddComponent<AlpsVRSLFixture>().target = vrsl;
+        foreach (var renderer in vrsl.objRenderers)
+        {
+            var material = renderer != null ? renderer.sharedMaterial : null;
+            if (material != null && material.shader.name.EndsWith(StaticProjectionShader))
+            {
+                renderer.sharedMaterial = ScaledProjection(material);
+            }
+        }
+
         return fixture;
+    }
+
+    /// <summary>
+    /// The material a static light throws its light with, for a venue at the demo's scale.
+    /// VRSL dims that light and lets it reach by the distance in the world's measure, so in a
+    /// scaled down venue a par lights the cloth above it brighter and further up. This copy
+    /// counts the distance in the venue's measure, and the light lands as it does at full size.
+    /// </summary>
+    private static Material ScaledProjection(Material source)
+    {
+        var material = AlpsDemoVenue.Asset($"{AlpsDemoVenue.Folder}/Materials/{source.name} Scaled.mat", () => new Material(source));
+        material.shader = source.shader;
+        material.CopyPropertiesFromMaterial(source);
+        material.SetFloat("_ProjectionUVMod", source.GetFloat("_ProjectionUVMod") / AlpsDemoVenue.Scale);
+        material.SetFloat("_Fade", source.GetFloat("_Fade") * AlpsDemoVenue.Scale);
+        EditorUtility.SetDirty(material);
+        return material;
     }
 
     /// <summary>A multi light bar at its prefab's own size, with the segments a show drives.</summary>

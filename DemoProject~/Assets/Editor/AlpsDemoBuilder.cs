@@ -23,7 +23,10 @@ public static class AlpsDemoBuilder
     private const string WorldName = "VRCWorld";
     private const string PostProcessPath = AlpsDemoVenue.Folder + "/DemoPostProcess.asset";
 
-    /// <summary>Where a visitor arrives and where the scene's camera stands: the mix position.</summary>
+    /// <summary>
+    /// Where a visitor arrives and where the scene's camera stands, the mix position, measured
+    /// like the venue.
+    /// </summary>
     private static readonly Vector3 Spawn = new Vector3(0f, 0.42f, AlpsDemoVenue.FohZ - 0.7f);
     private static readonly Vector3 CameraPosition = new Vector3(0f, 3.1f, AlpsDemoVenue.FohZ - 0.5f);
     private static readonly Vector3 CameraTarget = new Vector3(0f, 5.2f, 4f);
@@ -45,6 +48,7 @@ public static class AlpsDemoBuilder
 
         SetEnvironment();
         var demo = new GameObject(RootName);
+        demo.transform.localScale = Vector3.one * AlpsDemoVenue.Scale;
         AlpsDemoVenue.Build(demo.transform);
         var targets = AlpsDemoRig.Build(demo.transform);
         var camera = AddCamera(demo.transform);
@@ -147,8 +151,8 @@ public static class AlpsDemoBuilder
         var camera = new GameObject("Main Camera").AddComponent<Camera>();
         camera.gameObject.tag = "MainCamera";
         camera.transform.SetParent(parent, false);
-        camera.transform.position = CameraPosition;
-        camera.transform.LookAt(CameraTarget);
+        camera.transform.position = AlpsDemoVenue.World(CameraPosition);
+        camera.transform.LookAt(AlpsDemoVenue.World(CameraTarget));
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = Color.black;
         camera.fieldOfView = 50f;
@@ -230,7 +234,7 @@ public static class AlpsDemoBuilder
             return;
         }
 
-        world.transform.position = Spawn;
+        world.transform.position = AlpsDemoVenue.World(Spawn);
         world.transform.rotation = Quaternion.identity;
         foreach (var behaviour in world.GetComponents<MonoBehaviour>())
         {
