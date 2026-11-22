@@ -1,0 +1,443 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a57934446d44b0ca793db9de904ce39, type: 3}
+  m_Name: Drop A - Side Wash Colour - Magenta - Cyan
+  m_EditorClassIdentifier: 
+  data:
+    bpm: 0
+    order: 0
+    symmetric: 0
+    orderSeed: 0
+    version: 3
+    fadeInBeats: 0
+    fadeOutBeats: 0
+    phaseExpanded: 1
+    phase:
+      mode: 0
+      ease: 0
+      fallEase: 0
+      rise: 1
+      holdHigh: 0
+      fall: 0
+      version: 3
+      fixtureGroupSize: 1
+      spread: 0
+      spreadBeats: 0
+      spreadInBeats: 0
+      legacyDelayAcrossGroup: 0
+      beatsPerCycle: 4
+      inverse: 0
+      fireChance: 1
+      inBeats: 2
+      outBeats: 2
+      inOutMode: 1
+    effects:
+    - kind: 2
+      parity: 0
+      expanded: 1
+      phaseOffset: 0
+      moveMode: 0
+      tilt:
+        limit: {x: -90, y: 90}
+        value: 0
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 0, y: 0}
+        spreadRangeEnd: {x: 0, y: 0}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      pan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 0, y: 0}
+        spreadRangeEnd: {x: 0, y: 0}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      panTiltPhaseOffsetDegrees: 90
+      trackUserName: 
+      trackSpeed: 5.5
+      circleCenterTilt:
+        limit: {x: -90, y: 90}
+        value: 30
+        range: {x: -90, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 30, y: 30}
+        spreadRangeEnd: {x: 30, y: 30}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      circleCenterPan:
+        limit: {x: -180, y: 180}
+        value: 0
+        range: {x: -180, y: 180}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 0, y: 0}
+        spreadRangeEnd: {x: 0, y: 0}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      circleRadius:
+        limit: {x: 0, y: 90}
+        value: 10
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 10, y: 10}
+        spreadRangeEnd: {x: 10, y: 10}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      circleAspect: 1
+      coneWidth:
+        limit: {x: 0, y: 90}
+        value: 15
+        range: {x: 0, y: 90}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 15, y: 15}
+        spreadRangeEnd: {x: 15, y: 15}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      coneLength:
+        limit: {x: 0, y: 200}
+        value: 14
+        range: {x: 0, y: 200}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 14, y: 14}
+        spreadRangeEnd: {x: 14, y: 14}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      colorStops:
+      - isGradient: 0
+        color: {r: 1, g: 0, b: 0.7, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      - isGradient: 0
+        color: {r: 0, g: 0.78, b: 1, a: 1}
+        gradient:
+          serializedVersion: 2
+          key0: {r: 1, g: 1, b: 1, a: 1}
+          key1: {r: 1, g: 1, b: 1, a: 1}
+          key2: {r: 0, g: 0, b: 0, a: 0}
+          key3: {r: 0, g: 0, b: 0, a: 0}
+          key4: {r: 0, g: 0, b: 0, a: 0}
+          key5: {r: 0, g: 0, b: 0, a: 0}
+          key6: {r: 0, g: 0, b: 0, a: 0}
+          key7: {r: 0, g: 0, b: 0, a: 0}
+          ctime0: 0
+          ctime1: 65535
+          ctime2: 0
+          ctime3: 0
+          ctime4: 0
+          ctime5: 0
+          ctime6: 0
+          ctime7: 0
+          atime0: 0
+          atime1: 65535
+          atime2: 0
+          atime3: 0
+          atime4: 0
+          atime5: 0
+          atime6: 0
+          atime7: 0
+          m_Mode: 0
+          m_ColorSpace: -1
+          m_NumColorKeys: 2
+          m_NumAlphaKeys: 2
+      selectedColorStop: 0
+      colorPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 1
+        hasSpread: 0
+        spreadRange: {x: 0, y: 0}
+        spreadRangeEnd: {x: 0, y: 0}
+        version: 1
+        timing: 1
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      brightness:
+        limit: {x: 0, y: 200}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 100, y: 100}
+        spreadRangeEnd: {x: 100, y: 100}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      blackoutOnReturn: 0
+      blackoutFadeIn: 0
+      blackoutFadeOut: 0
+      fadeInBeats: 0
+      fadeOutBeats: 0
+      flickerSpeed: 12
+      flickerStrength: 0.3
+      flickerFixtureStagger: 0.6
+      goboStops: []
+      selectedGoboStop: 0
+      goboPickerExpanded: 0
+      goboPhasing:
+        limit: {x: 0, y: 1}
+        value: 0
+        range: {x: 0, y: 1}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 0, y: 0}
+        spreadRangeEnd: {x: 0, y: 0}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      goboRotationBeats: 0
+      goboFixtureStaggerDegrees: 0
+      goboProjectionOff: 0
+    profileExpanded: 0

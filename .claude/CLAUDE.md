@@ -33,7 +33,9 @@ A single test or fixture (the scripts do not forward filters, so call Unity dire
 
 Do not add `-quit`: with this Test Framework version it can exit before the results XML is written. Batch mode refuses a project that is open in the editor (`Temp/UnityLockfile`).
 
-`DemoProject~` has an editor script, `ALPS > Debug > Demo > Rebuild Example` (batch entry `AlpsDemoBuilder.RebuildAndExit`), that regenerates the demo scene and `ExampleTimeline.playable` from code. Change the demo by editing `DemoProject~/Assets/Editor/AlpsDemoBuilder.cs`, not the assets.
+`DemoProject~` is a concert stage made from code: `ALPS > Debug > Demo > Rebuild Example` (batch entry `AlpsDemoBuilder.RebuildAndExit`) regenerates the demo scene, everything under `Assets/Demo` and `ExampleTimeline.playable`. Change the demo by editing the scripts in `DemoProject~/Assets/Editor`, not the assets: `AlpsDemoVenue` models the hall, the deck and the truss, `AlpsDemoRig` hangs 90 fixtures in eleven containers and two penlight areas, and `AlpsDemoShow` writes the show (112 bars at 128 BPM, section by section, with `AlpsDemoCues` as its shorthand). `AlpsDemoRig` says what tilt and pan mean on each group: a VRSL mover's pan axis is its own +Z, so a hung one is turned to `Euler(90, 180, 0)` and a standing one to `Euler(-90, 0, 0)`, and tilt 0 is straight down or straight up.
+
+`ALPS > Debug > Demo > Capture Stills` (batch entries `AlpsDemoCapture.CaptureAndExit` and `RebuildAndCaptureAndExit`) previews moments of the show and writes them as contact sheets to `DemoProject~/TestResults~/demo`, which is how to look through a change to the show without playing it. `ALPS_DEMO_TIMES` picks the moments in seconds or bars (`b17,b17.5`), `ALPS_DEMO_VIEW` the camera (`house`, `crowd`, `side`, `top`, `stage`, `back`) and `ALPS_DEMO_SIZE` the width of a still.
 
 ## Architecture
 
