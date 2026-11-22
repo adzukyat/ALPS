@@ -174,7 +174,7 @@ Material:
     - _IsEven: 0
     - _LMStrength: 1
     - _LegacyGoboRange: 0
-    - _LensMaxBrightness: 35
+    - _LensMaxBrightness: 0.0128
     - _LightProbeMethod: 0
     - _MAGIC_NOISE_ON: 1
     - _MAGIC_NOISE_ON_HIGH: 1

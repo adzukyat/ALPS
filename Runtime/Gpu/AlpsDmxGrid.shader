@@ -33,7 +33,7 @@ Shader "Hidden/ALPS/DMX Grid"
     // and a brighter tint took over past 100%. In DMX mode the dimmer scales the floor once
     // and the cone and the lens about by the sixth and the seventh power, so the dimmer takes
     // the cube root of the level and the colour the rest, which lands between the two on the
-    // cone and the lens. The values at 100% match the floor, the cone and the lens of VRSL's
+    // cone and the lens. The values at 100% match the floor and the cone of VRSL's
     // stock movers.
     #define ALPS_DIMMER_AT_FULL 1.26
     #define ALPS_COLOUR_AT_FULL 2.02

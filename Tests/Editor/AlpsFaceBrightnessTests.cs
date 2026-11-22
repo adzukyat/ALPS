@@ -16,7 +16,8 @@ namespace AdzukiSoft.ALPS.Tests
     /// and each fixture by another amount, so <c>scripts/vendor-vrsl.py</c> sets the
     /// intensities this holds: the same level looks about the same on every fixture.
     ///
-    /// The spotlight and the laser have no lit face. Their light is the cone and the beams.
+    /// The spotlight's lens is the end of its cone, which its cone material lights. The laser
+    /// has no lit face: its light is its beams.
     /// </summary>
     public class AlpsFaceBrightnessTests
     {
@@ -28,7 +29,8 @@ namespace AdzukiSoft.ALPS.Tests
 
         private static readonly AlpsVrslPrefab[] Fixtures =
         {
-            AlpsCreateMenu.MoverWashLight, AlpsCreateMenu.ParLight, AlpsCreateMenu.Blinder, AlpsCreateMenu.LightBar, AlpsCreateMenu.MultiLightBar,
+            AlpsCreateMenu.MoverSpotlight, AlpsCreateMenu.MoverWashLight, AlpsCreateMenu.ParLight, AlpsCreateMenu.Blinder, AlpsCreateMenu.LightBar,
+            AlpsCreateMenu.MultiLightBar,
         };
 
         private readonly List<Object> _created = new List<Object>();
@@ -82,8 +84,9 @@ namespace AdzukiSoft.ALPS.Tests
             Debug.Log("[ALPS Face Brightness] at 50%: " + report);
             for (var i = 0; i < Fixtures.Length; i++)
             {
-                // Between the level itself and its square, so no fixture hangs on or drops out.
-                Assert.That(half[i], Is.InRange(Face * 0.25f, Face * 0.5f), $"{Fixtures[i].Name} at 50%. {report}");
+                // Between the level itself and its cube, which is how the spotlight's lens dims
+                // with its cone, so no fixture hangs on or drops out.
+                Assert.That(half[i], Is.InRange(Face * 0.125f, Face * 0.5f), $"{Fixtures[i].Name} at 50%. {report}");
             }
         }
 
@@ -117,15 +120,17 @@ namespace AdzukiSoft.ALPS.Tests
                 fixture.transform.position = new Vector3(i * Spacing, Distance, 0f);
                 // Every face looks straight down: a hung mover's, a static light's along its
                 // own -Y, and the multi light bar's along its own +Z.
-                fixture.transform.rotation = Fixtures[i] == AlpsCreateMenu.MoverWashLight ? Quaternion.Euler(90f, 180f, 0f)
+                var mover = Fixtures[i] == AlpsCreateMenu.MoverSpotlight || Fixtures[i] == AlpsCreateMenu.MoverWashLight;
+                fixture.transform.rotation = mover ? Quaternion.Euler(90f, 180f, 0f)
                     : Fixtures[i] == AlpsCreateMenu.MultiLightBar ? Quaternion.Euler(90f, 0f, 0f)
                     : Quaternion.identity;
 
-                // The face alone: the cone, the light it throws and the blinder's flare are drawn over it.
+                // The face alone, without the light it throws and the blinder's flare, which are
+                // drawn over it. A mover keeps its cone, whose end is the spotlight's lens.
                 foreach (var renderer in fixture.GetComponentsInChildren<Renderer>(true))
                 {
                     var shader = renderer.sharedMaterial != null ? renderer.sharedMaterial.shader.name : string.Empty;
-                    if (shader.EndsWith("/Projection") || shader.EndsWith("/Volumetric") || shader.EndsWith("/Lens Flare"))
+                    if (shader.EndsWith("/Projection") || shader.EndsWith("/Lens Flare"))
                     {
                         renderer.enabled = false;
                     }

@@ -73,21 +73,23 @@ BAR_CHANNEL_MODE = "- _ChannelMode: 0"
 BAR_KEYWORD = "_CHANNEL_MODE"
 KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
 # VRSL lights the face of a fixture hundreds of times past white at full, 1450 on a light
-# bar, which bloom turns into a glare and which washes every colour out to white. These are
-# the intensities at which a face comes out about four times past white at 100%, measured
-# on each fixture in DMX mode with the dimmer and the colour ALPS writes, so the same level
-# looks about the same on all of them and a level past 100% still has somewhere to go. The
-# movers square it, the others scale by it. The blinder's lens flare, which is drawn over
-# its face, peaks near white.
-FACE_INTENSITY = {
-    "VRSL-LightBar-FixtureMat-Horizontal.mat": 0.0413,
-    "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": 4,
-    "VRSL-ParLight-FixtureMat-Horizontal.mat": 0.0307,
-    "VRSL-Blinder-FixtureMat-Horizontal.mat": 0.0413,
-    "VRSL-Blinder-LensFlareMat-Horizontal.mat": 3,
-    "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": 0.0179,
+# bar and 4300 on the spotlight's lens, which bloom turns into a glare and which washes
+# every colour out to white. These are the values at which a face comes out about four
+# times past white at 100%, measured on each fixture in DMX mode with the dimmer and the
+# colour ALPS writes, so the same level looks about the same on all of them and a level past
+# 100% still has somewhere to go. The wash mover squares its intensity, the others scale by
+# it. The spotlight's lens is the end of its cone, which its cone material lights by the
+# lens brightness on top of the cone's own light there. The blinder's lens flare, which is
+# drawn over its face, peaks near white.
+FACE = {
+    "VRSL-LightBar-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0413),
+    "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": ("_FixtureMaxIntensity", 4),
+    "VRSL-ParLight-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0307),
+    "VRSL-Blinder-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0413),
+    "VRSL-Blinder-LensFlareMat-Horizontal.mat": ("_FixtureMaxIntensity", 3),
+    "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0179),
+    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": ("_LensMaxBrightness", 0.0128),
 }
-FACE_PROPERTY = re.compile(r"(- _FixtureMaxIntensity: )([0-9.eE+-]+)")
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -225,7 +227,7 @@ def main():
         return os.path.join(TARGET, relative[len("Runtime/"):])
 
     folders = set()
-    faces = set(FACE_INTENSITY)
+    faces = set(FACE)
     size = 0
     for relative in sorted(taken):
         source = os.path.join(SOURCE, relative)
@@ -242,11 +244,11 @@ def main():
                         sys.exit(f"{relative} has no channel mode to set")
                     text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
                     text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
-                face = FACE_INTENSITY.get(os.path.basename(relative))
-                if face is not None:
-                    text, found = FACE_PROPERTY.subn(lambda match: match.group(1) + format(face, ".7g"), text)
+                if os.path.basename(relative) in FACE:
+                    name, value = FACE[os.path.basename(relative)]
+                    text, found = re.subn(r"(- " + name + r": )[0-9.eE+-]+", lambda match: match.group(1) + format(value, ".7g"), text)
                     if found != 1:
-                        sys.exit(f"{relative} has no intensity to set")
+                        sys.exit(f"{relative} has no {name} to set")
                     faces.discard(os.path.basename(relative))
                 shader = re.search(r"m_Shader: \{fileID: \d+, guid: ([0-9a-f]{32})", read(source))
                 if shader and by_guid.get(shader.group(1)) in light_shaders:
