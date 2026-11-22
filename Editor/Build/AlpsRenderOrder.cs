@@ -64,7 +64,9 @@ namespace AdzukiSoft.ALPS.Editor
         private static List<AlpsContainer> Containers(Scene scene)
         {
             var containers = new List<AlpsContainer>();
-            if (scene.IsValid() && scene.isLoaded)
+            // Not asked whether it is loaded: the scene play mode hands over to be processed
+            // says it is not, and has its objects all the same.
+            if (scene.IsValid())
             {
                 foreach (var root in scene.GetRootGameObjects())
                 {

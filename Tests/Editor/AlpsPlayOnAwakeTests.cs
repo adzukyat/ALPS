@@ -12,8 +12,8 @@ namespace AdzukiSoft.ALPS.Tests
     /// <summary>
     /// Enters play mode on the preview smoke scene with its director set to play on awake.
     /// Play mode processes a scene after its objects woke up, so the director is already
-    /// playing when the show is applied and its timeline swapped. Explicit, since it enters
-    /// play mode.
+    /// playing when the show is applied and its timeline swapped, and the scene it is handed
+    /// says it is not loaded. Explicit, since it enters play mode.
     /// </summary>
     [Explicit]
     public class AlpsPlayOnAwakeTests
@@ -49,6 +49,32 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(PlayState.Playing, state, "The director plays the build timeline.");
             Assert.Greater(time, 0.0, "Its time moves.");
             Assert.Greater(drawn, 0f, "The player draws the show on its own update.");
+        }
+
+        /// <summary>
+        /// A scene that keeps the light off players has the queues of its own materials moved
+        /// below the projections in play mode too, where the scene handed over to be processed
+        /// says it is not loaded.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator AScene_KeepsTheLightOffPlayersInPlayMode()
+        {
+            const string floorName = "Draw Order Floor";
+            if (!Application.isPlaying)
+            {
+                var context = AlpsPreviewSmokeFixtureBuilder.OpenFreshScene();
+                context.Group.keepLightOffPlayers = true;
+                GameObject.CreatePrimitive(PrimitiveType.Cube).name = floorName;
+                yield return new EnterPlayMode();
+            }
+
+            LogAssert.ignoreFailingMessages = true;
+            yield return null;
+            var queue = GameObject.Find(floorName).GetComponent<Renderer>().sharedMaterial.renderQueue;
+            yield return new ExitPlayMode();
+
+            AssetDatabase.DeleteAsset(AlpsShowSetup.GeneratedFolder);
+            Assert.Less(queue, AlpsRenderOrder.ProjectionQueue, "The world's material draws before the projections.");
         }
 
         /// <summary>The time the player last drew, which stays at -1 while Udon does not run it.</summary>
