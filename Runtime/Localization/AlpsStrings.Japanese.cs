@@ -129,6 +129,10 @@ namespace AdzukiSoft.ALPS
                 { "migrate.source.audioLink", "VRSL の AudioLink 灯体" },
                 { "migrate.none", "VRSL パッケージの灯体はありません。" },
                 { "migrate.convert", "{0} 個の灯体を変換" },
+                { "migrate.blocked", "変換できない灯体 ({0})" },
+                { "migrate.blocked.nested", "プレハブの中にあります。そのプレハブを開いて変換してください。" },
+                { "migrate.blocked.root", "開いているプレハブのルートです。手作業で置き換えてください。" },
+                { "migrate.blocked.unknown", "灯体の種類を判別できません。手作業で置き換えてください。" },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPMオーバーライド" },

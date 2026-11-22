@@ -303,6 +303,91 @@ namespace AdzukiSoft.ALPS.Tests
             Object.DestroyImmediate(own);
         }
 
+        /// <summary>Gives the fixture meshes no prefab of the package has, as one made with an older version has.</summary>
+        private static void UseOtherMeshes(GameObject fixture)
+        {
+            foreach (var filter in fixture.GetComponentsInChildren<MeshFilter>(true))
+            {
+                filter.sharedMesh = Object.Instantiate(filter.sharedMesh);
+            }
+        }
+
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab", "Mover Spotlight")]
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Mover-WashLight-H-13CH.prefab", "Mover Wash Light")]
+        public void UnpackedFixtureWithOtherMeshes_IsToldByItsLook(string path, string expectedFixture)
+        {
+            var expected = AlpsCreateMenu.Fixtures.First(candidate => candidate.Name == expectedFixture);
+            var rig = new GameObject("Top");
+            rig.AddComponent<AlpsContainer>();
+            var old = Unpacked(PackagePrefabs + path, rig.transform, "Mover");
+            UseOtherMeshes(old);
+            // What a show made with an older ALPS left on it, a container among it.
+            old.AddComponent<AlpsVRSLFixture>();
+            var container = old.AddComponent<AlpsContainer>();
+            var timeline = ScriptableObject.CreateInstance<UnityEngine.Timeline.TimelineAsset>();
+            var director = new GameObject("Show").AddComponent<UnityEngine.Playables.PlayableDirector>();
+            director.playableAsset = timeline;
+            var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Mover");
+            director.SetGenericBinding(track, container);
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.IsFalse(items[0].Blocked);
+            Assert.AreSame(expected, items[0].Target);
+            Assert.AreEqual(AlpsVrslMigrationSource.AlpsFixture, items[0].Source);
+
+            var created = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.IsTrue(old == null);
+            Assert.AreEqual(expected.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(created));
+            var fixture = created.GetComponent<AlpsVRSLFixture>();
+            Assert.IsTrue(fixture.IsReady);
+            Assert.AreSame(fixture, director.GetGenericBinding(track), "The track drives the new fixture.");
+            Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+            Object.DestroyImmediate(timeline);
+        }
+
+        [Test]
+        public void FixtureNothingTellsTheKindOf_IsListedAndLeft()
+        {
+            var rig = new GameObject("Rig");
+            // A lit face on a mesh of the world's own that ALPS drives already: no fixture of
+            // the package to replace it by, and no emissive mesh to make of it.
+            var old = Unpacked(PackagePrefabs + "AudioLink/VRSL-AudioLink-Static-Lightbar.prefab", rig.transform, "LED");
+            UseOtherMeshes(old);
+            old.AddComponent<AlpsVRSLFixture>();
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count, "It is listed, not passed over.");
+            Assert.AreEqual(AlpsVrslMigration.BlockedUnknown, items[0].BlockedKey);
+
+            Assert.IsEmpty(AlpsVrslMigration.Convert(items));
+            Assert.IsTrue(old != null);
+            Assert.NotNull(PackageFixture(old));
+        }
+
+        [Test]
+        public void FixtureInsideAPrefabInstance_IsListedAndLeft()
+        {
+            const string path = "Assets/AlpsMigrationTestSong.prefab";
+            var song = new GameObject("Song");
+            Instantiate(DmxMover, song.transform);
+            try
+            {
+                PrefabUtility.SaveAsPrefabAssetAndConnect(song, path, InteractionMode.AutomatedAction);
+
+                var items = AlpsVrslMigration.Find();
+                Assert.AreEqual(1, items.Count, "It is listed, not passed over.");
+                Assert.AreEqual(AlpsVrslMigration.BlockedNested, items[0].BlockedKey);
+                Assert.IsEmpty(AlpsVrslMigration.Convert(items));
+            }
+            finally
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                AssetDatabase.DeleteAsset(path);
+            }
+        }
+
         [Test]
         public void ObjectWithoutThePackagesScript_IsNoFixture()
         {

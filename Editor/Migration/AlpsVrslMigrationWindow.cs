@@ -53,7 +53,7 @@ namespace AdzukiSoft.ALPS.Editor
             var selected = 0;
             for (var source = 0; source < SourceKeys.Length; source++)
             {
-                var count = _items.FindAll(item => (int)item.Source == source).Count;
+                var count = _items.FindAll(item => !item.Blocked && (int)item.Source == source).Count;
                 using (new EditorGUI.DisabledScope(count == 0))
                 {
                     _include[source] = EditorGUILayout.ToggleLeft($"{AlpsStrings.Tr(SourceKeys[source])} ({count})", _include[source]);
@@ -69,7 +69,7 @@ namespace AdzukiSoft.ALPS.Editor
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             foreach (var item in _items)
             {
-                if (item.Root == null || !_include[(int)item.Source])
+                if (item.Root == null || item.Blocked || !_include[(int)item.Source])
                 {
                     continue;
                 }
@@ -85,6 +85,27 @@ namespace AdzukiSoft.ALPS.Editor
                 }
             }
 
+            // What carries the package's script and stays as it is, with the reason, so that
+            // a fixture left behind is not found out by a show that does not light it.
+            var blocked = _items.FindAll(item => item.Root != null && item.Blocked);
+            if (blocked.Count > 0)
+            {
+                EditorGUILayout.Space();
+                GUILayout.Label(AlpsStrings.Tr("migrate.blocked", blocked.Count), EditorStyles.boldLabel);
+                foreach (var item in blocked)
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUI.DisabledScope(true))
+                        {
+                            EditorGUILayout.ObjectField(item.Root, typeof(GameObject), true, GUILayout.Width(160f));
+                        }
+
+                        GUILayout.Label(AlpsStrings.Tr(item.BlockedKey), EditorStyles.wordWrappedMiniLabel);
+                    }
+                }
+            }
+
             if (_items.Count == 0)
             {
                 GUILayout.Label(AlpsStrings.Tr("migrate.none"), EditorStyles.centeredGreyMiniLabel);
@@ -96,7 +117,7 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 if (GUILayout.Button(AlpsStrings.Tr("migrate.convert", selected), GUILayout.Height(28f)))
                 {
-                    AlpsVrslMigration.Convert(_items.FindAll(item => _include[(int)item.Source]));
+                    AlpsVrslMigration.Convert(_items.FindAll(item => !item.Blocked && _include[(int)item.Source]));
                     Refresh();
                     GUIUtility.ExitGUI();
                 }

@@ -52,8 +52,17 @@ namespace AdzukiSoft.ALPS.Editor
         /// </summary>
         public bool Emissive;
 
-        /// <summary>The <see cref="AlpsStrings"/> key of what it becomes.</summary>
-        public string LabelKey => Emissive ? "addFixture.emissiveMesh" : Target.LabelKey;
+        /// <summary>
+        /// The <see cref="AlpsStrings"/> key of why the migration leaves it as it is, null
+        /// for a fixture it converts. Such a fixture is listed so that it is not passed over
+        /// in silence, and converting skips it.
+        /// </summary>
+        public string BlockedKey;
+
+        public bool Blocked => BlockedKey != null;
+
+        /// <summary>The <see cref="AlpsStrings"/> key of what it becomes, or of why it is left.</summary>
+        public string LabelKey => Blocked ? BlockedKey : Emissive ? "addFixture.emissiveMesh" : Target.LabelKey;
 
         /// <summary>
         /// True when the instance only changes the prefab it is made from, which keeps the
@@ -78,8 +87,13 @@ namespace AdzukiSoft.ALPS.Editor
     ///
     /// A fixture that is no prefab instance, unpacked or put together by hand, has no prefab
     /// to tell what it is. It is found by the package's fixture script on it and replaced by
-    /// the fixture whose meshes it has. With meshes of the world's own it keeps its object
-    /// and becomes an emissive mesh.
+    /// the fixture whose meshes it has, or where it has none of them, as a fixture from an
+    /// older version of the package does, by the fixture whose materials and shaders it has.
+    /// A lit face on meshes of the world's own keeps its object and becomes an emissive mesh.
+    ///
+    /// What carries the package's script and cannot be converted where it is (a fixture
+    /// inside another prefab's instance, the root of the prefab that is open, a fixture
+    /// nothing tells the kind of) is listed with the reason, never passed over.
     /// </summary>
     public static class AlpsVrslMigration
     {
@@ -88,6 +102,10 @@ namespace AdzukiSoft.ALPS.Editor
         private const string AudioLinkPrefix = "VRSL-AudioLink-";
         private const string PackageNamespace = "VRSL.";
         private const string PackageShaders = "VRSL/";
+
+        public const string BlockedNested = "migrate.blocked.nested";
+        public const string BlockedRoot = "migrate.blocked.root";
+        public const string BlockedUnknown = "migrate.blocked.unknown";
 
         /// <summary>Parts of the package's prefab names, in the order they are tried.</summary>
         private static readonly KeyValuePair<string, AlpsVrslPrefab>[] Names =
@@ -172,11 +190,11 @@ namespace AdzukiSoft.ALPS.Editor
                 return DescribeLoose(gameObject);
             }
 
-            // An instance inside another prefab's instance belongs to that prefab, where it
-            // is converted with the prefab open.
+            // A fixture inside another prefab's instance belongs to that prefab, where it is
+            // converted with the prefab open.
             if (!PrefabUtility.IsOutermostPrefabInstanceRoot(gameObject))
             {
-                return null;
+                return DescribeBlocked(gameObject, BlockedNested);
             }
 
             var original = PrefabUtility.GetCorrespondingObjectFromOriginalSource(gameObject);
@@ -185,11 +203,12 @@ namespace AdzukiSoft.ALPS.Editor
                 return null;
             }
 
+            // An instance of a prefab of the project's own whose root is the fixture.
             var name = original.name;
             var dmx = name.StartsWith(DmxPrefix, StringComparison.OrdinalIgnoreCase);
             if (!dmx && !name.StartsWith(AudioLinkPrefix, StringComparison.OrdinalIgnoreCase))
             {
-                return null;
+                return DescribeBlocked(gameObject, BlockedNested);
             }
 
             var target = Match(name);
@@ -216,11 +235,55 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// What converting an object that is no prefab instance would do: nothing without
-        /// the package's fixture script on it. It becomes the fixture whose meshes it has,
-        /// or with none of them an emissive mesh, where it has a mesh at all and ALPS does
-        /// not drive it yet.
+        /// the package's fixture script on it. It becomes the fixture of the package prefab
+        /// it is told to be made from, or an emissive mesh where it is a lit face on meshes
+        /// of the world's own that ALPS does not drive yet. Anything else is blocked.
         /// </summary>
         private static AlpsVrslMigrationItem DescribeLoose(GameObject gameObject)
+        {
+            var item = DescribeBlocked(gameObject, BlockedUnknown);
+            if (item == null)
+            {
+                return null;
+            }
+
+            item.Loose = true;
+            var meshes = new HashSet<Mesh>();
+            var materials = new HashSet<Material>();
+            var shaders = new HashSet<string>();
+            Signature(gameObject, meshes, materials, shaders);
+            var audioLink = IsAudioLink(PackageFixtureOn(gameObject));
+            var needsFixture = NeedsFixture(shaders);
+            var original = MatchByMeshes(meshes, materials, audioLink);
+            if (original == null && needsFixture)
+            {
+                original = MatchByLook(materials, shaders, audioLink, Match(gameObject.name));
+            }
+
+            if (original != null)
+            {
+                item.SourcePrefab = original.Prefab;
+                item.Target = original.Target;
+                // Replacing it would remove the root of the prefab that is open.
+                var stage = PrefabStageUtility.GetCurrentPrefabStage();
+                item.BlockedKey = stage != null && stage.prefabContentsRoot == gameObject ? BlockedRoot : null;
+                return item;
+            }
+
+            if (!needsFixture && gameObject.GetComponent<AlpsTarget>() == null && AlpsEmissiveMesh.CanConvert(gameObject))
+            {
+                item.Emissive = true;
+                item.BlockedKey = null;
+            }
+
+            return item;
+        }
+
+        /// <summary>
+        /// An object with the package's fixture script on it as one the migration leaves as
+        /// it is, null without the script.
+        /// </summary>
+        private static AlpsVrslMigrationItem DescribeBlocked(GameObject gameObject, string reason)
         {
             var script = PackageFixtureOn(gameObject);
             if (script == null)
@@ -228,31 +291,37 @@ namespace AdzukiSoft.ALPS.Editor
                 return null;
             }
 
-            var audioLink = script.GetType().Name.IndexOf("AudioLink", StringComparison.OrdinalIgnoreCase) >= 0;
-            var item = new AlpsVrslMigrationItem
+            return new AlpsVrslMigrationItem
             {
                 Root = gameObject,
-                Loose = true,
+                BlockedKey = reason,
                 Source = gameObject.GetComponent<AlpsFixture>() != null
                     ? AlpsVrslMigrationSource.AlpsFixture
-                    : audioLink ? AlpsVrslMigrationSource.AudioLinkFixture : AlpsVrslMigrationSource.DmxFixture,
+                    : IsAudioLink(script) ? AlpsVrslMigrationSource.AudioLinkFixture : AlpsVrslMigrationSource.DmxFixture,
             };
+        }
 
-            var original = MatchByMeshes(gameObject, audioLink);
-            if (original != null)
+        private static bool IsAudioLink(MonoBehaviour script)
+        {
+            return script != null && script.GetType().Name.IndexOf("AudioLink", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>
+        /// True when one of the package's shaders on an object draws more than a lit face (a
+        /// cone, a projection, a laser, a mirror ball's light), which an emissive mesh cannot
+        /// stand in for.
+        /// </summary>
+        private static bool NeedsFixture(HashSet<string> shaders)
+        {
+            foreach (var shader in shaders)
             {
-                item.SourcePrefab = original.Prefab;
-                item.Target = original.Target;
-                return item;
+                if (!shader.EndsWith("/Fixture", StringComparison.Ordinal) && shader.IndexOf("/Surface Shaders/", StringComparison.Ordinal) < 0)
+                {
+                    return true;
+                }
             }
 
-            if (gameObject.GetComponent<AlpsTarget>() != null || !AlpsEmissiveMesh.CanConvert(gameObject))
-            {
-                return null;
-            }
-
-            item.Emissive = true;
-            return item;
+            return false;
         }
 
         /// <summary>A fixture prefab of the package, with what tells an object made from it.</summary>
@@ -263,6 +332,7 @@ namespace AdzukiSoft.ALPS.Editor
             public bool AudioLink;
             public readonly HashSet<Mesh> Meshes = new HashSet<Mesh>();
             public readonly HashSet<Material> Materials = new HashSet<Material>();
+            public readonly HashSet<string> Shaders = new HashSet<string>();
         }
 
         private static List<PackagePrefab> _packagePrefabs;
@@ -303,7 +373,7 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 var found = new PackagePrefab { Prefab = prefab, Target = target, AudioLink = audioLink };
-                Signature(prefab, found.Meshes, found.Materials);
+                Signature(prefab, found.Meshes, found.Materials, found.Shaders);
                 if (found.Meshes.Count > 0)
                 {
                     _packagePrefabs.Add(found);
@@ -314,31 +384,17 @@ namespace AdzukiSoft.ALPS.Editor
         }
 
         /// <summary>
-        /// The package prefab that shares the most meshes with <paramref name="gameObject"/>,
-        /// null when none shares one. Prefabs with the same meshes (the DMX and the AudioLink
-        /// one of a light, and its modes) are told by the kind of script and then by a shared
-        /// material.
+        /// The package prefab that shares the most of <paramref name="meshes"/>, null when
+        /// none shares one. Prefabs with the same meshes (the DMX and the AudioLink one of a
+        /// light, and its modes) are told by the kind of script and then by a shared material.
         /// </summary>
-        private static PackagePrefab MatchByMeshes(GameObject gameObject, bool audioLink)
+        private static PackagePrefab MatchByMeshes(HashSet<Mesh> meshes, HashSet<Material> materials, bool audioLink)
         {
-            var meshes = new HashSet<Mesh>();
-            var materials = new HashSet<Material>();
-            Signature(gameObject, meshes, materials);
-            if (meshes.Count == 0)
-            {
-                return null;
-            }
-
             PackagePrefab best = null;
             var bestScore = 0;
             foreach (var candidate in PackagePrefabs())
             {
-                var shared = 0;
-                foreach (var mesh in candidate.Meshes)
-                {
-                    shared += meshes.Contains(mesh) ? 1 : 0;
-                }
-
+                var shared = Shared(candidate.Meshes, meshes);
                 if (shared == 0)
                 {
                     continue;
@@ -355,7 +411,60 @@ namespace AdzukiSoft.ALPS.Editor
             return best;
         }
 
-        private static void Signature(GameObject root, HashSet<Mesh> meshes, HashSet<Material> materials)
+        /// <summary>
+        /// The package prefab a fixture with none of its meshes looks like: a fixture made
+        /// with an older version of the package has meshes no prefab uses any more, but is
+        /// still drawn with the package's materials or at least its shaders. The most shared
+        /// materials win, then the most shared shaders, then the fixture the object's name
+        /// says. Null when that leaves fixtures of more than one kind, as the shaders of the
+        /// static lights do, which are the same on all of them.
+        /// </summary>
+        private static PackagePrefab MatchByLook(HashSet<Material> materials, HashSet<string> shaders, bool audioLink, AlpsVrslPrefab named)
+        {
+            PackagePrefab best = null;
+            var bestScore = 0;
+            var kinds = 0;
+            foreach (var candidate in PackagePrefabs())
+            {
+                var sharedMaterials = Shared(candidate.Materials, materials);
+                var sharedShaders = Shared(candidate.Shaders, shaders);
+                if (sharedMaterials == 0 && sharedShaders == 0)
+                {
+                    continue;
+                }
+
+                var score = sharedMaterials * 10000 + sharedShaders * 100 + (candidate.Target == named ? 10 : 0);
+                if (score > bestScore)
+                {
+                    best = candidate;
+                    bestScore = score;
+                    kinds = 1;
+                }
+                else if (score == bestScore && candidate.Target != best.Target)
+                {
+                    kinds++;
+                }
+                else if (score == bestScore && candidate.AudioLink == audioLink && best.AudioLink != audioLink)
+                {
+                    best = candidate;
+                }
+            }
+
+            return kinds == 1 ? best : null;
+        }
+
+        private static int Shared<T>(HashSet<T> of, HashSet<T> with)
+        {
+            var shared = 0;
+            foreach (var value in of)
+            {
+                shared += with.Contains(value) ? 1 : 0;
+            }
+
+            return shared;
+        }
+
+        private static void Signature(GameObject root, HashSet<Mesh> meshes, HashSet<Material> materials, HashSet<string> shaders)
         {
             foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
             {
@@ -369,9 +478,16 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 foreach (var material in renderer.sharedMaterials)
                 {
-                    if (material != null)
+                    if (material == null)
                     {
-                        materials.Add(material);
+                        continue;
+                    }
+
+                    materials.Add(material);
+                    var shader = material.shader != null ? material.shader.name : "";
+                    if (shader.StartsWith(PackageShaders, StringComparison.Ordinal))
+                    {
+                        shaders.Add(shader);
                     }
                 }
             }
@@ -415,7 +531,7 @@ namespace AdzukiSoft.ALPS.Editor
             var group = Undo.GetCurrentGroup();
             foreach (var item in items)
             {
-                if (item.Root == null)
+                if (item.Root == null || item.Blocked)
                 {
                     continue;
                 }
@@ -589,10 +705,11 @@ namespace AdzukiSoft.ALPS.Editor
 
             ApplyValues(instance.GetComponentInChildren<VRStageLighting_DMX_Static>(true), CaptureValues(FindPackageFixture(old)));
             var fixture = Undo.AddComponent<AlpsVRSLFixture>(instance);
-            var oldFixture = old.GetComponent<AlpsFixture>();
-            if (oldFixture != null)
+            // The fixture a track drove, and a container on the fixture itself, which drove
+            // the same light.
+            foreach (var driven in old.GetComponents<AlpsTarget>())
             {
-                Rebind(oldFixture, fixture);
+                Rebind(driven, fixture);
             }
 
             Undo.DestroyObjectImmediate(old);

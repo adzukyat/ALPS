@@ -129,6 +129,10 @@ namespace AdzukiSoft.ALPS
                 { "migrate.source.audioLink", "VRSL AudioLink fixtures" },
                 { "migrate.none", "No fixtures of the VRSL package here." },
                 { "migrate.convert", "Convert {0} Fixtures" },
+                { "migrate.blocked", "Not converted ({0})" },
+                { "migrate.blocked.nested", "Inside a prefab. Open that prefab and convert it there." },
+                { "migrate.blocked.root", "The root of the prefab that is open. Replace it by hand." },
+                { "migrate.blocked.unknown", "Nothing tells which fixture it is. Replace it by hand." },
 
                 // --- Clip --------------------------------------------------
                 { "clip.bpmOverride", "BPM Override" },
