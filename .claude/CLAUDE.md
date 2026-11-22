@@ -13,7 +13,7 @@ Unity `2022.3.22f1`, VRChat SDK `3.10.2`. The fixtures are a copy of VRSL `2.8.4
 All tests run Unity in batch mode against `TestProject~`, which references the package with `file:../..`. The show is evaluated on the GPU, so they run without `-nographics`, and the tests that evaluate a show ignore themselves without a graphics device. Set `UNITY_EXECUTABLE` if Unity is not at the Hub default path. Results go to `TestProject~/TestResults~/`.
 
 ```sh
-scripts/test-all.sh            # metadata check, EditMode tests, UI tests
+scripts/test-all.sh            # metadata check, then every test, as several Unity instances at once
 scripts/test-editmode.sh       # AdzukiSoft.ALPS.EditorTests (show maths, preview, build conversion)
 scripts/test-editor-ui.sh      # AdzukiSoft.ALPS.EditorUiTests (inspector UI and layout audit)
 scripts/check-package-metadata.sh
@@ -21,17 +21,15 @@ scripts/bootstrap-test-project.sh   # fetches VRChat SDK, AudioLink and VRSL
 python scripts/vendor-vrsl.py       # copies the fixtures from the test project's VRSL into Runtime/VRSL
 ```
 
-A single test or fixture (the scripts do not forward filters, so call Unity directly):
+`test-all.sh` takes about a minute, where it took over four as one instance per assembly, one after the other. Starting Unity is most of a run, so it deals the test classes of both assemblies out to `ALPS_TEST_JOBS` instances by how long each took the last time (`.cache/test-timings.tsv`, which every run moves half the way to what it measured, so the deal settles and a class keeps to a worker that has its caches), with a `-testFilter` per instance made from the class names found in `Tests`. The default is three for every eight threads of the processor (6 on 16): more instances slow every start down by more than the shares get shorter. Unity opens a project once, so each instance runs in a worker: a copy of the package and the test project under `.cache/test-workers/<n>` with a Library of its own, brought up to date from the working tree before every run. Nothing a test writes reaches another instance, and nothing reaches `TestProject~` or the package, so a run leaves the working tree as it was and works while `TestProject~` is open in the editor. A worker keeps what UdonSharp compiled into it (`Assets/SerializedUdonPrograms`, `Assets/UdonSharp`), since the test project's may be older. What a worker's tests write beside their project (`TestResults~`, the layout dump) is copied back to `TestProject~`. It prints a line per instance with the tests that failed, and the results are `tests-<n>-results.xml` with a `tests-<n>.log` each. A worker's Library is about 2 GB, copied from the test project's the first time. `ALPS_TEST_JOBS=1` runs everything as one instance, which takes about two minutes, and `ALPS_TEST_WORKERS_DIR` moves the workers. Every run passes `--burst-disable-compilation`, since starting Burst takes about four seconds of every start and every entry into play mode and nothing under test uses it.
+
+The other two scripts run one assembly in `TestProject~` and hand their arguments on to Unity, so a single test or fixture is:
 
 ```sh
-"/Applications/Unity/Hub/Editor/2022.3.22f1/Unity.app/Contents/MacOS/Unity" -batchmode \
-  -projectPath TestProject~ -runTests -testPlatform EditMode \
-  -assemblyNames AdzukiSoft.ALPS.EditorTests \
-  -testFilter "AdzukiSoft.ALPS.Tests.AlpsShowTests.Circle_WalksAllTheWayRoundOncePerCycle" \
-  -testResults "$TMPDIR/one.xml" -logFile "$TMPDIR/one.log"
+scripts/test-editmode.sh -testFilter "AdzukiSoft.ALPS.Tests.AlpsShowTests.Circle_WalksAllTheWayRoundOncePerCycle"
 ```
 
-Do not add `-quit`: with this Test Framework version it can exit before the results XML is written. Batch mode refuses a project that is open in the editor (`Temp/UnityLockfile`).
+Do not add `-quit`: with this Test Framework version it can exit before the results XML is written. Batch mode refuses a project that is open in the editor (`Temp/UnityLockfile`). This Test Framework version runs `[Explicit]` tests too, without a filter and with one that matches their names.
 
 `DemoProject~` is a concert stage made from code: `ALPS > Debug > Demo > Rebuild Example` (batch entry `AlpsDemoBuilder.RebuildAndExit`) regenerates the demo scene, everything under `Assets/Demo` and `ExampleTimeline.playable`. Change the demo by editing the scripts in `DemoProject~/Assets/Editor`, not the assets: `AlpsDemoVenue` models the hall, the deck and the truss, `AlpsDemoRig` hangs 96 fixtures and four multi light bars in thirteen containers and two penlight areas, and `AlpsDemoShow` writes the show (112 bars at 128 BPM, section by section, with `AlpsDemoCues` as its shorthand). `AlpsDemoRig` says what tilt and pan mean on each group: a VRSL mover's pan axis is its own +Z, so a hung one is turned to `Euler(90, 180, 0)` and a standing one to `Euler(-90, 0, 0)`, and tilt 0 is straight down or straight up. The six lasers on the back truss are fans (their material, made by the rig, flattens the cone), which tilt lifts and lowers and pan rolls. The four multi light bars across the drum riser are 48 segments a clip counts from house left to house right. Everything is measured for people about 1.7 m tall and the demo's root is scaled down for avatars (`AlpsDemoVenue.Scale` = 0.75), fixtures included, so the show looks the same from an avatar's eyes; what is placed in the world's measure (the spawn, the cameras, the capture views, a light's range) goes through `AlpsDemoVenue.World`. VRSL dims a static light's projection and lets it reach by the distance in the world's measure, so the rig gives the pars and the blinders a copy of their projection material that counts it in the venue's (`AlpsDemoRig.ScaledProjection`).
 
