@@ -123,7 +123,7 @@ namespace AdzukiSoft.ALPS
 
                 // --- Migration ---------------------------------------------
                 { "migrate.title", "Migrate VRSL Fixtures" },
-                { "migrate.help", "Replaces fixtures made from the VR Stage Lighting package with the fixtures ALPS comes with, in the open scenes or the prefab that is open. ALPS fixtures keep their object, their settings and their tracks. Other fixtures are replaced in place: they keep their name, placement and look, and lose what only their own script had, such as AudioLink settings." },
+                { "migrate.help", "Replaces fixtures made from the VR Stage Lighting package with the fixtures ALPS comes with, in the open scenes or the prefab that is open. ALPS fixtures keep their object, their settings and their tracks. Other fixtures are replaced in place: they keep their name, placement and look, and lose what only their own script had, such as AudioLink settings. A fixture that is no prefab instance is found by its VRSL script and told by its meshes. With meshes of your own it keeps its object and becomes an emissive mesh." },
                 { "migrate.source.alps", "ALPS fixtures made from the VRSL package" },
                 { "migrate.source.dmx", "VRSL DMX fixtures" },
                 { "migrate.source.audioLink", "VRSL AudioLink fixtures" },

@@ -81,7 +81,7 @@ namespace AdzukiSoft.ALPS.Editor
                         EditorGUILayout.ObjectField(item.Root, typeof(GameObject), true);
                     }
 
-                    GUILayout.Label("→ " + AlpsStrings.Tr(item.Target.LabelKey), GUILayout.Width(150f));
+                    GUILayout.Label("→ " + AlpsStrings.Tr(item.LabelKey), GUILayout.Width(150f));
                 }
             }
 
