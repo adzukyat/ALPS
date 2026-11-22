@@ -65,6 +65,8 @@ public static class AlpsDemoBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
+        // Making a mesh glow registers an undo step, and undoing one would take a fixture apart.
+        Undo.ClearAll();
 
         // What a VRChat build would check before it converts the show.
         var show = AlpsShowCompiler.Compile(director);

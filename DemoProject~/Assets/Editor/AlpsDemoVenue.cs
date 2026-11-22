@@ -5,7 +5,9 @@ using UnityEngine;
 /// <summary>
 /// Models the venue of the demo from code: a dark hall, a stage deck with a thrust and
 /// risers, a ground supported truss roof with a ring below it, a cyclorama, the PA, the
-/// backline, a barricade, the front of house riser and a crowd holding penlights.
+/// backline, a barricade, the front of house riser and a crowd holding penlights. It also
+/// makes the meshes the rig lights as fixtures of their own: the strips along the stage's
+/// edge, the arcs round the ring and the letters of the sign.
 ///
 /// The audience looks along +Z. The deck's front edge is at Z 0 and the hall floor at Y 0.
 /// Every measure the rig hangs from is a constant here, so the fixtures land on the truss.
@@ -67,6 +69,31 @@ public static class AlpsDemoVenue
     public const float LaserZ = BackTrussZ - TrussWidth * 0.5f - 0.22f;
     public const float LaserDepth = 0.4f;
 
+    // The strobe panels climb the audience side of the two downstage towers.
+    public static readonly float[] StrobeY = { 2.6f, 4.4f, 6.2f, 8f };
+
+    // The sign hangs in front of the cyclorama, under the ring as the house sees it.
+    public const string SignText = "ALPS";
+    public static readonly Vector3 SignCenter = new Vector3(0f, 6.3f, CycZ - 0.25f);
+    public const float SignSpacing = 1.4f;
+    public const float SignHeight = 1.3f;
+    private const float SignWidth = 0.9f;
+    private const float SignStroke = 0.18f;
+
+    // The mirror ball hangs from the roof over the middle of the hall. VRSL's is 2.4 cm
+    // across in a cube of 1 m that its light stays in, so this scale makes it a ball of about
+    // 1 m whose light reaches every wall.
+    public static readonly Vector3 MirrorBall = new Vector3(0f, 9.5f, (HallFront + HallBack) * 0.5f);
+    public const float MirrorBallScale = 41f;
+    private const float MirrorBallRadius = 0.012f * MirrorBallScale;
+
+    // What glows along the edges: a strip per metre of the deck's lip and the thrust, and
+    // twelve arcs round the outside of the ring.
+    public const float EdgeStripLength = 0.96f;
+    public const float EdgeStripOut = 0.015f;
+    public const float EdgeStripY = DeckHeight - 0.06f;
+    public const int RingArcs = 12;
+
     // --- Audience -------------------------------------------------------------------------
     public const float BarricadeZ = -6.8f;
     public const float CrowdFront = -8f;
@@ -101,7 +128,9 @@ public static class AlpsDemoVenue
         var screen = Mat("Console Screen", new Color(0.02f, 0.02f, 0.02f), 0f, 0.6f);
         screen.EnableKeyword("_EMISSION");
         screen.SetColor("_EmissionColor", new Color(0.05f, 0.22f, 0.3f));
-        screen.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+        // No light is baked here, and the flag that says emission is black has Unity switch
+        // the keyword above off again whenever it looks the material over.
+        screen.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
 
         Part(venue, "Hall Floor", Hall(true), floor, true);
         Part(venue, "Hall Walls", Hall(false), wall, true);
@@ -282,7 +311,105 @@ public static class AlpsDemoVenue
             mesh.Cylinder(new Vector3(x, 10.1f, -0.1f), new Vector3(x, HallHeight, -0.1f), 0.012f, 6);
         }
 
+        // The mirror ball's drop from the roof, with the motor that turns it.
+        mesh.Cylinder(MirrorBall + Vector3.up * MirrorBallRadius, new Vector3(MirrorBall.x, HallHeight, MirrorBall.z), 0.02f, 8);
+        mesh.Cylinder(MirrorBall + Vector3.up * (MirrorBallRadius + 0.02f), MirrorBall + Vector3.up * (MirrorBallRadius + 0.2f), 0.09f, 12);
+
+        // The sign's wires, up to the batten the cyclorama hangs from.
+        var signHalfWidth = (SignText.Length - 1) * SignSpacing * 0.5f;
+        var signTop = SignCenter.y + SignHeight * 0.5f;
+        foreach (var x in new[] { -signHalfWidth, signHalfWidth })
+        {
+            mesh.Cylinder(new Vector3(x, signTop, SignCenter.z), new Vector3(x, CycTop, SignCenter.z), 0.008f, 6);
+        }
+
         return mesh;
+    }
+
+    // --- What glows: meshes the rig turns into fixtures -----------------------------------------
+
+    /// <summary>A metre of the strip along the stage's edge, lying along X around its own middle.</summary>
+    public static Mesh EdgeStrip()
+    {
+        var mesh = new AlpsDemoMesh();
+        mesh.Box(Vector3.zero, new Vector3(EdgeStripLength, 0.08f, EdgeStripOut * 2f));
+        return SaveMesh(mesh.ToMesh("Edge Strip"));
+    }
+
+    /// <summary>
+    /// One of the arcs round the outside of the ring, around the ring's own middle and
+    /// centred upstage, so turning it about Y puts it anywhere on the ring.
+    /// </summary>
+    public static Mesh RingArc()
+    {
+        const int steps = 4;
+        var radius = RingRadius + TrussWidth * 0.5f + 0.04f;
+        // A little short of its share of the ring, which leaves a gap between two arcs.
+        var half = 360f / RingArcs * 0.5f - 2f;
+        var mesh = new AlpsDemoMesh();
+        for (var i = 0; i < steps; i++)
+        {
+            var from = AlpsDemoMesh.Radial(Mathf.Lerp(-half, half, i / (float)steps)) * radius;
+            var to = AlpsDemoMesh.Radial(Mathf.Lerp(-half, half, (i + 1f) / steps)) * radius;
+            mesh.Cylinder(from, to, 0.045f, 8);
+        }
+
+        return SaveMesh(mesh.ToMesh("Ring Arc"));
+    }
+
+    /// <summary>
+    /// A letter of the sign around its own middle, in the strokes of a seven segment display:
+    /// top, middle and bottom bars, and the upper and lower halves of both sides.
+    /// </summary>
+    public static Mesh SignLetter(char letter)
+    {
+        string strokes;
+        switch (letter)
+        {
+            case 'A': strokes = "TM LlRr"; break;
+            case 'L': strokes = "B Ll"; break;
+            case 'P': strokes = "TM LlR"; break;
+            case 'S': strokes = "TMB Lr"; break;
+            default: throw new System.ArgumentException($"The sign has no strokes for '{letter}'.");
+        }
+
+        var x = (SignWidth - SignStroke) * 0.5f;
+        var y = (SignHeight - SignStroke) * 0.5f;
+        var bar = new Vector3(SignWidth, SignStroke, 0.12f);
+        var side = new Vector3(SignStroke, y + SignStroke, 0.12f);
+        var mesh = new AlpsDemoMesh();
+        foreach (var stroke in strokes)
+        {
+            switch (stroke)
+            {
+                case 'T': mesh.Box(new Vector3(0f, y, 0f), bar); break;
+                case 'M': mesh.Box(Vector3.zero, bar); break;
+                case 'B': mesh.Box(new Vector3(0f, -y, 0f), bar); break;
+                case 'L': mesh.Box(new Vector3(-x, y * 0.5f, 0f), side); break;
+                case 'l': mesh.Box(new Vector3(-x, -y * 0.5f, 0f), side); break;
+                case 'R': mesh.Box(new Vector3(x, y * 0.5f, 0f), side); break;
+                case 'r': mesh.Box(new Vector3(x, -y * 0.5f, 0f), side); break;
+            }
+        }
+
+        return SaveMesh(mesh.ToMesh("Sign " + letter));
+    }
+
+    /// <summary>
+    /// An object with one of the meshes above, for the rig to make a fixture of. It is not
+    /// static like the venue's own parts: a fixture's renderer takes values of its own, which
+    /// meshes batched into one would share.
+    /// </summary>
+    public static GameObject Prop(Transform parent, string name, Mesh mesh)
+    {
+        var prop = new GameObject(name);
+        prop.transform.SetParent(parent, false);
+        prop.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = prop.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = Mat("Fascia", new Color(0.02f, 0.02f, 0.02f), 0f, 0.15f);
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        return prop;
     }
 
     /// <summary>A box for every laser, which is only its beams, and the arm that holds it off the back truss.</summary>

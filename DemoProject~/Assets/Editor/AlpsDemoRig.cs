@@ -6,9 +6,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Hangs the demo's lighting rig on the venue: 96 fixtures and four multi light bars of
-/// twelve segments each in thirteen containers below one container for the whole rig, and
-/// two penlight areas over the crowd.
+/// Hangs the demo's lighting rig on the venue: 113 fixtures, 43 meshes that glow as
+/// fixtures and twenty multi light bars of twelve segments each, in nineteen containers
+/// below one container for the whole rig, then a mirror ball over the hall and two penlight
+/// areas over the crowd. They take 237 of the DMX grid's 348 rows.
 ///
 /// How the heads are mounted decides what tilt and pan mean in a clip. Pan turns a head
 /// around the axis it is mounted on, and tilt leans the beam away from that axis:
@@ -24,7 +25,18 @@ using UnityEngine;
 ///   is half the angle the fan opens by.
 ///
 /// The pixel bars are multi light bars, whose segments are the fixtures: a clip counts 48 of
-/// them from house left to house right, so a spread or a delay runs across the riser.
+/// them from house left to house right, so a spread or a delay runs across the riser. The
+/// roof pixels are sixteen more along the front truss, 192 segments counted the same way.
+///
+/// What a clip counts on the groups that are no row from left to right:
+/// - The strobe panels go up the house left tower and down the house right one, so a
+///   symmetric clip starts at the top of both.
+/// - The stage's edge runs along the deck's lip from house left, round the thrust and on to
+///   house right, so a symmetric clip starts at the tip of the thrust.
+/// - The ring's arcs go round from upstage, clockwise seen from above.
+///
+/// The mirror ball hangs beside the rig, not below it, so what lights the whole rig leaves
+/// it dark, and its track binds the ball itself.
 /// </summary>
 public static class AlpsDemoRig
 {
@@ -42,20 +54,45 @@ public static class AlpsDemoRig
     public const string ApronBars = "Apron Bars";
     public const string Lasers = "Lasers";
     public const string PixelBars = "Pixel Bars";
+    public const string RoofPixels = "Roof Pixels";
+    public const string Flashers = "Flashers";
+    public const string StrobePanels = "Strobe Panels";
+    public const string StageEdge = "Stage Edge";
+    public const string RingGlow = "Ring Glow";
+    public const string Sign = "Sign";
+    public const string MirrorBall = "Mirror Ball";
     public const string PenlightSweep = "Penlight Sweep";
     public const string PenlightRipple = "Penlight Ripple";
 
     /// <summary>The containers in the order their tracks come in the timeline, lowest layer first.</summary>
     public static readonly string[] Containers =
     {
-        CycPars, ApronBars, PixelBars, TotemBars, FrontWash, SideWash, Halo, BackSpots, MidSpots, FloorSpots, TotemSpots, Lasers, Blinders,
+        CycPars, Sign, StageEdge, ApronBars, PixelBars, TotemBars, RingGlow, RoofPixels, FrontWash, SideWash, Halo, BackSpots, MidSpots,
+        FloorSpots, TotemSpots, Lasers, Flashers, StrobePanels, Blinders,
     };
 
+    /// <summary>
+    /// The laser material's beams, in the measure of a laser effect: a clip that shapes the
+    /// beams sets all three, so one that only sends them round asks for these again.
+    /// </summary>
+    public const float LaserFanFlatness = 100f;
+    public const float LaserFanBeams = 16f;
+    public const float LaserFanThickness = 8f;
+
     private const string LaserMaterialPath = AlpsDemoVenue.Folder + "/Materials/Laser Fan.mat";
+    private const string MirrorBallMaterialPath = AlpsDemoVenue.Folder + "/Materials/Mirror Ball.mat";
     private const string StaticProjectionShader = "/Standard Static/Projection";
+    private const string MirrorBallShader = "/Other/Discoball";
 
     /// <summary>Where a light bar's body sits from its origin, which is on one of its long edges.</summary>
     private static readonly Vector3 LightBarCenter = new Vector3(0f, 0.01f, 0.13f);
+
+    /// <summary>The same for a flasher, which is a short light bar, and the size the demo hangs it at, its prefab's own.</summary>
+    private static readonly Vector3 FlasherCenter = new Vector3(0f, 0.01f, 0.08f);
+    private const float FlasherScale = 1.25f;
+
+    /// <summary>A strobe panel is 37 cm wide, which a hall this size loses, so the demo's are twice that.</summary>
+    private const float StrobePanelScale = 2f;
 
     // A VRSL mover's pan axis is its own +Z: these point it down from a truss and up from the deck,
     // with a positive tilt leaning the beam at the audience either way.
@@ -193,6 +230,60 @@ public static class AlpsDemoRig
             bar.transform.localPosition = new Vector3((i - 1.5f) * 1.05f, riserY, AlpsDemoVenue.DrumRiserMin.z - 0.14f);
         }
 
+        // --- Sixteen more along the audience side of the front truss, tipped down at the crowd ---
+        var roof = Container(rig, RoofPixels, targets);
+        for (var i = 0; i < 16; i++)
+        {
+            var bar = MultiLightBar(roof, "Roof Pixel Bar", i);
+            bar.transform.localRotation = Quaternion.Euler(15f, 180f, 0f);
+            bar.transform.localPosition = new Vector3((i - 7.5f) * 1.05f, AlpsDemoVenue.RoofY, AlpsDemoVenue.FrontTrussZ - AlpsDemoVenue.TrussWidth * 0.5f - 0.14f);
+        }
+
+        // --- Flashers on the audience side of the mid truss, between its spots -------------------
+        var flashers = Container(rig, Flashers, targets);
+        var atCrowd = new Vector3(0f, -0.35f, -1f).normalized;
+        for (var i = 0; i < 9; i++)
+        {
+            var flasher = Fixture(AlpsCreateMenu.Flasher, flashers, "Flasher", i, FlasherScale);
+            var rotation = Aim(atCrowd, Vector3.right);
+            flasher.transform.localRotation = rotation;
+            flasher.transform.localPosition = new Vector3((i - 4f) * 1.8f, AlpsDemoVenue.MidTrussY, AlpsDemoVenue.MidTrussZ - AlpsDemoVenue.TrussWidth * 0.5f - 0.12f)
+                                              - rotation * (FlasherCenter * FlasherScale);
+        }
+
+        // --- Strobe panels up the two downstage towers, turned in a little at the crowd ----------
+        var strobes = Container(rig, StrobePanels, targets);
+        var heights = AlpsDemoVenue.StrobeY;
+        for (var i = 0; i < heights.Length * 2; i++)
+        {
+            // Up the house left tower, then down the house right one.
+            var left = i < heights.Length;
+            var y = heights[left ? i : heights.Length * 2 - 1 - i];
+            var panel = Fixture(AlpsCreateMenu.StrobePanel, strobes, "Strobe Panel", i, StrobePanelScale);
+            panel.transform.localRotation = Aim(new Vector3(left ? 0.3f : -0.3f, -0.12f, -1f), Vector3.right);
+            panel.transform.localPosition = new Vector3(left ? -AlpsDemoVenue.TowerX : AlpsDemoVenue.TowerX, y, AlpsDemoVenue.FrontTrussZ - AlpsDemoVenue.TrussWidth * 0.5f - 0.3f);
+        }
+
+        // --- Meshes of the venue that glow: every one is a fixture of its own --------------------
+        Edge(Container(rig, StageEdge, targets));
+
+        var ring = Container(rig, RingGlow, targets);
+        ring.transform.localPosition = new Vector3(0f, AlpsDemoVenue.RingY, AlpsDemoVenue.MidTrussZ);
+        var arc = AlpsDemoVenue.RingArc();
+        for (var i = 0; i < AlpsDemoVenue.RingArcs; i++)
+        {
+            Glow(ring, "Ring Arc", i, arc, Vector3.zero, Quaternion.Euler(0f, i * 360f / AlpsDemoVenue.RingArcs, 0f), 1f);
+        }
+
+        var sign = Container(rig, Sign, targets);
+        sign.transform.localPosition = AlpsDemoVenue.SignCenter;
+        var text = AlpsDemoVenue.SignText;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var letter = Glow(sign, "Letter", i, AlpsDemoVenue.SignLetter(text[i]), new Vector3((i - (text.Length - 1) * 0.5f) * AlpsDemoVenue.SignSpacing, 0f, 0f), Quaternion.identity, 1f);
+            letter.name = $"Letter {text[i]}";
+        }
+
         // --- Lasers on the back truss, turned round to fire over the crowd -----------------------
         var lasers = Container(rig, Lasers, targets);
         var fan = LaserFan();
@@ -207,6 +298,11 @@ public static class AlpsDemoRig
                 renderer.sharedMaterial = fan;
             }
         }
+
+        // --- The mirror ball over the hall, beside the rig -----------------------------------------
+        var ball = Fixture(AlpsCreateMenu.MirrorBall, parent, MirrorBall, AlpsDemoVenue.MirrorBallScale);
+        ball.transform.localPosition = AlpsDemoVenue.MirrorBall;
+        targets[MirrorBall] = ball.GetComponent<AlpsVRSLFixture>();
 
         // --- Penlights: one area across the crowd, one spreading out from the thrust ------------
         var crowdMiddle = (AlpsDemoVenue.CrowdFront + AlpsDemoVenue.CrowdBack) * 0.5f;
@@ -235,7 +331,64 @@ public static class AlpsDemoRig
         return container;
     }
 
-    private static GameObject Fixture(AlpsVrslPrefab prefab, AlpsContainer container, string name, int index)
+    /// <summary>
+    /// The strips along the stage's edge, a fixture each: the deck's lip from house left, down
+    /// the thrust's side, across its tip, back up the other side and on to house right.
+    /// </summary>
+    private static void Edge(AlpsContainer container)
+    {
+        var strip = AlpsDemoVenue.EdgeStrip();
+        var deck = AlpsDemoVenue.DeckHalfWidth;
+        var thrust = AlpsDemoVenue.ThrustHalfWidth;
+        var tip = AlpsDemoVenue.ThrustLength;
+        var y = AlpsDemoVenue.EdgeStripY;
+        var corners = new[]
+        {
+            new Vector3(-deck, y, 0f), new Vector3(-thrust, y, 0f), new Vector3(-thrust, y, -tip),
+            new Vector3(thrust, y, -tip), new Vector3(thrust, y, 0f), new Vector3(deck, y, 0f),
+        };
+
+        var index = 0;
+        for (var run = 0; run < corners.Length - 1; run++)
+        {
+            var along = corners[run + 1] - corners[run];
+            var count = Mathf.Max(1, Mathf.FloorToInt(along.magnitude + 0.01f));
+            var step = along / count;
+            // The stage is to the left of the way the run goes, seen from above.
+            var outward = Vector3.Cross(Vector3.up, along.normalized);
+            var rotation = Quaternion.LookRotation(outward, Vector3.up);
+            for (var i = 0; i < count; i++)
+            {
+                // A run that is no whole number of metres stretches its strips to fill it.
+                Glow(container, "Edge Strip", index++, strip, corners[run] + step * (i + 0.5f) + outward * AlpsDemoVenue.EdgeStripOut, rotation, step.magnitude);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A mesh of the venue made a fixture the way the Hierarchy's Make Selection Emissive
+    /// makes one: it takes the one material ALPS lights a mesh with, and a row of its own.
+    /// </summary>
+    private static GameObject Glow(AlpsContainer container, string name, int index, Mesh mesh, Vector3 position, Quaternion rotation, float length)
+    {
+        var prop = AlpsDemoVenue.Prop(container.transform, $"{name} {index + 1}", mesh);
+        prop.transform.localPosition = position;
+        prop.transform.localRotation = rotation;
+        prop.transform.localScale = new Vector3(length, 1f, 1f);
+        if (AlpsEmissiveMesh.Convert(prop) == null)
+        {
+            throw new System.InvalidOperationException($"{prop.name} could not be made an emissive mesh.");
+        }
+
+        return prop;
+    }
+
+    private static GameObject Fixture(AlpsVrslPrefab prefab, AlpsContainer container, string name, int index, float scale = 1f)
+    {
+        return Fixture(prefab, container.transform, $"{name} {index + 1}", scale);
+    }
+
+    private static GameObject Fixture(AlpsVrslPrefab prefab, Transform parent, string name, float scale)
     {
         var source = prefab.Load();
         if (source == null)
@@ -243,12 +396,12 @@ public static class AlpsDemoRig
             throw new System.InvalidOperationException($"The prefab for {prefab.Name} was not found at {prefab.Path}.");
         }
 
-        var fixture = (GameObject)PrefabUtility.InstantiatePrefab(source, container.transform);
-        fixture.name = $"{name} {index + 1}";
+        var fixture = (GameObject)PrefabUtility.InstantiatePrefab(source, parent);
+        fixture.name = name;
         fixture.transform.localPosition = Vector3.zero;
         fixture.transform.localRotation = Quaternion.identity;
         // The rig is measured out for fixtures at this scale, whatever their prefabs come with.
-        fixture.transform.localScale = Vector3.one;
+        fixture.transform.localScale = Vector3.one * scale;
         var vrsl = fixture.GetComponentInChildren<VRStageLighting_DMX_Static>(true);
         fixture.AddComponent<AlpsVRSLFixture>().target = vrsl;
         foreach (var renderer in vrsl.objRenderers)
@@ -258,9 +411,28 @@ public static class AlpsDemoRig
             {
                 renderer.sharedMaterial = ScaledProjection(material);
             }
+            else if (material != null && material.shader.name.EndsWith(MirrorBallShader))
+            {
+                renderer.sharedMaterial = ScaledMirrorBall(material);
+            }
         }
 
         return fixture;
+    }
+
+    /// <summary>
+    /// The material a mirror ball throws its light with, for a venue at the demo's scale.
+    /// That light falls off with the square of the distance in the world's measure, so in a
+    /// scaled down venue it lands brighter. This copy takes that back.
+    /// </summary>
+    private static Material ScaledMirrorBall(Material source)
+    {
+        var material = AlpsDemoVenue.Asset(MirrorBallMaterialPath, () => new Material(source));
+        material.shader = source.shader;
+        material.CopyPropertiesFromMaterial(source);
+        material.SetFloat("_Multiplier", source.GetFloat("_Multiplier") * AlpsDemoVenue.Scale * AlpsDemoVenue.Scale);
+        EditorUtility.SetDirty(material);
+        return material;
     }
 
     /// <summary>
@@ -300,7 +472,8 @@ public static class AlpsDemoRig
     /// <summary>
     /// The material of the demo's lasers. A laser no laser effect drives takes how flat its
     /// cone is, how many beams it has and how thick they are from its material: this one
-    /// flattens VRSL's cone into a fan of sixteen thin beams.
+    /// flattens VRSL's cone into a fan of sixteen thin beams, which the show's laser effects
+    /// then bend, thin out and send round.
     /// </summary>
     private static Material LaserFan()
     {
@@ -308,9 +481,9 @@ public static class AlpsDemoRig
         var material = AlpsDemoVenue.Asset(LaserMaterialPath, () => new Material(source));
         material.shader = source.shader;
         material.CopyPropertiesFromMaterial(source);
-        material.SetFloat(AlpsShowPlayer.LaserFlatnessProperty, 1.999f);
-        material.SetFloat(AlpsShowPlayer.LaserBeamsProperty, 16f);
-        material.SetFloat(AlpsShowPlayer.LaserThicknessProperty, 0.008f);
+        material.SetFloat(AlpsShowPlayer.LaserFlatnessProperty, AlpsShowPlayer.LaserMaxFlatness * LaserFanFlatness / 100f);
+        material.SetFloat(AlpsShowPlayer.LaserBeamsProperty, LaserFanBeams);
+        material.SetFloat(AlpsShowPlayer.LaserThicknessProperty, AlpsShowPlayer.LaserMaxThickness * LaserFanThickness / 100f);
         EditorUtility.SetDirty(material);
         return material;
     }

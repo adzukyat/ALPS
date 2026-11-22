@@ -472,4 +472,98 @@ MonoBehaviour:
       goboRotationBeats: 0
       goboFixtureStaggerDegrees: 0
       goboProjectionOff: 0
+      laserFlatness:
+        limit: {x: 0, y: 100}
+        value: 50
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 50, y: 50}
+        spreadRangeEnd: {x: 50, y: 50}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      laserBeams:
+        limit: {x: 4, y: 68}
+        value: 8
+        range: {x: 4, y: 68}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 8, y: 8}
+        spreadRangeEnd: {x: 8, y: 8}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      laserThickness:
+        limit: {x: 0, y: 100}
+        value: 100
+        range: {x: 0, y: 100}
+        isRange: 0
+        hasSpread: 0
+        spreadRange: {x: 100, y: 100}
+        spreadRangeEnd: {x: 100, y: 100}
+        version: 1
+        timing: 0
+        useOwnPhase: 0
+        ownPhase:
+          mode: 0
+          ease: 3
+          fallEase: 3
+          rise: 0.5
+          holdHigh: 0
+          fall: 0.5
+          version: 3
+          fixtureGroupSize: 1
+          spread: 0
+          spreadBeats: 0
+          spreadInBeats: 0
+          legacyDelayAcrossGroup: 0
+          beatsPerCycle: 2
+          inverse: 0
+          fireChance: 1
+          inBeats: 2
+          outBeats: 2
+          inOutMode: 1
+        ownPhaseExpanded: 1
+      laserSpinBeats: 0
     profileExpanded: 0

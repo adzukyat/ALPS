@@ -375,6 +375,30 @@ public static class Cue
         return set;
     }
 
+    /// <summary>
+    /// Turns a mirror ball once round every <paramref name="beats"/> beats, counted from the
+    /// clip's start. A ball no clip turns keeps to its own slow speed.
+    /// </summary>
+    public static AlpsClipEffectSet Turn(this AlpsClipEffectSet set, float beats)
+    {
+        return set.Gobo(beats, 0f, false, 1);
+    }
+
+    /// <summary>
+    /// A laser's beams: how flat its cone is in percent, from a round cone at 0 to a fan at
+    /// 100, how many beams it has, how thick they are in percent, and the beats they take to
+    /// go once round the cone, 0 to leave them standing. Left out, a value is the demo's fan.
+    /// </summary>
+    public static AlpsClipEffectSet Laser(this AlpsClipEffectSet set, V? flatness = null, V? beams = null, V? thickness = null, float spinBeats = 0f)
+    {
+        var effect = set.Add(AlpsEffectKind.Laser);
+        (flatness ?? AlpsDemoRig.LaserFanFlatness).Apply(effect.laserFlatness);
+        (beams ?? AlpsDemoRig.LaserFanBeams).Apply(effect.laserBeams);
+        (thickness ?? AlpsDemoRig.LaserFanThickness).Apply(effect.laserThickness);
+        effect.laserSpinBeats = spinBeats;
+        return set;
+    }
+
     public static AlpsClipEffectSet Flicker(this AlpsClipEffectSet set, float speed, float strength, float stagger = 0.6f)
     {
         var effect = set.Add(AlpsEffectKind.Flicker);

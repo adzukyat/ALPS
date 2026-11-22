@@ -15,7 +15,8 @@ using UnityEngine.Playables;
 /// In batch mode the environment picks what is drawn: ALPS_DEMO_TIMES is a list of seconds
 /// ("12.5,40,41"), or of bars with a b in front ("b17,b17.5"), and without it every section
 /// is drawn a few times. ALPS_DEMO_VIEW is one of the views below, and ALPS_DEMO_SIZE the
-/// width of a still in pixels.
+/// width of a still in pixels. The moments it picks on its own are off the beat, so what
+/// flashes on the beat is dark in them.
 /// </summary>
 public static class AlpsDemoCapture
 {
@@ -32,6 +33,8 @@ public static class AlpsDemoCapture
             { "stage", (new Vector3(3f, 3.2f, 1.5f), new Vector3(-1f, 4.5f, 8f), 70f) },
             { "back", (new Vector3(0f, 5.5f, 9.5f), new Vector3(0f, 1.5f, -10f), 70f) },
             { "riser", (new Vector3(0f, 2.3f, 1.6f), new Vector3(0f, 1.75f, 5.4f), 62f) },
+            { "hall", (new Vector3(-17f, 8f, -22f), new Vector3(2f, 2.5f, -3f), 72f) },
+            { "truss", (new Vector3(0f, 7.6f, 1.6f), new Vector3(0f, 9.5f, 4.75f), 85f) },
         };
 
     [MenuItem(AlpsMainMenu.DebugRoot + "Demo/Capture Stills", false, AlpsMainMenu.DebugPriority + 1)]
@@ -161,7 +164,8 @@ public static class AlpsDemoCapture
                 RenderTexture.active = previous;
                 camera.targetTexture = null;
 
-                if (times.Count <= 2)
+                // A sheet's worth of moments or fewer are also written each on their own, at full size.
+                if (times.Count <= Columns * Rows)
                 {
                     File.WriteAllBytes(Path.Combine(folder, $"{view}-{times[i]:000.00}s.jpg"), still.EncodeToJPG(88));
                 }
