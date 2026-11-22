@@ -1669,6 +1669,61 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Laser_ShapesItsBeamsAndSendsThemRound()
+        {
+            var set = Set();
+            var laser = set.Add(AlpsEffectKind.Laser);
+            laser.laserFlatness.isRange = true;
+            laser.laserFlatness.range = new Vector2(0f, 100f);
+            laser.laserBeams.hasSpread = true;
+            laser.laserBeams.spreadRange = new Vector2(8f, 32f);
+            laser.laserThickness.value = 40f;
+            laser.laserSpinBeats = 4f;
+            var show = Compile(3, set);
+
+            var first = Evaluate(show, 0, 0.25f);
+            Assert.AreEqual(25f, first[AlpsShowLayout.FrameLaserFlatness], 0.01f, "A quarter of the way from a cone to a fan.");
+            Assert.AreEqual(8f, first[AlpsShowLayout.FrameLaserBeams], 0.001f);
+            Assert.AreEqual(20f, Evaluate(show, 1, 0.25f)[AlpsShowLayout.FrameLaserBeams], 0.001f, "The spread runs over the lasers.");
+            Assert.AreEqual(32f, Evaluate(show, 2, 0.25f)[AlpsShowLayout.FrameLaserBeams], 0.001f);
+            Assert.AreEqual(40f, first[AlpsShowLayout.FrameLaserThickness], 0.001f);
+            Assert.AreEqual(22.5f, first[AlpsShowLayout.FrameLaserSpin], 0.01f, "A quarter beat of a four beat turn.");
+            Assert.AreEqual(22.5f, Evaluate(show, 2, 0.25f)[AlpsShowLayout.FrameLaserSpin], 0.01f, "Every laser's beams are as far round.");
+        }
+
+        [Test]
+        public void Laser_SendsItsBeamsRoundTheOtherWayOnTheMirroredHalf()
+        {
+            var set = Set();
+            set.symmetric = true;
+            set.Add(AlpsEffectKind.Laser).laserSpinBeats = 4f;
+            var show = Compile(4, set);
+
+            Assert.AreEqual(337.5f, Evaluate(show, 0, 0.25f)[AlpsShowLayout.FrameLaserSpin], 0.01f, "The first half is mirrored, as its pan is.");
+            Assert.AreEqual(22.5f, Evaluate(show, 3, 0.25f)[AlpsShowLayout.FrameLaserSpin], 0.01f);
+        }
+
+        [Test]
+        public void Laser_WithoutTheEffectKeepsWhatTheFixtureHas()
+        {
+            var plain = Set();
+            plain.Add(AlpsEffectKind.Brightness);
+            var shaped = Set();
+            shaped.Add(AlpsEffectKind.Laser).laserBeams.value = 24f;
+            var show = AlpsShowCompiler.CompileStandalone(
+                1,
+                Bpm,
+                new AlpsStandaloneClip { set = plain, start = 0f, end = 4f },
+                new AlpsStandaloneClip { set = shaped, start = 1f, end = 3f, layer = 1, mixIn = 1f });
+
+            // The default frame of the tests has the fewest beams a laser draws.
+            Assert.AreEqual(AlpsShowPlayer.LaserMinBeams, Evaluate(show, 0, 0.5f)[AlpsShowLayout.FrameLaserBeams], 0.001f, "Before the laser effect.");
+            Assert.AreEqual(24f, Evaluate(show, 0, 2.5f)[AlpsShowLayout.FrameLaserBeams], 0.001f, "Under it.");
+            Assert.AreEqual(14f, Evaluate(show, 0, 1.5f)[AlpsShowLayout.FrameLaserBeams], 0.2f, "Half way in, which the grid rounds to whole beams.");
+            Assert.AreEqual(AlpsShowPlayer.LaserMinBeams, Evaluate(show, 0, 3.5f)[AlpsShowLayout.FrameLaserBeams], 0.001f, "After it.");
+        }
+
+        [Test]
         public void Flicker_ScalesBrightnessDeterministically()
         {
             var set = Set();
@@ -2476,6 +2531,12 @@ namespace AdzukiSoft.ALPS.Tests
             gobo.goboStops.Add(new AlpsGoboStop(7));
             gobo.goboRotationBeats = 8f;
             gobo.goboFixtureStaggerDegrees = 45f;
+
+            var laser = set.Add(AlpsEffectKind.Laser);
+            laser.laserFlatness.isRange = true;
+            laser.laserBeams.hasSpread = true;
+            laser.laserBeams.spreadRange = new Vector2(8f, 16f);
+            laser.laserSpinBeats = 2f;
             return set;
         }
 
@@ -2488,6 +2549,9 @@ namespace AdzukiSoft.ALPS.Tests
                     return 5;
                 case AlpsEffectKind.Cone:
                     return 2;
+                case AlpsEffectKind.Laser:
+                    // Flatness, beams and thickness.
+                    return 3;
                 case AlpsEffectKind.Flicker:
                     return 0;
                 default:

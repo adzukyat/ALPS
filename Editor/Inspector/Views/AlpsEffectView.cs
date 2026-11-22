@@ -133,6 +133,7 @@ namespace AdzukiSoft.ALPS.Editor
                 case AlpsEffectKind.Brightness: BuildBrightness(body); break;
                 case AlpsEffectKind.Flicker: BuildFlicker(body); break;
                 case AlpsEffectKind.Gobo: BuildGobo(body); break;
+                case AlpsEffectKind.Laser: BuildLaser(body); break;
             }
         }
 
@@ -524,6 +525,31 @@ namespace AdzukiSoft.ALPS.Editor
             body.Add(goboStagger);
         }
 
+        // ------------------------------------------------------------ Laser
+
+        private void BuildLaser(VisualElement body)
+        {
+            var flatness = Animatable(AlpsStrings.Tr("effect.laser.flatness"), _effect.laserFlatness, _defaults.laserFlatness, "%", "0",
+                limit => AlpsSnapPoints.Multiples(limit, 50f));
+            flatness.tooltip = AlpsStrings.Tr("effect.laser.flatness.tip");
+            body.Add(flatness);
+
+            // Beams come whole, so the count steps where a range sweeps it.
+            body.Add(Animatable(AlpsStrings.Tr("effect.laser.beams"), _effect.laserBeams, _defaults.laserBeams, string.Empty, "0",
+                _ => new[] { 8f, 16f, 32f, 64f }));
+            body.Add(Animatable(AlpsStrings.Tr("effect.laser.thickness"), _effect.laserThickness, _defaults.laserThickness, "%", "0"));
+
+            var rotation = new AlpsStepper(AlpsStrings.Tr("effect.gobo.rotationSpeed"), AlpsStrings.Tr("unit.beats"), 1f, AlpsStrings.Tr("effect.gobo.perTurn")) { Minimum = 0f, Subdivides = true };
+            rotation.SetValueWithoutNotify(_effect.laserSpinBeats);
+            rotation.RegisterValueChangedCallback(evt =>
+            {
+                _effect.laserSpinBeats = evt.newValue;
+                _onChanged?.Invoke();
+            });
+            _mixed?.Bind(rotation, _effect, nameof(AlpsEffect.laserSpinBeats));
+            body.Add(rotation);
+        }
+
         // ------------------------------------------------------- phase offset
 
         /// <summary>
@@ -581,6 +607,8 @@ namespace AdzukiSoft.ALPS.Editor
                     return _effect.brightness.HasMultipleStops || _effect.blackoutOnReturn;
                 case AlpsEffectKind.Gobo:
                     return _effect.goboStops.Count >= 2;
+                case AlpsEffectKind.Laser:
+                    return _effect.laserFlatness.HasMultipleStops || _effect.laserBeams.HasMultipleStops || _effect.laserThickness.HasMultipleStops;
                 default:
                     return false;
             }
@@ -618,6 +646,8 @@ namespace AdzukiSoft.ALPS.Editor
                            && (effect.brightness.HasMultipleStops || effect.blackoutOnReturn);
                 case AlpsEffectKind.Gobo:
                     return !effect.goboPhasing.useOwnPhase && effect.goboStops.Count >= 2;
+                case AlpsEffectKind.Laser:
+                    return Shared(effect.laserFlatness) || Shared(effect.laserBeams) || Shared(effect.laserThickness);
                 default:
                     return false;
             }

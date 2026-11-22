@@ -519,6 +519,12 @@ namespace AdzukiSoft.ALPS
                         row[AlpsShowLayout.EffectScalarB] = effect.goboFixtureStaggerDegrees;
                         row[AlpsShowLayout.EffectScalarC] = effect.goboProjectionOff ? 1f : 0f;
                         break;
+                    case AlpsEffectKind.Laser:
+                        AddParameter(effect.laserFlatness);
+                        AddParameter(effect.laserBeams);
+                        AddParameter(effect.laserThickness);
+                        row[AlpsShowLayout.EffectScalarA] = effect.laserSpinBeats;
+                        break;
                 }
 
                 _effects.AddRange(row);

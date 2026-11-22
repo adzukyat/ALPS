@@ -128,6 +128,7 @@ namespace AdzukiSoft.ALPS.Editor
                 case AlpsEffectKind.Brightness: BuildRamp(well); break;
                 case AlpsEffectKind.Flicker: BuildBars(well); break;
                 case AlpsEffectKind.Gobo: well.Add(BuildGobo()); break;
+                case AlpsEffectKind.Laser: well.Add(BuildFan()); break;
             }
 
             return well;
@@ -158,6 +159,28 @@ namespace AdzukiSoft.ALPS.Editor
                 origin,
                 origin + new Vector2(Mathf.Sin(radians) * length, -Mathf.Cos(radians) * length),
             };
+        }
+
+        /// <summary>Laser: seven thin beams fanning out of one point at the bottom centre.</summary>
+        private static VisualElement BuildFan()
+        {
+            const int beams = 7;
+            const float spread = 62f;
+            const float length = 21f;
+            var origin = new Vector2(30f, 24f);
+            var contours = new Vector2[beams][];
+            for (var i = 0; i < beams; i++)
+            {
+                var radians = Mathf.Lerp(-spread, spread, i / (beams - 1f)) * Mathf.Deg2Rad;
+                contours[i] = new[] { origin, origin + new Vector2(Mathf.Sin(radians) * length, -Mathf.Cos(radians) * length) };
+            }
+
+            var icon = new AlpsVectorIcon { StrokeWidth = 1f, IconColor = Art };
+            icon.SetViewBox(new Vector2(60f, 26f));
+            icon.SetContours(contours);
+            icon.style.width = 60f;
+            icon.style.height = 26f;
+            return icon;
         }
 
         /// <summary>Cone: the filled 18x18 triangle.</summary>

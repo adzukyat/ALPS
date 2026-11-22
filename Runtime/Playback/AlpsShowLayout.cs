@@ -44,6 +44,7 @@ namespace AdzukiSoft.ALPS
         public const int KindBrightness = 3;
         public const int KindFlicker = 4;
         public const int KindGobo = 5;
+        public const int KindLaser = 6;
 
         public const int ParityAll = 0;
         public const int ParityEven = 1;
@@ -149,7 +150,7 @@ namespace AdzukiSoft.ALPS
         public const int EffectParamStart = 2;
         public const int EffectPaletteStart = 3;
         public const int EffectPaletteCount = 4;
-        /// <summary>Move mode, flicker speed, gobo beats per turn.</summary>
+        /// <summary>Move mode, flicker speed, gobo beats per turn, laser beats per turn of its beams.</summary>
         public const int EffectScalarA = 5;
         /// <summary>Pan/tilt phase offset, flicker strength, gobo stagger degrees.</summary>
         public const int EffectScalarB = 6;
@@ -226,25 +227,37 @@ namespace AdzukiSoft.ALPS
         /// default, and the cone length scales the mesh relative to it.
         /// </summary>
         public const int FrameConeMeshLength = 12;
-        public const int FrameStride = 13;
+        /// <summary>
+        /// How flat a laser's cone is, in percent: 0 is a round cone and 100 a fan. Only a
+        /// laser reads this and the three channels after it, and one no laser effect drives
+        /// keeps what its material says.
+        /// </summary>
+        public const int FrameLaserFlatness = 13;
+        /// <summary>Beams around a laser's cone. The grid rounds it, since they come whole.</summary>
+        public const int FrameLaserBeams = 14;
+        /// <summary>Thickness of a laser's beams, in percent of <see cref="AlpsShowPlayer.LaserMaxThickness"/>.</summary>
+        public const int FrameLaserThickness = 15;
+        /// <summary>How far a laser's beams have gone round its cone, in degrees.</summary>
+        public const int FrameLaserSpin = 16;
+        public const int FrameStride = 17;
 
         /// <summary>
         /// 1 while a tracking head is aimed at its user. Only the GPU frames hold it, right
         /// after the channels, so the next frame knows to follow instead of jumping.
         /// </summary>
-        public const int FrameAimed = 13;
+        public const int FrameAimed = 17;
 
         /// <summary>
         /// The token of the show that drew the frame, which only the GPU frames hold. Pan and
         /// tilt start from the previous frame only when the same show drew it.
         /// </summary>
-        public const int FrameShowToken = 14;
+        public const int FrameShowToken = 18;
 
         /// <summary>
         /// 1 while a head stays where a tracked user left it, which only the GPU frames hold,
         /// so it keeps doing so until something moves it again.
         /// </summary>
-        public const int FrameTrackHeld = 15;
+        public const int FrameTrackHeld = 19;
 
         // ==================================================================================
         // Helpers the compiler runs once

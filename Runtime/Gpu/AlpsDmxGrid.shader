@@ -5,7 +5,8 @@
 // reads each channel. Channels it holds no fixture for stay dark.
 // The fixtures read in VRSL's nine universe mode, where rows 0, 120 and 240 on are three
 // bands laid over the same texels in red, green and blue.
-// Pass 0 is the grid VRSL reads its channels from, pass 1 the gobo spin phase grid.
+// Pass 0 is the grid VRSL reads its channels from, pass 1 the spin phase grid, which holds
+// how far a gobo has turned and how far a laser's beams have gone round its cone.
 //
 // Which texel VRSL reads a channel from is worked out the way VRSL's getValueAtCoords
 // does (VRSL-DMXFunctions.cginc), so each channel lands exactly where it is read.
@@ -40,11 +41,8 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_DIMMER_AT_FULL 1.26
     #define ALPS_COLOUR_AT_FULL 2.02
 
-    // AlpsShowPlayer.InfoLayout and what follows it, DmxLayoutLaser and the laser's ranges.
+    // AlpsShowPlayer.InfoLayout, DmxLayoutLaser and the laser's ranges.
     #define ALPS_INFO_LAYOUT 4
-    #define ALPS_INFO_LASER_FLATNESS 5
-    #define ALPS_INFO_LASER_BEAMS 6
-    #define ALPS_INFO_LASER_THICKNESS 7
     #define ALPS_LAYOUT_LASER 1
     #define ALPS_LASER_ANGLE_RANGE 90.0
     #define ALPS_LASER_MIN_WIDTH (-3.75)
@@ -52,11 +50,18 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_LASER_MESH_SLOPE 0.511
     #define ALPS_LASER_MIN_STRETCH 0.5
     #define ALPS_LASER_MAX_STRETCH 6.0
+    #define ALPS_LASER_MIN_BEAMS 4.0
+    #define ALPS_LASER_MAX_BEAMS 68.0
+    #define ALPS_LASER_MAX_THICKNESS 0.1
+    #define ALPS_LASER_DMX_MIN_THICKNESS 0.0005
+    #define ALPS_LASER_DMX_MAX_THICKNESS 0.05
 
     // A laser caps the middle of its beams, so no pair of values dims all of a beam by the
     // curve of the other fixtures. Up to 100% the intensity is the level and the colour takes
     // this power of it, at which the light of a whole beam of the stock laser comes out
-    // near the level to the power of 2.2, the middle of it about to the power of 1.5.
+    // near the level to the power of 2.2, the middle of it about to the power of 1.5. That
+    // is at the stock laser's thickness: a thinner beam has less glow around its capped
+    // middle, so more of it dims the way the middle does.
     #define ALPS_LASER_COLOUR_POWER 1.2
 
     // AlpsShowPlayer.DmxLayoutBarSegment and GpuChannelFixtureStep.
@@ -193,7 +198,7 @@ Shader "Hidden/ALPS/DMX Grid"
 
     // What VRSL's laser (VRSL-BasicLaser-DMX.shader) reads from its row, which is laid out
     // another way than the other fixtures' rows.
-    float AlpsLaserValue(int fixture, int offset, int info)
+    float AlpsLaserValue(int fixture, int offset)
     {
         if (offset <= 1)
         {
@@ -232,12 +237,16 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset == 4)
         {
-            return AlpsRead(info + ALPS_INFO_LASER_FLATNESS) / 1.999;
+            // The laser turns this into its flatness, which halves the depth of the cone at
+            // 1 and leaves none of it at 1.999.
+            return saturate(AlpsFrameChannel(fixture, FrameLaserFlatness) / 100.0);
         }
 
         if (offset == 5)
         {
-            return (AlpsRead(info + ALPS_INFO_LASER_BEAMS) - 4.0) / 64.0;
+            // Beams come whole, so a count on its way from one to another steps.
+            float beams = clamp(round(AlpsFrameChannel(fixture, FrameLaserBeams)), ALPS_LASER_MIN_BEAMS, ALPS_LASER_MAX_BEAMS);
+            return (beams - ALPS_LASER_MIN_BEAMS) / (ALPS_LASER_MAX_BEAMS - ALPS_LASER_MIN_BEAMS);
         }
 
         if (offset >= 7 && offset <= 9)
@@ -264,10 +273,13 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset == 11)
         {
-            return (AlpsRead(info + ALPS_INFO_LASER_THICKNESS) - 0.0005) / 0.0495;
+            // The channel reaches half the thickest beam at 1, and the laser reads on past it.
+            float thickness = max(0.0, AlpsFrameChannel(fixture, FrameLaserThickness)) / 100.0 * ALPS_LASER_MAX_THICKNESS;
+            return max(0.0, (thickness - ALPS_LASER_DMX_MIN_THICKNESS) / (ALPS_LASER_DMX_MAX_THICKNESS - ALPS_LASER_DMX_MIN_THICKNESS));
         }
 
-        // The spin stays at 0, so the beams stand still around the cone.
+        // The spin channel only says which way the beams go round, and at 0 it is the way the
+        // spin grid counts. How far they have gone is in the spin grid.
         return 0.0;
     }
 
@@ -279,7 +291,7 @@ Shader "Hidden/ALPS/DMX Grid"
         int layout = AlpsReadInt(info + ALPS_INFO_LAYOUT);
         if (layout == ALPS_LAYOUT_LASER)
         {
-            return AlpsLaserValue(fixture, offset, info);
+            return AlpsLaserValue(fixture, offset);
         }
 
         if (layout == ALPS_LAYOUT_BAR_SEGMENT)
@@ -411,18 +423,25 @@ Shader "Hidden/ALPS/DMX Grid"
                 {
                     int fixture;
                     int offset;
-                    if (AlpsCellAt(band, n, x, show, fixture, offset) && offset == 10)
+                    if (AlpsCellAt(band, n, x, show, fixture, offset) && (offset == 10 || offset == 6))
                     {
-                        // A laser has no gobo, and its own spin stays at 0. VRSL turns the
-                        // phase into an angle of degrees(phase * 4) and flips it for an
-                        // inverted pan, so the gobo angle goes in as that phase.
+                        // VRSL turns a gobo's phase, on channel 10, into an angle of
+                        // degrees(phase * 4) and flips it for an inverted pan, so the gobo
+                        // angle goes in as that phase. A laser has no gobo. The phase on its
+                        // channel 6 is how far its beams have gone round the cone, in turns.
                         int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
-                        if (AlpsReadInt(info + ALPS_INFO_LAYOUT) != ALPS_LAYOUT_LASER)
+                        bool laser = AlpsReadInt(info + ALPS_INFO_LAYOUT) == ALPS_LAYOUT_LASER;
+                        float phase = 0.0;
+                        if (laser && offset == 6)
                         {
-                            float sign = AlpsRead(info + 2);
-                            float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
-                            result.rgb += float3(band == 0, band == 1, band == 2) * phase;
+                            phase = AlpsFrameChannel(fixture, FrameLaserSpin) / 360.0;
                         }
+                        else if (!laser && offset == 10)
+                        {
+                            phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * AlpsRead(info + 2);
+                        }
+
+                        result.rgb += float3(band == 0, band == 1, band == 2) * phase;
                     }
                 }
 

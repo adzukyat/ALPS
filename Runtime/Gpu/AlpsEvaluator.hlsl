@@ -88,6 +88,7 @@ float AlpsLight(float tint, float level)
 #define KindBrightness 3
 #define KindFlicker 4
 #define KindGobo 5
+#define KindLaser 6
 #define ParityEven 1
 #define ParityOdd 2
 #define MoveCircle 1
@@ -176,10 +177,17 @@ float AlpsLight(float tint, float level)
 #define FrameBrightnessScale 10
 #define FrameTrackEffect 11
 #define FrameConeMeshLength 12
-#define FrameStride 13
-#define FrameAimed 13
-#define FrameShowToken 14
-#define FrameTrackHeld 15
+#define FrameLaserFlatness 13
+#define FrameLaserBeams 14
+#define FrameLaserThickness 15
+#define FrameLaserSpin 16
+#define FrameStride 17
+#define FrameAimed 17
+#define FrameShowToken 18
+#define FrameTrackHeld 19
+
+// AlpsShowPlayer.GpuFrameTexels, the RGBA texels a fixture's row of the frames takes.
+#define ALPS_FRAME_TEXELS 5
 
 // How long before the end of the clip that last turned a head its stopping pose is taken,
 // inside the clip, where it still weighs something.
@@ -819,6 +827,13 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             slots = 2;
             slotParam[1] = paramRow + ParamStride;
         }
+        else if (kind == KindLaser)
+        {
+            // Flatness, then the beams and how thick they are.
+            slots = 3;
+            slotParam[1] = paramRow + ParamStride;
+            slotParam[2] = paramRow + 2 * ParamStride;
+        }
         else if (kind == KindBrightness || ((kind == KindColor || kind == KindGobo) && paletteCount > 0))
         {
             slots = 1;
@@ -942,6 +957,19 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             int stop = AlpsPaletteStop(paramRow, paletteCount, source[0], phase[0], local);
             AlpsWrite(frame, FrameGobo, AlpsRead(show.gobos + AlpsReadInt(effectRow + EffectPaletteStart) + stop));
         }
+        else if (kind == KindLaser)
+        {
+            AlpsWrite(frame, FrameLaserFlatness, value[0]);
+            AlpsWrite(frame, FrameLaserBeams, value[1]);
+            AlpsWrite(frame, FrameLaserThickness, value[2]);
+
+            // The beams go round the cone the other way on the mirrored half of a symmetric
+            // order, as the pan turns the other way there.
+            float beamBeatsPerTurn = AlpsRead(effectRow + EffectScalarA);
+            float beamTurn = beamBeatsPerTurn > 0.0 ? c.beats / beamBeatsPerTurn : 0.0;
+            float beamAngle = 360.0 * (mirrored ? -beamTurn : beamTurn);
+            AlpsWrite(frame, FrameLaserSpin, beamAngle - floor(beamAngle / 360.0) * 360.0);
+        }
     }
 }
 
@@ -953,11 +981,13 @@ bool AlpsIsDiscrete(int channel)
     return channel == FrameGobo || channel == FrameTrackEffect;
 }
 
-// Channels of how the light looks, its colour and its cone, which mix as light.
+// Channels of how the light looks, its colour, its cone and the shape of a laser's, which
+// mix as light.
 bool AlpsMixesAsLight(int channel)
 {
     return channel == FrameRed || channel == FrameGreen || channel == FrameBlue
-        || channel == FrameConeWidth || channel == FrameConeLength;
+        || channel == FrameConeWidth || channel == FrameConeLength
+        || channel == FrameLaserFlatness || channel == FrameLaserBeams || channel == FrameLaserThickness;
 }
 
 // Position of a fixture inside a group, or -1 when it is not a member.

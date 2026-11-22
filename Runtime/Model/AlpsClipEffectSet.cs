@@ -357,6 +357,7 @@ namespace AdzukiSoft.ALPS
                 {
                     effect.tilt, effect.pan, effect.circleCenterTilt, effect.circleCenterPan, effect.circleRadius,
                     effect.coneWidth, effect.coneLength, effect.colorPhasing, effect.brightness, effect.goboPhasing,
+                    effect.laserFlatness, effect.laserBeams, effect.laserThickness,
                 };
                 foreach (var value in values)
                 {

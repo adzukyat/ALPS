@@ -77,6 +77,7 @@ namespace AdzukiSoft.ALPS
         Brightness,
         Flicker,
         Gobo,
+        Laser,
     }
 
     /// <summary>Odd / even split: which half of the fixture order an effect applies to.</summary>

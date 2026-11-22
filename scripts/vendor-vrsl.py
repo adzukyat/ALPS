@@ -24,7 +24,8 @@ only what keeps the copy apart from a VRSL package in the same project:
 - a cone and a projection are drawn down to a far darker colour, since ALPS dims a fixture
   by its colour,
 - a static light throws no more light on what is right in front of it than on what is 25 cm
-  away, and none on its own face.
+  away, and none on its own face,
+- a laser's beams stand where the spin grid says, where VRSL moves them on by its own clock.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -128,6 +129,15 @@ CLOSE_LIGHT_NONE = 0.1
 CLOSE_LIGHT_SCALE = (
     "col * (min(UVscale, 1/(_ProjectionDistanceFallOff + ({0} * _ProjectionUVMod) + (_FeatherOffset * ({0} * {0}))))"
     " * smoothstep({1}, {0}, distanceFromOrigin)) * _ProjectionMaxIntensity").format(CLOSE_LIGHT_DISTANCE, CLOSE_LIGHT_NONE)
+# VRSL's laser takes a speed from the spin grid and moves its beams round the cone by that
+# speed times the shader's own time, which differs from one visitor to the next and does not
+# follow a seek. In DMX mode the copy takes how far the beams have gone round, in turns, from
+# the spin grid as it is, so a show places them by its own time. Each of its two passes
+# reads the phase and moves the beams.
+LASER_SPIN = re.compile(r"(GetSpin\(dmx\s*\+\s*\(uint\)\s*6\))\s*\*\s*_ScrollOffset")
+LASER_SCROLL = re.compile(r"laserUV\.x \+= _Time\.y \* scroll;")
+LASER_SCROLL_PLACED = "laserUV.x += IF(isDMX() > 0, scroll, _Time.y * scroll);"
+LASER_PASSES = 2
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -221,6 +231,8 @@ def main():
     remap = {guid_of[relative]: new_guid(guid_of[relative]) for relative in taken}
     cutoffs = []
     close_lights = []
+    laser_spins = []
+    laser_scrolls = []
     cleared = set()
 
     def remap_references(text, relative):
@@ -251,6 +263,10 @@ def main():
         cutoffs.append(found)
         text, found = CLOSE_LIGHT.subn(CLOSE_LIGHT_SCALE, text)
         close_lights.append(found)
+        text, found = LASER_SPIN.subn(r"\1", text)
+        laser_spins.append(found)
+        text, found = LASER_SCROLL.subn(LASER_SCROLL_PLACED, text)
+        laser_scrolls.append(found)
         text = re.sub(r'^(﻿?\s*Shader\s+")VRSL/', r"\1ALPS/VRSL/", text, count=1)
         # VRSL's material inspector lives in its editor assembly, which may not be there.
         return re.sub(r'^[ \t]*CustomEditor\s+"VRSLInspector"[ \t]*\r?\n', "", text, flags=re.M)
@@ -327,6 +343,8 @@ def main():
         sys.exit(f"Found {sum(cutoffs)} dark cut offs in the shaders, not {DARK_CUTOFFS}")
     if sum(close_lights) != 1:
         sys.exit(f"Found {sum(close_lights)} static projections to keep off their own face, not 1")
+    if sum(laser_spins) != LASER_PASSES or sum(laser_scrolls) != LASER_PASSES:
+        sys.exit(f"Found {sum(laser_spins)} laser spin phases and {sum(laser_scrolls)} scrolls to place, not {LASER_PASSES} of each")
 
     version = re.search(r'"version":\s*"([^"]+)"', read(os.path.join(SOURCE, "package.json"))).group(1)
     license_text = read(os.path.join(SOURCE, "LICENSE"))

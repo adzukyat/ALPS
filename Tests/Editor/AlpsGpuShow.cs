@@ -39,7 +39,8 @@ namespace AdzukiSoft.ALPS.Tests
         /// <param name="aim">Each fixture's world to aim space, all zero when left out.</param>
         /// <param name="penlight">The penlight section of the show data, the show's own when left out.</param>
         /// <param name="info">Each fixture's DMX info, that of a fixture nothing is known about when left out.</param>
-        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null, float[] penlight = null, float[] info = null)
+        /// <param name="defaults">Each fixture's default frame, that of a fixture nothing is known about when left out.</param>
+        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null, float[] penlight = null, float[] info = null, float[] defaults = null)
         {
             RequireGraphics();
             FixtureCount = fixtureCount >= 0 ? fixtureCount : Mathf.Max(show.fixtureCount, show.FixtureCount);
@@ -64,7 +65,7 @@ namespace AdzukiSoft.ALPS.Tests
             _data = Keep(AlpsShowPlayer.CreateShowTexture(AlpsShowPlayer.PackShowData(
                 show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
                 show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                FixtureCount, NeutralDefaults(FixtureCount), info, rows, aim ?? new float[FixtureCount * AlpsShowPlayer.GpuAimStride],
+                FixtureCount, defaults ?? NeutralDefaults(FixtureCount), info, rows, aim ?? new float[FixtureCount * AlpsShowPlayer.GpuAimStride],
                 penlight ?? show.penlight)));
             var framesShader = Shader.Find(AlpsPreviewDriver.GpuFramesShader);
             var gridShader = Shader.Find(AlpsPreviewDriver.GpuGridShader);

@@ -67,8 +67,7 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Floats per fixture in the fixture info section: the pan and tilt ranges, which way
         /// the gobo turns and the DMX step between gobos, then which channels the fixture
-        /// reads (<see cref="InfoLayout"/>), then what a laser keeps from its material or which
-        /// segment of its bar a bar segment is.
+        /// reads (<see cref="InfoLayout"/>), then which segment of its bar a bar segment is.
         /// </summary>
         public const int GpuFixtureInfoStride = 8;
         public const int InfoPanRange = 0;
@@ -76,17 +75,15 @@ namespace AdzukiSoft.ALPS
         public const int InfoPanSign = 2;
         public const int InfoGoboStep = 3;
         public const int InfoLayout = 4;
-        public const int InfoLaserFlatness = 5;
         public const int InfoBarSegment = 5;
-        public const int InfoLaserBeams = 6;
-        public const int InfoLaserThickness = 7;
 
         /// <summary>The 13 channels VRSL's movers and static lights read.</summary>
         public const int DmxLayoutStandard = 0;
 
         /// <summary>
         /// The 12 channels VRSL's laser reads: tilt, pan, cone length, cone width, flatness,
-        /// beam count, spin, the colour, the intensity and the beam thickness.
+        /// beam count, which way its beams go round, the colour, the intensity and the beam
+        /// thickness. How far the beams have gone round it reads from the spin grid.
         /// </summary>
         public const int DmxLayoutLaser = 1;
 
@@ -137,6 +134,24 @@ namespace AdzukiSoft.ALPS
         /// <summary>The angle the laser's pan and tilt channels reach to either side.</summary>
         public const float LaserAngleRange = 90f;
 
+        /// <summary>The laser's flatness at which its cone is a fan, 100% in the model.</summary>
+        public const float LaserMaxFlatness = 1.999f;
+
+        /// <summary>The fewest and the most beams the laser draws around its cone.</summary>
+        public const float LaserMinBeams = 4f;
+        public const float LaserMaxBeams = 68f;
+
+        /// <summary>
+        /// The thickest beam a laser's material holds, 100% in the model. It is twice what the
+        /// laser's thickness channel reaches at 1 (<see cref="LaserDmxMaxThickness"/>), and the
+        /// laser reads on past that, since the grid holds floats.
+        /// </summary>
+        public const float LaserMaxThickness = 0.1f;
+
+        /// <summary>The thickness the laser's channel gives at 0 and at 1.</summary>
+        public const float LaserDmxMinThickness = 0.0005f;
+        public const float LaserDmxMaxThickness = 0.05f;
+
         /// <summary>Floats per fixture in the aim section, the first three rows of its world to aim matrix.</summary>
         public const int GpuAimStride = 12;
 
@@ -164,8 +179,11 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public const int GpuDmxRowSpan = 354;
 
-        /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels, the aim flag and the show token.</summary>
-        public const int GpuFrameTexels = 4;
+        /// <summary>
+        /// RGBA texels per fixture row of the frames target, room for the 17 channels, the aim
+        /// flag, the show token and the held flag.
+        /// </summary>
+        public const int GpuFrameTexels = 5;
 
         /// <summary>Size of VRSL's horizontal DMX grid, which its shaders' texel maths expects.</summary>
         public const int GpuGridWidth = 26;
@@ -793,6 +811,7 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowLayout.FrameGobo] = AlpsShowLayout.GoboOff;
             frame[offset + AlpsShowLayout.FrameBrightnessScale] = 1f;
             frame[offset + AlpsShowLayout.FrameConeMeshLength] = 1f;
+            frame[offset + AlpsShowLayout.FrameLaserBeams] = LaserMinBeams;
         }
 
         /// <summary>Reads a VRSL fixture's fields into model units.</summary>
@@ -832,6 +851,12 @@ namespace AdzukiSoft.ALPS
                 frame[offset + AlpsShowLayout.FrameConeLength] = stretch * ModelConeLengthLimit;
                 frame[offset + AlpsShowLayout.FrameConeMeshLength] = 1f;
                 frame[offset + AlpsShowLayout.FrameGobo] = AlpsShowLayout.GoboOff;
+
+                // How flat the cone is, how many beams it has and how thick they are, which a
+                // laser no laser effect drives keeps. Its beams stand still.
+                frame[offset + AlpsShowLayout.FrameLaserFlatness] = laser.GetFloat(LaserFlatnessProperty) / LaserMaxFlatness * 100f;
+                frame[offset + AlpsShowLayout.FrameLaserBeams] = laser.GetFloat(LaserBeamsProperty);
+                frame[offset + AlpsShowLayout.FrameLaserThickness] = laser.GetFloat(LaserThicknessProperty) / LaserMaxThickness * 100f;
             }
         }
 
@@ -873,9 +898,7 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>
         /// What the DMX grid needs to know about a fixture: its pan and tilt ranges, which way
-        /// its gobo turns, and the DMX step between gobos. A laser reads how flat its cone is,
-        /// how many beams it has and how thick they are from DMX too, which no effect drives,
-        /// so the grid hands it back what its material says.
+        /// its gobo turns, and the DMX step between gobos, or that it is a laser.
         /// </summary>
         public static void CaptureVRSLDmxInfo(VRStageLighting_DMX_Static fixture, float[] info, int offset)
         {
@@ -886,9 +909,6 @@ namespace AdzukiSoft.ALPS
                 info[offset + InfoPanRange] = LaserAngleRange;
                 info[offset + InfoTiltRange] = LaserAngleRange;
                 info[offset + InfoLayout] = DmxLayoutLaser;
-                info[offset + InfoLaserFlatness] = laser.GetFloat(LaserFlatnessProperty);
-                info[offset + InfoLaserBeams] = laser.GetFloat(LaserBeamsProperty);
-                info[offset + InfoLaserThickness] = laser.GetFloat(LaserThicknessProperty);
                 return;
             }
 
@@ -913,9 +933,7 @@ namespace AdzukiSoft.ALPS
             info[offset + InfoPanSign] = 1f;
             info[offset + InfoGoboStep] = 30f;
             info[offset + InfoLayout] = DmxLayoutStandard;
-            info[offset + InfoLaserFlatness] = 0f;
-            info[offset + InfoLaserBeams] = 0f;
-            info[offset + InfoLaserThickness] = 0f;
+            info[offset + InfoBarSegment] = 0f;
         }
 
         /// <summary>

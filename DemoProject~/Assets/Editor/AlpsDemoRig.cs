@@ -298,9 +298,9 @@ public static class AlpsDemoRig
     }
 
     /// <summary>
-    /// The material of the demo's lasers. No effect drives how flat a laser's cone is, how
-    /// many beams it has or how thick they are, so a show takes them from the material: this
-    /// one flattens VRSL's cone into a fan of sixteen thin beams.
+    /// The material of the demo's lasers. A laser no laser effect drives takes how flat its
+    /// cone is, how many beams it has and how thick they are from its material: this one
+    /// flattens VRSL's cone into a fan of sixteen thin beams.
     /// </summary>
     private static Material LaserFan()
     {

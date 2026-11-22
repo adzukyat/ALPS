@@ -236,14 +236,18 @@ namespace AdzukiSoft.ALPS.Tests
             return opening * -AlpsShowPlayer.LaserMinConeWidth / (AlpsShowPlayer.LaserMaxConeWidth - AlpsShowPlayer.LaserMinConeWidth);
         }
 
-        private static float[] LaserInfo(float flatness, float beams, float thickness)
+        private static float[] LaserInfo()
         {
             var info = NeutralInfo();
             info[AlpsShowPlayer.InfoLayout] = AlpsShowPlayer.DmxLayoutLaser;
-            info[AlpsShowPlayer.InfoLaserFlatness] = flatness;
-            info[AlpsShowPlayer.InfoLaserBeams] = beams;
-            info[AlpsShowPlayer.InfoLaserThickness] = thickness;
             return info;
+        }
+
+        /// <summary>The thickness channel that gives a laser beams of <paramref name="percent"/> of the thickest.</summary>
+        private static float LaserThickness(float percent)
+        {
+            var thickness = percent / 100f * AlpsShowPlayer.LaserMaxThickness;
+            return (thickness - AlpsShowPlayer.LaserDmxMinThickness) / (AlpsShowPlayer.LaserDmxMaxThickness - AlpsShowPlayer.LaserDmxMinThickness);
         }
 
         [Test]
@@ -261,15 +265,19 @@ namespace AdzukiSoft.ALPS.Tests
             var brightness = set.Add(AlpsEffectKind.Brightness);
             brightness.brightness.hasSpread = true;
             brightness.brightness.spreadRange = new Vector2(50f, 150f);
+
+            // Beams come whole, and their thickness reaches past what the channel holds at 1.
+            var laser = set.Add(AlpsEffectKind.Laser);
+            laser.laserFlatness.value = 60f;
+            laser.laserBeams.value = 12.4f;
+            laser.laserThickness.value = 80f;
+            laser.laserSpinBeats = 4f;
             var show = AlpsShowCompiler.CompileStandalone(3, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
 
             // The first fixture is a mover, the other two are lasers.
-            const float flatness = 1.2f;
-            const float beams = 12f;
-            const float thickness = 0.03f;
             var info = new List<float>(NeutralInfo());
-            info.AddRange(LaserInfo(flatness, beams, thickness));
-            info.AddRange(LaserInfo(flatness, beams, thickness));
+            info.AddRange(LaserInfo());
+            info.AddRange(LaserInfo());
             var gpu = Keep(new AlpsGpuShow(show, 3, info: info.ToArray()));
             var frames = gpu.FramesAt(1f);
             var grid = gpu.ReadBack(gpu.Grid);
@@ -300,17 +308,20 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual((pan + range) / (2f * range), Read(grid, fixture, 1), 1e-4f, "Pan. " + diagnostics);
                 Assert.AreEqual((2f - 0.5f) / 5.5f, Read(grid, fixture, 2), 1e-4f, "Twice the mesh. " + diagnostics);
                 Assert.AreEqual(LaserWidth(30f, 100f), Read(grid, fixture, 3), 1e-4f, "Cone width. " + diagnostics);
-                Assert.AreEqual(flatness / 1.999f, Read(grid, fixture, 4), 1e-4f, "Flatness. " + diagnostics);
-                Assert.AreEqual((beams - 4f) / 64f, Read(grid, fixture, 5), 1e-4f, "Beams. " + diagnostics);
-                Assert.AreEqual(0f, Read(grid, fixture, 6), 1e-4f, "Spin. " + diagnostics);
+                Assert.AreEqual(0.6f, Read(grid, fixture, 4), 1e-4f, "Flatness. " + diagnostics);
+                Assert.AreEqual((12f - 4f) / 64f, Read(grid, fixture, 5), 1e-4f, "Beams. " + diagnostics);
+                Assert.AreEqual(0f, Read(grid, fixture, 6), 1e-4f, "Which way the beams go round. " + diagnostics);
                 Assert.AreEqual(LaserColour(0.2f, level), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
                 Assert.AreEqual(LaserColour(0.4f, level), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
                 Assert.AreEqual(LaserColour(1f, level), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
                 Assert.AreEqual(Mathf.Min(level, 1f), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
-                Assert.AreEqual((thickness - 0.0005f) / 0.0495f, Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
-                Assert.AreEqual(0f, Read(spin, fixture, 6), 1e-6f, "The beams stand still. " + diagnostics);
+                Assert.AreEqual(LaserThickness(80f), Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
+                Assert.Greater(Read(grid, fixture, 11), 1f, "Thicker than the channel holds at 1. " + diagnostics);
+                Assert.AreEqual(0.25f, Read(spin, fixture, 6), 1e-5f, "A beat of four a turn is a quarter turn. " + diagnostics);
                 Assert.AreEqual(0f, Read(spin, fixture, 10), 1e-6f, "A laser has no gobo to turn. " + diagnostics);
             }
+
+            Assert.AreEqual(0f, Read(spin, 0, 6), 1e-6f, "A mover has no beams to send round.");
 
             Assert.AreEqual(1, folded, "The pan of 120 is the one of -60 with the tilt the other way.");
             Assert.AreEqual(100f, Channel(1, AlpsShowLayout.FrameBrightness), 1e-3f);
@@ -433,15 +444,32 @@ namespace AdzukiSoft.ALPS.Tests
             var info = new float[AlpsShowPlayer.GpuFixtureInfoStride];
             AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, 0);
             Assert.AreEqual(AlpsShowPlayer.DmxLayoutLaser, info[AlpsShowPlayer.InfoLayout]);
-            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserFlatnessProperty), info[AlpsShowPlayer.InfoLaserFlatness]);
-            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserBeamsProperty), info[AlpsShowPlayer.InfoLaserBeams]);
-            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserThicknessProperty), info[AlpsShowPlayer.InfoLaserThickness]);
-            Assert.Greater(info[AlpsShowPlayer.InfoLaserBeams], 3f);
 
             var frame = new float[AlpsShowLayout.FrameStride];
             AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
             Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserPanProperty), frame[AlpsShowLayout.FramePan], 1e-4f);
             Assert.AreEqual(-material.GetFloat(AlpsShowPlayer.LaserTiltProperty), frame[AlpsShowLayout.FrameTilt], 1e-4f);
+            Assert.Greater(frame[AlpsShowLayout.FrameLaserBeams], 3f);
+
+            // A show without a laser effect hands the laser back how flat its material says
+            // its cone is, how many beams it has and how thick they are, in what the laser
+            // turns each channel into (VRSL-BasicLaser-DMX.shader).
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness);
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+            var gpu = Keep(new AlpsGpuShow(show, 1, info: info, defaults: frame));
+            gpu.Render(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+            float Read(int offset)
+            {
+                var texel = VrslTexel(1 + offset);
+                return grid.GetPixel(texel.x, texel.y).r;
+            }
+
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserFlatnessProperty), Mathf.LerpUnclamped(0f, 1.999f, Read(4)), 1e-4f, "Flatness.");
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserBeamsProperty), Mathf.LerpUnclamped(4f, 68f, Read(5)), 1e-3f, "Beams.");
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserThicknessProperty), Mathf.LerpUnclamped(0.0005f, 0.05f, Read(11)), 1e-5f, "Thickness.");
+            Assert.AreEqual(0f, gpu.ReadBack(gpu.Spin).GetPixel(VrslTexel(1 + 6).x, VrslTexel(1 + 6).y).r, 1e-6f, "The beams stand still.");
 
             // What the grid hands back for the captured cone is the material's own.
             var width = material.GetFloat(AlpsShowPlayer.LaserConeWidthProperty);

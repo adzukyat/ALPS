@@ -112,6 +112,16 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public bool goboProjectionOff;
 
+        // --- Laser ---
+        /// <summary>How flat the cone is, in percent: 0 is a round cone and 100 a fan.</summary>
+        public AlpsAnimatableValue laserFlatness = new AlpsAnimatableValue(50f, new Vector2(0f, 100f));
+        /// <summary>Beams around the cone. They come whole, so a range steps through them.</summary>
+        public AlpsAnimatableValue laserBeams = new AlpsAnimatableValue(8f, new Vector2(AlpsShowPlayer.LaserMinBeams, AlpsShowPlayer.LaserMaxBeams));
+        /// <summary>Thickness of a beam, in percent of the thickest a laser draws (<see cref="AlpsShowPlayer.LaserMaxThickness"/>).</summary>
+        public AlpsAnimatableValue laserThickness = new AlpsAnimatableValue(100f, new Vector2(0f, 100f));
+        /// <summary>Beats the beams take to go once round the cone. 0 leaves them standing.</summary>
+        public float laserSpinBeats;
+
         public AlpsEffect() { }
 
         public AlpsEffect(AlpsEffect other)
@@ -167,6 +177,11 @@ namespace AdzukiSoft.ALPS
             goboRotationBeats = other.goboRotationBeats;
             goboFixtureStaggerDegrees = other.goboFixtureStaggerDegrees;
             goboProjectionOff = other.goboProjectionOff;
+
+            laserFlatness = new AlpsAnimatableValue(other.laserFlatness);
+            laserBeams = new AlpsAnimatableValue(other.laserBeams);
+            laserThickness = new AlpsAnimatableValue(other.laserThickness);
+            laserSpinBeats = other.laserSpinBeats;
         }
 
         /// <summary>Both Tilt and Pan ranged, the condition for showing phase offset.</summary>
@@ -202,6 +217,11 @@ namespace AdzukiSoft.ALPS
                     break;
                 case AlpsEffectKind.Gobo:
                     effect.goboPhasing.isRange = true;
+                    break;
+                case AlpsEffectKind.Laser:
+                    // What the ranges open on. The values are those of VRSL's own laser.
+                    effect.laserBeams.range = new Vector2(4f, 16f);
+                    effect.laserThickness.range = new Vector2(10f, 100f);
                     break;
             }
 

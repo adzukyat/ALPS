@@ -277,7 +277,7 @@
 
                 o.flatnessBeamCountSpinThickness.x = lerp(0,1.999,getValueAtCoords(dmx+ (uint) 4, _Udon_DMXGridRenderTexture)); //5
                 o.flatnessBeamCountSpinThickness.y = lerp(4,68,getValueAtCoords(dmx+ (uint) 5, _Udon_DMXGridRenderTexture));//6
-                o.flatnessBeamCountSpinThickness.z = GetSpin(dmx+ (uint) 6) * _ScrollOffset; //7
+                o.flatnessBeamCountSpinThickness.z = GetSpin(dmx+ (uint) 6); //7
                 o.flatnessBeamCountSpinThickness.w = lerp(0.0005, 0.05,getValueAtCoords(dmx+ (uint) 11, _Udon_DMXGridRenderTexture)); //12
                 o.rgbIntensity.x = getValueAtCoords(dmx+ (uint) 7, _Udon_DMXGridRenderTexture); //8 
                 o.rgbIntensity.y = getValueAtCoords(dmx+ (uint) 8, _Udon_DMXGridRenderTexture); //9
@@ -319,7 +319,7 @@
 
                 //Draw Beams
                 half scroll = IF(isDMX() > 0, i.flatnessBeamCountSpinThickness.z, getScrollSpeed());
-                laserUV.x += _Time.y * scroll;
+                laserUV.x += IF(isDMX() > 0, scroll, _Time.y * scroll);
                 half beamcount = IF(isDMX() > 0, round(i.flatnessBeamCountSpinThickness.y), getLaserCount());
                 laserUV.x = frac(laserUV.x * beamcount);
                 laserUV.x = laserUV.x - 0.5;
@@ -620,7 +620,7 @@
 
                 o.flatnessBeamCountSpinThickness.x = lerp(0,1.999,getValueAtCoords(dmx+ (uint) 4, _Udon_DMXGridRenderTexture)); //5
                 o.flatnessBeamCountSpinThickness.y = lerp(4,68,getValueAtCoords(dmx+ (uint) 5, _Udon_DMXGridRenderTexture));//6
-                o.flatnessBeamCountSpinThickness.z = GetSpin(dmx+ (uint) 6) * _ScrollOffset; //7
+                o.flatnessBeamCountSpinThickness.z = GetSpin(dmx+ (uint) 6); //7
                 o.flatnessBeamCountSpinThickness.w = lerp(0.0005, 0.05,getValueAtCoords(dmx+ (uint) 11, _Udon_DMXGridRenderTexture)); //12
                 o.rgbIntensity.x = getValueAtCoords(dmx+ (uint) 7, _Udon_DMXGridRenderTexture); //8 
                 o.rgbIntensity.y = getValueAtCoords(dmx+ (uint) 8, _Udon_DMXGridRenderTexture); //9
@@ -664,7 +664,7 @@
 
                 //Draw Beams
                 half scroll = IF(isDMX() > 0, i.flatnessBeamCountSpinThickness.z, getScrollSpeed());
-                laserUV.x += _Time.y * scroll;  
+                laserUV.x += IF(isDMX() > 0, scroll, _Time.y * scroll);  
                 half beamcount = IF(isDMX() > 0, round(i.flatnessBeamCountSpinThickness.y), getLaserCount());
                 laserUV.x = frac(laserUV.x * beamcount);
                 laserUV.x = laserUV.x - 0.5;

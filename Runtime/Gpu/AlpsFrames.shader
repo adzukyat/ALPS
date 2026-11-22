@@ -1,5 +1,5 @@
-// Evaluates the show. Each row of the target is one fixture, four RGBA texels wide, holding
-// the 13 frame channels of AlpsShowLayout in order, whether the head is aimed at a tracked
+// Evaluates the show. Each row of the target is one fixture, five RGBA texels wide, holding
+// the 17 frame channels of AlpsShowLayout in order, whether the head is aimed at a tracked
 // user, the token of the show that drew it, and whether the head stays where a tracked user
 // left it.
 //
@@ -131,7 +131,7 @@ Shader "Hidden/ALPS/Frames"
                     trackHeld = 1.0;
                 }
 
-                int first = (int)floor(i.uv.x * 4.0) * 4;
+                int first = (int)floor(i.uv.x * ALPS_FRAME_TEXELS) * 4;
                 float4 result = 0;
                 [unroll]
                 for (int c = 0; c < 4; c++)
