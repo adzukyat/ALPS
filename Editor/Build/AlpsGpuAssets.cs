@@ -16,9 +16,11 @@ namespace AdzukiSoft.ALPS.Editor
 
         /// <summary>
         /// Rows of the shared frames targets, one per fixture of a show: what VRSL's grid
-        /// holds, and every slot of the penlight areas a show can have.
+        /// holds, counting the segments of multi light bars, which put three fixtures on a
+        /// row, and every slot of the penlight areas a show can have.
         /// </summary>
-        public const int FrameRows = AlpsShowPlayer.GpuMaxFixtures + AlpsShowPlayer.GpuMaxPenlightAreas * AlpsShowPlayer.GpuMaxPenlightSlots;
+        public const int FrameRows = AlpsShowPlayer.GpuMaxFixtures * AlpsVRSLMultiLightBar.SegmentCount / AlpsVRSLMultiLightBar.RowCount
+                                     + AlpsShowPlayer.GpuMaxPenlightAreas * AlpsShowPlayer.GpuMaxPenlightSlots;
 
         /// <summary>The materials and targets every show player of a scene shares.</summary>
         public sealed class Shared

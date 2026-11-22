@@ -46,7 +46,33 @@ namespace AdzukiSoft.ALPS.Tests
 
             Assign(out var errors, a, b);
 
-            Assert.IsEmpty(errors, "129 fixtures over two shows fit, since each show fits on its own.");
+            Assert.IsEmpty(errors, "359 fixtures over two shows fit, since each show fits on its own.");
+        }
+
+        [Test]
+        public void Rows_SkipWhatABandDoesNotRead()
+        {
+            var show = Fixtures(AlpsShowPlayer.GpuMaxFixtures);
+
+            var rows = Assign(out var errors, show);
+
+            Assert.IsEmpty(errors);
+            var expected = Enumerable.Range(0, 118).Concat(Enumerable.Range(120, 116)).Concat(Enumerable.Range(240, 114));
+            CollectionAssert.AreEqual(expected, show.Select(f => rows[f]));
+        }
+
+        [Test]
+        public void Rows_ABarStaysInOneBand()
+        {
+            // 116 fixtures leave the first band two rows, which a bar does not fit in.
+            var before = Fixtures(116);
+            var bar = Bar();
+            var after = Fixtures(3);
+            var rows = Assign(out var errors, before.Concat(bar).Concat(after).ToList());
+
+            Assert.IsEmpty(errors);
+            Assert.IsTrue(bar.All(segment => rows[segment] == 120), "The bar starts the second band.");
+            CollectionAssert.AreEqual(new[] { 116, 117, 124 }, after.Select(f => rows[f]), "The fixtures after it fill the rows it left.");
         }
 
         [Test]
@@ -113,20 +139,37 @@ namespace AdzukiSoft.ALPS.Tests
         [Test]
         public void Rows_BarsCountTheirFourRowsAgainstTheGrid()
         {
-            // 29 bars take 116 rows, which leaves two.
+            // 29, 29 and 28 bars fill the bands of 118, 116 and 114 rows but for two rows of
+            // the first band and two of the last.
             var show = new List<AlpsFixture>();
-            for (var i = 0; i < 29; i++)
+            for (var i = 0; i < 86; i++)
             {
                 show.AddRange(Bar());
             }
 
-            show.AddRange(Fixtures(2));
-            Assign(out var errors, show);
-            Assert.IsEmpty(errors, "348 segments and two fixtures take 118 rows.");
+            show.AddRange(Fixtures(4));
+            var rows = Assign(out var errors, show);
+            Assert.IsEmpty(errors, "1032 segments and four fixtures take 348 rows.");
+            CollectionAssert.AreEqual(new[] { 116, 117, 352, 353 }, show.Skip(86 * AlpsVRSLMultiLightBar.SegmentCount).Select(f => rows[f]));
 
             show.AddRange(Fixtures(1));
             Assign(out errors, show);
             Assert.AreEqual(1, errors.Count);
+        }
+
+        [Test]
+        public void Rows_BarsThatAddUpToTheGridMayStillNotFit()
+        {
+            // 87 bars take 348 rows, but each band holds whole bars only.
+            var show = new List<AlpsFixture>();
+            for (var i = 0; i < 87; i++)
+            {
+                show.AddRange(Bar());
+            }
+
+            Assign(out var errors, show);
+            Assert.AreEqual(1, errors.Count);
+            StringAssert.Contains("Show 0", errors[0]);
         }
 
         /// <summary>A multi light bar's twelve segments, in order.</summary>

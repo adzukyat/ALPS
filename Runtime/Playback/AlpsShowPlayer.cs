@@ -141,10 +141,28 @@ namespace AdzukiSoft.ALPS
         public const int GpuAimStride = 12;
 
         /// <summary>
-        /// The rows VRSL's 26 x 240 grid holds within three universes, 13 channels each. A
-        /// fixture takes one, and a multi light bar four for its twelve segments.
+        /// The rows of 13 channels VRSL's 26 x 240 grid holds in its nine universe mode, which
+        /// reads universes 1 to 3 from red, 4 to 6 from green and 7 to 9 from blue
+        /// (<see cref="GpuDmxBandRows"/>). A fixture takes one, and a multi light bar four for
+        /// its twelve segments, all in one band.
         /// </summary>
-        public const int GpuMaxFixtures = 118;
+        public const int GpuMaxFixtures = 348;
+
+        /// <summary>The colour bands of the grid, three universes each.</summary>
+        public const int GpuDmxBands = 3;
+
+        /// <summary>
+        /// Rows a band spans. VRSL counts a universe as 520 channels, 40 rows, so band k starts
+        /// on row 120k, absolute channel 1560k + 1. Not all of them can be read
+        /// (<see cref="DmxBandRows"/>).
+        /// </summary>
+        public const int GpuDmxBandRows = 120;
+
+        /// <summary>
+        /// Rows from the first to past the last one VRSL reads. A row n reads absolute channel
+        /// 13n + 1 on, and the rows past the end of a band stay empty.
+        /// </summary>
+        public const int GpuDmxRowSpan = 354;
 
         /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels, the aim flag and the show token.</summary>
         public const int GpuFrameTexels = 4;
@@ -621,7 +639,7 @@ namespace AdzukiSoft.ALPS
             var defaultsAt = groupIndexAt + groupIndex.Length;
             var fixtureInfoAt = defaultsAt + defaults.Length;
             var channelFixturesAt = fixtureInfoAt + fixtureInfo.Length;
-            var channels = GpuMaxFixtures * GpuRowChannels;
+            var channels = GpuDmxRowSpan * GpuRowChannels;
             var aimAt = channelFixturesAt + channels;
             var penlightAt = aimAt + aim.Length;
             var size = penlightAt + penlight.Length;
@@ -679,7 +697,7 @@ namespace AdzukiSoft.ALPS
             for (var i = 0; i < fixtureCount; i++)
             {
                 var row = i < dmxRows.Length ? dmxRows[i] : i;
-                if (row < 0 || row >= GpuMaxFixtures)
+                if (!IsDmxRow(row))
                 {
                     continue;
                 }
@@ -907,7 +925,9 @@ namespace AdzukiSoft.ALPS
         /// length rides on the fine pan channel: the cone reaches as far as the mesh stretch
         /// that VRSL's cone length via DMX adds to <paramref name="baseConeLength"/>, the
         /// fixture's own mesh length, with the fade along the cone left fully open. That
-        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>).
+        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>). Every
+        /// fixture reads in nine universe mode, which takes a channel from the colour of the
+        /// grid its band is laid out in, since a fixture in the other mode reads all three.
         /// </summary>
         public static void ConfigureVRSLDmx(VRStageLighting_DMX_Static fixture, int row, float baseConeLength)
         {
@@ -915,7 +935,7 @@ namespace AdzukiSoft.ALPS
             var universe = (channel - 1) / 520 + 1;
             fixture.enableDMXChannels = true;
             fixture.useLegacySectorMode = false;
-            fixture.nineUniverseMode = false;
+            fixture.nineUniverseMode = true;
             fixture.singleChannelMode = false;
             fixture.enableFineChannels = false;
             fixture.enableStrobe = false;
@@ -929,6 +949,56 @@ namespace AdzukiSoft.ALPS
             fixture.coneLength = VrslMaxConeLength;
             fixture.maxConeLength = baseConeLength;
             fixture._UpdateInstancedProperties();
+        }
+
+        /// <summary>
+        /// The rows of band <paramref name="band"/> VRSL reads all of. Its getValueAtCoords
+        /// takes a channel to a band by universes of 512 channels, so band k ends on absolute
+        /// channel 1536(k + 1), and moves it back by 1560k to read the texel the same channel
+        /// of band 0 is read from. That leaves the band its channels 1 to 1536 - 24k, and a
+        /// row needs twelve of them, a bar's last row nine.
+        /// </summary>
+        public static int DmxBandRows(int band)
+        {
+            return (1536 - 24 * band - (GpuRowChannels - 1)) / GpuRowChannels + 1;
+        }
+
+        /// <summary>Whether VRSL reads all of row <paramref name="row"/>.</summary>
+        public static bool IsDmxRow(int row)
+        {
+            if (row < 0 || row >= GpuDmxRowSpan)
+            {
+                return false;
+            }
+
+            return row % GpuDmxBandRows < DmxBandRows(row / GpuDmxBandRows);
+        }
+
+        /// <summary>
+        /// The first row from <paramref name="row"/> on where <paramref name="size"/> rows in a
+        /// row are all read and in one band, or <see cref="GpuDmxRowSpan"/> when none is left.
+        /// </summary>
+        public static int FitDmxRows(int row, int size)
+        {
+            if (row < 0)
+            {
+                row = 0;
+            }
+
+            while (row < GpuDmxRowSpan)
+            {
+                var band = row / GpuDmxBandRows;
+                var last = row + size - 1;
+                if (IsDmxRow(row) && IsDmxRow(last) && last / GpuDmxBandRows == band)
+                {
+                    return row;
+                }
+
+                // The rows a band reads come first, so nothing later in this band fits.
+                row = (band + 1) * GpuDmxBandRows;
+            }
+
+            return GpuDmxRowSpan;
         }
     }
 }

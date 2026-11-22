@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -317,11 +318,17 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void Grid_LaysAMultiLightBarOutOverFourRows()
+        [TestCase(5)]
+        [TestCase(125)]
+        [TestCase(245)]
+        public void Grid_LaysAMultiLightBarOutOverFourRows(int barRow)
         {
             const int segments = AlpsVRSLMultiLightBar.SegmentCount;
             const int count = segments + 2;
-            const int barRow = 5;
+
+            // Each band reads the texels of band 0 from a colour of its own.
+            var band = barRow / AlpsShowPlayer.GpuDmxBandRows;
+            var local = barRow % AlpsShowPlayer.GpuDmxBandRows;
             var set = Set(0f);
             set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
             var brightness = set.Add(AlpsEffectKind.Brightness);
@@ -330,8 +337,8 @@ namespace AdzukiSoft.ALPS.Tests
             var show = AlpsShowCompiler.CompileStandalone(count, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
 
             // A mover on the row before the bar, the bar's twelve segments on its four rows,
-            // and a mover on the row after them. Rows 6 and 7 hold channels 91 and 104, which
-            // VRSL reads through its exceptions for the thirteenth channel.
+            // and a mover on the row after them. Rows 6 and 7 of a band hold its channels 91
+            // and 104, which VRSL reads through its exceptions for the thirteenth channel.
             var info = new List<float>(NeutralInfo());
             var rows = new List<int> { barRow - 1 };
             for (var s = 0; s < segments; s++)
@@ -348,10 +355,11 @@ namespace AdzukiSoft.ALPS.Tests
             var frames = gpu.FramesAt(1f);
             var grid = gpu.ReadBack(gpu.Grid);
 
-            // What VRSL's own getValueAtCoords reads for every channel of the first ten rows.
+            // What VRSL's own getValueAtCoords reads for every channel of the band's first ten rows.
             var probe = Keep(new Material(Shader.Find("Hidden/ALPS/Tests/VRSL Probe")));
             const int channels = 13 * 10;
             probe.SetFloat("_AlpsProbeChannels", channels);
+            probe.SetFloat("_AlpsProbeFirst", 13 * AlpsShowPlayer.GpuDmxBandRows * band);
             Shader.SetGlobalTexture("_Udon_DMXGridRenderTexture", gpu.Grid);
             Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", gpu.Spin);
             Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / gpu.Grid.width, 1f / gpu.Grid.height, gpu.Grid.width, gpu.Grid.height));
@@ -364,7 +372,7 @@ namespace AdzukiSoft.ALPS.Tests
             float Stored(int channel)
             {
                 var texel = VrslTexel(channel + 1);
-                return grid.GetPixel(texel.x, texel.y).r;
+                return grid.GetPixel(texel.x, texel.y)[band];
             }
 
             var thirteenth = 0;
@@ -377,7 +385,7 @@ namespace AdzukiSoft.ALPS.Tests
                 var colour = new[] { 0.2f, 0.4f, 1f };
                 for (var k = 0; k < AlpsShowPlayer.BarSegmentChannels; k++)
                 {
-                    var channel = barRow * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
+                    var channel = local * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
                     thirteenth += channel % 13 == 12 ? 1 : 0;
                     var expected = k == 0 ? 1f : AlpsGpuShow.Light(colour[k - 1], level);
                     if (Mathf.Abs(expected - Stored(channel)) > 1e-4f)
@@ -398,14 +406,14 @@ namespace AdzukiSoft.ALPS.Tests
 
             // The four channels the bar leaves of its last row stay dark, and the movers
             // either side keep their own rows.
-            for (var channel = (barRow + 3) * 13 + 9; channel < (barRow + 4) * 13; channel++)
+            for (var channel = (local + 3) * 13 + 9; channel < (local + 4) * 13; channel++)
             {
                 Assert.AreEqual(0f, Stored(channel), 1e-6f, $"Channel {channel + 1} past the bar's last.");
             }
 
-            Assert.AreEqual(GridDimmer(Level(0)), Stored((barRow - 1) * 13 + 5), 1e-4f, "The mover before the bar.");
-            Assert.AreEqual(GridDimmer(Mathf.Min(Level(count - 1), 1f)), Stored((barRow + 4) * 13 + 5), 1e-4f, "The mover after the bar.");
-            Assert.AreEqual(0f, Stored((barRow - 1) * 13 + 12), 1e-6f, "A mover reads nothing from its thirteenth channel.");
+            Assert.AreEqual(GridDimmer(Level(0)), Stored((local - 1) * 13 + 5), 1e-4f, "The mover before the bar.");
+            Assert.AreEqual(GridDimmer(Mathf.Min(Level(count - 1), 1f)), Stored((local + 4) * 13 + 5), 1e-4f, "The mover after the bar.");
+            Assert.AreEqual(0f, Stored((local - 1) * 13 + 12), 1e-6f, "A mover reads nothing from its thirteenth channel.");
         }
 
 
@@ -567,11 +575,11 @@ namespace AdzukiSoft.ALPS.Tests
             for (var fixture = 0; fixture < Fixtures; fixture++)
             {
                 float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+                // The first band of rows is read from red, in either grid.
                 float Read(Texture2D texture, int offset)
                 {
                     var texel = VrslTexel(13 * fixture + 1 + offset);
-                    var color = texture.GetPixel(texel.x, texel.y);
-                    return texture == grid ? color.r * 0.2126729f + color.g * 0.7151522f + color.b * 0.0721750f : color.r;
+                    return texture.GetPixel(texel.x, texel.y).r;
                 }
 
                 var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
@@ -649,6 +657,124 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             Assert.IsEmpty(failures, string.Join("\n", failures));
+        }
+
+        [Test]
+        public void Grid_ReadsEveryBandThroughVrslsOwnFunctions()
+        {
+            // The first and last row of each band. Rows 0, 120 and 240 share their texels.
+            var rows = new[] { 0, 117, 120, 235, 240, 353 };
+            Assert.AreEqual(Fixtures, rows.Length);
+            var show = Standalone(MoveSet(), ColorSet(), BrightnessSet(), ConeSet(), GoboSet());
+            const float time = 1.3f;
+            var gpu = Keep(new AlpsGpuShow(show, Fixtures, rows));
+            var frames = gpu.FramesAt(time);
+            var info = NeutralInfo();
+
+            var probe = Keep(new Material(Shader.Find("Hidden/ALPS/Tests/VRSL Probe")));
+            probe.SetFloat("_AlpsProbeChannels", 13);
+            Shader.SetGlobalTexture("_Udon_DMXGridRenderTexture", gpu.Grid);
+            Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", gpu.Spin);
+            Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / gpu.Grid.width, 1f / gpu.Grid.height, gpu.Grid.width, gpu.Grid.height));
+            var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", 13, 1));
+
+            var failures = new List<string>();
+            var pans = new HashSet<float>();
+            for (var fixture = 0; fixture < Fixtures; fixture++)
+            {
+                // The channels a fixture on this row reads (Rows_SetVrslsFixtureUpInNineUniverseMode).
+                var channel = 13 * rows[fixture] + 1;
+                probe.SetFloat("_AlpsProbeFirst", channel - 1);
+                Graphics.Blit(null, read, probe);
+                var values = AlpsGpuShow.ReadBackTexture(read);
+                float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+                var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
+                var expected = new[]
+                {
+                    (-Channel(AlpsShowLayout.FramePan) + info[0]) / (2f * info[0]),
+                    ConeStretch(Channel(AlpsShowLayout.FrameConeLength), Channel(AlpsShowLayout.FrameConeMeshLength)),
+                    (Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]),
+                    0f,
+                    Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f,
+                    GridDimmer(level),
+                    1f,
+                    GridColour(Channel(AlpsShowLayout.FrameRed), level),
+                    GridColour(Channel(AlpsShowLayout.FrameGreen), level),
+                    GridColour(Channel(AlpsShowLayout.FrameBlue), level),
+                    0f,
+                    Mathf.Round(Channel(AlpsShowLayout.FrameGobo)) * 30f / 255f,
+                };
+
+                pans.Add(Mathf.Round(expected[0] * 1000f));
+                for (var offset = 0; offset < expected.Length; offset++)
+                {
+                    var vrsl = values.GetPixel(offset, 0).r;
+                    if (Mathf.Abs(expected[offset] - vrsl) > 1e-3f)
+                    {
+                        failures.Add($"row {rows[fixture]} offset {offset}: expected {expected[offset]:0.####}, VRSL reads {vrsl:0.####}");
+                    }
+                }
+
+                var spin = values.GetPixel(10, 0).g;
+                if (Mathf.Abs(SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)) - spin) > 1e-3f)
+                {
+                    failures.Add($"row {rows[fixture]} gobo angle: expected {SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)):0.####}, VRSL reads {spin:0.####}");
+                }
+
+                Object.DestroyImmediate(values);
+            }
+
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.Greater(pans.Count, 1, "The fixtures that share texels hold values of their own.");
+        }
+
+        [Test]
+        public void Rows_KeepToWhatEachBandReads()
+        {
+            Assert.AreEqual(AlpsShowPlayer.GpuMaxFixtures, AlpsShowPlayer.DmxBandRows(0) + AlpsShowPlayer.DmxBandRows(1) + AlpsShowPlayer.DmxBandRows(2));
+            var read = Enumerable.Range(0, AlpsShowPlayer.GpuDmxRowSpan + 10).Where(AlpsShowPlayer.IsDmxRow).ToList();
+            Assert.AreEqual(AlpsShowPlayer.GpuMaxFixtures, read.Count);
+            foreach (var row in new[] { 0, 117, 120, 235, 240, 353 })
+            {
+                Assert.IsTrue(AlpsShowPlayer.IsDmxRow(row), $"Row {row}.");
+            }
+
+            foreach (var row in new[] { -1, 118, 119, 236, 239, 354 })
+            {
+                Assert.IsFalse(AlpsShowPlayer.IsDmxRow(row), $"Row {row}.");
+            }
+
+            Assert.AreEqual(116, AlpsShowPlayer.FitDmxRows(116, 1));
+            Assert.AreEqual(120, AlpsShowPlayer.FitDmxRows(116, 4), "A bar does not run over the end of a band.");
+            Assert.AreEqual(120, AlpsShowPlayer.FitDmxRows(118, 1));
+            Assert.AreEqual(232, AlpsShowPlayer.FitDmxRows(232, 4));
+            Assert.AreEqual(240, AlpsShowPlayer.FitDmxRows(233, 4));
+            Assert.AreEqual(AlpsShowPlayer.GpuDmxRowSpan, AlpsShowPlayer.FitDmxRows(351, 4));
+        }
+
+        [TestCase(0)]
+        [TestCase(117)]
+        [TestCase(120)]
+        [TestCase(235)]
+        [TestCase(240)]
+        [TestCase(353)]
+        public void Rows_SetVrslsFixtureUpInNineUniverseMode(int row)
+        {
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            var fixture = mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, 1f);
+
+            // What VRSL's own script hands its shaders, which the grid lays the row out for.
+            var block = new MaterialPropertyBlock();
+            foreach (var renderer in fixture.objRenderers)
+            {
+                renderer.GetPropertyBlock(block);
+                Assert.AreEqual(13 * row + 1, block.GetInt("_DMXChannel"), $"{renderer.name} on row {row}.");
+                Assert.AreEqual(1, block.GetInt("_NineUniverseMode"), $"{renderer.name} on row {row}.");
+            }
+
+            Assert.Greater(fixture.objRenderers.Length, 0);
         }
 
         /// <summary>Logs which texel VRSL's getValueAtCoords reads for each channel, from a grid that holds its own coordinates.</summary>

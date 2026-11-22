@@ -108,13 +108,15 @@ namespace AdzukiSoft.ALPS.Editor
         /// keeps one row, free in each of them. A fixture that reads nothing from the grid,
         /// a penlight slot, takes no row. The segments of a multi light bar share the rows
         /// handed to their bar (<see cref="AlpsFixture.DmxOwner"/>), four in a row, and each
-        /// is given the first of them.
+        /// is given the first of them. The grid's rows come in three bands
+        /// (<see cref="AlpsShowPlayer.FitDmxRows"/>), and a bar's rows stay in one.
         /// </summary>
         public static Dictionary<AlpsFixture, int> AssignDmxRows(List<List<AlpsFixture>> shows, List<string> names, List<string> errors)
         {
             var showsOf = new Dictionary<Object, List<int>>();
             var rowsOf = new Dictionary<Object, int>();
             var order = new List<Object>();
+            var tooMany = new bool[shows.Count];
             for (var s = 0; s < shows.Count; s++)
             {
                 var count = 0;
@@ -143,6 +145,7 @@ namespace AdzukiSoft.ALPS.Editor
 
                 if (count > AlpsShowPlayer.GpuMaxFixtures)
                 {
+                    tooMany[s] = true;
                     errors.Add($"A show's fixtures take {AlpsShowPlayer.GpuMaxFixtures} rows of VRSL's DMX grid at most, one each and {AlpsVRSLMultiLightBar.RowCount} for a multi light bar. {names[s]} takes {count}.");
                 }
             }
@@ -154,14 +157,26 @@ namespace AdzukiSoft.ALPS.Editor
             }
 
             var first = new Dictionary<Object, int>();
-            var overflow = false;
+            var overflow = new bool[shows.Count];
             foreach (var owner in order)
             {
                 var size = rowsOf[owner];
-                var row = 0;
-                while (showsOf[owner].Exists(s => Taken(used[s], row, size)))
+                var row = AlpsShowPlayer.FitDmxRows(0, size);
+                while (row < AlpsShowPlayer.GpuDmxRowSpan && showsOf[owner].Exists(s => Taken(used[s], row, size)))
                 {
-                    row++;
+                    row = AlpsShowPlayer.FitDmxRows(row + 1, size);
+                }
+
+                if (row >= AlpsShowPlayer.GpuDmxRowSpan)
+                {
+                    // Left without a row, which the errors below report.
+                    foreach (var s in showsOf[owner])
+                    {
+                        overflow[s] = true;
+                    }
+
+                    first.Add(owner, -1);
+                    continue;
                 }
 
                 foreach (var s in showsOf[owner])
@@ -173,13 +188,16 @@ namespace AdzukiSoft.ALPS.Editor
                 }
 
                 first.Add(owner, row);
-                overflow |= row + size > AlpsShowPlayer.GpuMaxFixtures;
             }
 
-            // Every show fits on its own, but the fixtures they share pushed a row past the grid.
-            if (overflow && used.TrueForAll(u => u.Count <= AlpsShowPlayer.GpuMaxFixtures))
+            // The show's rows add up to what the grid holds, but its bars or the fixtures it
+            // shares with other shows left no room in a band.
+            for (var s = 0; s < shows.Count; s++)
             {
-                errors.Add($"The fixtures the shows share leave no room for the others in VRSL's DMX grid, which holds {AlpsShowPlayer.GpuMaxFixtures} rows.");
+                if (overflow[s] && !tooMany[s])
+                {
+                    errors.Add($"{names[s]} does not fit in VRSL's DMX grid. Its rows come in three bands of {AlpsShowPlayer.DmxBandRows(0)}, {AlpsShowPlayer.DmxBandRows(1)} and {AlpsShowPlayer.DmxBandRows(2)}, a multi light bar's {AlpsVRSLMultiLightBar.RowCount} rows stay in one band, and a fixture several shows share keeps one row in each of them.");
+                }
             }
 
             var rows = new Dictionary<AlpsFixture, int>();

@@ -43,7 +43,7 @@ float _AlpsTime;
 
 #define ALPS_FIXTURE_INFO_STRIDE 8
 #define ALPS_AIM_STRIDE 12
-#define ALPS_MAX_FIXTURES 118
+#define ALPS_MAX_FIXTURES 348
 
 // The penlight areas, mirrored from AlpsShowPlayer.GpuPenlightAreaStride and what it holds.
 #define ALPS_PENLIGHT_AREAS 4

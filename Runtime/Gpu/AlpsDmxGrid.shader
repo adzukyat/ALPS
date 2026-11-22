@@ -3,6 +3,8 @@
 // grid each, and a multi light bar runs on over four rows, four channels per segment. Rows
 // are handed out across every show of a scene, and the show data says which of its fixtures
 // reads each channel. Channels it holds no fixture for stay dark.
+// The fixtures read in VRSL's nine universe mode, where rows 0, 120 and 240 on are three
+// bands laid over the same texels in red, green and blue.
 // Pass 0 is the grid VRSL reads its channels from, pass 1 the gobo spin phase grid.
 //
 // Which texel VRSL reads a channel from is worked out the way VRSL's getValueAtCoords
@@ -61,6 +63,16 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_LAYOUT_BAR_SEGMENT 2
     #define ALPS_CHANNEL_FIXTURE_STEP 16
 
+    // AlpsShowPlayer.GpuDmxBands and GpuDmxBandRows.
+    #define ALPS_DMX_BANDS 3
+    #define ALPS_DMX_BAND_ROWS 120
+
+    // AlpsShowPlayer.DmxBandRows, the rows of a band VRSL reads all of.
+    int AlpsDmxBandRows(int band)
+    {
+        return (1536 - 24 * band - 12) / 13 + 1;
+    }
+
     float AlpsFrameChannel(int fixture, int channel)
     {
         return _MainTex.Load(int3(channel / 4, fixture, 0))[channel % 4];
@@ -106,18 +118,19 @@ Shader "Hidden/ALPS/DMX Grid"
         return int2(floor(uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT)));
     }
 
-    // Finds the show's fixture and the channel offset VRSL reads from texel <p>, or returns false.
-    bool AlpsCellAt(int2 p, AlpsShow show, out int fixture, out int offset)
+    // Finds the row <n> of a band and its channel <x> VRSL reads from texel <p>, or returns
+    // false. Each band reads the texel of the same row and channel in band 0.
+    bool AlpsGridCell(int2 p, out int n, out int x)
     {
-        fixture = 0;
-        offset = 0;
+        n = 0;
+        x = 0;
         if ((p.x & 1) == 0)
         {
             return false;
         }
 
         // Only odd columns are read, column 2x - 1 for channel x of a row.
-        int x = (p.x + 1) / 2;
+        x = (p.x + 1) / 2;
         if (x < 1 || x > 13)
         {
             return false;
@@ -129,20 +142,30 @@ Shader "Hidden/ALPS/DMX Grid"
             return false;
         }
 
-        int n = (p.y - 1) / 2;
-        if (n >= ALPS_MAX_FIXTURES)
+        n = (p.y - 1) / 2;
+        if (n >= ALPS_DMX_BAND_ROWS)
         {
             return false;
         }
 
         int2 read = AlpsVrslTexel((uint)(13 * n + x));
-        if (read.x != p.x || read.y != p.y)
+        return read.x == p.x && read.y == p.y;
+    }
+
+    // Finds the show's fixture and the channel offset on channel <x> of row <n> of band
+    // <band>, or returns false.
+    bool AlpsCellAt(int band, int n, int x, AlpsShow show, out int fixture, out int offset)
+    {
+        fixture = 0;
+        offset = 0;
+        if (n >= AlpsDmxBandRows(band))
         {
             return false;
         }
 
         // The channel map names the fixture and which of its channels this is.
-        int cell = AlpsReadInt(show.channelFixtures + 13 * n + x - 1);
+        int row = band * ALPS_DMX_BAND_ROWS + n;
+        int cell = AlpsReadInt(show.channelFixtures + 13 * row + x - 1);
         if (cell < 0)
         {
             return false;
@@ -339,15 +362,27 @@ Shader "Hidden/ALPS/DMX Grid"
             float4 frag(v2f_img i) : SV_Target
             {
                 AlpsShow show = AlpsLoadShow();
-                int fixture;
-                int offset;
-                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show, fixture, offset))
+                int n;
+                int x;
+                if (!AlpsGridCell(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), n, x))
                 {
                     return 0;
                 }
 
-                float value = AlpsDmxValue(fixture, offset, show);
-                return float4(value, value, value, 1);
+                // One loop over the bands, so the value compiles once.
+                float4 result = float4(0, 0, 0, 1);
+                [loop]
+                for (int band = 0; band < ALPS_DMX_BANDS; band++)
+                {
+                    int fixture;
+                    int offset;
+                    if (AlpsCellAt(band, n, x, show, fixture, offset))
+                    {
+                        result.rgb += float3(band == 0, band == 1, band == 2) * AlpsDmxValue(fixture, offset, show);
+                    }
+                }
+
+                return result;
             }
             ENDCG
         }
@@ -362,25 +397,36 @@ Shader "Hidden/ALPS/DMX Grid"
             float4 frag(v2f_img i) : SV_Target
             {
                 AlpsShow show = AlpsLoadShow();
-                int fixture;
-                int offset;
-                if (!AlpsCellAt(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), show, fixture, offset) || offset != 10)
+                int n;
+                int x;
+                if (!AlpsGridCell(int2(floor(i.uv * float2(ALPS_GRID_WIDTH, ALPS_GRID_HEIGHT))), n, x))
                 {
                     return 0;
                 }
 
-                // A laser has no gobo, and its own spin stays at 0.
-                int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
-                if (AlpsReadInt(info + ALPS_INFO_LAYOUT) == ALPS_LAYOUT_LASER)
+                // VRSL reads this grid from the band's own colour in either mode.
+                float4 result = float4(0, 0, 0, 1);
+                [loop]
+                for (int band = 0; band < ALPS_DMX_BANDS; band++)
                 {
-                    return 0;
+                    int fixture;
+                    int offset;
+                    if (AlpsCellAt(band, n, x, show, fixture, offset) && offset == 10)
+                    {
+                        // A laser has no gobo, and its own spin stays at 0. VRSL turns the
+                        // phase into an angle of degrees(phase * 4) and flips it for an
+                        // inverted pan, so the gobo angle goes in as that phase.
+                        int info = show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE;
+                        if (AlpsReadInt(info + ALPS_INFO_LAYOUT) != ALPS_LAYOUT_LASER)
+                        {
+                            float sign = AlpsRead(info + 2);
+                            float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
+                            result.rgb += float3(band == 0, band == 1, band == 2) * phase;
+                        }
+                    }
                 }
 
-                // VRSL turns the phase into an angle of degrees(phase * 4) and flips it for an
-                // inverted pan, so the gobo angle goes in as that phase.
-                float sign = AlpsRead(info + 2);
-                float phase = radians(AlpsFrameChannel(fixture, FrameGoboRotation)) / 4.0 * sign;
-                return float4(phase, 0, 0, 1);
+                return result;
             }
             ENDCG
         }
