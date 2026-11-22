@@ -135,7 +135,10 @@ public static class AlpsDemoCapture
         director.RebuildGraph();
 
         var sheet = new Texture2D(width * Columns, height * Rows, TextureFormat.RGB24, false);
-        var target2 = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+        // Post processing works in the format of the camera's target, so the camera draws into
+        // an HDR one: in 8 bits nothing is past white and the bloom finds nothing to spread.
+        var drawn = new RenderTexture(width, height, 24, RenderTextureFormat.DefaultHDR);
+        var target2 = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
         var still = new Texture2D(width, height, TextureFormat.RGB24, false);
         var log = new List<string>();
         try
@@ -147,8 +150,9 @@ public static class AlpsDemoCapture
                 director.time = times[i];
                 director.Evaluate();
 
-                camera.targetTexture = target2;
+                camera.targetTexture = drawn;
                 camera.Render();
+                Graphics.Blit(drawn, target2);
                 var previous = RenderTexture.active;
                 RenderTexture.active = target2;
                 still.ReadPixels(new Rect(0, 0, width, height), 0, 0);
@@ -188,6 +192,7 @@ public static class AlpsDemoCapture
             UnityEngine.Object.DestroyImmediate(sheet);
             UnityEngine.Object.DestroyImmediate(still);
             UnityEngine.Object.DestroyImmediate(target2);
+            UnityEngine.Object.DestroyImmediate(drawn);
         }
 
         File.WriteAllLines(Path.Combine(folder, view + "-index.txt"), log);
