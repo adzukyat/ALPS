@@ -264,8 +264,18 @@ namespace AdzukiSoft.ALPS.Editor
             player.penlightTarget = shared.penlight;
             player.gameObject.SetActive(true);
             UdonSharpEditorUtility.CopyProxyToUdon(player);
+            // Play mode processes a scene after its objects woke up, so a director that plays on
+            // awake is already playing here, and taking another timeline stops it. A build
+            // processes the scene before anything wakes up.
+            var playing = Application.isPlaying && director.state == PlayState.Playing;
+            var time = director.time;
             AlpsBuildTimeline.SwapAndRebind(director, source, build);
             AlpsProjectionTracks.Bind(director, build, show, errors);
+            if (playing)
+            {
+                director.time = time;
+                director.Play();
+            }
         }
 
         public static void CopyShowToPlayer(AlpsCompiledShow show, AlpsShowPlayer player, PlayableDirector director)
