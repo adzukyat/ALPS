@@ -161,7 +161,7 @@ namespace AdzukiSoft.ALPS.Tests
         // --- Penlight texture --------------------------------------------------------------
 
         [Test]
-        public void Grid_HoldsEachSlotsColourTimesItsBrightness()
+        public void Grid_HoldsTheLightOfEachSlotsColourAtItsBrightness()
         {
             AlpsGpuShow.RequireGraphics();
             var set = new AlpsClipEffectSet();
@@ -185,12 +185,12 @@ namespace AdzukiSoft.ALPS.Tests
                     var fixture = 3 - slot;
                     var level = frames[fixture * AlpsShowLayout.FrameStride + AlpsShowLayout.FrameBrightness] / 100f;
                     var texel = texture.GetPixel(slot, 0);
-                    Assert.AreEqual(level, texel.r, 1e-4f, $"Slot {slot} is fixture {fixture}'s red at its brightness.");
+                    Assert.AreEqual(AlpsGpuShow.Light(1f, level), texel.r, 1e-4f, $"Slot {slot} is fixture {fixture}'s red at its brightness.");
                     Assert.AreEqual(0f, texel.g, 1e-4f);
                     Assert.AreEqual(level, texel.a, 1e-4f, "Alpha holds the brightness.");
                 }
 
-                Assert.AreEqual(0.2f, texture.GetPixel(3, 0).r, 1e-4f, "The first fixture is the dimmest and sits on the last slot.");
+                Assert.AreEqual(AlpsGpuShow.Light(1f, 0.2f), texture.GetPixel(3, 0).r, 1e-4f, "The first fixture is the dimmest and sits on the last slot.");
                 Assert.AreEqual(new Color(0f, 0f, 0f, 0f), texture.GetPixel(4, 0), "Slots past the count stay empty.");
 
                 var info = texture.GetPixel(Slots + 3, 0);

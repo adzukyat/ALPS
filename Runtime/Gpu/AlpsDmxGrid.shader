@@ -27,17 +27,16 @@ Shader "Hidden/ALPS/DMX Grid"
     // AlpsShowPlayer.ModelConeLengthLimit, the model length of the fixture's own mesh.
     #define ALPS_CONE_LENGTH_LIMIT 50.0
 
-    // Brightness is laid out to look the way VRSL's static path showed it, which ALPS drove
-    // before it moved to DMX. There the global intensity dimmed a fixture up to 100%, the
-    // floor linearly, the cone about by the square and the lens about by the fourth power,
-    // and a brighter tint took over past 100%. In DMX mode the dimmer scales the floor once
-    // and the cone and the lens about by the sixth and the seventh power, so the dimmer takes
-    // the cube root of the level and the colour the rest, which lands between the two on the
-    // cone and the lens. The values at 100% match the floor and the cone of VRSL's
-    // stock movers.
+    // A lit fixture's dimmer stays where it is, and its colour carries the brightness. VRSL
+    // multiplies each part of a fixture by the dimmer another number of times, the light on
+    // the floor once, a lit face two or three times and a cone five or six, while the
+    // colour scales every part once. So with the level in the colour (AlpsLight) the floor,
+    // the cone and the face of every fixture dim by the same curve. These are what the
+    // dimmer and a white colour hold, at which the floor and the cone of VRSL's stock
+    // movers look at 100% the way its static path showed them, which ALPS drove before it
+    // moved to DMX.
     #define ALPS_DIMMER_AT_FULL 1.26
     #define ALPS_COLOUR_AT_FULL 2.02
-    #define ALPS_DIMMER_SHARE (1.0 / 3.0)
 
     // AlpsShowPlayer.InfoLayout and what follows it, DmxLayoutLaser and the laser's ranges.
     #define ALPS_INFO_LAYOUT 4
@@ -52,13 +51,15 @@ Shader "Hidden/ALPS/DMX Grid"
     #define ALPS_LASER_MIN_STRETCH 0.5
     #define ALPS_LASER_MAX_STRETCH 6.0
 
-    // AlpsShowPlayer.DmxLayoutBarSegment and GpuChannelFixtureStep. A segment of a multi
-    // light bar dims by this power of the level, which is about how the 13 channel light
-    // bar beside it dims under the dimmer and the colour above. 100% is the most the bar's
-    // material shines.
+    // A laser caps the middle of its beams, so no pair of values dims all of a beam by the
+    // curve of the other fixtures. Up to 100% the intensity is the level and the colour takes
+    // this power of it, at which the light of a whole beam of the stock laser comes out
+    // near the level to the power of 2.2, the middle of it about to the power of 1.5.
+    #define ALPS_LASER_COLOUR_POWER 1.2
+
+    // AlpsShowPlayer.DmxLayoutBarSegment and GpuChannelFixtureStep.
     #define ALPS_LAYOUT_BAR_SEGMENT 2
     #define ALPS_CHANNEL_FIXTURE_STEP 16
-    #define ALPS_BAR_DIMMING 1.5
 
     float AlpsFrameChannel(int fixture, int channel)
     {
@@ -73,26 +74,13 @@ Shader "Hidden/ALPS/DMX Grid"
 
     float AlpsDimmer(int fixture)
     {
-        float level = AlpsLevel(fixture);
-        return level > 0.0 ? ALPS_DIMMER_AT_FULL * pow(min(level, 1.0), ALPS_DIMMER_SHARE) : 0.0;
+        return AlpsLevel(fixture) > 0.0 ? ALPS_DIMMER_AT_FULL : 0.0;
     }
 
-    // The static path handed VRSL the colour as a tint, which Unity turns from gamma into
-    // linear in a linear project, brightness past 100% included. The DMX grid is read as
-    // it is, so the colour goes through the same conversion here.
     float AlpsColour(int fixture, int channel)
     {
         float level = AlpsLevel(fixture);
-        if (level <= 0.0)
-        {
-            return 0.0;
-        }
-
-        float tint = AlpsFrameChannel(fixture, channel) * max(level, 1.0);
-        #ifndef UNITY_COLORSPACE_GAMMA
-        tint = GammaToLinearSpaceExact(tint);
-        #endif
-        return tint * ALPS_COLOUR_AT_FULL * pow(min(level, 1.0), 1.0 - ALPS_DIMMER_SHARE);
+        return level > 0.0 ? AlpsLight(AlpsFrameChannel(fixture, channel), level) * ALPS_COLOUR_AT_FULL : 0.0;
     }
 
     // The texel VRSL samples for absolute channel <dmx> on a 26 x 240 grid, following
@@ -167,8 +155,8 @@ Shader "Hidden/ALPS/DMX Grid"
 
     // What a segment of VRSL's multi light bar reads in its 48 channel mode
     // (GetDMX12CHRGB in VRSL-StandardSurface-Functions.cginc): a dimmer, then the colour.
-    // The bar raises the dimmer to the fifth power and more, so it only says whether the
-    // segment is lit, and the colour carries the level.
+    // As on the other fixtures the dimmer only says whether the segment is lit, and the
+    // colour carries the level. A white segment at 100% is the most the bar's material shines.
     float AlpsBarSegmentValue(int fixture, int offset)
     {
         float level = AlpsLevel(fixture);
@@ -177,16 +165,7 @@ Shader "Hidden/ALPS/DMX Grid"
             return 0.0;
         }
 
-        if (offset == 0)
-        {
-            return 1.0;
-        }
-
-        float tint = AlpsFrameChannel(fixture, FrameRed + offset - 1) * max(level, 1.0);
-        #ifndef UNITY_COLORSPACE_GAMMA
-        tint = GammaToLinearSpaceExact(tint);
-        #endif
-        return tint * pow(min(level, 1.0), ALPS_BAR_DIMMING);
+        return offset == 0 ? 1.0 : AlpsLight(AlpsFrameChannel(fixture, FrameRed + offset - 1), level);
     }
 
     // What VRSL's laser (VRSL-BasicLaser-DMX.shader) reads from its row, which is laid out
@@ -240,26 +219,23 @@ Shader "Hidden/ALPS/DMX Grid"
 
         if (offset >= 7 && offset <= 9)
         {
-            // The colour over a white tint, brightness past 100% included, turned into
-            // linear the way Unity turned the tint.
+            // Past 100% the colour alone carries the brightness, the way it does on the
+            // other fixtures.
             float level = AlpsLevel(fixture);
             if (level <= 0.0)
             {
                 return 0.0;
             }
 
-            float tint = AlpsFrameChannel(fixture, FrameRed + offset - 7) * max(level, 1.0);
-            #ifndef UNITY_COLORSPACE_GAMMA
-            tint = GammaToLinearSpaceExact(tint);
-            #endif
-            return tint;
+            float light = AlpsLight(AlpsFrameChannel(fixture, FrameRed + offset - 7), max(level, 1.0));
+            return light * pow(min(level, 1.0), ALPS_LASER_COLOUR_POWER);
         }
 
         if (offset == 10)
         {
             // The laser multiplies by the intensity twice and caps its beams in between, so
-            // the middle of a beam follows the level and the glow around it the square, which
-            // is about how the lit faces of the other fixtures dim.
+            // the middle of a beam follows the intensity and the glow around it the square.
+            // Below 5% it switches itself off.
             return min(AlpsLevel(fixture), 1.0);
         }
 

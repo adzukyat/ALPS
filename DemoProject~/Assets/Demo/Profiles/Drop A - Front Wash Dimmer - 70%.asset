@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a57934446d44b0ca793db9de904ce39, type: 3}
-  m_Name: Rainbow - Front Wash Dimmer - 55%
+  m_Name: Drop A - Front Wash Dimmer - 70%
   m_EditorClassIdentifier: 
   data:
     bpm: 0
@@ -302,7 +302,7 @@ MonoBehaviour:
         ownPhaseExpanded: 1
       brightness:
         limit: {x: 0, y: 200}
-        value: 55
+        value: 70
         range: {x: 0, y: 100}
         isRange: 0
         hasSpread: 0

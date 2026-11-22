@@ -164,8 +164,8 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         /// <summary>
-        /// Two movers 3 m above VRChat's default floor, 0.6 m apart and pointing down at 15%
-        /// brightness, so their spots overlap without either being blown out. Cameras from the
+        /// Two movers 3 m above VRChat's default floor, 0.6 m apart and pointing down at 42%
+        /// brightness, 15% of their light, so their spots overlap without either being blown out. Cameras from the
         /// side and from above.
         /// </summary>
         private static Scene BuildScene(out Camera[] cameras, out PlayableDirector director, out Renderer[] projections)
@@ -218,7 +218,7 @@ namespace AdzukiSoft.ALPS.Tests
             var set = new AlpsClipEffectSet();
             set.Add(AlpsEffectKind.Move).tilt.value = 90f;
             set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
-            set.Add(AlpsEffectKind.Brightness).brightness.value = 15f;
+            set.Add(AlpsEffectKind.Brightness).brightness.value = 42f;
             set.Add(AlpsEffectKind.Cone).coneWidth.value = 60f;
             ((AlpsLightingClip)clip.asset).data = set;
             EditorUtility.SetDirty(timeline);

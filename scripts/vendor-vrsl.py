@@ -19,7 +19,9 @@ only what keeps the copy apart from a VRSL package in the same project:
   materials scaled to match, so overlapping ones add up instead of multiplying,
 - the multi light bar's material is in its 48 channel mode, a dimmer and a colour for each
   of its twelve segments, which ALPS drives as a fixture each,
-- the lit faces shine about as much on every fixture, and far less than VRSL makes them.
+- the lit faces shine about as much on every fixture, and far less than VRSL makes them,
+- a cone and a projection are drawn down to a far darker colour, since ALPS dims a fixture
+  by its colour.
 
 The global shader properties and the DMX grid layout are left as they are. Running it again
 replaces Runtime/VRSL with a fresh copy.
@@ -80,16 +82,25 @@ KEYWORDS = re.compile(r"(m_ShaderKeywords:[^\r\n]*)")
 # 100% still has somewhere to go. The wash mover squares its intensity, the others scale by
 # it. The spotlight's lens is the end of its cone, which its cone material lights by the
 # lens brightness on top of the cone's own light there. The blinder's lens flare, which is
-# drawn over its face, peaks near white.
+# drawn over its face, peaks near white, and its curve modifier is 0: VRSL's 5 holds the
+# flare back until the dimmer is up, and ALPS keeps the dimmer up and dims by the colour,
+# which the flare follows at 0.
 FACE = {
-    "VRSL-LightBar-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0413),
-    "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": ("_FixtureMaxIntensity", 4),
-    "VRSL-ParLight-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0307),
-    "VRSL-Blinder-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0413),
-    "VRSL-Blinder-LensFlareMat-Horizontal.mat": ("_FixtureMaxIntensity", 3),
-    "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": ("_FixtureMaxIntensity", 0.0179),
-    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": ("_LensMaxBrightness", 0.0128),
+    "VRSL-LightBar-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0413},
+    "VRSL-LightBar-FixtureMat-Horizontal-15CH.mat": {"_FixtureMaxIntensity": 4},
+    "VRSL-ParLight-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0307},
+    "VRSL-Blinder-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0413},
+    "VRSL-Blinder-LensFlareMat-Horizontal.mat": {"_FixtureMaxIntensity": 3, "_CurveMod": 0},
+    "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0179},
+    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": {"_LensMaxBrightness": 0.0128},
 }
+# VRSL stops drawing a cone or a projection whose colour is under a hundredth or so, which
+# saves the work on a dark fixture. ALPS dims a fixture by its colour, along the curve the
+# eye reads, so that is a brightness of 10 to 17%, where the light would drop out of a fade.
+# At this colour it is under 2%.
+DARK_CUTOFF = re.compile(r"(all\(\s*[io]\.rgbColor\s*<=\s*(?:half4|float4)\()[0-9.]+\s*,\s*[0-9.]+\s*,\s*[0-9.]+(\s*,\s*1\s*\))")
+DARK_CUTOFF_COLOUR = "0.0001"
+DARK_CUTOFFS = 9
 INCLUDE = re.compile(r'(#include\s+")([^"]+)(")')
 
 
@@ -181,6 +192,7 @@ def main():
         return match.group(1) + format(float(match.group(2)) * PROJECTION_INTENSITY_SCALE, ".7g")
 
     remap = {guid_of[relative]: new_guid(guid_of[relative]) for relative in taken}
+    cutoffs = []
     cleared = set()
 
     def remap_references(text, relative):
@@ -206,6 +218,9 @@ def main():
 
         text = INCLUDE.sub(include, text)
         text = PROJECTION_BLEND.sub("Blend One One", text)
+        text, found = DARK_CUTOFF.subn(
+            lambda match: match.group(1) + ", ".join([DARK_CUTOFF_COLOUR] * 3) + match.group(2), text)
+        cutoffs.append(found)
         text = re.sub(r'^(﻿?\s*Shader\s+")VRSL/', r"\1ALPS/VRSL/", text, count=1)
         # VRSL's material inspector lives in its editor assembly, which may not be there.
         return re.sub(r'^[ \t]*CustomEditor\s+"VRSLInspector"[ \t]*\r?\n', "", text, flags=re.M)
@@ -244,8 +259,7 @@ def main():
                         sys.exit(f"{relative} has no channel mode to set")
                     text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
                     text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
-                if os.path.basename(relative) in FACE:
-                    name, value = FACE[os.path.basename(relative)]
+                for name, value in FACE.get(os.path.basename(relative), {}).items():
                     text, found = re.subn(r"(- " + name + r": )[0-9.eE+-]+", lambda match: match.group(1) + format(value, ".7g"), text)
                     if found != 1:
                         sys.exit(f"{relative} has no {name} to set")
@@ -278,6 +292,8 @@ def main():
 
     if faces:
         sys.exit("No material named " + ", ".join(sorted(faces)))
+    if sum(cutoffs) != DARK_CUTOFFS:
+        sys.exit(f"Found {sum(cutoffs)} dark cut offs in the shaders, not {DARK_CUTOFFS}")
 
     version = re.search(r'"version":\s*"([^"]+)"', read(os.path.join(SOURCE, "package.json"))).group(1)
     license_text = read(os.path.join(SOURCE, "LICENSE"))

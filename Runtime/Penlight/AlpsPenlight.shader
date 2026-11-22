@@ -6,9 +6,9 @@
 // copying this one file.
 //
 // The texture holds a row per penlight area: a texel per slot along the area's shape, the
-// slot's colour times its brightness, then the first three rows of the area's world to
-// area matrix and a texel of the slot count, the shape, the size and 1 for an area that is
-// there. The penlight finds where it is along each area, blends the two slots around that
+// light the slot's colour gives off at its brightness, then the first three rows of the
+// area's world to area matrix and a texel of the slot count, the shape, the size and 1 for
+// an area that is there. The penlight finds where it is along each area, blends the two slots around that
 // place and takes the brightest area. It reads from where the object is, not from each
 // vertex, so one penlight is one colour.
 //

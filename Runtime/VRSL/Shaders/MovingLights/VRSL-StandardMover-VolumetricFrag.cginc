@@ -93,7 +93,7 @@ half4 VolumetricLightingBRDF(v2f i, fixed facePos)
 
 
 		#ifdef VRSL_DMX
-			if(((all(i.rgbColor <= half4(0.005,0.005,0.005,1)) || i.intensityStrobeGOBOSpinSpeed.x <= 0.005) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005)
+			if(((all(i.rgbColor <= half4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobeGOBOSpinSpeed.x <= 0.005) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005)
 			{
 				//If the light is basically off, don't render anything.
 				return half4(0,0,0,0);

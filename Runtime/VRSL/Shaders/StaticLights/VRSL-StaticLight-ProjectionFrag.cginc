@@ -35,12 +35,12 @@
                 float gi = i.globalFinalIntensity.x;
                 float fi = i.globalFinalIntensity.y;
                 #ifdef FIVECH
-                    if(((all(i.rgbColor <= float4(0.01,0.01,0.01,1)) || i.intensityStrobe.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
+                    if(((all(i.rgbColor <= float4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobe.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
                     {
                         return float4(0,0,0,0);
                     }
                 #else
-                    if(((all(i.rgbColor <= float4(0.05,0.05,0.05,1)) || i.intensityStrobe.x <= 0.05) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
+                    if(((all(i.rgbColor <= float4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobe.x <= 0.05) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
                     {
                         return float4(0,0,0,0);
                     }

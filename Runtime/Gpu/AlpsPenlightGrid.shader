@@ -1,7 +1,8 @@
 // Lays the evaluated frames of the show's penlight slots out as the texture the penlights
-// read, a row per area. A row holds a texel per slot, the slot's colour times its brightness
-// with the brightness in alpha, then the first three rows of the area's world to area matrix
-// and a texel of the slot count, the shape, the size and 1 for an area that is there.
+// read, a row per area. A row holds a texel per slot, the light the slot's colour gives off
+// at its brightness with the brightness in alpha, then the first three rows of the area's
+// world to area matrix and a texel of the slot count, the shape, the size and 1 for an area
+// that is there.
 // Rows the show holds no area for stay empty, so a penlight finds no area in them.
 //
 // The penlight shader (Runtime/Penlight/AlpsPenlight.shader) reads this layout on its own,
@@ -69,14 +70,13 @@ Shader "Hidden/ALPS/Penlight Grid"
                     return 0;
                 }
 
-                // The colour is authored the way a tint is, which Unity turns from gamma into
-                // linear in a linear project, so a penlight shows the colour a fixture would.
+                // A penlight shows the colour a fixture would and dims by the same curve.
                 float level = max(0.0, AlpsFrameChannel(fixture, FrameBrightness) * AlpsFrameChannel(fixture, FrameBrightnessScale) / 100.0);
-                float3 colour = float3(AlpsFrameChannel(fixture, FrameRed), AlpsFrameChannel(fixture, FrameGreen), AlpsFrameChannel(fixture, FrameBlue));
-                #ifndef UNITY_COLORSPACE_GAMMA
-                colour = float3(GammaToLinearSpaceExact(colour.r), GammaToLinearSpaceExact(colour.g), GammaToLinearSpaceExact(colour.b));
-                #endif
-                return float4(colour * level, level);
+                return float4(
+                    AlpsLight(AlpsFrameChannel(fixture, FrameRed), level),
+                    AlpsLight(AlpsFrameChannel(fixture, FrameGreen), level),
+                    AlpsLight(AlpsFrameChannel(fixture, FrameBlue), level),
+                    level);
             }
             ENDCG
         }

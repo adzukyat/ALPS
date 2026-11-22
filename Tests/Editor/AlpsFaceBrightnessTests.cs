@@ -14,7 +14,8 @@ namespace AdzukiSoft.ALPS.Tests
     /// How bright the lit face of each fixture comes out at 100%, previewed and rendered
     /// without tonemapping. VRSL's own materials light a face hundreds of times past white,
     /// and each fixture by another amount, so <c>scripts/vendor-vrsl.py</c> sets the
-    /// intensities this holds: the same level looks about the same on every fixture.
+    /// intensities this holds, and the grid dims every fixture by its colour: the same level
+    /// looks about the same on every fixture.
     ///
     /// The spotlight's lens is the end of its cone, which its cone material lights. The laser
     /// has no lit face: its light is its beams.
@@ -77,16 +78,15 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void AFace_DimsWithTheLevelOnEveryFixture()
+        public void AFace_DimsByTheSameCurveOnEveryFixture()
         {
             var half = Measure(50f);
             var report = Describe(half);
             Debug.Log("[ALPS Face Brightness] at 50%: " + report);
             for (var i = 0; i < Fixtures.Length; i++)
             {
-                // Between the level itself and its cube, which is how the spotlight's lens dims
-                // with its cone, so no fixture hangs on or drops out.
-                Assert.That(half[i], Is.InRange(Face * 0.125f, Face * 0.5f), $"{Fixtures[i].Name} at 50%. {report}");
+                // Half the level looks half as bright, which is the level to the power of 2.2 in light.
+                Assert.AreEqual(Face * Mathf.Pow(0.5f, 2.2f), half[i], Face * 0.02f, $"{Fixtures[i].Name} at 50%. {report}");
             }
         }
 

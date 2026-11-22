@@ -165,6 +165,22 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
+        /// <summary>
+        /// What a colour channel gives off at a level, a share of 100%: AlpsLight in the
+        /// evaluator. The tint goes from gamma to linear the way Unity hands it to a shader in
+        /// a linear project, and the level through the same curve.
+        /// </summary>
+        public static float Light(float tint, float level)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear)
+            {
+                return tint * level;
+            }
+
+            var linear = tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+            return linear * Mathf.Pow(level, 2.2f);
+        }
+
         public static float[] NeutralDefaults(int fixtures)
         {
             var defaults = new float[fixtures * AlpsShowLayout.FrameStride];

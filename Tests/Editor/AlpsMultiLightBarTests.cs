@@ -209,22 +209,12 @@ namespace AdzukiSoft.ALPS.Tests
                     // Channel c of the grid is read from texel (2 (c mod 13) + 1, 2 (c / 13) + 1).
                     var channel = row * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
                     var stored = grid.GetPixel(2 * (channel % 13) + 1, 2 * (channel / 13) + 1).r;
-                    var expected = k == 0 ? 1f : Linear(colour[k - 1] * Mathf.Max(level, 1f)) * Mathf.Pow(Mathf.Min(level, 1f), 1.5f);
+                    var expected = k == 0 ? 1f : AlpsGpuShow.Light(colour[k - 1], level);
                     Assert.AreEqual(expected, stored, 1e-4f, $"Segment {s} channel {k}.");
                 }
             }
 
             Assert.AreEqual(Segments, levels.Count, "The spread gives every segment a level of its own.");
-        }
-
-        private static float Linear(float tint)
-        {
-            if (QualitySettings.activeColorSpace != ColorSpace.Linear)
-            {
-                return tint;
-            }
-
-            return tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
         }
 
         private T Keep<T>(T created) where T : Object

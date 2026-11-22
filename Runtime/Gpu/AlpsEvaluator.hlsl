@@ -56,6 +56,23 @@ float _AlpsTime;
 #define ALPS_PENLIGHT_STRIDE (ALPS_PENLIGHT_FIRST_SLOT + ALPS_PENLIGHT_SLOTS)
 #define ALPS_PENLIGHT_WIDTH (ALPS_PENLIGHT_SLOTS + 4)
 
+// What a colour channel gives off at a level, which is the brightness as a share of 100%.
+// The colour is authored the way a tint is, which Unity turns from gamma into linear in a
+// linear project, and the level goes through the same curve, so it darkens and brightens a
+// colour the way picking a darker or a brighter one would. The light given off follows the
+// level to the power of 2.2, which is about how the eye reads it: half the level looks half
+// as bright, below 100% and past it.
+#define ALPS_LEVEL_GAMMA 2.2
+
+float AlpsLight(float tint, float level)
+{
+    #ifdef UNITY_COLORSPACE_GAMMA
+    return tint * level;
+    #else
+    return GammaToLinearSpaceExact(tint) * pow(level, ALPS_LEVEL_GAMMA);
+    #endif
+}
+
 // --- Layout constants, mirrored from AlpsShowLayout -----------------------------------
 
 #define PhaseWave 0

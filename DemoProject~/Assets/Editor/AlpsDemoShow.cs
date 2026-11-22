@@ -327,21 +327,21 @@ public sealed class AlpsDemoShow
     private void Intro(float b)
     {
         C(CycPars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(CycPars, b, 8, "Breathe", Cue.On(P.Wave(16).Spread(0.5f)).Sym().Dim(V.R(6, 30), fadeIn: 4));
+        D(CycPars, b, 8, "Breathe", Cue.On(P.Wave(16).Spread(0.5f)).Sym().Dim(V.R(30, 60), fadeIn: 4));
 
         C(TotemBars, b, 8, "Cyan", Ink.Cyan);
-        D(TotemBars, b, 8, "Rise From The Middle", Cue.On(P.InOut(8, 8).Delay(1.5f)).Sym().Dim(V.R(0, 55)));
+        D(TotemBars, b, 8, "Rise From The Middle", Cue.On(P.InOut(8, 8).Delay(1.5f)).Sym().Dim(V.R(0, 65)));
 
         C(ApronBars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 8, "Drift", Cue.On(P.Wave(8).Spread(1)).Dim(V.R(10, 45), fadeIn: 4));
+        D(ApronBars, b, 8, "Drift", Cue.On(P.Wave(8).Spread(1)).Dim(V.R(20, 55), fadeIn: 4));
 
         C(PixelBars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(PixelBars, b, 8, "Comet", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 60), fadeIn: 8));
+        D(PixelBars, b, 8, "Comet", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 70), fadeIn: 8));
 
         B(Halo, b, 8, "Pencil", Cue.On().Cone(10, 110));
         M(Halo, b, 8, "Straight Down", Cue.On().Move(0, 0));
         C(Halo, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(Halo, b, 8, "Slow Chase", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(4, 40), fadeIn: 8));
+        D(Halo, b, 8, "Slow Chase", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(25, 65), fadeIn: 8));
 
         B(BackSpots, b + 4, 4, "Pencil", Cue.On().Cone(7, 120));
         M(BackSpots, b + 4, 4, "Lift", Cue.On(P.In(14).Delay(0.4f)).Sym().Move(V.R(0, 62), V.S(0, -30)));
@@ -349,7 +349,7 @@ public sealed class AlpsDemoShow
         D(BackSpots, b + 4, 4, "Fade Up", Cue.On(P.In(8).Delay(0.4f)).Sym().Dim(V.R(0, 55)));
 
         C(PenlightRipple, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(PenlightRipple, b, 8, "Slow Ripple", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 45), fadeIn: 8));
+        D(PenlightRipple, b, 8, "Slow Ripple", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 70), fadeIn: 8));
     }
 
     // --- 9: Build -------------------------------------------------------------------------
@@ -358,7 +358,7 @@ public sealed class AlpsDemoShow
     {
         const float len = 7.5f;
         C(CycPars, b, len, "Blue To Violet", Cue.On(P.Wave(16).Spread(0.5f)).Color(Ink.DeepBlue, Ink.Violet));
-        D(CycPars, b, len, 34);
+        D(CycPars, b, len, 60);
 
         B(BackSpots, b, len, "Pencil", Cue.On().Cone(7, 120));
         M(BackSpots, b, len, "Fan Opens", Cue.On(P.In(24)).Sym().Move(62, V.SR(0, -30, 0, -62)));
@@ -376,32 +376,32 @@ public sealed class AlpsDemoShow
         D(MidSpots, b, len, "Sparkle", Cue.On(P.Hit(1, 0.15f, 0.5f).Fire(0.22f)).Dim(V.R(0, 70)));
 
         C(TotemBars, b, len, "Cyan", Ink.Cyan);
-        D(TotemBars, b, len, "On The One", Cue.On(P.Hit(4, 0.03f, 0.3f)).Dim(V.R(0, 70)));
+        D(TotemBars, b, len, "On The One", Cue.On(P.Hit(4, 0.03f, 0.3f)).Dim(V.R(0, 75)));
 
         C(ApronBars, b, len, "Blue", Ink.Blue);
-        D(ApronBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 60)));
+        D(ApronBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 70)));
 
         C(PixelBars, b, len, "Blue Through Cyan", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Blue, Ink.Cyan, Ink.Blue));
-        D(PixelBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.4f).Spread(1)).Sym().Dim(V.R(0, 70)));
+        D(PixelBars, b, len, "Chase Out", Cue.On(P.Wave(2, 0.1f, 0.1f, 0.4f).Spread(1)).Sym().Dim(V.R(0, 80)));
 
         FrontOnStage(b, len);
         C(FrontWash, b, len, "Deep Blue", Ink.DeepBlue);
-        D(FrontWash, b, len, 35);
+        D(FrontWash, b, len, 60);
 
         SideAcross(b, len);
         C(SideWash, b, len, "Violet", Ink.Violet);
-        D(SideWash, b, len, 30);
+        D(SideWash, b, len, 60);
 
         B(Halo, b, len, "Soft", Cue.On().Cone(14, 110));
         M(Halo, b, len, "Tip Out", Cue.On(P.In(24)).Move(V.R(0, 28), 0));
         C(Halo, b, len, "Blue Through Cyan", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Blue, Ink.Cyan, Ink.Blue));
-        D(Halo, b, len, "Chase", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(8, 50)));
+        D(Halo, b, len, "Chase", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(30, 75)));
 
         C(Blinders, b + 6, 1.5f, "Warm", Ink.Warm);
         D(Blinders, b + 6, 1.5f, "Swell", Cue.On(P.In(6, AlpsEaseType.InExpo)).Dim(V.R(0, 85)));
 
         C(PenlightSweep, b, len, "Blue", Ink.Blue);
-        D(PenlightSweep, b, len, "Wave", Cue.On(P.Wave(4).Spread(1)).Dim(V.R(5, 70)));
+        D(PenlightSweep, b, len, "Wave", Cue.On(P.Wave(4).Spread(1)).Dim(V.R(25, 85)));
     }
 
     // --- 17 and 89: Drop A ----------------------------------------------------------------
@@ -435,32 +435,32 @@ public sealed class AlpsDemoShow
         B(Halo, b, 8, "Medium", Cue.On().Cone(14, 110));
         M(Halo, b, 8, "Out", Cue.On().Move(35, 0));
         C(Halo, b, 8, "Magenta Through Blue", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Magenta, Ink.Blue, Ink.Magenta));
-        D(Halo, b, 8, "Two Runners", Cue.On(P.Wave(2, 0.05f, 0.15f, 0.3f).Spread(2)).Dim(V.R(10, 100)));
+        D(Halo, b, 8, "Two Runners", Cue.On(P.Wave(2, 0.05f, 0.15f, 0.3f).Spread(2)).Dim(V.R(35, 100)));
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Magenta / Cyan", Cue.On(P.Saw(4)).ColorSteps(Ink.Magenta, Ink.Cyan));
-        D(SideWash, b, 8, 70);
+        D(SideWash, b, 8, 85);
 
         FrontOverCrowd(b, 8, 8);
         C(FrontWash, b, 8, "Blue", Ink.Blue);
-        D(FrontWash, b, 8, 45);
+        D(FrontWash, b, 8, 70);
 
         B(Lasers, b, 8, "Wide Fan", Cue.On().Cone(34, LaserReach));
         M(Lasers, b, 8, "Liquid Sky", Cue.On(P.Wave(4).Spread(1)).Sym().Move(V.R(-24, 4), 0));
         C(Lasers, b, 8, "Cyan", Ink.Cyan);
-        D(Lasers, b, 8, "Kick", Kick(35, 100));
+        D(Lasers, b, 8, "Kick", Kick(45, 100));
 
         C(CycPars, b, 8, "Magenta / Cyan / Blue", Cue.On(P.Saw(2).Spread(0.5f)).ColorSteps(Ink.Magenta, Ink.Cyan, Ink.Blue));
-        D(CycPars, b, 8, "Kick", Kick(35, 90));
+        D(CycPars, b, 8, "Kick", Kick(60, 95));
 
         C(TotemBars, b, 8, "Magenta", Ink.Magenta);
-        D(TotemBars, b, 8, "Kick From The Wings", Cue.On(P.Hit(1, 0.1f, 0.5f).Delay(0.125f)).Sym().Reverse().Dim(V.R(0, 80)));
+        D(TotemBars, b, 8, "Kick From The Wings", Cue.On(P.Hit(1, 0.1f, 0.5f).Delay(0.125f)).Sym().Reverse().Dim(V.R(0, 85)));
 
         C(ApronBars, b, 8, "White", Ink.White);
-        D(ApronBars, b, 8, "Run", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Dim(V.R(0, 90)));
+        D(ApronBars, b, 8, "Run", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Dim(V.R(0, 95)));
 
         C(PixelBars, b, 8, "Magenta Through Cyan", Cue.On(P.Saw(2).Spread(2)).Gradient(Ink.Magenta, Ink.Cyan, Ink.Magenta));
-        D(PixelBars, b, 8, "Kick From The Middle", Cue.On(P.Hit(1, 0.1f, 0.6f).Delay(0.02f)).Sym().Dim(V.R(8, 100)));
+        D(PixelBars, b, 8, "Kick From The Middle", Cue.On(P.Hit(1, 0.1f, 0.6f).Delay(0.02f)).Sym().Dim(V.R(20, 100)));
 
         C(PenlightSweep, b, 8, "Magenta / Cyan", Cue.On(P.Saw(2)).ColorSteps(Ink.Magenta, Ink.Cyan));
         D(PenlightSweep, b, 8, "Run", Cue.On(P.Wave(2, 0.1f, 0.2f, 0.4f).Spread(1)).Dim(V.R(0, 100)));
@@ -501,11 +501,11 @@ public sealed class AlpsDemoShow
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Red / Amber", Cue.On(P.Saw(4)).ColorSteps(Ink.Red, Ink.Amber));
-        D(SideWash, b, 8, 70);
+        D(SideWash, b, 8, 85);
 
         FrontOverCrowd(b, 8, 4);
         C(FrontWash, b, 8, "Amber", Ink.Amber);
-        D(FrontWash, b, 8, 45);
+        D(FrontWash, b, 8, 70);
 
         B(Lasers, b, 8, "Blade", Cue.On().Cone(22, LaserReach));
         M(Lasers, b, 8, "Blades, On End", Cue.On(P.Wave(2).Spread(0.5f)).Sym().Move(V.R(-28, 28), 90));
@@ -513,13 +513,13 @@ public sealed class AlpsDemoShow
         D(Lasers, b, 8, 100);
 
         C(CycPars, b, 8, "Red / Amber", Cue.On(P.Saw(2).Spread(0.5f)).ColorSteps(Ink.Red, Ink.Amber));
-        D(CycPars, b, 8, "Kick", Kick(35, 90));
+        D(CycPars, b, 8, "Kick", Kick(60, 95));
 
         C(TotemBars, b, 8, "Amber", Ink.Amber);
-        D(TotemBars, b, 8, "Kick From The Middle", Cue.On(P.Hit(1, 0.1f, 0.5f).Delay(0.125f)).Sym().Dim(V.R(0, 80)));
+        D(TotemBars, b, 8, "Kick From The Middle", Cue.On(P.Hit(1, 0.1f, 0.5f).Delay(0.125f)).Sym().Dim(V.R(0, 85)));
 
         C(ApronBars, b, 8, "Red", Ink.Red);
-        D(ApronBars, b, 8, "Run Back", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Reverse().Dim(V.R(0, 90)));
+        D(ApronBars, b, 8, "Run Back", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Reverse().Dim(V.R(0, 95)));
 
         C(PixelBars, b, 8, "Amber / Red", Cue.On(P.Saw(2)).ColorSteps(Ink.Amber, Ink.Red));
         D(PixelBars, b, 8, "Two Runners", Cue.On(P.Wave(1, 0.05f, 0.1f, 0.3f).Spread(2)).Dim(V.R(0, 100)));
@@ -536,7 +536,7 @@ public sealed class AlpsDemoShow
         B(Halo, b, 8, "Pencil", Cue.On().Cone(6, 120));
         M(Halo, b, 8, "Crown Opens", Cue.On(P.InOut(16, 12)).Move(V.R(0, 32), 0));
         C(Halo, b, 8, "Amber", Ink.Amber);
-        D(Halo, b, 8, "Glow", Cue.On().Dim(70, fadeIn: 4, fadeOut: 4));
+        D(Halo, b, 8, "Glow", Cue.On().Dim(85, fadeIn: 4, fadeOut: 4));
 
         B(MidSpots, b, 8, "Slow Gobo", Cue.On().Cone(12, 110).Gobo(16, 0, false, 6));
         M(MidSpots, b, 8, "Converge", Cue.On().Sym().Move(V.S(10, 45), V.S(0, 85)));
@@ -544,30 +544,30 @@ public sealed class AlpsDemoShow
         D(MidSpots, b, 8, "The Middle Pair", Cue.On().Sym().Dim(V.S(100, -100), fadeIn: 2, fadeOut: 2));
 
         C(CycPars, b, 8, "Embers", Cue.On(P.Wander(8).Spread(0.7f)).Gradient(Ink.Amber, Ink.Red, Ink.Violet));
-        D(CycPars, b, 8, "Low", Cue.On().Dim(22, fadeIn: 2, fadeOut: 2));
+        D(CycPars, b, 8, "Low", Cue.On().Dim(50, fadeIn: 2, fadeOut: 2));
 
         C(TotemBars, b, 8, "Warm", Ink.Warm);
-        D(TotemBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 75)));
+        D(TotemBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 80)));
 
         C(ApronBars, b, 8, "Amber", Ink.Amber);
-        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(12, 45)));
+        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(20, 55)));
 
         C(PixelBars, b, 8, "Warm", Ink.Warm);
-        D(PixelBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.1f)).Dim(V.R(0, 70)));
+        D(PixelBars, b, 8, "Twinkle", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.1f)).Dim(V.R(0, 80)));
 
         FrontOnStage(b, 8);
         C(FrontWash, b, 8, "Warm", Ink.Warm);
-        D(FrontWash, b, 8, "Low", Cue.On().Dim(30, fadeIn: 4, fadeOut: 2));
+        D(FrontWash, b, 8, "Low", Cue.On().Dim(60, fadeIn: 4, fadeOut: 2));
 
         B(SideWash, b, 8, "Medium", Cue.On().Cone(30, 100));
         M(SideWash, b, 8, "Centre Stage", Cue.On().Sym().Move(35, 90));
         C(SideWash, b, 8, "Warm", Ink.Warm);
-        D(SideWash, b, 8, "Low", Cue.On().Dim(40, fadeIn: 4, fadeOut: 2));
+        D(SideWash, b, 8, "Low", Cue.On().Dim(65, fadeIn: 4, fadeOut: 2));
         // Above the move: once a display name is typed into this clip, the heads follow that player.
         F(SideWash, b, 8, "Follow A Player (name one)", Cue.On().Track(string.Empty));
 
         C(PenlightRipple, b, 8, "Amber", Ink.Amber);
-        D(PenlightRipple, b, 8, "Ripple", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 70)));
+        D(PenlightRipple, b, 8, "Ripple", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 85)));
     }
 
     // --- 41: Verse ------------------------------------------------------------------------
@@ -602,32 +602,32 @@ public sealed class AlpsDemoShow
         B(Halo, b, 16, "Soft", Cue.On().Cone(16, 110));
         M(Halo, b, 16, "Out", Cue.On().Move(22, 0));
         C(Halo, b, 16, "Teal Through Violet", Cue.On(P.Saw(16).Spread(1)).Gradient(Ink.Teal, Ink.Violet, Ink.Teal));
-        D(Halo, b, 16, 45);
+        D(Halo, b, 16, 70);
 
         SideAcross(b, 16);
         C(SideWash, b, 16, "Violet To Teal", Cue.On(P.Wave(16)).Color(Ink.Violet, Ink.Teal));
-        D(SideWash, b, 16, 45);
+        D(SideWash, b, 16, 70);
 
         FrontOnStage(b, 16);
         C(FrontWash, b, 16, "Teal To Violet", Cue.On(P.Wave(16)).Color(Ink.Teal, Ink.Violet));
-        D(FrontWash, b, 16, 40);
+        D(FrontWash, b, 16, 65);
 
         C(CycPars, b, 16, "Split, Swapping", Cue.On(P.Saw(8)).ColorSteps(Ink.Teal, Ink.Violet).ColorSteps(Ink.Violet, Ink.Teal));
-        D(CycPars, b, 16, 40);
+        D(CycPars, b, 16, 65);
 
         C(TotemBars, b, 16, "Lavender", Ink.Lavender);
-        D(TotemBars, b, 16, "Off Beat", Cue.On(P.Hit(1, 0.1f, 0.4f)).Dim(V.R(0, 70), offset: 0.5f));
+        D(TotemBars, b, 16, "Off Beat", Cue.On(P.Hit(1, 0.1f, 0.4f)).Dim(V.R(0, 75), offset: 0.5f));
 
         C(ApronBars, b, 16, "Violet", Ink.Violet);
-        D(ApronBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(15, 65)));
+        D(ApronBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(25, 75)));
 
         C(PixelBars, b, 16, "Teal Through Violet", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Teal, Ink.Violet, Ink.Teal));
-        D(PixelBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(10, 60)));
+        D(PixelBars, b, 16, "Swell", Cue.On(P.Wave(4).Spread(1)).Sym().Dim(V.R(20, 70)));
 
         C(PenlightSweep, b, 16, "Teal", Ink.Teal);
-        D(PenlightSweep, b, 16, "Long Wave", Cue.On(P.Wave(16).Spread(1)).Dim(V.R(10, 60)));
+        D(PenlightSweep, b, 16, "Long Wave", Cue.On(P.Wave(16).Spread(1)).Dim(V.R(35, 80)));
         C(PenlightRipple, b + 8, 8, "Violet", Ink.Violet);
-        D(PenlightRipple, b + 8, 8, "Ripple", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 80), fadeIn: 4));
+        D(PenlightRipple, b + 8, 8, "Ripple", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 90), fadeIn: 4));
     }
 
     // --- 57: Riser ------------------------------------------------------------------------
@@ -669,12 +669,12 @@ public sealed class AlpsDemoShow
         for (var i = 0; i < 4; i++)
         {
             var bar = b + i * 2;
-            D(Halo, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.05f, 0.2f, 0.3f).Spread(1)).Dim(V.R(5, 100)));
-            D(TotemBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(0, 80)));
-            D(Lasers, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(15, 100)));
-            D(ApronBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 80)));
+            D(Halo, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.05f, 0.2f, 0.3f).Spread(1)).Dim(V.R(25, 100)));
+            D(TotemBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(0, 85)));
+            D(Lasers, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f)).Dim(V.R(25, 100)));
+            D(ApronBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 85)));
             D(PixelBars, bar, 2, names[i], Cue.On(P.Hit(beats[i], 0.3f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 100)));
-            D(PenlightSweep, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.1f, 0.2f, 0.4f).Spread(1)).Dim(V.R(10, 100)));
+            D(PenlightSweep, bar, 2, "Runner " + names[i], Cue.On(P.Wave(beats[i] * 2f, 0.1f, 0.2f, 0.4f).Spread(1)).Dim(V.R(35, 100)));
         }
 
         C(TotemBars, b, 8, "White", Ink.White);
@@ -683,16 +683,16 @@ public sealed class AlpsDemoShow
         C(PenlightSweep, b, 8, "Blue To White", Cue.On(P.In(32)).Gradient(Ink.Blue, Ink.Ice, Ink.White));
 
         C(CycPars, b, 8, "Blue To White", Cue.On(P.In(32)).Gradient(Ink.DeepBlue, Ink.Ice, Ink.White));
-        D(CycPars, b, 8, "Ramp", Cue.On(P.In(32, AlpsEaseType.InQuad)).Dim(V.R(10, 100)));
+        D(CycPars, b, 8, "Ramp", Cue.On(P.In(32, AlpsEaseType.InQuad)).Dim(V.R(35, 100)));
 
         B(FrontWash, b, 8, "Medium", Cue.On().Cone(30, 100));
         M(FrontWash, b, 8, "Lift Over The Crowd", Cue.On(P.In(32)).Sym().Move(V.R(45, 85), V.S(0, -35)));
         C(FrontWash, b, 8, "Blue To White", Cue.On(P.In(32)).Gradient(Ink.Blue, Ink.Ice, Ink.White));
-        D(FrontWash, b, 8, "Ramp", Cue.On(P.In(32, AlpsEaseType.InQuad)).Dim(V.R(10, 70)));
+        D(FrontWash, b, 8, "Ramp", Cue.On(P.In(32, AlpsEaseType.InQuad)).Dim(V.R(35, 85)));
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Blue", Ink.Blue);
-        D(SideWash, b, 8, 30);
+        D(SideWash, b, 8, 60);
 
         C(Blinders, b + 6, 2, "Warm", Ink.Warm);
         D(Blinders, b + 6, 2, "Swell", Cue.On(P.In(8, AlpsEaseType.InExpo)).Dim(V.R(0, 100)));
@@ -735,11 +735,11 @@ public sealed class AlpsDemoShow
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Red", Ink.Red);
-        D(SideWash, b, 8, 80);
+        D(SideWash, b, 8, 90);
 
         FrontOverCrowd(b, 8, 4);
         C(FrontWash, b, 8, "Red", Ink.Red);
-        D(FrontWash, b, 8, 50);
+        D(FrontWash, b, 8, 75);
 
         B(Lasers, b, 8, "Snap Open", Cue.On(P.Hit(1, 0.1f, 0.6f)).Cone(V.R(8, 42), LaserReach));
         M(Lasers, b, 8, "Rock", Cue.On(P.Wave(4).Spread(1)).Move(-12, V.R(-28, 28)));
@@ -747,13 +747,13 @@ public sealed class AlpsDemoShow
         D(Lasers, b, 8, 100);
 
         C(CycPars, b, 8, "Red / White", Cue.On(P.Saw(1).Spread(0.5f)).ColorSteps(Ink.Red, Ink.White));
-        D(CycPars, b, 8, "Kick", Kick(35, 90));
+        D(CycPars, b, 8, "Kick", Kick(60, 95));
 
         C(TotemBars, b, 8, "White", Ink.White);
-        D(TotemBars, b, 8, "Sixteenths, By Chance", Cue.On(P.Hit(0.25f, 0.4f, 0.2f).Fire(0.5f)).Dim(V.R(0, 80)));
+        D(TotemBars, b, 8, "Sixteenths, By Chance", Cue.On(P.Hit(0.25f, 0.4f, 0.2f).Fire(0.5f)).Dim(V.R(0, 85)));
 
         C(ApronBars, b, 8, "Red", Ink.Red);
-        D(ApronBars, b, 8, "Run Out", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 90)));
+        D(ApronBars, b, 8, "Run Out", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Sym().Dim(V.R(0, 95)));
 
         C(PixelBars, b, 8, "White / Red", Cue.On(P.Saw(1)).ColorSteps(Ink.White, Ink.Red));
         D(PixelBars, b, 8, "Sparks", Cue.On(P.Hit(0.25f, 0.4f, 0.2f).Fire(0.4f)).Dim(V.R(0, 100)));
@@ -795,15 +795,15 @@ public sealed class AlpsDemoShow
         B(Halo, b, 8, "Medium", Cue.On().Cone(14, 110));
         M(Halo, b, 8, "Nod", Cue.On(P.Wave(2).Spread(1)).Move(V.R(15, 55), 0));
         C(Halo, b, 8, "Rainbow", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Rainbow));
-        D(Halo, b, 8, "Three Runners", Cue.On(P.Wave(1, 0.05f, 0.2f, 0.3f).Spread(3)).Dim(V.R(15, 100)));
+        D(Halo, b, 8, "Three Runners", Cue.On(P.Wave(1, 0.05f, 0.2f, 0.3f).Spread(3)).Dim(V.R(40, 100)));
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Rainbow", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Rainbow));
-        D(SideWash, b, 8, 80);
+        D(SideWash, b, 8, 90);
 
         FrontOverCrowd(b, 8, 4);
         C(FrontWash, b, 8, "Rainbow", Cue.On(P.Saw(8).Spread(1)).Gradient(Ink.Rainbow));
-        D(FrontWash, b, 8, 55);
+        D(FrontWash, b, 8, 75);
 
         // A fan is the same one a half turn on, so a pan that runs from -90 to 90 turns it for good.
         B(Lasers, b, 8, "Wide Fan", Cue.On().Cone(38, LaserReach));
@@ -812,19 +812,19 @@ public sealed class AlpsDemoShow
         D(Lasers, b, 8, 100);
 
         C(CycPars, b, 8, "Rainbow", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Rainbow));
-        D(CycPars, b, 8, "Kick", Kick(40, 100));
+        D(CycPars, b, 8, "Kick", Kick(65, 100));
 
         C(TotemBars, b, 8, "Rainbow", Cue.On(P.Saw(2).Spread(1)).Gradient(Ink.Rainbow));
-        D(TotemBars, b, 8, "Kick", Kick(10, 80));
+        D(TotemBars, b, 8, "Kick", Kick(20, 85));
 
         C(ApronBars, b, 8, "Rainbow", Cue.On(P.Saw(2).Spread(1)).Gradient(Ink.Rainbow));
-        D(ApronBars, b, 8, "Run", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Dim(V.R(10, 90)));
+        D(ApronBars, b, 8, "Run", Cue.On(P.Hit(1, 0.2f, 0.3f).Spread(1)).Dim(V.R(20, 95)));
 
         C(PixelBars, b, 8, "Rainbow", Cue.On(P.Saw(2).Spread(1)).Gradient(Ink.Rainbow));
-        D(PixelBars, b, 8, "Kick", Kick(30, 100));
+        D(PixelBars, b, 8, "Kick", Kick(45, 100));
 
         C(PenlightSweep, b, 8, "Rainbow", Cue.On(P.Saw(4).Spread(1)).Gradient(Ink.Rainbow));
-        D(PenlightSweep, b, 8, "Wave", Cue.On(P.Wave(2).Spread(1)).Dim(V.R(30, 100)));
+        D(PenlightSweep, b, 8, "Wave", Cue.On(P.Wave(2).Spread(1)).Dim(V.R(60, 100)));
     }
 
     // --- 81: Bridge -----------------------------------------------------------------------
@@ -851,31 +851,31 @@ public sealed class AlpsDemoShow
         B(Halo, b, 8, "Pencil", Cue.On().Cone(8, 120));
         M(Halo, b, 8, "Straight Down", Cue.On().Move(0, 0));
         C(Halo, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(Halo, b, 8, 25);
+        D(Halo, b, 8, 55);
 
         C(CycPars, b, 8, "Violet", Ink.Violet);
-        D(CycPars, b, 8, 25);
+        D(CycPars, b, 8, 55);
 
         B(Lasers, b, 8, "Breathing Fan", Cue.On(P.Wave(8)).Tempo(half).Cone(V.R(26, 44), LaserReach));
         M(Lasers, b, 8, "Ceiling Comes Down", Cue.On(P.Wave(8).Delay(0.5f)).Sym().Tempo(half).Move(V.R(2, -24), 0));
         C(Lasers, b, 8, "Azure", Ink.Azure);
-        D(Lasers, b, 8, "Glow", Cue.On().Dim(80, fadeIn: 4, fadeOut: 2));
+        D(Lasers, b, 8, "Glow", Cue.On().Dim(85, fadeIn: 4, fadeOut: 2));
 
         C(TotemBars, b, 8, "Blue", Ink.Blue);
-        D(TotemBars, b, 8, "Slow Hits", Cue.On(P.Hit(2, 0.05f, 0.6f)).Tempo(half).Dim(V.R(0, 70)));
+        D(TotemBars, b, 8, "Slow Hits", Cue.On(P.Hit(2, 0.05f, 0.6f)).Tempo(half).Dim(V.R(0, 75)));
 
         C(ApronBars, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(4).Spread(0.5f)).Sym().Tempo(half).Dim(V.R(12, 45)));
+        D(ApronBars, b, 8, "Breathe", Cue.On(P.Wave(4).Spread(0.5f)).Sym().Tempo(half).Dim(V.R(20, 55)));
 
         C(PixelBars, b, 8, "Azure", Ink.Azure);
-        D(PixelBars, b, 8, "Slow Comets", Cue.On(P.Wave(4, 0.08f, 0.02f, 0.5f).Spread(2)).Tempo(half).Dim(V.R(0, 70)));
+        D(PixelBars, b, 8, "Slow Comets", Cue.On(P.Wave(4, 0.08f, 0.02f, 0.5f).Spread(2)).Tempo(half).Dim(V.R(0, 80)));
 
         SideAcross(b, 8);
         C(SideWash, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(SideWash, b, 8, 40);
+        D(SideWash, b, 8, 65);
 
         C(PenlightRipple, b, 8, "Blue", Ink.Blue);
-        D(PenlightRipple, b, 8, "Slow Ripple", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.5f).Spread(1)).Tempo(half).Dim(V.R(0, 70)));
+        D(PenlightRipple, b, 8, "Slow Ripple", Cue.On(P.Wave(4, 0.3f, 0.1f, 0.5f).Spread(1)).Tempo(half).Dim(V.R(0, 85)));
     }
 
     // --- 89: what the last Drop A adds ------------------------------------------------------
@@ -885,7 +885,7 @@ public sealed class AlpsDemoShow
         F(MidSpots, b, 8, "Flicker", Cue.On().Flicker(18, 0.4f));
         F(BackSpots, b, 8, "Flicker", Cue.On().Flicker(14, 0.35f));
         C(PenlightRipple, b, 8, "White", Ink.White);
-        D(PenlightRipple, b, 8, "Fast Ripple", Cue.On(P.Hit(2, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 70)));
+        D(PenlightRipple, b, 8, "Fast Ripple", Cue.On(P.Hit(2, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 85)));
     }
 
     // --- 105: Outro -----------------------------------------------------------------------
@@ -914,30 +914,30 @@ public sealed class AlpsDemoShow
         B(Halo, b, 8, "Pencil", Cue.On().Cone(8, 120));
         M(Halo, b, 8, "Straight Down", Cue.On().Move(0, 0));
         C(Halo, b, 8, "Deep Blue", Ink.DeepBlue);
-        D(Halo, b, 8, "Slow Chase, Fading", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(10, 50), fadeOut: 16));
+        D(Halo, b, 8, "Slow Chase, Fading", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.4f).Spread(1)).Dim(V.R(35, 75), fadeOut: 16));
 
         B(Lasers, b, 6, "Close Up", Cue.On(P.In(20)).Cone(V.R(40, 2), LaserReach));
         M(Lasers, b, 6, "Lift Away", Cue.On(P.In(20)).Move(V.R(-16, 12), 0));
         C(Lasers, b, 6, "Blue", Ink.Blue);
-        D(Lasers, b, 6, "Fade", Cue.On().Dim(70, fadeOut: 12));
+        D(Lasers, b, 6, "Fade", Cue.On().Dim(75, fadeOut: 12));
 
         C(CycPars, b, 8, "Violet To Deep Blue", Cue.On(P.In(24)).Color(Ink.Violet, Ink.DeepBlue));
-        D(CycPars, b, 8, "Fade", Cue.On().Dim(35, fadeOut: 24));
+        D(CycPars, b, 8, "Fade", Cue.On().Dim(60, fadeOut: 24));
 
         C(TotemBars, b, 6, "Warm", Ink.Warm);
-        D(TotemBars, b, 6, "Twinkle, Fading", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 75), fadeOut: 8));
+        D(TotemBars, b, 6, "Twinkle, Fading", Cue.On(P.Wave(0.5f, 0.2f, 0.1f, 0.6f).Fire(0.12f)).Dim(V.R(0, 80), fadeOut: 8));
 
         C(ApronBars, b, 6, "Deep Blue", Ink.DeepBlue);
-        D(ApronBars, b, 6, "Breathe, Fading", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(12, 45), fadeOut: 12));
+        D(ApronBars, b, 6, "Breathe, Fading", Cue.On(P.Wave(8).Spread(0.5f)).Sym().Dim(V.R(20, 55), fadeOut: 12));
 
         C(PixelBars, b, 6, "Blue", Ink.Blue);
-        D(PixelBars, b, 6, "Comet, Fading", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 60), fadeOut: 12));
+        D(PixelBars, b, 6, "Comet, Fading", Cue.On(P.Wave(8, 0.08f, 0.02f, 0.5f).Spread(1)).Dim(V.R(0, 70), fadeOut: 12));
 
         FrontOnStage(b, 4);
         C(FrontWash, b, 4, "Warm", Ink.Warm);
-        D(FrontWash, b, 4, "Fade", Cue.On().Dim(30, fadeOut: 12));
+        D(FrontWash, b, 4, "Fade", Cue.On().Dim(60, fadeOut: 12));
 
         C(PenlightRipple, b, 8, "Blue", Ink.Blue);
-        D(PenlightRipple, b, 8, "Ripple, Fading", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 60), fadeOut: 16));
+        D(PenlightRipple, b, 8, "Ripple, Fading", Cue.On(P.Wave(8, 0.3f, 0.1f, 0.5f).Spread(1)).Dim(V.R(0, 80), fadeOut: 16));
     }
 }

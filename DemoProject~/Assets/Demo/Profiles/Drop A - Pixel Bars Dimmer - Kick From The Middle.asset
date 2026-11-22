@@ -302,8 +302,8 @@ MonoBehaviour:
         ownPhaseExpanded: 1
       brightness:
         limit: {x: 0, y: 200}
-        value: 8
-        range: {x: 8, y: 100}
+        value: 20
+        range: {x: 20, y: 100}
         isRange: 1
         hasSpread: 0
         spreadRange: {x: 100, y: 100}

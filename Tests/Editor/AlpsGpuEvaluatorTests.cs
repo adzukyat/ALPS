@@ -190,32 +190,22 @@ namespace AdzukiSoft.ALPS.Tests
             return degrees * Mathf.Deg2Rad / 4f;
         }
 
-        /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%.</summary>
+        /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%: up while the fixture is lit.</summary>
         private static float GridDimmer(float level)
         {
-            return level > 0f ? 1.26f * Mathf.Pow(Mathf.Min(level, 1f), 1f / 3f) : 0f;
+            return level > 0f ? 1.26f : 0f;
         }
 
-        /// <summary>The colour channel the grid holds, the tint VRSL's static path was handed turned into linear.</summary>
+        /// <summary>The colour channel the grid holds, which carries the brightness.</summary>
         private static float GridColour(float channel, float level)
         {
-            if (level <= 0f)
-            {
-                return 0f;
-            }
-
-            return ToLinear(channel * Mathf.Max(level, 1f)) * 2.02f * Mathf.Pow(Mathf.Min(level, 1f), 2f / 3f);
+            return level > 0f ? AlpsGpuShow.Light(channel, level) * 2.02f : 0f;
         }
 
-        /// <summary>A tint the way Unity hands it to a shader in a linear project.</summary>
-        private static float ToLinear(float tint)
+        /// <summary>The colour channel a laser reads, which shares the brightness with its intensity up to 100%.</summary>
+        private static float LaserColour(float channel, float level)
         {
-            if (QualitySettings.activeColorSpace != ColorSpace.Linear)
-            {
-                return tint;
-            }
-
-            return tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+            return AlpsGpuShow.Light(channel, Mathf.Max(level, 1f)) * Mathf.Pow(Mathf.Min(level, 1f), 1.2f);
         }
 
         // ------------------------------------------------------------------ laser
@@ -312,9 +302,9 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.AreEqual(flatness / 1.999f, Read(grid, fixture, 4), 1e-4f, "Flatness. " + diagnostics);
                 Assert.AreEqual((beams - 4f) / 64f, Read(grid, fixture, 5), 1e-4f, "Beams. " + diagnostics);
                 Assert.AreEqual(0f, Read(grid, fixture, 6), 1e-4f, "Spin. " + diagnostics);
-                Assert.AreEqual(ToLinear(0.2f * Mathf.Max(level, 1f)), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
-                Assert.AreEqual(ToLinear(0.4f * Mathf.Max(level, 1f)), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
-                Assert.AreEqual(ToLinear(Mathf.Max(level, 1f)), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
+                Assert.AreEqual(LaserColour(0.2f, level), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
+                Assert.AreEqual(LaserColour(0.4f, level), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
+                Assert.AreEqual(LaserColour(1f, level), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
                 Assert.AreEqual(Mathf.Min(level, 1f), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
                 Assert.AreEqual((thickness - 0.0005f) / 0.0495f, Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
                 Assert.AreEqual(0f, Read(spin, fixture, 6), 1e-6f, "The beams stand still. " + diagnostics);
@@ -389,7 +379,7 @@ namespace AdzukiSoft.ALPS.Tests
                 {
                     var channel = barRow * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
                     thirteenth += channel % 13 == 12 ? 1 : 0;
-                    var expected = k == 0 ? 1f : ToLinear(colour[k - 1] * Mathf.Max(level, 1f)) * Mathf.Pow(Mathf.Min(level, 1f), BarDimming);
+                    var expected = k == 0 ? 1f : AlpsGpuShow.Light(colour[k - 1], level);
                     if (Mathf.Abs(expected - Stored(channel)) > 1e-4f)
                     {
                         failures.Add($"segment {s} channel {k}: expected {expected:0.####}, the grid holds {Stored(channel):0.####}");
@@ -418,8 +408,6 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.AreEqual(0f, Stored((barRow - 1) * 13 + 12), 1e-6f, "A mover reads nothing from its thirteenth channel.");
         }
 
-        /// <summary>The power of the level a segment of a multi light bar dims by, ALPS_BAR_DIMMING in the grid shader.</summary>
-        private const float BarDimming = 1.5f;
 
         [Test]
         public void Laser_KeepsWhatItsMaterialSays()
