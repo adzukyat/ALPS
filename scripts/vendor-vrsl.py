@@ -20,6 +20,7 @@ only what keeps the copy apart from a VRSL package in the same project:
 - the multi light bar's material is in its 48 channel mode, a dimmer and a colour for each
   of its twelve segments, which ALPS drives as a fixture each,
 - the lit faces shine about as much on every fixture, and far less than VRSL makes them,
+- the smoke in a mover's cone thins the light by half at most, where VRSL's leaves holes,
 - a cone and a projection are drawn down to a far darker colour, since ALPS dims a fixture
   by its colour,
 - a static light throws no more light on what is right in front of it than on what is 25 cm
@@ -94,7 +95,19 @@ FACE = {
     "VRSL-Blinder-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0413},
     "VRSL-Blinder-LensFlareMat-Horizontal.mat": {"_FixtureMaxIntensity": 3, "_CurveMod": 0},
     "VRSL-WashMover-HQ-FixtureMat-Horizontal.mat": {"_FixtureMaxIntensity": 0.0179},
-    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": {"_LensMaxBrightness": 0.0128},
+    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": {"_LensMaxBrightness": 0.0063},
+}
+# The smoke in a mover's cone is a noise that darkens it by this share at its thinnest.
+# VRSL's 0.85 and 0.887 leave about a seventh of the light there, which reads as holes in
+# the beam and not as smoke. At half, the thinnest smoke still shows half the light. Both the
+# high quality value and the default one are set, since the quality mode picks between them.
+# Thinner smoke leaves more of the light on average, about a quarter, so the cone's own
+# intensity (VRSL's 0.25 and 0.2) comes down by as much and a beam is as bright as it was.
+# The spotlight's lens is lit through the same smoke, which is why its brightness in FACE
+# was measured with these.
+SMOKE = {
+    "VRSL-StandardMover-VolumetricMat-HQ-Horizontal.mat": {"_Noise2Power": 0.5, "_Noise2PowerDefault": 0.5, "_FixtureMaxIntensity": 0.195},
+    "VRSL-WashMover-VolumetricMat-HQ-Horizontal.mat": {"_Noise2Power": 0.5, "_Noise2PowerDefault": 0.5, "_FixtureMaxIntensity": 0.152},
 }
 # VRSL stops drawing a cone or a projection whose colour is under a hundredth or so, which
 # saves the work on a dark fixture. ALPS dims a fixture by its colour, along the curve the
@@ -259,7 +272,7 @@ def main():
         return os.path.join(TARGET, relative[len("Runtime/"):])
 
     folders = set()
-    faces = set(FACE)
+    faces = set(FACE) | set(SMOKE)
     size = 0
     for relative in sorted(taken):
         source = os.path.join(SOURCE, relative)
@@ -276,7 +289,8 @@ def main():
                         sys.exit(f"{relative} has no channel mode to set")
                     text = text.replace(BAR_CHANNEL_MODE, "- _ChannelMode: 1")
                     text = KEYWORDS.sub(lambda match: match.group(1).rstrip() + " " + BAR_KEYWORD, text, count=1)
-                for name, value in FACE.get(os.path.basename(relative), {}).items():
+                values = dict(FACE.get(os.path.basename(relative), {}), **SMOKE.get(os.path.basename(relative), {}))
+                for name, value in values.items():
                     text, found = re.subn(r"(- " + name + r": )[0-9.eE+-]+", lambda match: match.group(1) + format(value, ".7g"), text)
                     if found != 1:
                         sys.exit(f"{relative} has no {name} to set")
