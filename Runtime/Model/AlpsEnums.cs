@@ -77,6 +77,7 @@ namespace AdzukiSoft.ALPS
         Brightness,
         Flicker,
         Gobo,
+        Laser,
     }
 
     /// <summary>Odd / even split: which half of the fixture order an effect applies to.</summary>
@@ -151,5 +152,19 @@ namespace AdzukiSoft.ALPS
         InOutBack,
         InBounce,
         InOutBounce,
+    }
+
+    /// <summary>
+    /// How an <see cref="AlpsPenlightArea"/> turns where a penlight is into a place along its
+    /// slots. Mirrored by the penlight shaders, so the order is load bearing.
+    /// </summary>
+    public enum AlpsPenlightShape
+    {
+        /// <summary>Along the area's X axis, from one end of the line to the other.</summary>
+        Line,
+        /// <summary>By the distance from the middle, outward.</summary>
+        Radial,
+        /// <summary>By the angle around the middle, once round from behind it.</summary>
+        Angle,
     }
 }

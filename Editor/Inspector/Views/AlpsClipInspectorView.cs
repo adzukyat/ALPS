@@ -32,12 +32,17 @@ namespace AdzukiSoft.ALPS.Editor
         /// False when the clip is on no timeline, so there is no show tempo to write back.
         /// </param>
         /// <param name="fixtureCount">How many fixtures the clip plays on, 0 when that is not known.</param>
+        /// <param name="offerLaser">
+        /// False when the clip is known to play on no laser, which takes the laser effect out
+        /// of the add list. A laser effect already on the clip keeps its card.
+        /// </param>
         public AlpsClipInspectorView(
             AlpsClipEffectSet set,
             AlpsMixedValues mixed = null,
             float showBpm = AlpsLightingTrack.DefaultBpm,
             bool showBpmEditable = true,
-            int fixtureCount = 0)
+            int fixtureCount = 0,
+            bool offerLaser = true)
         {
             _set = set;
             _mixed = mixed;
@@ -195,7 +200,7 @@ namespace AdzukiSoft.ALPS.Editor
                     }
                 });
                 RaiseChanged();
-            });
+            }, offerLaser);
             Add(_catalog);
 
             // --- Profile -------------------------------------------------

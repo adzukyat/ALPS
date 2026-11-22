@@ -52,6 +52,7 @@ done < <(
 )
 
 if command -v git >/dev/null 2>&1 && git -C "${ROOT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  meta_paths=()
   while IFS= read -r -d '' meta_path; do
     rel="${meta_path#${ROOT_DIR}/}"
 
@@ -59,14 +60,20 @@ if command -v git >/dev/null 2>&1 && git -C "${ROOT_DIR}" rev-parse --is-inside-
       continue
     fi
 
-    if git -C "${ROOT_DIR}" check-ignore -q -- "${rel}"; then
-      printf '%s\n' "${rel}" >> "${ignored_meta_file}"
-    fi
+    meta_paths+=("${rel}")
   done < <(
     find "${ROOT_DIR}" -mindepth 1 \
       \( -name '.*' -o -name '*~' \) -prune -o \
       \( -name '*.meta' -type f \) -print0
   )
+
+  # One git process for every path: starting one per file takes most of a minute on Windows.
+  # check-ignore prints the ignored paths and exits with 1 when there are none.
+  if (( ${#meta_paths[@]} > 0 )); then
+    printf '%s\0' "${meta_paths[@]}" \
+      | git -C "${ROOT_DIR}" check-ignore -z --stdin \
+      | tr '\0' '\n' >> "${ignored_meta_file}" || true
+  fi
 fi
 
 if [[ -s "${missing_meta_file}" || -s "${ignored_meta_file}" ]]; then

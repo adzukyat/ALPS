@@ -17,8 +17,30 @@ namespace AdzukiSoft.ALPS
         /// <summary>Which output path the Udon player uses for this fixture.</summary>
         public abstract int AdapterKind { get; }
 
+        /// <summary>
+        /// Whether the fixture reads a row of VRSL's DMX grid, which holds
+        /// <see cref="AlpsShowPlayer.GpuMaxFixtures"/> of them.
+        /// </summary>
+        public virtual bool UsesDmxRow => true;
+
+        /// <summary>
+        /// What the fixture's rows of the grid are handed to: the fixture itself, or the
+        /// object it shares them with, the way the segments of a multi light bar share
+        /// their bar's.
+        /// </summary>
+        public virtual Object DmxOwner => this;
+
+        /// <summary>How many rows of the grid, one after the other, <see cref="DmxOwner"/> takes.</summary>
+        public virtual int DmxRowCount => 1;
+
         /// <summary>False when the fixture has nothing to drive, for example a missing target.</summary>
         public abstract bool IsReady { get; }
+
+        /// <summary>What is wrong with how the fixture is set up, which compiling a show warns about, or null.</summary>
+        public virtual string SetupWarning => null;
+
+        /// <summary>Whether the fixture is a laser, the only one a laser effect drives.</summary>
+        public virtual bool IsLaser => false;
 
         /// <summary>The Transform used to aim at a tracked user.</summary>
         public abstract Transform AimTransform { get; }

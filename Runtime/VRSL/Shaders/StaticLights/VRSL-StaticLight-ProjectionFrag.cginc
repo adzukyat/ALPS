@@ -35,12 +35,12 @@
                 float gi = i.globalFinalIntensity.x;
                 float fi = i.globalFinalIntensity.y;
                 #ifdef FIVECH
-                    if(((all(i.rgbColor <= float4(0.01,0.01,0.01,1)) || i.intensityStrobe.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
+                    if(((all(i.rgbColor <= float4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobe.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
                     {
                         return float4(0,0,0,0);
                     }
                 #else
-                    if(((all(i.rgbColor <= float4(0.05,0.05,0.05,1)) || i.intensityStrobe.x <= 0.05) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
+                    if(((all(i.rgbColor <= float4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobe.x <= 0.05) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= float4(0.005, 0.005, 0.005, 1.0)))
                     {
                         return float4(0,0,0,0);
                     }
@@ -166,7 +166,7 @@
 
 
                 
-                float4 result = ((col * UVscale  * _ProjectionMaxIntensity) * emissionTint) * strobe;
+                float4 result = ((col * (min(UVscale, 1/(_ProjectionDistanceFallOff + (0.25 * _ProjectionUVMod) + (_FeatherOffset * (0.25 * 0.25)))) * smoothstep(0.1, 0.25, distanceFromOrigin)) * _ProjectionMaxIntensity) * emissionTint) * strobe;
                 float fadeRange = (saturate(1-(pow(10, distanceFromOrigin - 2))));
                 col = (((lerp(result,float4(0,0,0,0), smoothstep(distanceFromOrigin, 0, f))) * gi) * fi) * _UniversalIntensity;
                 

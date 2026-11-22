@@ -231,7 +231,7 @@
                 o.worldDirection.xyz = o.worldPos.xyz - _WorldSpaceCameraPos;
                 // pack correction factor into direction w component to save space
                 o.worldDirection.w = dot(o.pos, CalculateFrustumCorrection());
-                if (((all(o.rgbColor <= float4(0.05, 0.05, 0.05, 1)) || o.intensityStrobe.x <= 0.05) && isDMX() == 1) ||
+                if (((all(o.rgbColor <= float4(0.0001, 0.0001, 0.0001, 1)) || o.intensityStrobe.x <= 0.05) && isDMX() == 1) ||
                     o.globalFinalIntensity.x <= 0.005 || o.globalFinalIntensity.y <= 0.005 || all(
                         o.emissionColor <= float4(0.005, 0.005, 0.005, 1.0)))
                 {
@@ -398,7 +398,7 @@
 		o.worldDirection.xyz = o.worldPos.xyz - _WorldSpaceCameraPos;
 		// pack correction factor into direction w component to save space
 		o.worldDirection.w = dot(o.pos, CalculateFrustumCorrection());
-		if(((all(o.rgbColor <= float4(0.05,0.05,0.05,1)) || o.intensityStrobe.x <= 0.05) && isDMX() == 1) || o.globalFinalIntensity.x <= 0.005 || o.globalFinalIntensity.y <= 0.005 || all(o.emissionColor <= float4(0.005, 0.005, 0.005, 1.0)))
+		if(((all(o.rgbColor <= float4(0.0001, 0.0001, 0.0001,1)) || o.intensityStrobe.x <= 0.05) && isDMX() == 1) || o.globalFinalIntensity.x <= 0.005 || o.globalFinalIntensity.y <= 0.005 || all(o.emissionColor <= float4(0.005, 0.005, 0.005, 1.0)))
 		{
 			v.vertex = float4(0,0,0,0);
 			o.pos = UnityObjectToClipPos(v.vertex);

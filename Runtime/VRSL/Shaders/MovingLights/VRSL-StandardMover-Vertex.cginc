@@ -473,7 +473,7 @@ v2f vert (appdata v)
 			#endif
 			o.goboPlusSpinPanTilt = half4(getDMXGoboSelection(dmx), spinSpeed, oscPanValue, oscTiltValue);
 			o.rgbColor = GetDMXColor(dmx);
-			if(((all(o.rgbColor <= half4(0.01,0.01,0.01,1)) || o.intensityStrobeWidth.x <= 0.01) && isDMX() == 1) || getGlobalIntensity() <= 0.005 || getFinalIntensity() <= 0.005 || all(o.emissionColor <= half4(0.005, 0.005, 0.005, 1.0)))
+			if(((all(o.rgbColor <= half4(0.0001, 0.0001, 0.0001,1)) || o.intensityStrobeWidth.x <= 0.01) && isDMX() == 1) || getGlobalIntensity() <= 0.005 || getFinalIntensity() <= 0.005 || all(o.emissionColor <= half4(0.005, 0.005, 0.005, 1.0)))
 			{
 				v.vertex = half4(0,0,0,0);
 				o.pos = UnityObjectToClipPos(v.vertex);
@@ -528,7 +528,7 @@ v2f vert (appdata v)
 			o.stripeInfo = GetStripeInfo(gobo);
 			#endif
 			o.rgbColor = GetDMXColor(dmx);
-			if(((all(o.rgbColor <= half4(0.005,0.005,0.005,1)) || o.intensityStrobeGOBOSpinSpeed.x <= 0.01) && isDMX() == 1) || getGlobalIntensity() <= 0.005 || getFinalIntensity() <= 0.005)
+			if(((all(o.rgbColor <= half4(0.0001, 0.0001, 0.0001,1)) || o.intensityStrobeGOBOSpinSpeed.x <= 0.01) && isDMX() == 1) || getGlobalIntensity() <= 0.005 || getFinalIntensity() <= 0.005)
 			{
 				v.vertex = half4(0,0,0,0);
 				o.pos = UnityObjectToClipPos(v.vertex);

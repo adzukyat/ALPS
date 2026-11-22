@@ -14,21 +14,29 @@ namespace AdzukiSoft.ALPS.Editor
         /// <summary>Where older versions wrote these, which the preflights remove (<see cref="AlpsGeneratedCleanup"/>).</summary>
         public const string AssetFolder = AlpsShowSetup.GeneratedFolder + "/Gpu";
 
-        /// <summary>Rows of the shared frames targets, one per fixture of a show.</summary>
-        public const int FrameRows = 128;
+        /// <summary>
+        /// Rows of the shared frames targets, one per fixture of a show: what VRSL's grid
+        /// holds, counting the segments of multi light bars, which put three fixtures on a
+        /// row, and every slot of the penlight areas a show can have.
+        /// </summary>
+        public const int FrameRows = AlpsShowPlayer.GpuMaxFixtures * AlpsVRSLMultiLightBar.SegmentCount / AlpsVRSLMultiLightBar.RowCount
+                                     + AlpsShowPlayer.GpuMaxPenlightAreas * AlpsShowPlayer.GpuMaxPenlightSlots;
 
         /// <summary>The materials and targets every show player of a scene shares.</summary>
         public sealed class Shared
         {
             public Material framesMaterial;
             public Material gridMaterial;
+            public Material penlightMaterial;
             public RenderTexture frames;
             public RenderTexture framesPrevious;
             public RenderTexture grid;
             public RenderTexture spin;
+            public RenderTexture penlight;
 
             public bool IsComplete =>
-                framesMaterial != null && gridMaterial != null && frames != null && framesPrevious != null && grid != null && spin != null;
+                framesMaterial != null && gridMaterial != null && penlightMaterial != null
+                && frames != null && framesPrevious != null && grid != null && spin != null && penlight != null;
         }
 
         /// <summary>
@@ -41,10 +49,12 @@ namespace AdzukiSoft.ALPS.Editor
             {
                 framesMaterial = CreateMaterial("ALPS Frames", AlpsPreviewDriver.GpuFramesShader),
                 gridMaterial = CreateMaterial("ALPS DMX Grid", AlpsPreviewDriver.GpuGridShader),
+                penlightMaterial = CreateMaterial("ALPS Penlight", AlpsPenlight.GridShader),
                 frames = CreateTarget("ALPS Frames", AlpsShowPlayer.GpuFrameTexels, FrameRows),
                 framesPrevious = CreateTarget("ALPS Frames Previous", AlpsShowPlayer.GpuFrameTexels, FrameRows),
                 grid = CreateTarget("ALPS DMX Grid", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
                 spin = CreateTarget("ALPS DMX Spin", AlpsShowPlayer.GpuGridWidth, AlpsShowPlayer.GpuGridHeight),
+                penlight = CreateTarget("ALPS Penlight", AlpsShowPlayer.GpuPenlightWidth, AlpsShowPlayer.GpuMaxPenlightAreas),
             };
 
             return shared;

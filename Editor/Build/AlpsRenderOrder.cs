@@ -64,7 +64,9 @@ namespace AdzukiSoft.ALPS.Editor
         private static List<AlpsContainer> Containers(Scene scene)
         {
             var containers = new List<AlpsContainer>();
-            if (scene.IsValid() && scene.isLoaded)
+            // Not asked whether it is loaded: the scene play mode hands over to be processed
+            // says it is not, and has its objects all the same.
+            if (scene.IsValid())
             {
                 foreach (var root in scene.GetRootGameObjects())
                 {
@@ -159,9 +161,10 @@ namespace AdzukiSoft.ALPS.Editor
 
         private static bool IsProjection(Material material)
         {
-            // VRSL's projection shaders, the ones ALPS comes with and a VRSL package's own.
+            // VRSL's projection shaders, the ones ALPS comes with and a VRSL package's own, and
+            // its mirror ball, whose light is a projection too.
             var name = material.shader.name;
-            return name.EndsWith("/Projection") && (name.StartsWith("ALPS/VRSL/") || name.StartsWith("VRSL/"));
+            return (name.EndsWith("/Projection") || name.EndsWith("/Other/Discoball")) && (name.StartsWith("ALPS/VRSL/") || name.StartsWith("VRSL/"));
         }
 
         private static bool IsOpaque(Material material)

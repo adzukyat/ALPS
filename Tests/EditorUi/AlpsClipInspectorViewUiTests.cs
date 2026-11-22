@@ -1533,6 +1533,56 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void AddCatalog_LeavesTheLaserEffectOutWhereNoLaserPlaysIt()
+        {
+            var set = new AlpsClipEffectSet();
+            set.Add(AlpsEffectKind.Laser);
+            var laser = AlpsEffectCatalog.GetName(AlpsEffectKind.Laser);
+
+            var view = new AlpsClipInspectorView(set, offerLaser: false);
+            var catalog = view.Q<AlpsAddEffectCatalog>();
+            Assert.IsFalse(Labels(catalog).Any(label => label.text.StartsWith(laser)), "Not even the odd half is offered.");
+            Assert.IsTrue(Labels(catalog).Any(label => label.text == AlpsEffectCatalog.GetName(AlpsEffectKind.Move)));
+
+            catalog.RequestAdd(AlpsEffectKind.Laser);
+            Assert.AreEqual(1, set.effects.Count, "A request for it adds nothing either.");
+            Assert.AreEqual(1, view.Query<AlpsEffectView>().ToList().Count, "The one the clip has keeps its card, to change or remove.");
+
+            var unknown = new AlpsClipEffectSet();
+            var open = new AlpsClipInspectorView(unknown).Q<AlpsAddEffectCatalog>();
+            Assert.IsTrue(Labels(open).Any(label => label.text == laser), "It is offered while nothing says the clip plays on no laser.");
+            open.RequestAdd(AlpsEffectKind.Laser);
+            Assert.AreEqual(AlpsEffectKind.Laser, unknown.effects.Single().kind);
+        }
+
+        [Test]
+        public void TheLaserEffect_IsOfferedOnlyToATargetWithALaser()
+        {
+            var lasers = new GameObject("Lasers", typeof(AlpsContainer));
+            var pars = new GameObject("Pars", typeof(AlpsContainer));
+            try
+            {
+                var par = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, pars);
+                AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, lasers);
+                var laser = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.Laser, lasers);
+
+                Assert.IsTrue(laser.GetComponent<AlpsFixture>().IsLaser);
+                Assert.IsFalse(par.GetComponent<AlpsFixture>().IsLaser);
+
+                Assert.IsTrue(AlpsLightingClipInspector.OffersLaser(lasers.GetComponent<AlpsContainer>()), "One laser among the fixtures is enough.");
+                Assert.IsTrue(AlpsLightingClipInspector.OffersLaser(laser.GetComponent<AlpsFixture>()));
+                Assert.IsFalse(AlpsLightingClipInspector.OffersLaser(pars.GetComponent<AlpsContainer>()));
+                Assert.IsFalse(AlpsLightingClipInspector.OffersLaser(par.GetComponent<AlpsFixture>()));
+                Assert.IsTrue(AlpsLightingClipInspector.OffersLaser(null), "Nothing is known about a clip no director plays.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(lasers);
+                Object.DestroyImmediate(pars);
+            }
+        }
+
+        [Test]
         public void MoveEffect_ShowsPhaseOffsetOnlyWhenBothAxesAreRanges()
         {
             var set = new AlpsClipEffectSet();

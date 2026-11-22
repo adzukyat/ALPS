@@ -19,6 +19,7 @@ namespace AdzukiSoft.ALPS
             AlpsEffectKind.Cone,
             AlpsEffectKind.Flicker,
             AlpsEffectKind.Gobo,
+            AlpsEffectKind.Laser,
         };
 
         // The names and descriptions are localized, so the catalog holds the string keys and
@@ -32,6 +33,7 @@ namespace AdzukiSoft.ALPS
                 { AlpsEffectKind.Brightness, "effect.brightness.name" },
                 { AlpsEffectKind.Flicker, "effect.flicker.name" },
                 { AlpsEffectKind.Gobo, "effect.gobo.name" },
+                { AlpsEffectKind.Laser, "effect.laser.name" },
             };
 
         private static readonly Dictionary<AlpsEffectKind, string> DescriptionKeys =
@@ -43,6 +45,7 @@ namespace AdzukiSoft.ALPS
                 { AlpsEffectKind.Brightness, "effect.brightness.desc" },
                 { AlpsEffectKind.Flicker, "effect.flicker.desc" },
                 { AlpsEffectKind.Gobo, "effect.gobo.desc" },
+                { AlpsEffectKind.Laser, "effect.laser.desc" },
             };
 
         /// <summary>Position of <paramref name="kind"/> in <see cref="Order"/>. Unknown kinds sort last.</summary>

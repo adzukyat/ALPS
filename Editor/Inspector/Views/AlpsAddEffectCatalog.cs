@@ -12,16 +12,22 @@ namespace AdzukiSoft.ALPS.Editor
     /// An effect already on the clip stays in the list, retitled with an odd suffix. Picking it
     /// is what splits the existing card into even / odd. A kind disappears from the list
     /// only once both halves exist.
+    ///
+    /// The laser effect is listed only where a laser can play it, since it drives nothing on
+    /// any other fixture.
     /// </summary>
     public class AlpsAddEffectCatalog : VisualElement
     {
         private readonly AlpsClipEffectSet _set;
+        private readonly bool _offerLaser;
         private readonly VisualElement _divider;
         private readonly VisualElement _list;
 
-        public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd)
+        /// <param name="offerLaser">False when the clip is known to play on no laser.</param>
+        public AlpsAddEffectCatalog(AlpsClipEffectSet set, Action<AlpsEffectKind> onAdd, bool offerLaser = true)
         {
             _set = set;
+            _offerLaser = offerLaser;
             OnAdd = onAdd;
             AddToClassList("alps-add");
 
@@ -35,13 +41,22 @@ namespace AdzukiSoft.ALPS.Editor
 
         private Action<AlpsEffectKind> OnAdd { get; }
 
-        /// <summary>Adds <paramref name="kind"/>, the same entry point a list item uses. Does nothing while the kind is used up.</summary>
+        /// <summary>
+        /// Adds <paramref name="kind"/>, the same entry point a list item uses. Does nothing
+        /// while the kind is used up or not offered.
+        /// </summary>
         public void RequestAdd(AlpsEffectKind kind)
         {
-            if (_set.CanAdd(kind))
+            if (Offers(kind))
             {
                 OnAdd?.Invoke(kind);
             }
+        }
+
+        /// <summary>Whether the list holds <paramref name="kind"/>.</summary>
+        public bool Offers(AlpsEffectKind kind)
+        {
+            return (kind != AlpsEffectKind.Laser || _offerLaser) && _set.CanAdd(kind);
         }
 
         public void Rebuild()
@@ -53,11 +68,12 @@ namespace AdzukiSoft.ALPS.Editor
 
             foreach (var kind in AlpsEffectCatalog.Order)
             {
-                var label = _set.GetAddLabel(kind);
-                if (label == null)
+                if (!Offers(kind))
                 {
                     continue;
                 }
+
+                var label = _set.GetAddLabel(kind);
 
                 var captured = kind;
                 var item = AlpsCatalogPanel.Item(AlpsEffectThumbnail.Build(kind), label, AlpsEffectCatalog.GetDescription(kind));
@@ -128,6 +144,7 @@ namespace AdzukiSoft.ALPS.Editor
                 case AlpsEffectKind.Brightness: BuildRamp(well); break;
                 case AlpsEffectKind.Flicker: BuildBars(well); break;
                 case AlpsEffectKind.Gobo: well.Add(BuildGobo()); break;
+                case AlpsEffectKind.Laser: well.Add(BuildFan()); break;
             }
 
             return well;
@@ -158,6 +175,28 @@ namespace AdzukiSoft.ALPS.Editor
                 origin,
                 origin + new Vector2(Mathf.Sin(radians) * length, -Mathf.Cos(radians) * length),
             };
+        }
+
+        /// <summary>Laser: seven thin beams fanning out of one point at the bottom centre.</summary>
+        private static VisualElement BuildFan()
+        {
+            const int beams = 7;
+            const float spread = 62f;
+            const float length = 21f;
+            var origin = new Vector2(30f, 24f);
+            var contours = new Vector2[beams][];
+            for (var i = 0; i < beams; i++)
+            {
+                var radians = Mathf.Lerp(-spread, spread, i / (beams - 1f)) * Mathf.Deg2Rad;
+                contours[i] = new[] { origin, origin + new Vector2(Mathf.Sin(radians) * length, -Mathf.Cos(radians) * length) };
+            }
+
+            var icon = new AlpsVectorIcon { StrokeWidth = 1f, IconColor = Art };
+            icon.SetViewBox(new Vector2(60f, 26f));
+            icon.SetContours(contours);
+            icon.style.width = 60f;
+            icon.style.height = 26f;
+            return icon;
         }
 
         /// <summary>Cone: the filled 18x18 triangle.</summary>

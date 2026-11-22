@@ -1,56 +1,93 @@
-using System.Collections.Generic;
+using System.Linq;
 using AdzukiSoft.ALPS;
 using AdzukiSoft.ALPS.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
-using UnityEngine.Timeline;
-using AdzukiSoft.ALPS.Vrsl;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.PostProcessing;
 
 /// <summary>
-/// Rebuilds the demo: the scene's fixtures as the ones ALPS comes with, containers on its
-/// universes, an example timeline with one ALPS track per container, and the show player.
-/// Safe to run again at any time.
+/// Rebuilds the demo from code: the venue (<see cref="AlpsDemoVenue"/>), the lighting rig
+/// hung on it (<see cref="AlpsDemoRig"/>) and a three and a half minute show
+/// (<see cref="AlpsDemoShow"/>). Everything below the scene's ALPS Demo object and under
+/// Assets/Demo is written again on every run, so it is safe to run at any time, and what is
+/// changed by hand there does not last.
 /// </summary>
 public static class AlpsDemoBuilder
 {
-    private const string ScenePath = "Assets/Scenes/VRCDefaultWorldScene.unity";
-    private const string TimelinePath = "Assets/ExampleTimeline.playable";
-    private const string GroupPrefix = "Universe_";
-    private const float Bpm = 120f;
-    private const double Duration = 26.0;
+    public const string ScenePath = "Assets/Scenes/VRCDefaultWorldScene.unity";
+    public const string RootName = "ALPS Demo";
+    public const string DirectorName = "Show";
+    private const string WorldName = "VRCWorld";
+    private const string PostProcessPath = AlpsDemoVenue.Folder + "/DemoPostProcess.asset";
+
+    /// <summary>
+    /// Where a visitor arrives and where the scene's camera stands, the mix position, measured
+    /// like the venue.
+    /// </summary>
+    private static readonly Vector3 Spawn = new Vector3(0f, 0.42f, AlpsDemoVenue.FohZ - 0.7f);
+    private static readonly Vector3 CameraPosition = new Vector3(0f, 3.1f, AlpsDemoVenue.FohZ - 0.5f);
+    private static readonly Vector3 CameraTarget = new Vector3(0f, 5.2f, 4f);
 
     [MenuItem(AlpsMainMenu.DebugRoot + "Demo/Rebuild Example", false, AlpsMainMenu.DebugPriority)]
     public static void Rebuild()
     {
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        RemoveLegacyObjects();
-        // The scene was made with fixtures of the VR Stage Lighting package.
-        AlpsVrslMigration.Convert(AlpsVrslMigration.Find());
+        RemoveLegacyAssets();
 
-        var groups = BuildGroups(scene);
-        var director = Object.FindObjectOfType<PlayableDirector>();
-        if (director == null)
+        // Everything but VRChat's world object is the demo's and is made again.
+        foreach (var root in scene.GetRootGameObjects())
         {
-            Debug.LogError("[ALPS Demo] The demo scene has no PlayableDirector.");
-            return;
-        }
-
-        var timeline = BuildTimeline();
-        director.playableAsset = timeline;
-        foreach (var track in timeline.GetRootTracks())
-        {
-            if (track is AlpsLightingTrack && groups.TryGetValue(track.name, out var group))
+            if (root.name != WorldName)
             {
-                director.SetGenericBinding(track, group);
+                Object.DestroyImmediate(root);
             }
         }
 
+        SetEnvironment();
+        var demo = new GameObject(RootName);
+        demo.transform.localScale = Vector3.one * AlpsDemoVenue.Scale;
+        AlpsDemoVenue.Build(demo.transform);
+        var targets = AlpsDemoRig.Build(demo.transform);
+        var camera = AddCamera(demo.transform);
+        AddDepthLight(demo.transform);
+
+        var director = new GameObject(DirectorName).AddComponent<PlayableDirector>();
+        director.transform.SetParent(demo.transform, false);
+        director.playOnAwake = true;
+        // Loop, since a director that ends with wrap mode None stops and a later seek freezes it.
+        director.extrapolationMode = DirectorWrapMode.Loop;
+        AlpsDemoShow.Build(director, targets);
+
+        PlaceWorld(camera);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
-        Debug.Log("[ALPS Demo] Rebuilt the example show.");
+        // Making a mesh glow registers an undo step, and undoing one would take a fixture apart.
+        Undo.ClearAll();
+
+        // What a VRChat build would check before it converts the show.
+        var show = AlpsShowCompiler.Compile(director);
+        var errors = new System.Collections.Generic.List<string>(show.errors);
+        var warnings = new System.Collections.Generic.List<string>(show.warnings);
+        AlpsShowApplier.Validate(scene, errors, warnings);
+        foreach (var error in errors.Distinct())
+        {
+            Debug.LogError("[ALPS Demo] " + error);
+        }
+
+        foreach (var warning in warnings.Distinct())
+        {
+            Debug.LogWarning("[ALPS Demo] " + warning);
+        }
+
+        // A fixture takes a row of the DMX grid, and the segments of a multi light bar share four.
+        var rows = show.fixtures.Where(fixture => fixture != null && fixture.UsesDmxRow)
+            .GroupBy(fixture => fixture.DmxOwner).Sum(group => group.First().DmxRowCount);
+        Debug.Log($"[ALPS Demo] Rebuilt the example show: {show.fixtures.Count} fixtures on {rows} of the DMX grid's {AlpsShowPlayer.GpuMaxFixtures} rows, "
+                  + $"{show.clips.Length / AlpsShowLayout.ClipStride} clips, {AlpsDemoShow.Duration:0} seconds.");
     }
 
     /// <summary>Batch mode entry point.</summary>
@@ -67,6 +104,11 @@ public static class AlpsDemoBuilder
         {
             Rebuild();
         }
+        catch (System.Exception exception)
+        {
+            Debug.LogException(exception);
+            failed = true;
+        }
         finally
         {
             Application.logMessageReceived -= OnLog;
@@ -75,13 +117,15 @@ public static class AlpsDemoBuilder
         EditorApplication.Exit(failed ? 1 : 0);
     }
 
-    private static void RemoveLegacyObjects()
+    /// <summary>The demo's director in the open scene, or null.</summary>
+    public static PlayableDirector FindDirector()
     {
-        foreach (var transform in Object.FindObjectsOfType<Transform>(true))
-        {
-            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(transform.gameObject);
-        }
+        var demo = GameObject.Find(RootName);
+        return demo != null ? demo.GetComponentInChildren<PlayableDirector>(true) : null;
+    }
 
+    private static void RemoveLegacyAssets()
+    {
         const string legacySettingsPath = "Assets/StageLightManeuverSettings.asset";
         if (AssetDatabase.LoadAssetAtPath<Object>(legacySettingsPath) != null)
         {
@@ -89,214 +133,125 @@ public static class AlpsDemoBuilder
         }
     }
 
-    private static Dictionary<string, AlpsContainer> BuildGroups(UnityEngine.SceneManagement.Scene scene)
+    /// <summary>A dark room: no sky, next to no ambient light and nothing to reflect.</summary>
+    private static void SetEnvironment()
     {
-        var groups = new Dictionary<string, AlpsContainer>();
-        foreach (var transform in Object.FindObjectsOfType<Transform>(true))
+        RenderSettings.skybox = null;
+        RenderSettings.sun = null;
+        RenderSettings.ambientMode = AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.012f, 0.013f, 0.02f);
+        RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+        RenderSettings.customReflection = null;
+        RenderSettings.reflectionIntensity = 0f;
+        RenderSettings.fog = false;
+        Lightmapping.realtimeGI = false;
+        Lightmapping.bakedGI = false;
+    }
+
+    private static Camera AddCamera(Transform parent)
+    {
+        var camera = new GameObject("Main Camera").AddComponent<Camera>();
+        camera.gameObject.tag = "MainCamera";
+        camera.transform.SetParent(parent, false);
+        camera.transform.position = AlpsDemoVenue.World(CameraPosition);
+        camera.transform.LookAt(AlpsDemoVenue.World(CameraTarget));
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Color.black;
+        camera.fieldOfView = 50f;
+        camera.nearClipPlane = 0.1f;
+        camera.farClipPlane = 200f;
+        camera.allowHDR = true;
+        camera.gameObject.AddComponent<AudioListener>();
+
+        // Bloom is what makes a lit lens and a beam read as light. VRChat takes these settings
+        // from the scene descriptor's reference camera.
+        var profile = AlpsDemoVenue.Asset<PostProcessProfile>(PostProcessPath, ScriptableObject.CreateInstance<PostProcessProfile>);
+        var bloom = Setting<Bloom>(profile);
+        bloom.enabled.Override(true);
+        bloom.intensity.Override(2.2f);
+        bloom.threshold.Override(1.05f);
+        bloom.softKnee.Override(0.6f);
+        bloom.diffusion.Override(6.5f);
+        var grading = Setting<ColorGrading>(profile);
+        grading.enabled.Override(true);
+        grading.tonemapper.Override(Tonemapper.Neutral);
+        EditorUtility.SetDirty(profile);
+
+        var volume = camera.gameObject.AddComponent<PostProcessVolume>();
+        volume.isGlobal = true;
+        volume.sharedProfile = profile;
+
+        var resources = AssetDatabase.FindAssets("t:PostProcessResources")
+            .Select(guid => AssetDatabase.LoadAssetAtPath<PostProcessResources>(AssetDatabase.GUIDToAssetPath(guid)))
+            .FirstOrDefault(found => found != null);
+        if (resources != null)
         {
-            if (!transform.name.StartsWith(GroupPrefix))
+            var layer = camera.gameObject.AddComponent<PostProcessLayer>();
+            layer.Init(resources);
+            layer.volumeTrigger = camera.transform;
+            layer.volumeLayer = 1 << camera.gameObject.layer;
+        }
+
+        return camera;
+    }
+
+    /// <summary>The profile's settings of one effect, added to its asset the first time.</summary>
+    private static T Setting<T>(PostProcessProfile profile) where T : PostProcessEffectSettings
+    {
+        var setting = profile.GetSetting<T>();
+        if (setting == null)
+        {
+            setting = profile.AddSettings<T>();
+            setting.name = typeof(T).Name;
+            AssetDatabase.AddObjectToAsset(setting, profile);
+        }
+
+        return setting;
+    }
+
+    /// <summary>
+    /// A directional light that casts shadows from nothing. VRSL's cones fade out where they
+    /// meet the scene, which they read from the camera's depth texture, and in the built-in
+    /// pipeline it is a shadow casting directional light that makes Unity draw one.
+    /// </summary>
+    private static void AddDepthLight(Transform parent)
+    {
+        var light = new GameObject("Depth Light").AddComponent<Light>();
+        light.transform.SetParent(parent, false);
+        light.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        light.type = LightType.Directional;
+        light.intensity = 0.01f;
+        light.color = Color.black;
+        light.shadows = LightShadows.Hard;
+        light.cullingMask = 1 << LayerMask.NameToLayer("Water");
+    }
+
+    /// <summary>Moves VRChat's world object, which is the spawn, and hands it the camera to copy.</summary>
+    private static void PlaceWorld(Camera camera)
+    {
+        var world = GameObject.Find(WorldName);
+        if (world == null)
+        {
+            Debug.LogWarning("[ALPS Demo] The scene has no VRCWorld object, so it has no spawn.");
+            return;
+        }
+
+        world.transform.position = AlpsDemoVenue.World(Spawn);
+        world.transform.rotation = Quaternion.identity;
+        foreach (var behaviour in world.GetComponents<MonoBehaviour>())
+        {
+            if (behaviour == null)
             {
                 continue;
             }
 
-            var container = transform.GetComponent<AlpsContainer>();
-            if (container == null)
+            var serialized = new SerializedObject(behaviour);
+            var reference = serialized.FindProperty("ReferenceCamera");
+            if (reference != null && reference.propertyType == SerializedPropertyType.ObjectReference)
             {
-                container = transform.gameObject.AddComponent<AlpsContainer>();
+                reference.objectReferenceValue = camera.gameObject;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
             }
-
-            foreach (var vrsl in transform.GetComponentsInChildren<VRStageLighting_DMX_Static>(true))
-            {
-                var fixture = vrsl.GetComponent<AlpsVRSLFixture>();
-                if (fixture == null)
-                {
-                    fixture = vrsl.gameObject.AddComponent<AlpsVRSLFixture>();
-                }
-
-                fixture.target = vrsl;
-            }
-
-            EditorUtility.SetDirty(container);
-            groups[transform.name] = container;
         }
-
-        return groups;
-    }
-
-    private static TimelineAsset BuildTimeline()
-    {
-        AssetDatabase.DeleteAsset(TimelinePath);
-        var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-        timeline.name = "ExampleTimeline";
-        AssetDatabase.CreateAsset(timeline, TimelinePath);
-        timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
-        timeline.fixedDuration = Duration;
-
-        var wash = Track(timeline, GroupPrefix + "MovingWashLight");
-        Clip(wash, "Wash Sweep", 0, 8.5, WashSweep());
-        Clip(wash, "Wash Chase", 8, 8.5, WashChase());
-        Clip(wash, "Wash Odd Even", 16, 10, WashOddEven());
-
-        var beam = Track(timeline, GroupPrefix + "MovingBeamLight");
-        Clip(beam, "Beam Circle", 0, 13.5, BeamCircle());
-        Clip(beam, "Beam Pulse", 13, 13, BeamPulse());
-
-        var gobo = Track(timeline, GroupPrefix + "MovingBeamLight_Gobo");
-        Clip(gobo, "Gobo Spin", 0, Duration, GoboSpin());
-
-        EditorUtility.SetDirty(timeline);
-        AssetDatabase.SaveAssets();
-        return AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
-    }
-
-    private static AlpsLightingTrack Track(TimelineAsset timeline, string name)
-    {
-        var track = timeline.CreateTrack<AlpsLightingTrack>(null, name);
-        track.bpm = Bpm;
-        return track;
-    }
-
-    private static void Clip(AlpsLightingTrack track, string name, double start, double duration, AlpsClipEffectSet set)
-    {
-        var clip = track.CreateClip<AlpsLightingClip>();
-        clip.displayName = name;
-        clip.start = start;
-        clip.duration = duration;
-        ((AlpsLightingClip)clip.asset).data = set;
-    }
-
-    // ------------------------------------------------------------------ cues
-
-    private static AlpsClipEffectSet WashSweep()
-    {
-        var set = Set(AlpsEaseType.InOutSine, 4f);
-        set.symmetric = true;
-        set.phase.spread = 0.5f;
-
-        var move = set.Add(AlpsEffectKind.Move);
-        move.tilt.isRange = true;
-        move.tilt.range = new Vector2(-30f, 30f);
-        move.pan.value = 0f;
-
-        var color = set.Add(AlpsEffectKind.Color);
-        color.colorStops.Add(new AlpsColorStop(new Color(1f, 0.1f, 0.2f)));
-        color.colorStops.Add(new AlpsColorStop(new Color(0.9f, 0.2f, 1f)));
-        color.colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.3f, 1f)));
-        color.colorPhasing.timing = AlpsTimingMode.PerCycle;
-
-        set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
-        return set;
-    }
-
-    private static AlpsClipEffectSet WashChase()
-    {
-        var set = Sawtooth(AlpsEaseType.OutQuad, 2f);
-        set.phase.spread = 1f;
-
-        var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
-        brightness.isRange = true;
-        brightness.range = new Vector2(0f, 100f);
-
-        var gradient = new Gradient();
-        gradient.SetKeys(
-            new[] { new GradientColorKey(new Color(0.1f, 0.9f, 1f), 0f), new GradientColorKey(new Color(0.6f, 0.1f, 1f), 1f) },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
-        set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop { isGradient = true, gradient = gradient });
-        return set;
-    }
-
-    private static AlpsClipEffectSet WashOddEven()
-    {
-        var set = Set(AlpsEaseType.InOutCubic, 8f);
-
-        set.Add(AlpsEffectKind.Move).tilt.value = -25f;
-        set.Add(AlpsEffectKind.Move).tilt.value = 25f;
-
-        set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
-        set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
-
-        var flicker = set.Add(AlpsEffectKind.Flicker);
-        flicker.flickerSpeed = 8f;
-        flicker.flickerStrength = 0.35f;
-        return set;
-    }
-
-    private static AlpsClipEffectSet BeamCircle()
-    {
-        // A linear sawtooth, so the ring turns at a steady speed. A full spread walks the
-        // fixtures right around it, one per position.
-        var set = Sawtooth(AlpsEaseType.Linear, 4f);
-        set.phase.spread = 1f;
-
-        var move = set.Add(AlpsEffectKind.Move);
-        move.moveMode = AlpsMoveMode.Circle;
-        move.circleCenterTilt.value = 30f;
-        move.circleRadius.value = 12f;
-
-        var cone = set.Add(AlpsEffectKind.Cone);
-        cone.coneWidth.value = 12f;
-        cone.coneLength.value = 40f;
-
-        set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(Color.white));
-        set.Add(AlpsEffectKind.Brightness).brightness.value = 100f;
-        return set;
-    }
-
-    private static AlpsClipEffectSet BeamPulse()
-    {
-        var set = Sawtooth(AlpsEaseType.Linear, 0.5f);
-
-        var brightness = set.Add(AlpsEffectKind.Brightness).brightness;
-        brightness.isRange = true;
-        brightness.range = new Vector2(0f, 100f);
-        brightness.timing = AlpsTimingMode.PerCycle;
-
-        var color = set.Add(AlpsEffectKind.Color);
-        color.colorStops.Add(new AlpsColorStop(new Color(1f, 0.85f, 0.1f)));
-        color.colorStops.Add(new AlpsColorStop(new Color(1f, 0.45f, 0.05f)));
-        color.colorPhasing.timing = AlpsTimingMode.PerCycle;
-        color.colorPhasing.useOwnPhase = true;
-        color.colorPhasing.ownPhase.beatsPerCycle = 2f;
-        return set;
-    }
-
-    private static AlpsClipEffectSet GoboSpin()
-    {
-        var set = Sawtooth(AlpsEaseType.Linear, 4f);
-
-        var gobo = set.Add(AlpsEffectKind.Gobo);
-        gobo.goboStops.Add(new AlpsGoboStop(4));
-        gobo.goboStops.Add(new AlpsGoboStop(7));
-        gobo.goboStops.Add(new AlpsGoboStop());
-        gobo.goboPhasing.timing = AlpsTimingMode.PerCycle;
-        gobo.goboRotationBeats = 2f;
-        gobo.goboFixtureStaggerDegrees = 45f;
-
-        var cone = set.Add(AlpsEffectKind.Cone);
-        cone.coneWidth.value = 20f;
-        cone.coneLength.value = 45f;
-
-        set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.3f, 0.5f, 1f)));
-        set.Add(AlpsEffectKind.Brightness).brightness.value = 80f;
-        return set;
-    }
-
-    /// <summary>A wave that goes up over half the cycle and comes back over the other half.</summary>
-    private static AlpsClipEffectSet Set(AlpsEaseType ease, float beatsPerCycle)
-    {
-        var set = new AlpsClipEffectSet();
-        set.phase.mode = AlpsPhaseMode.Wave;
-        set.phase.ease = ease;
-        set.phase.fallEase = ease;
-        set.phase.beatsPerCycle = beatsPerCycle;
-        return set;
-    }
-
-    /// <summary>A wave that rises over the whole cycle and drops back as the next one starts.</summary>
-    private static AlpsClipEffectSet Sawtooth(AlpsEaseType ease, float beatsPerCycle)
-    {
-        var set = Set(ease, beatsPerCycle);
-        set.phase.SetShares(1f, 0f, 0f);
-        return set;
     }
 }

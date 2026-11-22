@@ -171,7 +171,7 @@ inline float CorrectedLinearEyeDepth(float z, float B)
                     half gi = getGlobalIntensity();
                     half fi = getFinalIntensity();
                     half coneWidth = i.intensityStrobeWidth.z;
-                    if(((all(i.rgbColor <= half4(0.01,0.01,0.01,1)) || i.intensityStrobeWidth.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= half4(0.005, 0.005, 0.005, 1)))
+                    if(((all(i.rgbColor <= half4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobeWidth.x <= 0.01) && isDMX() == 1) || gi <= 0.005 || fi <= 0.005 || all(emissionTint <= half4(0.005, 0.005, 0.005, 1)))
                     {
                         return half4(0,0,0,0);
                     }
@@ -181,7 +181,7 @@ inline float CorrectedLinearEyeDepth(float z, float B)
                     half gi = i.audioGlobalFinalConeIntensity.y;
                     half fi = i.audioGlobalFinalConeIntensity.z;
                     half coneWidth = i.audioGlobalFinalConeIntensity.w;
-                    // if((all(i.rgbColor <= half4(0.01,0.01,0.01,1)) || i.intensityStrobeWidth.x <= 0.01) && isOSC() == 1)
+                    // if((all(i.rgbColor <= half4(0.0001, 0.0001, 0.0001,1)) || i.intensityStrobeWidth.x <= 0.01) && isOSC() == 1)
                     // {
                     //     return (0,0,0,0);
                     // }

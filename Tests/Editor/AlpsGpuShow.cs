@@ -24,6 +24,8 @@ namespace AdzukiSoft.ALPS.Tests
         public readonly RenderTexture Frames;
         public readonly RenderTexture Grid;
         public readonly RenderTexture Spin;
+        public readonly Material PenlightMaterial;
+        public readonly RenderTexture Penlight;
 
         public static void RequireGraphics()
         {
@@ -35,14 +37,20 @@ namespace AdzukiSoft.ALPS.Tests
 
         /// <param name="rows">The DMX row of each fixture, its own index when left out.</param>
         /// <param name="aim">Each fixture's world to aim space, all zero when left out.</param>
-        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null)
+        /// <param name="penlight">The penlight section of the show data, the show's own when left out.</param>
+        /// <param name="info">Each fixture's DMX info, that of a fixture nothing is known about when left out.</param>
+        /// <param name="defaults">Each fixture's default frame, that of a fixture nothing is known about when left out.</param>
+        public AlpsGpuShow(AlpsCompiledShow show, int fixtureCount = -1, int[] rows = null, float[] aim = null, float[] penlight = null, float[] info = null, float[] defaults = null)
         {
             RequireGraphics();
             FixtureCount = fixtureCount >= 0 ? fixtureCount : Mathf.Max(show.fixtureCount, show.FixtureCount);
-            var info = new float[FixtureCount * AlpsShowPlayer.GpuFixtureInfoStride];
-            for (var i = 0; i < FixtureCount; i++)
+            if (info == null)
             {
-                AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                info = new float[FixtureCount * AlpsShowPlayer.GpuFixtureInfoStride];
+                for (var i = 0; i < FixtureCount; i++)
+                {
+                    AlpsShowPlayer.WriteNeutralDmxInfo(info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                }
             }
 
             if (rows == null)
@@ -57,7 +65,8 @@ namespace AdzukiSoft.ALPS.Tests
             _data = Keep(AlpsShowPlayer.CreateShowTexture(AlpsShowPlayer.PackShowData(
                 show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
                 show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                FixtureCount, NeutralDefaults(FixtureCount), info, rows, aim ?? new float[FixtureCount * AlpsShowPlayer.GpuAimStride])));
+                FixtureCount, defaults ?? NeutralDefaults(FixtureCount), info, rows, aim ?? new float[FixtureCount * AlpsShowPlayer.GpuAimStride],
+                penlight ?? show.penlight)));
             var framesShader = Shader.Find(AlpsPreviewDriver.GpuFramesShader);
             var gridShader = Shader.Find(AlpsPreviewDriver.GpuGridShader);
             Assert.NotNull(framesShader, "The frames shader did not compile.");
@@ -70,6 +79,12 @@ namespace AdzukiSoft.ALPS.Tests
             FramesMaterial.SetTexture("_AlpsData", _data);
             FramesMaterial.SetFloat("_AlpsFrameRows", Frames.height);
             GridMaterial.SetTexture("_AlpsData", _data);
+
+            var penlightShader = Shader.Find(AlpsPenlight.GridShader);
+            Assert.NotNull(penlightShader, "The penlight grid shader did not compile.");
+            PenlightMaterial = Keep(new Material(penlightShader));
+            PenlightMaterial.SetTexture("_AlpsData", _data);
+            Penlight = Keep(AlpsPreviewDriver.CreateGpuTarget("Penlight", AlpsShowPlayer.GpuPenlightWidth, AlpsShowPlayer.GpuMaxPenlightAreas));
         }
 
         /// <summary>Every fixture's frame at <paramref name="time"/>, channel after channel.</summary>
@@ -108,6 +123,7 @@ namespace AdzukiSoft.ALPS.Tests
         {
             FramesMaterial.SetFloat("_AlpsTime", time);
             AlpsShowPlayer.RenderPasses(_data, FramesMaterial, GridMaterial, Frames, Grid, Spin);
+            AlpsShowPlayer.RenderPenlight(Frames, PenlightMaterial, Penlight);
         }
 
         public Texture2D ReadBack(RenderTexture target)
@@ -148,6 +164,22 @@ namespace AdzukiSoft.ALPS.Tests
             {
                 Object.DestroyImmediate(pixels);
             }
+        }
+
+        /// <summary>
+        /// What a colour channel gives off at a level, a share of 100%: AlpsLight in the
+        /// evaluator. The tint goes from gamma to linear the way Unity hands it to a shader in
+        /// a linear project, and the level through the same curve.
+        /// </summary>
+        public static float Light(float tint, float level)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear)
+            {
+                return tint * level;
+            }
+
+            var linear = tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+            return linear * Mathf.Pow(level, 2.2f);
         }
 
         public static float[] NeutralDefaults(int fixtures)

@@ -46,36 +46,58 @@ namespace AdzukiSoft.ALPS.Tests
             }
         }
 
+        /// <summary>
+        /// The views laid out so far, by view and width. No audit changes a view, so they all
+        /// read the one layout of a view at a width: laying it out takes sixteen frames, which
+        /// for every audit again was most of the UI tests' time.
+        /// </summary>
+        private static readonly Dictionary<string, (LayoutProbeWindow Window, VisualElement View)> Measured =
+            new Dictionary<string, (LayoutProbeWindow Window, VisualElement View)>();
+
         private static IEnumerator Measure(float width, System.Action<VisualElement> assert, string viewName = "Clip")
         {
-            var window = ScriptableObject.CreateInstance<LayoutProbeWindow>();
-            window.hideFlags = HideFlags.HideAndDontSave;
-
-            // A tall panel so vertical flex-shrink never masks a real defect. The
-            // Inspector hosts this inside a ScrollView, which is equally unconstrained.
-            window.minSize = new Vector2(width, 3200f);
-            window.maxSize = new Vector2(width, 3200f);
-            window.ShowUtility();
-            window.position = new Rect(0f, 0f, width, 3200f);
-
-            var view = BuildView(viewName);
-            window.rootVisualElement.Add(view);
-
-            for (var i = 0; i < 16; i++)
+            var key = viewName + "@" + width.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!Measured.TryGetValue(key, out var measured) || measured.Window == null)
             {
-                window.Repaint();
-                yield return null;
+                var window = ScriptableObject.CreateInstance<LayoutProbeWindow>();
+                window.hideFlags = HideFlags.HideAndDontSave;
+
+                // A tall panel so vertical flex-shrink never masks a real defect. The
+                // Inspector hosts this inside a ScrollView, which is equally unconstrained.
+                window.minSize = new Vector2(width, 3200f);
+                window.maxSize = new Vector2(width, 3200f);
+                window.ShowUtility();
+                window.position = new Rect(0f, 0f, width, 3200f);
+
+                var view = BuildView(viewName);
+                window.rootVisualElement.Add(view);
+
+                for (var i = 0; i < 16; i++)
+                {
+                    window.Repaint();
+                    yield return null;
+                }
+
+                measured = (window, view);
+                Measured[key] = measured;
             }
 
-            try
+            assert(measured.View);
+        }
+
+        [OneTimeTearDown]
+        public void CloseMeasuredWindows()
+        {
+            foreach (var measured in Measured.Values)
             {
-                assert(view);
+                if (measured.Window != null)
+                {
+                    measured.Window.Close();
+                    Object.DestroyImmediate(measured.Window);
+                }
             }
-            finally
-            {
-                window.Close();
-                Object.DestroyImmediate(window);
-            }
+
+            Measured.Clear();
         }
 
         /// <summary>Walks the tree the user can actually see.</summary>

@@ -47,6 +47,7 @@ namespace AdzukiSoft.ALPS
             }
 
             builder.Finish();
+            AlpsPenlight.Compile(show);
             show.clipInSignature = ClipInSignature(director);
             return show;
         }
@@ -291,6 +292,12 @@ namespace AdzukiSoft.ALPS
                         _show.errors.Add($"Fixture '{fixture.name}' in '{group.name}' has nothing to drive. Assign its target.");
                     }
 
+                    var warning = fixture.SetupWarning;
+                    if (!string.IsNullOrEmpty(warning) && !_show.warnings.Contains(warning))
+                    {
+                        _show.warnings.Add(warning);
+                    }
+
                     var index = _show.fixtures.IndexOf(fixture);
                     if (index < 0)
                     {
@@ -511,6 +518,12 @@ namespace AdzukiSoft.ALPS
                         row[AlpsShowLayout.EffectScalarA] = effect.goboRotationBeats;
                         row[AlpsShowLayout.EffectScalarB] = effect.goboFixtureStaggerDegrees;
                         row[AlpsShowLayout.EffectScalarC] = effect.goboProjectionOff ? 1f : 0f;
+                        break;
+                    case AlpsEffectKind.Laser:
+                        AddParameter(effect.laserFlatness);
+                        AddParameter(effect.laserBeams);
+                        AddParameter(effect.laserThickness);
+                        row[AlpsShowLayout.EffectScalarA] = effect.laserSpinBeats;
                         break;
                 }
 

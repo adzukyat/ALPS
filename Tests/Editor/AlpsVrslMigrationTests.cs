@@ -1,3 +1,4 @@
+using System.Linq;
 using AdzukiSoft.ALPS.Editor;
 using NUnit.Framework;
 using UnityEditor;
@@ -14,6 +15,7 @@ namespace AdzukiSoft.ALPS.Tests
     {
         private const string PackagePrefabs = "Packages/com.acchosen.vr-stage-lighting/Runtime/Prefabs/";
         private const string DmxMover = PackagePrefabs + "DMX/Horizontal Mode/VRSL-DMX-Mover-Spotlight-H-13CH.prefab";
+        private const string DmxMultiLightBar = PackagePrefabs + "DMX/Horizontal Mode/VRSL-DMX-Static-MultiLightBar-H-15CH.prefab";
         private const string AudioLinkMover = PackagePrefabs + "AudioLink/VRSL-AudioLink-Mover-Spotlight.prefab";
 
         [SetUp]
@@ -65,6 +67,35 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void MultiLightBar_IsDrivenBySegmentsAfterwards()
+        {
+            var rig = new GameObject("Rig");
+            var old = Instantiate(DmxMultiLightBar, rig.transform);
+            old.name = "Bar 1";
+            var fixture = old.AddComponent<AlpsVRSLFixture>();
+
+            // A track bound to the one fixture older versions put on a bar.
+            var timeline = ScriptableObject.CreateInstance<UnityEngine.Timeline.TimelineAsset>();
+            var director = new GameObject("Show").AddComponent<UnityEngine.Playables.PlayableDirector>();
+            director.playableAsset = timeline;
+            var track = timeline.CreateTrack<AlpsLightingTrack>(null, "Bar");
+            director.SetGenericBinding(track, fixture);
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            var converted = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.AreEqual(AlpsCreateMenu.MultiLightBar.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(converted));
+            Assert.IsNull(converted.GetComponent<AlpsFixture>(), "The single fixture gave way to the bar.");
+            var bar = converted.GetComponent<AlpsVRSLMultiLightBar>();
+            Assert.NotNull(bar);
+            Assert.NotNull(bar.ResolveTarget());
+            Assert.AreEqual(AlpsVRSLMultiLightBar.SegmentCount, bar.Fixtures().Count);
+            Assert.AreSame(bar, director.GetGenericBinding(track), "The track drives the bar's segments now.");
+            Object.DestroyImmediate(timeline);
+        }
+
+        [Test]
         public void AlpsFixture_KeepsItsObjectAndItsOverrides()
         {
             var rig = new GameObject("Rig");
@@ -112,6 +143,49 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+        }
+
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Static-Flasher-H-1CH.prefab", "Flasher")]
+        [TestCase("DMX/Horizontal Mode/5-Channel Statics/VRSL-DMX-Static-6x4StrobeLight-H-5CH.prefab", "Strobe Panel")]
+        [TestCase("DMX/Horizontal Mode/VRSL-DMX-Static-DiscoBall-H-1CH.prefab", "Mirror Ball")]
+        public void StaticFixture_SwapsToTheCopyOfItsPrefab(string path, string fixture)
+        {
+            var expected = AlpsCreateMenu.Fixtures.First(candidate => candidate.Name == fixture);
+            var rig = new GameObject("Rig");
+            var old = Instantiate(PackagePrefabs + path, rig.transform);
+            var alps = old.AddComponent<AlpsVRSLFixture>();
+            Assert.AreEqual(expected.Guid, AlpsVrslMigration.CopyGuid(AssetDatabase.AssetPathToGUID(PackagePrefabs + path)));
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreSame(expected, items[0].Target);
+            Assert.IsTrue(items[0].KeepsObject, "An instance of the prefab the copy was made from only swaps its prefab.");
+
+            var converted = AlpsVrslMigration.Convert(items);
+
+            Assert.AreSame(old, converted[0]);
+            Assert.AreSame(alps, old.GetComponent<AlpsVRSLFixture>());
+            Assert.AreEqual(expected.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(old));
+            Assert.IsTrue(alps.IsReady);
+            Assert.IsEmpty(AlpsVrslMigration.Find(), "Nothing is left to convert.");
+        }
+
+        [TestCase("AudioLink/VRSL-AudioLink-Static-Flasher.prefab", "Flasher")]
+        [TestCase("AudioLink/VRSL-AudioLink-DiscoBall.prefab", "Mirror Ball")]
+        public void AudioLinkStaticFixture_BecomesItsDmxCopy(string path, string fixture)
+        {
+            var expected = AlpsCreateMenu.Fixtures.First(candidate => candidate.Name == fixture);
+            Instantiate(PackagePrefabs + path, new GameObject("Rig").transform);
+
+            var items = AlpsVrslMigration.Find();
+            Assert.AreEqual(1, items.Count);
+            Assert.AreSame(expected, items[0].Target);
+            Assert.AreEqual(AlpsVrslMigrationSource.AudioLinkFixture, items[0].Source);
+
+            var created = AlpsVrslMigration.Convert(items)[0];
+
+            Assert.AreEqual(expected.Path, PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(created));
+            Assert.IsTrue(created.GetComponent<AlpsVRSLFixture>().IsReady);
         }
 
         [Test]

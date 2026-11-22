@@ -151,6 +151,30 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void Initialize_WaitsForTheFirstChildOfAnEmptyContainer()
+        {
+            var container = Rig(0, initialized: false);
+
+            AlpsArrangementLayout.CommitEdit(container);
+            Assert.That(container.Initialized, Is.False, "An empty container has nothing to start from.");
+
+            var child = new GameObject("Child").transform;
+            child.SetParent(container.transform, false);
+            child.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+
+            Assert.That(container.Initialized, Is.True);
+            Assert.That(container.settings.rotationX.value, Is.EqualTo(90f).Within(1e-3f));
+            Assert.That(Quaternion.Angle(Quaternion.Euler(90f, 0f, 0f), child.localRotation), Is.LessThan(0.01f));
+
+            // The children after it take the layout's rotation.
+            var second = new GameObject("Second").transform;
+            second.SetParent(container.transform, false);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+            Assert.That(Quaternion.Angle(Quaternion.Euler(90f, 0f, 0f), second.localRotation), Is.LessThan(0.01f));
+        }
+
+        [Test]
         public void CommitEdit_StartsFromTheChildrenWhenAShapeIsFirstPicked()
         {
             var container = Rig(2, initialized: false, shape: AlpsArrangementShape.Off);

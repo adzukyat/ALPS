@@ -143,9 +143,11 @@ namespace AdzukiSoft.ALPS.Tests
                 Assert.IsTrue(host.Q<AlpsArrangementView>().ClassListContains("alps-root--component"), "Unity pads a component's inspector already.");
                 Assert.AreEqual(AlpsStrings.Tr("addFixture.title"), catalog.Q<Label>(className: "alps-add__heading").text);
                 CollectionAssert.AreEqual(
-                    new[] { AlpsStrings.Tr("addFixture.container") }.Concat(AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey))),
+                    new[] { AlpsStrings.Tr("addFixture.container") }
+                        .Concat(AlpsCreateMenu.Fixtures.Select(f => AlpsStrings.Tr(f.LabelKey)))
+                        .Concat(new[] { AlpsStrings.Tr("addFixture.emissiveMesh") }),
                     catalog.Query<Label>(className: "alps-add__label").ToList().Select(l => l.text),
-                    "A container leads, to show that containers nest.");
+                    "A container leads, to show that containers nest, and a mesh that glows comes after the lights.");
                 Assert.AreEqual(DisplayStyle.None, setup.style.display.value, "Nothing to set up without a fixture.");
 
                 Selection.activeGameObject = container.gameObject;

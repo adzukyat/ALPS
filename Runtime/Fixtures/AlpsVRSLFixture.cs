@@ -12,45 +12,7 @@ namespace AdzukiSoft.ALPS
         [Tooltip("The VRSL fixture to drive. Found in children when left empty.")]
         public VRStageLighting_DMX_Static target;
 
-        /// <summary>Every field <see cref="AlpsShowPlayer.ConfigureVRSLDmx"/> writes.</summary>
-        private static readonly string[] PreviewProperties =
-        {
-            "enableDMXChannels",
-            "enableStrobe",
-            "enableFineChannels",
-            "enableAutoSpin",
-            "dmxChannel",
-            "dmxUniverse",
-            "nineUniverseMode",
-            "useLegacySectorMode",
-            "singleChannelMode",
-            "panOffsetBlueGreen",
-            "tiltOffsetBlue",
-            "globalIntensity",
-            "lightColorTint.r",
-            "lightColorTint.g",
-            "lightColorTint.b",
-            "lightColorTint.a",
-            "coneLength",
-            "maxConeLength",
-        };
-
-        private bool _hasAuthored;
-        private bool _authoredDmx;
-        private bool _authoredStrobe;
-        private bool _authoredAutoSpin;
-        private bool _authoredFineChannels;
-        private int _authoredChannel;
-        private int _authoredUniverse;
-        private bool _authoredNineUniverses;
-        private bool _authoredSectors;
-        private bool _authoredSingleChannel;
-        private float _authoredPan;
-        private float _authoredTilt;
-        private float _authoredIntensity;
-        private Color _authoredTint;
-        private float _authoredConeLength;
-        private float _authoredMaxConeLength;
+        private readonly AlpsVrslAuthoredState _authored = new AlpsVrslAuthoredState();
         private readonly List<Renderer> _projection = new List<Renderer>();
         private readonly List<bool> _authoredProjection = new List<bool>();
 
@@ -58,7 +20,17 @@ namespace AdzukiSoft.ALPS
 
         public override bool IsReady => ResolveTarget() != null;
 
-        public override Transform AimTransform => AlpsShowPlayer.GetVRSLAimTransform(ResolveTarget());
+        public override bool IsLaser => AlpsShowPlayer.GetVRSLLaserMaterial(ResolveTarget()) != null;
+
+        public override Transform AimTransform =>AlpsShowPlayer.GetVRSLAimTransform(ResolveTarget());
+
+        /// <summary>
+        /// A multi light bar reads a dimmer and a colour per segment over four rows of the
+        /// grid, which this one fixture on one row does not write.
+        /// </summary>
+        public override string SetupWarning => AlpsVRSLMultiLightBar.IsMultiLightBar(ResolveTarget())
+            ? $"'{name}' is a multi light bar, which a show drives segment by segment. Replace its ALPS VRSL Fixture with an ALPS VRSL Multi Light Bar."
+            : null;
 
         public VRStageLighting_DMX_Static ResolveTarget()
         {
@@ -80,22 +52,7 @@ namespace AdzukiSoft.ALPS
             }
 
             AlpsShowPlayer.CaptureVRSL(fixture, frame, offset);
-            _hasAuthored = true;
-            _authoredDmx = fixture.enableDMXChannels;
-            _authoredStrobe = fixture.enableStrobe;
-            _authoredAutoSpin = fixture.enableAutoSpin;
-            _authoredFineChannels = fixture.enableFineChannels;
-            _authoredChannel = fixture.dmxChannel;
-            _authoredUniverse = fixture.dmxUniverse;
-            _authoredNineUniverses = fixture.nineUniverseMode;
-            _authoredSectors = fixture.useLegacySectorMode;
-            _authoredSingleChannel = fixture.singleChannelMode;
-            _authoredPan = fixture.panOffsetBlueGreen;
-            _authoredTilt = fixture.tiltOffsetBlue;
-            _authoredIntensity = fixture.globalIntensity;
-            _authoredTint = fixture.lightColorTint;
-            _authoredConeLength = fixture.coneLength;
-            _authoredMaxConeLength = fixture.maxConeLength;
+            _authored.Capture(fixture);
 
             _projection.Clear();
             _authoredProjection.Clear();
@@ -109,28 +66,13 @@ namespace AdzukiSoft.ALPS
         public override void RestoreAuthored(float[] frame, int offset)
         {
             var fixture = ResolveTarget();
-            if (fixture == null || !_hasAuthored)
+            if (fixture == null || !_authored.Has)
             {
                 return;
             }
 
             // The preview put the fixture in DMX mode.
-            fixture.enableDMXChannels = _authoredDmx;
-            fixture.enableStrobe = _authoredStrobe;
-            fixture.enableAutoSpin = _authoredAutoSpin;
-            fixture.enableFineChannels = _authoredFineChannels;
-            fixture.dmxChannel = _authoredChannel;
-            fixture.dmxUniverse = _authoredUniverse;
-            fixture.nineUniverseMode = _authoredNineUniverses;
-            fixture.useLegacySectorMode = _authoredSectors;
-            fixture.singleChannelMode = _authoredSingleChannel;
-            fixture.panOffsetBlueGreen = _authoredPan;
-            fixture.tiltOffsetBlue = _authoredTilt;
-            fixture.globalIntensity = _authoredIntensity;
-            fixture.lightColorTint = _authoredTint;
-            fixture.coneLength = _authoredConeLength;
-            fixture.maxConeLength = _authoredMaxConeLength;
-            fixture._UpdateInstancedProperties();
+            _authored.Restore(fixture);
             SetPreviewProjection(true);
         }
 
@@ -142,10 +84,7 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            foreach (var property in PreviewProperties)
-            {
-                driver.AddFromName(fixture, property);
-            }
+            AlpsVrslAuthoredState.Gather(driver, fixture);
 
             var projection = new List<Renderer>();
             CollectProjectionRenderers(projection);
@@ -155,7 +94,11 @@ namespace AdzukiSoft.ALPS
             }
         }
 
-        /// <summary>The fixture's renderers drawn with one of VRSL's projection shaders.</summary>
+        /// <summary>
+        /// The fixture's renderers drawn with one of VRSL's projection shaders, which the gobo's
+        /// projection switch hides. A mirror ball's light is not one of them: the ball has no
+        /// gobo, and its light is all it throws, which its brightness dims.
+        /// </summary>
         public override void CollectProjectionRenderers(List<Renderer> into)
         {
             var fixture = ResolveTarget();
@@ -176,7 +119,7 @@ namespace AdzukiSoft.ALPS
 
         public override void SetPreviewProjection(bool visible)
         {
-            if (!_hasAuthored)
+            if (!_authored.Has)
             {
                 return;
             }
@@ -201,7 +144,7 @@ namespace AdzukiSoft.ALPS
                 fixture._UpdateInstancedProperties();
             }
 
-            _hasAuthored = false;
+            _authored.Clear();
         }
 
         public override void ConfigureGpu(int row, float[] defaults, int offset, float[] info, int infoOffset)

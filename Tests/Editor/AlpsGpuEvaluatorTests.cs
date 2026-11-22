@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -190,27 +191,382 @@ namespace AdzukiSoft.ALPS.Tests
             return degrees * Mathf.Deg2Rad / 4f;
         }
 
-        /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%.</summary>
+        /// <summary>The dimmer the grid holds at brightness <paramref name="level"/>, a share of 100%: up while the fixture is lit.</summary>
         private static float GridDimmer(float level)
         {
-            return level > 0f ? 1.26f * Mathf.Pow(Mathf.Min(level, 1f), 1f / 3f) : 0f;
+            return level > 0f ? 1.26f : 0f;
         }
 
-        /// <summary>The colour channel the grid holds, the tint VRSL's static path was handed turned into linear.</summary>
+        /// <summary>The colour channel the grid holds, which carries the brightness.</summary>
         private static float GridColour(float channel, float level)
         {
-            if (level <= 0f)
+            return level > 0f ? AlpsGpuShow.Light(channel, level) * 2.02f : 0f;
+        }
+
+        /// <summary>The colour channel a laser reads, which shares the brightness with its intensity up to 100%.</summary>
+        private static float LaserColour(float channel, float level)
+        {
+            return AlpsGpuShow.Light(channel, Mathf.Max(level, 1f)) * Mathf.Pow(Mathf.Min(level, 1f), 1.2f);
+        }
+
+        // ------------------------------------------------------------------ laser
+
+        private const string LaserPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-Laser-H-13CH.prefab";
+
+        /// <summary>The pan and tilt the grid hands a laser, which reaches 90 degrees to either side.</summary>
+        private static void LaserFold(ref float pan, ref float tilt)
+        {
+            pan -= 360f * Mathf.Round(pan / 360f);
+            if (Mathf.Abs(pan) > AlpsShowPlayer.LaserAngleRange)
             {
-                return 0f;
+                pan -= pan > 0f ? 180f : -180f;
+                tilt = -tilt;
+            }
+        }
+
+        private static float LaserStretch(float length)
+        {
+            return Mathf.Clamp(length / AlpsShowPlayer.ModelConeLengthLimit, AlpsShowPlayer.LaserMinStretch, AlpsShowPlayer.LaserMaxStretch);
+        }
+
+        /// <summary>The width channel that opens a laser's cone to twice <paramref name="width"/> degrees.</summary>
+        private static float LaserWidth(float width, float length)
+        {
+            var opening = Mathf.Tan(Mathf.Clamp(width, 0f, 89f) * Mathf.Deg2Rad) * LaserStretch(length) / AlpsShowPlayer.LaserMeshSlope;
+            return opening * -AlpsShowPlayer.LaserMinConeWidth / (AlpsShowPlayer.LaserMaxConeWidth - AlpsShowPlayer.LaserMinConeWidth);
+        }
+
+        private static float[] LaserInfo()
+        {
+            var info = NeutralInfo();
+            info[AlpsShowPlayer.InfoLayout] = AlpsShowPlayer.DmxLayoutLaser;
+            return info;
+        }
+
+        /// <summary>The thickness channel that gives a laser beams of <paramref name="percent"/> of the thickest.</summary>
+        private static float LaserThickness(float percent)
+        {
+            var thickness = percent / 100f * AlpsShowPlayer.LaserMaxThickness;
+            return (thickness - AlpsShowPlayer.LaserDmxMinThickness) / (AlpsShowPlayer.LaserDmxMaxThickness - AlpsShowPlayer.LaserDmxMinThickness);
+        }
+
+        [Test]
+        public void Grid_LaysALaserOutOnItsOwnChannels()
+        {
+            var set = Set(0f);
+            var move = set.Add(AlpsEffectKind.Move);
+            move.tilt.value = 30f;
+            move.pan.hasSpread = true;
+            move.pan.spreadRange = new Vector2(40f, 120f);
+            var cone = set.Add(AlpsEffectKind.Cone);
+            cone.coneWidth.value = 30f;
+            cone.coneLength.value = 100f;
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.hasSpread = true;
+            brightness.brightness.spreadRange = new Vector2(50f, 150f);
+
+            // Beams come whole, and their thickness reaches past what the channel holds at 1.
+            var laser = set.Add(AlpsEffectKind.Laser);
+            laser.laserFlatness.value = 60f;
+            laser.laserBeams.value = 12.4f;
+            laser.laserThickness.value = 80f;
+            laser.laserSpinBeats = 4f;
+            var show = AlpsShowCompiler.CompileStandalone(3, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+
+            // The first fixture is a mover, the other two are lasers.
+            var info = new List<float>(NeutralInfo());
+            info.AddRange(LaserInfo());
+            info.AddRange(LaserInfo());
+            var gpu = Keep(new AlpsGpuShow(show, 3, info: info.ToArray()));
+            var frames = gpu.FramesAt(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+            var spin = gpu.ReadBack(gpu.Spin);
+
+            float Channel(int fixture, int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+            float Read(Texture2D texture, int fixture, int offset)
+            {
+                var texel = VrslTexel(13 * fixture + 1 + offset);
+                return texture.GetPixel(texel.x, texel.y).r;
             }
 
-            var tint = channel * Mathf.Max(level, 1f);
-            if (QualitySettings.activeColorSpace == ColorSpace.Linear)
+            Assert.AreEqual(GridDimmer(0.5f), Read(grid, 0, 5), 1e-4f, "The mover keeps its own channels.");
+            Assert.AreEqual(GridColour(1f, 0.5f), Read(grid, 0, 9), 1e-4f);
+
+            var folded = 0;
+            for (var fixture = 1; fixture < 3; fixture++)
             {
-                tint = tint <= 0.04045f ? tint / 12.92f : tint < 1f ? Mathf.Pow((tint + 0.055f) / 1.055f, 2.4f) : Mathf.Pow(tint, 2.2f);
+                var level = Channel(fixture, AlpsShowLayout.FrameBrightness) * Channel(fixture, AlpsShowLayout.FrameBrightnessScale) / 100f;
+                var pan = Channel(fixture, AlpsShowLayout.FramePan);
+                var tilt = Channel(fixture, AlpsShowLayout.FrameTilt);
+                Assert.AreEqual(30f, tilt, 1e-3f);
+                LaserFold(ref pan, ref tilt);
+                folded += tilt < 0f ? 1 : 0;
+                var range = AlpsShowPlayer.LaserAngleRange;
+                var diagnostics = $"fixture {fixture}";
+                Assert.AreEqual((-tilt + range) / (2f * range), Read(grid, fixture, 0), 1e-4f, "Tilt. " + diagnostics);
+                Assert.AreEqual((pan + range) / (2f * range), Read(grid, fixture, 1), 1e-4f, "Pan. " + diagnostics);
+                Assert.AreEqual((2f - 0.5f) / 5.5f, Read(grid, fixture, 2), 1e-4f, "Twice the mesh. " + diagnostics);
+                Assert.AreEqual(LaserWidth(30f, 100f), Read(grid, fixture, 3), 1e-4f, "Cone width. " + diagnostics);
+                Assert.AreEqual(0.6f, Read(grid, fixture, 4), 1e-4f, "Flatness. " + diagnostics);
+                Assert.AreEqual((12f - 4f) / 64f, Read(grid, fixture, 5), 1e-4f, "Beams. " + diagnostics);
+                Assert.AreEqual(0f, Read(grid, fixture, 6), 1e-4f, "Which way the beams go round. " + diagnostics);
+                Assert.AreEqual(LaserColour(0.2f, level), Read(grid, fixture, 7), 1e-4f, "Red. " + diagnostics);
+                Assert.AreEqual(LaserColour(0.4f, level), Read(grid, fixture, 8), 1e-4f, "Green. " + diagnostics);
+                Assert.AreEqual(LaserColour(1f, level), Read(grid, fixture, 9), 1e-4f, "Blue. " + diagnostics);
+                Assert.AreEqual(Mathf.Min(level, 1f), Read(grid, fixture, 10), 1e-4f, "Intensity. " + diagnostics);
+                Assert.AreEqual(LaserThickness(80f), Read(grid, fixture, 11), 1e-4f, "Thickness. " + diagnostics);
+                Assert.Greater(Read(grid, fixture, 11), 1f, "Thicker than the channel holds at 1. " + diagnostics);
+                Assert.AreEqual(0.25f, Read(spin, fixture, 6), 1e-5f, "A beat of four a turn is a quarter turn. " + diagnostics);
+                Assert.AreEqual(0f, Read(spin, fixture, 10), 1e-6f, "A laser has no gobo to turn. " + diagnostics);
             }
 
-            return tint * 2.02f * Mathf.Pow(Mathf.Min(level, 1f), 2f / 3f);
+            Assert.AreEqual(0f, Read(spin, 0, 6), 1e-6f, "A mover has no beams to send round.");
+
+            Assert.AreEqual(1, folded, "The pan of 120 is the one of -60 with the tilt the other way.");
+            Assert.AreEqual(100f, Channel(1, AlpsShowLayout.FrameBrightness), 1e-3f);
+            Assert.AreEqual(1f, Read(grid, 1, 10), 1e-4f, "100% is the whole intensity.");
+        }
+
+        [Test]
+        [TestCase(5)]
+        [TestCase(125)]
+        [TestCase(245)]
+        public void Grid_LaysAMultiLightBarOutOverFourRows(int barRow)
+        {
+            const int segments = AlpsVRSLMultiLightBar.SegmentCount;
+            const int count = segments + 2;
+
+            // Each band reads the texels of band 0 from a colour of its own.
+            var band = barRow / AlpsShowPlayer.GpuDmxBandRows;
+            var local = barRow % AlpsShowPlayer.GpuDmxBandRows;
+            var set = Set(0f);
+            set.Add(AlpsEffectKind.Color).colorStops.Add(new AlpsColorStop(new Color(0.2f, 0.4f, 1f)));
+            var brightness = set.Add(AlpsEffectKind.Brightness);
+            brightness.brightness.hasSpread = true;
+            brightness.brightness.spreadRange = new Vector2(20f, 150f);
+            var show = AlpsShowCompiler.CompileStandalone(count, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+
+            // A mover on the row before the bar, the bar's twelve segments on its four rows,
+            // and a mover on the row after them. Rows 6 and 7 of a band hold its channels 91
+            // and 104, which VRSL reads through its exceptions for the thirteenth channel.
+            var info = new List<float>(NeutralInfo());
+            var rows = new List<int> { barRow - 1 };
+            for (var s = 0; s < segments; s++)
+            {
+                var segment = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+                AlpsShowPlayer.WriteBarSegmentDmxInfo(segment, 0, s);
+                info.AddRange(segment);
+                rows.Add(barRow);
+            }
+
+            info.AddRange(NeutralInfo());
+            rows.Add(barRow + AlpsVRSLMultiLightBar.RowCount);
+            var gpu = Keep(new AlpsGpuShow(show, count, rows.ToArray(), info: info.ToArray()));
+            var frames = gpu.FramesAt(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+
+            // What VRSL's own getValueAtCoords reads for every channel of the band's first ten rows.
+            var probe = Keep(new Material(Shader.Find("Hidden/ALPS/Tests/VRSL Probe")));
+            const int channels = 13 * 10;
+            probe.SetFloat("_AlpsProbeChannels", channels);
+            probe.SetFloat("_AlpsProbeFirst", 13 * AlpsShowPlayer.GpuDmxBandRows * band);
+            Shader.SetGlobalTexture("_Udon_DMXGridRenderTexture", gpu.Grid);
+            Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", gpu.Spin);
+            Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / gpu.Grid.width, 1f / gpu.Grid.height, gpu.Grid.width, gpu.Grid.height));
+            var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", channels, 1));
+            Graphics.Blit(null, read, probe);
+            var values = Keep(AlpsGpuShow.ReadBackTexture(read));
+
+            float Level(int fixture) => frames[fixture * AlpsShowLayout.FrameStride + AlpsShowLayout.FrameBrightness]
+                                        * frames[fixture * AlpsShowLayout.FrameStride + AlpsShowLayout.FrameBrightnessScale] / 100f;
+            float Stored(int channel)
+            {
+                var texel = VrslTexel(channel + 1);
+                return grid.GetPixel(texel.x, texel.y)[band];
+            }
+
+            var thirteenth = 0;
+            var failures = new List<string>();
+            for (var s = 0; s < segments; s++)
+            {
+                var fixture = 1 + s;
+                var level = Level(fixture);
+                Assert.Greater(level, 0f);
+                var colour = new[] { 0.2f, 0.4f, 1f };
+                for (var k = 0; k < AlpsShowPlayer.BarSegmentChannels; k++)
+                {
+                    var channel = local * 13 + s * AlpsShowPlayer.BarSegmentChannels + k;
+                    thirteenth += channel % 13 == 12 ? 1 : 0;
+                    var expected = k == 0 ? 1f : AlpsGpuShow.Light(colour[k - 1], level);
+                    if (Mathf.Abs(expected - Stored(channel)) > 1e-4f)
+                    {
+                        failures.Add($"segment {s} channel {k}: expected {expected:0.####}, the grid holds {Stored(channel):0.####}");
+                    }
+
+                    if (Mathf.Abs(expected - values.GetPixel(channel, 0).r) > 1e-3f)
+                    {
+                        failures.Add($"segment {s} channel {k} (DMX {channel + 1}): expected {expected:0.####}, VRSL reads {values.GetPixel(channel, 0).r:0.####}");
+                    }
+                }
+            }
+
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.AreEqual(3, thirteenth, "The bar's channels cross three thirteenth columns.");
+            Assert.AreNotEqual(Level(1), Level(segments), "The spread runs along the bar.");
+
+            // The four channels the bar leaves of its last row stay dark, and the movers
+            // either side keep their own rows.
+            for (var channel = (local + 3) * 13 + 9; channel < (local + 4) * 13; channel++)
+            {
+                Assert.AreEqual(0f, Stored(channel), 1e-6f, $"Channel {channel + 1} past the bar's last.");
+            }
+
+            Assert.AreEqual(GridDimmer(Level(0)), Stored((local - 1) * 13 + 5), 1e-4f, "The mover before the bar.");
+            Assert.AreEqual(GridDimmer(Mathf.Min(Level(count - 1), 1f)), Stored((local + 4) * 13 + 5), 1e-4f, "The mover after the bar.");
+            Assert.AreEqual(0f, Stored((local - 1) * 13 + 12), 1e-6f, "A mover reads nothing from its thirteenth channel.");
+        }
+
+
+        [Test]
+        public void Laser_KeepsWhatItsMaterialSays()
+        {
+            var laser = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab));
+            _created.Add(laser);
+            var fixture = laser.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var material = AlpsShowPlayer.GetVRSLLaserMaterial(fixture);
+            Assert.NotNull(material, "The laser prefab is drawn with VRSL's laser shader.");
+
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            Assert.IsNull(AlpsShowPlayer.GetVRSLLaserMaterial(mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>()));
+
+            var info = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, 0);
+            Assert.AreEqual(AlpsShowPlayer.DmxLayoutLaser, info[AlpsShowPlayer.InfoLayout]);
+
+            var frame = new float[AlpsShowLayout.FrameStride];
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserPanProperty), frame[AlpsShowLayout.FramePan], 1e-4f);
+            Assert.AreEqual(-material.GetFloat(AlpsShowPlayer.LaserTiltProperty), frame[AlpsShowLayout.FrameTilt], 1e-4f);
+            Assert.Greater(frame[AlpsShowLayout.FrameLaserBeams], 3f);
+
+            // A show without a laser effect hands the laser back how flat its material says
+            // its cone is, how many beams it has and how thick they are, in what the laser
+            // turns each channel into (VRSL-BasicLaser-DMX.shader).
+            var set = Set();
+            set.Add(AlpsEffectKind.Brightness);
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm, new AlpsStandaloneClip { set = set, end = 10f });
+            var gpu = Keep(new AlpsGpuShow(show, 1, info: info, defaults: frame));
+            gpu.Render(1f);
+            var grid = gpu.ReadBack(gpu.Grid);
+            float Read(int offset)
+            {
+                var texel = VrslTexel(1 + offset);
+                return grid.GetPixel(texel.x, texel.y).r;
+            }
+
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserFlatnessProperty), Mathf.LerpUnclamped(0f, 1.999f, Read(4)), 1e-4f, "Flatness.");
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserBeamsProperty), Mathf.LerpUnclamped(4f, 68f, Read(5)), 1e-3f, "Beams.");
+            Assert.AreEqual(material.GetFloat(AlpsShowPlayer.LaserThicknessProperty), Mathf.LerpUnclamped(0.0005f, 0.05f, Read(11)), 1e-5f, "Thickness.");
+            Assert.AreEqual(0f, gpu.ReadBack(gpu.Spin).GetPixel(VrslTexel(1 + 6).x, VrslTexel(1 + 6).y).r, 1e-6f, "The beams stand still.");
+
+            // What the grid hands back for the captured cone is the material's own.
+            var width = material.GetFloat(AlpsShowPlayer.LaserConeWidthProperty);
+            var length = material.GetFloat(AlpsShowPlayer.LaserConeLengthProperty);
+            var range = AlpsShowPlayer.LaserMaxConeWidth - AlpsShowPlayer.LaserMinConeWidth;
+            Assert.AreEqual((width - AlpsShowPlayer.LaserMinConeWidth) / range, LaserWidth(frame[AlpsShowLayout.FrameConeWidth], frame[AlpsShowLayout.FrameConeLength]), 1e-4f);
+            Assert.AreEqual(1f + length, LaserStretch(frame[AlpsShowLayout.FrameConeLength]), 1e-4f);
+        }
+
+        [Test]
+        public void Laser_OpensItsConeByTwiceTheModelWidth()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab);
+            var mesh = prefab.GetComponentInChildren<MeshFilter>().sharedMesh;
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            var uv2 = mesh.uv2;
+            foreach (var length in new[] { 50f, 120f })
+            {
+                foreach (var width in new[] { 10f, 30f, 55f })
+                {
+                    // VRSL's own vertex maths (VRSL-BasicLaser-DMX.shader) on the far end of the cone.
+                    var dmxLength = Mathf.Lerp(-0.5f, 5f, (LaserStretch(length) - 0.5f) / 5.5f);
+                    var dmxWidth = Mathf.LerpUnclamped(AlpsShowPlayer.LaserMinConeWidth, AlpsShowPlayer.LaserMaxConeWidth, LaserWidth(width, length));
+                    var widest = 0f;
+                    var far = 0;
+                    for (var i = 0; i < vertices.Length; i++)
+                    {
+                        if (uv2[i].y < 0.99f)
+                        {
+                            continue;
+                        }
+
+                        var y = Mathf.LerpUnclamped(vertices[i].y, vertices[i].y * 2f, dmxLength);
+                        var moved = vertices[i] + normals[i] * dmxWidth;
+                        widest = Mathf.Max(widest, Mathf.Atan2(new Vector2(moved.x, moved.z).magnitude, Mathf.Abs(y)) * Mathf.Rad2Deg);
+                        far++;
+                    }
+
+                    Assert.Greater(far, 8, "The far end of the laser's mesh.");
+                    Assert.AreEqual(width, widest, 0.75f, $"Half the opening angle at a width of {width} and a length of {length}.");
+                }
+            }
+        }
+
+        [Test]
+        public void Tracking_PointsTheLasersConeAtTheUser()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(LaserPrefab);
+            var laser = (GameObject)Object.Instantiate(prefab);
+            _created.Add(laser);
+            var fixture = laser.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var head = AlpsShowPlayer.GetVRSLAimTransform(fixture);
+
+            // A laser that stands the way its prefab does fires along +Z and tilts up.
+            laser.transform.SetPositionAndRotation(Vector3.zero, prefab.transform.rotation);
+            var upright = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(head.worldToLocalMatrix, upright, 0);
+            AlpsShowPlayer.OrientVRSLAim(fixture, upright, 0);
+            Assert.AreEqual(1f, upright[0], 1e-4f, "Aim space is the world for a laser at its prefab's rotation.");
+            Assert.AreEqual(1f, upright[5], 1e-4f);
+            Assert.AreEqual(1f, upright[10], 1e-4f);
+
+            laser.transform.SetPositionAndRotation(new Vector3(2f, 3f, -1f), Quaternion.Euler(-70f, 30f, 15f));
+            var aim = new float[AlpsShowPlayer.GpuAimStride];
+            AlpsShowPlayer.WriteAim(head.worldToLocalMatrix, aim, 0);
+            AlpsShowPlayer.OrientVRSLAim(fixture, aim, 0);
+            var reached = 0;
+            foreach (var user in new[] { new Vector3(3f, -8f, 2f), new Vector3(-6f, -1f, -4f), new Vector3(1f, 5f, 7f), new Vector3(-2f, 3f, -9f), new Vector3(4f, 6f, 1f) })
+            {
+                var target = head.position + user;
+                var local = new Vector3(
+                    aim[0] * target.x + aim[1] * target.y + aim[2] * target.z + aim[3],
+                    aim[4] * target.x + aim[5] * target.y + aim[6] * target.z + aim[7],
+                    aim[8] * target.x + aim[9] * target.y + aim[10] * target.z + aim[11]);
+                var pan = AimPan(local);
+                var tilt = AimTilt(local);
+                LaserFold(ref pan, ref tilt);
+                if (Mathf.Abs(tilt) > AlpsShowPlayer.LaserAngleRange)
+                {
+                    // Behind the laser, where its tilt does not reach.
+                    continue;
+                }
+
+                // VRSL's own rotation of the cone, which rests along the mesh's -Y: the tilt
+                // around X, then the pan around Y. The grid hands it the tilt negated.
+                var x = -tilt * Mathf.Deg2Rad;
+                var y = pan * Mathf.Deg2Rad;
+                var rest = Vector3.down;
+                var tilted = new Vector3(rest.x, Mathf.Cos(x) * rest.y - Mathf.Sin(x) * rest.z, Mathf.Sin(x) * rest.y + Mathf.Cos(x) * rest.z);
+                var cone = new Vector3(Mathf.Cos(y) * tilted.x + Mathf.Sin(y) * tilted.z, tilted.y, -Mathf.Sin(y) * tilted.x + Mathf.Cos(y) * tilted.z);
+
+                Assert.Less(Vector3.Angle(head.TransformDirection(cone), user), 1f, $"The cone points at a user at {user}.");
+                reached++;
+            }
+
+            Assert.Greater(reached, 1, "Users in front of the laser.");
         }
 
         [Test]
@@ -247,11 +603,11 @@ namespace AdzukiSoft.ALPS.Tests
             for (var fixture = 0; fixture < Fixtures; fixture++)
             {
                 float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+                // The first band of rows is read from red, in either grid.
                 float Read(Texture2D texture, int offset)
                 {
                     var texel = VrslTexel(13 * fixture + 1 + offset);
-                    var color = texture.GetPixel(texel.x, texel.y);
-                    return texture == grid ? color.r * 0.2126729f + color.g * 0.7151522f + color.b * 0.0721750f : color.r;
+                    return texture.GetPixel(texel.x, texel.y).r;
                 }
 
                 var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
@@ -331,6 +687,124 @@ namespace AdzukiSoft.ALPS.Tests
             Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
+        [Test]
+        public void Grid_ReadsEveryBandThroughVrslsOwnFunctions()
+        {
+            // The first and last row of each band. Rows 0, 120 and 240 share their texels.
+            var rows = new[] { 0, 117, 120, 235, 240, 353 };
+            Assert.AreEqual(Fixtures, rows.Length);
+            var show = Standalone(MoveSet(), ColorSet(), BrightnessSet(), ConeSet(), GoboSet());
+            const float time = 1.3f;
+            var gpu = Keep(new AlpsGpuShow(show, Fixtures, rows));
+            var frames = gpu.FramesAt(time);
+            var info = NeutralInfo();
+
+            var probe = Keep(new Material(Shader.Find("Hidden/ALPS/Tests/VRSL Probe")));
+            probe.SetFloat("_AlpsProbeChannels", 13);
+            Shader.SetGlobalTexture("_Udon_DMXGridRenderTexture", gpu.Grid);
+            Shader.SetGlobalTexture("_Udon_DMXGridSpinTimer", gpu.Spin);
+            Shader.SetGlobalVector("_Udon_DMXGridRenderTexture_TexelSize", new Vector4(1f / gpu.Grid.width, 1f / gpu.Grid.height, gpu.Grid.width, gpu.Grid.height));
+            var read = Keep(AlpsPreviewDriver.CreateGpuTarget("Probe", 13, 1));
+
+            var failures = new List<string>();
+            var pans = new HashSet<float>();
+            for (var fixture = 0; fixture < Fixtures; fixture++)
+            {
+                // The channels a fixture on this row reads (Rows_SetVrslsFixtureUpInNineUniverseMode).
+                var channel = 13 * rows[fixture] + 1;
+                probe.SetFloat("_AlpsProbeFirst", channel - 1);
+                Graphics.Blit(null, read, probe);
+                var values = AlpsGpuShow.ReadBackTexture(read);
+                float Channel(int ch) => frames[fixture * AlpsShowLayout.FrameStride + ch];
+                var level = Mathf.Max(0f, Channel(AlpsShowLayout.FrameBrightness) * Channel(AlpsShowLayout.FrameBrightnessScale) / 100f);
+                var expected = new[]
+                {
+                    (-Channel(AlpsShowLayout.FramePan) + info[0]) / (2f * info[0]),
+                    ConeStretch(Channel(AlpsShowLayout.FrameConeLength), Channel(AlpsShowLayout.FrameConeMeshLength)),
+                    (Channel(AlpsShowLayout.FrameTilt) + info[1]) / (2f * info[1]),
+                    0f,
+                    Mathf.Max(0f, Channel(AlpsShowLayout.FrameConeWidth)) / 90f * 6f / 5.5f,
+                    GridDimmer(level),
+                    1f,
+                    GridColour(Channel(AlpsShowLayout.FrameRed), level),
+                    GridColour(Channel(AlpsShowLayout.FrameGreen), level),
+                    GridColour(Channel(AlpsShowLayout.FrameBlue), level),
+                    0f,
+                    Mathf.Round(Channel(AlpsShowLayout.FrameGobo)) * 30f / 255f,
+                };
+
+                pans.Add(Mathf.Round(expected[0] * 1000f));
+                for (var offset = 0; offset < expected.Length; offset++)
+                {
+                    var vrsl = values.GetPixel(offset, 0).r;
+                    if (Mathf.Abs(expected[offset] - vrsl) > 1e-3f)
+                    {
+                        failures.Add($"row {rows[fixture]} offset {offset}: expected {expected[offset]:0.####}, VRSL reads {vrsl:0.####}");
+                    }
+                }
+
+                var spin = values.GetPixel(10, 0).g;
+                if (Mathf.Abs(SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)) - spin) > 1e-3f)
+                {
+                    failures.Add($"row {rows[fixture]} gobo angle: expected {SpinPhase(Channel(AlpsShowLayout.FrameGoboRotation)):0.####}, VRSL reads {spin:0.####}");
+                }
+
+                Object.DestroyImmediate(values);
+            }
+
+            Assert.IsEmpty(failures, string.Join("\n", failures));
+            Assert.Greater(pans.Count, 1, "The fixtures that share texels hold values of their own.");
+        }
+
+        [Test]
+        public void Rows_KeepToWhatEachBandReads()
+        {
+            Assert.AreEqual(AlpsShowPlayer.GpuMaxFixtures, AlpsShowPlayer.DmxBandRows(0) + AlpsShowPlayer.DmxBandRows(1) + AlpsShowPlayer.DmxBandRows(2));
+            var read = Enumerable.Range(0, AlpsShowPlayer.GpuDmxRowSpan + 10).Where(AlpsShowPlayer.IsDmxRow).ToList();
+            Assert.AreEqual(AlpsShowPlayer.GpuMaxFixtures, read.Count);
+            foreach (var row in new[] { 0, 117, 120, 235, 240, 353 })
+            {
+                Assert.IsTrue(AlpsShowPlayer.IsDmxRow(row), $"Row {row}.");
+            }
+
+            foreach (var row in new[] { -1, 118, 119, 236, 239, 354 })
+            {
+                Assert.IsFalse(AlpsShowPlayer.IsDmxRow(row), $"Row {row}.");
+            }
+
+            Assert.AreEqual(116, AlpsShowPlayer.FitDmxRows(116, 1));
+            Assert.AreEqual(120, AlpsShowPlayer.FitDmxRows(116, 4), "A bar does not run over the end of a band.");
+            Assert.AreEqual(120, AlpsShowPlayer.FitDmxRows(118, 1));
+            Assert.AreEqual(232, AlpsShowPlayer.FitDmxRows(232, 4));
+            Assert.AreEqual(240, AlpsShowPlayer.FitDmxRows(233, 4));
+            Assert.AreEqual(AlpsShowPlayer.GpuDmxRowSpan, AlpsShowPlayer.FitDmxRows(351, 4));
+        }
+
+        [TestCase(0)]
+        [TestCase(117)]
+        [TestCase(120)]
+        [TestCase(235)]
+        [TestCase(240)]
+        [TestCase(353)]
+        public void Rows_SetVrslsFixtureUpInNineUniverseMode(int row)
+        {
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            var fixture = mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            AlpsShowPlayer.ConfigureVRSLDmx(fixture, row, 1f);
+
+            // What VRSL's own script hands its shaders, which the grid lays the row out for.
+            var block = new MaterialPropertyBlock();
+            foreach (var renderer in fixture.objRenderers)
+            {
+                renderer.GetPropertyBlock(block);
+                Assert.AreEqual(13 * row + 1, block.GetInt("_DMXChannel"), $"{renderer.name} on row {row}.");
+                Assert.AreEqual(1, block.GetInt("_NineUniverseMode"), $"{renderer.name} on row {row}.");
+            }
+
+            Assert.Greater(fixture.objRenderers.Length, 0);
+        }
+
         /// <summary>Logs which texel VRSL's getValueAtCoords reads for each channel, from a grid that holds its own coordinates.</summary>
         [Test, Explicit]
         public void Diagnose_WhereVrslReads()
@@ -372,6 +846,67 @@ namespace AdzukiSoft.ALPS.Tests
             }
 
             Debug.Log(text.ToString());
+        }
+
+        // ------------------------------------------------------------------ mirror ball
+
+        private const string MirrorBallPrefab = "Packages/me.adzuki.live-performance-system/Runtime/VRSL/Prefabs/DMX/Horizontal Mode/VRSL-DMX-Static-DiscoBall-H-1CH.prefab";
+
+        [Test]
+        public void MirrorBall_TurnsByTheShowsTimeWhereNoGoboTurnsIt()
+        {
+            var ball = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MirrorBallPrefab));
+            _created.Add(ball);
+            var fixture = ball.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>();
+            var material = AlpsShowPlayer.GetVRSLMirrorBallMaterial(fixture);
+            Assert.NotNull(material, "The mirror ball prefab is drawn with VRSL's mirror ball shader.");
+            Assert.IsNull(AlpsShowPlayer.GetVRSLLaserMaterial(fixture), "A mirror ball is no laser.");
+
+            var mover = (GameObject)Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(MoverPrefab));
+            _created.Add(mover);
+            var moverInfo = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(mover.GetComponentInChildren<AdzukiSoft.ALPS.Vrsl.VRStageLighting_DMX_Static>(), moverInfo, 0);
+            Assert.AreEqual(0f, moverInfo[AlpsShowPlayer.InfoIdleSpin], "A gobo stands still where no gobo effect turns it.");
+
+            // The ball reads the row the other fixtures read, and turns by the gobo angle.
+            var info = new float[AlpsShowPlayer.GpuFixtureInfoStride];
+            AlpsShowPlayer.CaptureVRSLDmxInfo(fixture, info, 0);
+            var speed = material.GetFloat(AlpsShowPlayer.MirrorBallSpinProperty);
+            Assert.AreEqual(AlpsShowPlayer.DmxLayoutStandard, info[AlpsShowPlayer.InfoLayout]);
+            Assert.AreEqual(speed, info[AlpsShowPlayer.InfoIdleSpin], 1e-5f);
+            Assert.AreNotEqual(0f, speed, "VRSL's ball turns on its own.");
+
+            var frame = new float[AlpsShowLayout.FrameStride];
+            AlpsShowPlayer.CaptureVRSL(fixture, frame, 0);
+
+            // Lit for the first ten seconds, then a gobo effect turns it once every 4 beats.
+            var lit = Set();
+            lit.Add(AlpsEffectKind.Brightness);
+            var turned = Set();
+            var gobo = turned.Add(AlpsEffectKind.Gobo);
+            gobo.goboStops.Add(new AlpsGoboStop(1));
+            gobo.goboRotationBeats = 4f;
+            var show = AlpsShowCompiler.CompileStandalone(1, Bpm,
+                new AlpsStandaloneClip { set = lit, start = 0f, end = 10f },
+                new AlpsStandaloneClip { set = turned, start = 10f, end = 20f, layer = 1 });
+            var gpu = Keep(new AlpsGpuShow(show, 1, info: info, defaults: frame));
+            var texel = VrslTexel(1 + 10);
+            float Spin(float time)
+            {
+                gpu.Render(time);
+                return gpu.ReadBack(gpu.Spin).GetPixel(texel.x, texel.y).r;
+            }
+
+            foreach (var time in new[] { 0.5f, 3f, 7.25f, 25f })
+            {
+                var angle = Mathf.Repeat(time * speed, 360f);
+                Assert.AreEqual(angle, gpu.Evaluate(0, time)[AlpsShowLayout.FrameGoboRotation], 1e-2f, $"The ball's own turn at {time} s.");
+                Assert.AreEqual(SpinPhase(angle), Spin(time), 1e-4f, $"The spin grid at {time} s.");
+            }
+
+            // Two beats into the gobo clip at 60 BPM is half a turn.
+            Assert.AreEqual(180f, gpu.Evaluate(0, 12f)[AlpsShowLayout.FrameGoboRotation], 1e-2f, "A gobo effect turns the ball instead.");
+            Assert.AreEqual(SpinPhase(180f), Spin(12f), 1e-4f);
         }
 
         // ------------------------------------------------------------------ shows
@@ -500,11 +1035,19 @@ namespace AdzukiSoft.ALPS.Tests
         /// The texel VRSL samples for absolute channel <paramref name="dmx"/>, as its
         /// getValueAtCoords and IndustryRead work it out on the 26 x 240 horizontal grid.
         /// IndustryRead takes the row as an int, so the fraction of dmx / 13 is dropped.
+        /// <see cref="Grid_LaysAMultiLightBarOutOverFourRows"/> holds it to VRSL's own read.
         /// </summary>
         private static Vector2Int VrslTexel(int dmx)
         {
             var x = dmx % 13;
-            var row = (int)(dmx / 13f + 1f);
+            var row = dmx / 13 + 1;
+            if (x == 0)
+            {
+                // The thirteenth channel of a row is read from that row's thirteenth column.
+                x = 13;
+                row -= 1;
+            }
+
             var resMultiplier = 26f / 13f;
             var u = x * resMultiplier * (1f / 26f) - 0.015f;
             var v = row * resMultiplier * (1f / 240f) - 0.001915f;

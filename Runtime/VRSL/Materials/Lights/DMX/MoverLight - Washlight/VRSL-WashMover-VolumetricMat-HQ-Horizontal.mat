@@ -155,7 +155,7 @@ Material:
     - _FinalIntensity: 1
     - _FinalStrobeFreq: 0
     - _FixtureBaseRotationY: 0
-    - _FixtureMaxIntensity: 0.2
+    - _FixtureMaxIntensity: 0.152
     - _FixtureRotationX: 0
     - _GlobalIntensity: 0.938
     - _GlobalIntensityBlend: 1
@@ -184,8 +184,8 @@ Material:
     - _ModX: 0
     - _ModY: 0
     - _NineUniverseMode: 0
-    - _Noise2Power: 0.887
-    - _Noise2PowerDefault: 0.887
+    - _Noise2Power: 0.5
+    - _Noise2PowerDefault: 0.5
     - _Noise2PowerPotato: 1
     - _Noise2Stretch: 2
     - _Noise2StretchDefault: 1.5

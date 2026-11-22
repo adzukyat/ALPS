@@ -74,6 +74,89 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
+        public void CreateFixture_GivesAMultiLightBarItsSegments()
+        {
+            var container = AlpsCreateMenu.CreateContainer(null);
+            var mover = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, container);
+
+            var created = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MultiLightBar, mover);
+
+            Assert.AreSame(container.transform, created.transform.parent, "It goes next to the fixture it was made on.");
+            Assert.IsNull(created.GetComponent<AlpsFixture>(), "The bar is no fixture itself.");
+            var bar = created.GetComponent<AlpsVRSLMultiLightBar>();
+            Assert.NotNull(bar);
+            var segments = bar.Fixtures();
+            Assert.AreEqual(AlpsVRSLMultiLightBar.SegmentCount, segments.Count);
+            for (var i = 0; i < segments.Count; i++)
+            {
+                var segment = (AlpsVRSLMultiLightBarSegment)segments[i];
+                Assert.AreEqual(i, segment.index);
+                Assert.AreSame(bar, segment.Bar);
+                Assert.AreSame(bar, segment.DmxOwner);
+                Assert.IsTrue(segment.IsReady, "The segment finds the bar's VRSL target.");
+                Assert.AreEqual(HideFlags.HideInHierarchy, segment.gameObject.hideFlags & HideFlags.HideInHierarchy);
+            }
+
+            // A track bound to the container counts the mover and then the segments.
+            var driven = container.GetComponent<AlpsContainer>().Fixtures();
+            Assert.AreEqual(1 + AlpsVRSLMultiLightBar.SegmentCount, driven.Count);
+            Assert.AreSame(segments[0], driven[1]);
+
+            // A fixture made on the bar goes next to it, not below it.
+            var next = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.ParLight, created);
+            Assert.AreSame(container.transform, next.transform.parent);
+
+            Assert.IsFalse(AlpsMultiLightBarSegments.Sync(bar, recordUndo: false), "Nothing is left to set up.");
+        }
+
+        [Test]
+        public void TheMultiLightBarsMaterial_ReadsADimmerAndAColourPerSegment()
+        {
+            var renderer = AlpsCreateMenu.MultiLightBar.Load().GetComponentInChildren<MeshRenderer>(true);
+
+            Assert.IsTrue(renderer.sharedMaterial.IsKeywordEnabled("_CHANNEL_MODE"), "The material is not in VRSL's 48 channel mode.");
+        }
+
+        [Test]
+        public void TheFlasherAndTheStrobePanel_ReadTheRowOfTheOtherStaticLights()
+        {
+            foreach (var fixture in new[] { AlpsCreateMenu.Flasher, AlpsCreateMenu.StrobePanel })
+            {
+                foreach (var renderer in fixture.Load().GetComponentsInChildren<Renderer>(true))
+                {
+                    var material = renderer.sharedMaterial;
+                    Assert.IsTrue(material.IsKeywordEnabled("_13CH_MODE"), $"{material.name} of {fixture.Name} is not in VRSL's 13 channel mode.");
+                    Assert.AreEqual(3f, material.GetFloat("_ChannelMode"), $"{material.name} of {fixture.Name}.");
+                }
+            }
+        }
+
+        [Test]
+        public void TheMirrorBall_AddsItsLightWhereItsDmxRowSays()
+        {
+            Renderer light = null;
+            foreach (var renderer in AlpsCreateMenu.MirrorBall.Load().GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer.sharedMaterial != null && renderer.sharedMaterial.shader.name == "ALPS/VRSL/Other/Discoball")
+                {
+                    light = renderer;
+                }
+            }
+
+            Assert.NotNull(light, "The mirror ball has no light.");
+            var material = light.sharedMaterial;
+            Assert.IsFalse(material.IsKeywordEnabled("_ALPHATEST_ON"), "The light is dithered.");
+            Assert.AreEqual(3001, material.renderQueue);
+            var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(AssetDatabase.GetAssetPath(material.shader)));
+            StringAssert.Contains("Blend One One", source, "The mirror ball does not add its light.");
+            StringAssert.DoesNotContain("DstColor", source.Substring(source.IndexOf("SubShader", System.StringComparison.Ordinal)), "The mirror ball still multiplies.");
+            StringAssert.Contains("_Udon_DMXGridSpinTimer", source, "The mirror ball does not turn by the spin grid.");
+            StringAssert.Contains("dmx + 5", source, "The mirror ball is not lit by its dimmer.");
+            // A prefab's objects are not active, which the search leaves out unless told.
+            Assert.IsNotNull(AlpsShowPlayer.GetVRSLMirrorBallMaterial(light.GetComponentInParent<VRStageLighting_DMX_Static>(true)));
+        }
+
+        [Test]
         public void Fixtures_AddTheirProjectionsAsLight()
         {
             var found = 0;
@@ -98,17 +181,90 @@ namespace AdzukiSoft.ALPS.Tests
         }
 
         [Test]
-        public void CreateFixture_HasTheSameScaleAtTheRootAsUnderAContainer()
+        public void CreateFixture_HasTheSamePoseEverywhere()
         {
             var rig = new GameObject("Rig");
+            var container = AlpsCreateMenu.CreateContainer(null);
             foreach (var fixture in AlpsCreateMenu.Fixtures)
             {
+                var prefab = fixture.Load().transform;
+                var scale = fixture.Scale > 0f ? Vector3.one * fixture.Scale : prefab.localScale;
                 var underRig = AlpsCreateMenu.CreateFixture(fixture, rig);
+                var underContainer = AlpsCreateMenu.CreateFixture(fixture, container);
+                var nextToIt = AlpsCreateMenu.CreateFixture(fixture, underContainer);
                 var atRoot = AlpsCreateMenu.CreateFixture(fixture, null);
 
-                Assert.AreEqual(Vector3.one, underRig.transform.localScale, $"{fixture.Name} under a parent.");
-                Assert.AreEqual(Vector3.one, atRoot.transform.localScale, $"{fixture.Name} at the scene root.");
+                AssertPose(prefab, scale, underRig.transform, $"{fixture.Name} under a parent");
+                AssertPose(prefab, scale, underContainer.transform, $"{fixture.Name} under a container");
+                AssertPose(prefab, scale, nextToIt.transform, $"{fixture.Name} next to a fixture");
+                AssertPose(prefab, scale, atRoot.transform, $"{fixture.Name} at the scene root");
+                Assert.AreEqual(Vector3.zero, underContainer.transform.localPosition, $"{fixture.Name} starts on its container.");
             }
+        }
+
+        [Test]
+        public void CreateFixture_KeepsTheMultiLightBarsOwnScale()
+        {
+            var created = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MultiLightBar, new GameObject("Rig"));
+
+            // Its mesh is over 20 m wide at a scale of 1.
+            Assert.AreEqual(AlpsCreateMenu.MultiLightBar.Load().transform.localScale.x, created.transform.localScale.x, 1e-6f);
+            Assert.Less(created.transform.localScale.x, 0.1f);
+        }
+
+        [Test]
+        public void CreateFixture_HangsAMoverWithItsPanAxisUpright()
+        {
+            var rig = new GameObject("Rig");
+            foreach (var fixture in new[] { AlpsCreateMenu.MoverSpotlight, AlpsCreateMenu.MoverWashLight })
+            {
+                var created = AlpsCreateMenu.CreateFixture(fixture, rig);
+
+                // A VRSL mover pans around its own +Z, which hangs straight down.
+                Assert.Less(Vector3.Angle(Vector3.down, created.transform.forward), 0.01f, $"{fixture.Name}'s pan axis.");
+                Assert.AreEqual(Vector3.one, created.transform.localScale, $"{fixture.Name}'s size.");
+            }
+        }
+
+        [Test]
+        public void TheFirstLayout_KeepsTheRotationNewFixturesShare()
+        {
+            var containerObject = AlpsCreateMenu.CreateContainer(null);
+            var container = containerObject.GetComponent<AlpsContainer>();
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, containerObject);
+            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, first);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load().transform;
+
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+
+            AssertPose(prefab, Vector3.one, first.transform, "The first mover once laid out");
+            AssertPose(prefab, Vector3.one, second.transform, "The second mover once laid out");
+        }
+
+        [Test]
+        public void AShapePickedOnAnEmptyContainer_StillHangsTheMoversAddedToIt()
+        {
+            var containerObject = AlpsCreateMenu.CreateContainer(null);
+            var container = containerObject.GetComponent<AlpsContainer>();
+            container.settings.shape = AlpsArrangementShape.Line;
+            AlpsArrangementLayout.CommitEdit(container);
+            var prefab = AlpsCreateMenu.MoverSpotlight.Load().transform;
+
+            var first = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, containerObject);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+            var second = AlpsCreateMenu.CreateFixture(AlpsCreateMenu.MoverSpotlight, first);
+            AlpsArrangementLayout.Refresh(container, recordUndo: false);
+
+            AssertPose(prefab, Vector3.one, first.transform, "The first mover");
+            AssertPose(prefab, Vector3.one, second.transform, "The second mover");
+            Assert.AreNotEqual(first.transform.localPosition, second.transform.localPosition, "The container lays them out.");
+        }
+
+        private static void AssertPose(Transform prefab, Vector3 scale, Transform created, string what)
+        {
+            Assert.Less(Quaternion.Angle(prefab.localRotation, created.localRotation), 0.01f, $"{what}: rotation {created.localEulerAngles}, the prefab's is {prefab.localEulerAngles}.");
+            Assert.Less((scale - created.localScale).magnitude, 1e-5f, $"{what}: scale {created.localScale}, expected {scale}.");
         }
 
         [Test]

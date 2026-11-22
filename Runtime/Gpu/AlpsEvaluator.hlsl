@@ -36,12 +36,44 @@ float _AlpsTime;
 #define ALPS_HEADER_DEFAULTS 16
 #define ALPS_HEADER_FIXTURE_INFO 17
 #define ALPS_HEADER_GROUP_COLUMNS 18
-#define ALPS_HEADER_ROW_FIXTURES 19
+#define ALPS_HEADER_CHANNEL_FIXTURES 19
 #define ALPS_HEADER_AIM 20
+#define ALPS_HEADER_PENLIGHT 21
+#define ALPS_HEADER_PENLIGHT_AREAS 22
 
-#define ALPS_FIXTURE_INFO_STRIDE 4
+#define ALPS_FIXTURE_INFO_STRIDE 8
+// AlpsShowPlayer.InfoIdleSpin, how fast a mirror ball's gobo angle turns where no gobo turns it.
+#define ALPS_INFO_IDLE_SPIN 6
 #define ALPS_AIM_STRIDE 12
-#define ALPS_MAX_FIXTURES 118
+#define ALPS_MAX_FIXTURES 348
+
+// The penlight areas, mirrored from AlpsShowPlayer.GpuPenlightAreaStride and what it holds.
+#define ALPS_PENLIGHT_AREAS 4
+#define ALPS_PENLIGHT_SLOTS 64
+#define ALPS_PENLIGHT_SLOT_COUNT 0
+#define ALPS_PENLIGHT_SHAPE 1
+#define ALPS_PENLIGHT_SIZE 2
+#define ALPS_PENLIGHT_MATRIX 4
+#define ALPS_PENLIGHT_FIRST_SLOT 16
+#define ALPS_PENLIGHT_STRIDE (ALPS_PENLIGHT_FIRST_SLOT + ALPS_PENLIGHT_SLOTS)
+#define ALPS_PENLIGHT_WIDTH (ALPS_PENLIGHT_SLOTS + 4)
+
+// What a colour channel gives off at a level, which is the brightness as a share of 100%.
+// The colour is authored the way a tint is, which Unity turns from gamma into linear in a
+// linear project, and the level goes through the same curve, so it darkens and brightens a
+// colour the way picking a darker or a brighter one would. The light given off follows the
+// level to the power of 2.2, which is about how the eye reads it: half the level looks half
+// as bright, below 100% and past it.
+#define ALPS_LEVEL_GAMMA 2.2
+
+float AlpsLight(float tint, float level)
+{
+    #ifdef UNITY_COLORSPACE_GAMMA
+    return tint * level;
+    #else
+    return GammaToLinearSpaceExact(tint) * pow(level, ALPS_LEVEL_GAMMA);
+    #endif
+}
 
 // --- Layout constants, mirrored from AlpsShowLayout -----------------------------------
 
@@ -58,6 +90,7 @@ float _AlpsTime;
 #define KindBrightness 3
 #define KindFlicker 4
 #define KindGobo 5
+#define KindLaser 6
 #define ParityEven 1
 #define ParityOdd 2
 #define MoveCircle 1
@@ -146,10 +179,17 @@ float _AlpsTime;
 #define FrameBrightnessScale 10
 #define FrameTrackEffect 11
 #define FrameConeMeshLength 12
-#define FrameStride 13
-#define FrameAimed 13
-#define FrameShowToken 14
-#define FrameTrackHeld 15
+#define FrameLaserFlatness 13
+#define FrameLaserBeams 14
+#define FrameLaserThickness 15
+#define FrameLaserSpin 16
+#define FrameStride 17
+#define FrameAimed 17
+#define FrameShowToken 18
+#define FrameTrackHeld 19
+
+// AlpsShowPlayer.GpuFrameTexels, the RGBA texels a fixture's row of the frames takes.
+#define ALPS_FRAME_TEXELS 5
 
 // How long before the end of the clip that last turned a head its stopping pose is taken,
 // inside the clip, where it still weighs something.
@@ -193,7 +233,7 @@ struct AlpsShow
     int defaults;
     int fixtureInfo;
     int groupColumns;
-    int rowFixtures;
+    int channelFixtures;
     int aim;
 };
 
@@ -218,7 +258,7 @@ AlpsShow AlpsLoadShow()
     show.defaults = AlpsReadInt(ALPS_HEADER_DEFAULTS);
     show.fixtureInfo = AlpsReadInt(ALPS_HEADER_FIXTURE_INFO);
     show.groupColumns = AlpsReadInt(ALPS_HEADER_GROUP_COLUMNS);
-    show.rowFixtures = AlpsReadInt(ALPS_HEADER_ROW_FIXTURES);
+    show.channelFixtures = AlpsReadInt(ALPS_HEADER_CHANNEL_FIXTURES);
     show.aim = AlpsReadInt(ALPS_HEADER_AIM);
     return show;
 }
@@ -789,6 +829,13 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             slots = 2;
             slotParam[1] = paramRow + ParamStride;
         }
+        else if (kind == KindLaser)
+        {
+            // Flatness, then the beams and how thick they are.
+            slots = 3;
+            slotParam[1] = paramRow + ParamStride;
+            slotParam[2] = paramRow + 2 * ParamStride;
+        }
         else if (kind == KindBrightness || ((kind == KindColor || kind == KindGobo) && paletteCount > 0))
         {
             slots = 1;
@@ -912,6 +959,19 @@ void AlpsEvaluateClip(int clip, int fixtureIndex, float time, inout AlpsFrame fr
             int stop = AlpsPaletteStop(paramRow, paletteCount, source[0], phase[0], local);
             AlpsWrite(frame, FrameGobo, AlpsRead(show.gobos + AlpsReadInt(effectRow + EffectPaletteStart) + stop));
         }
+        else if (kind == KindLaser)
+        {
+            AlpsWrite(frame, FrameLaserFlatness, value[0]);
+            AlpsWrite(frame, FrameLaserBeams, value[1]);
+            AlpsWrite(frame, FrameLaserThickness, value[2]);
+
+            // The beams go round the cone the other way on the mirrored half of a symmetric
+            // order, as the pan turns the other way there.
+            float beamBeatsPerTurn = AlpsRead(effectRow + EffectScalarA);
+            float beamTurn = beamBeatsPerTurn > 0.0 ? c.beats / beamBeatsPerTurn : 0.0;
+            float beamAngle = 360.0 * (mirrored ? -beamTurn : beamTurn);
+            AlpsWrite(frame, FrameLaserSpin, beamAngle - floor(beamAngle / 360.0) * 360.0);
+        }
     }
 }
 
@@ -923,11 +983,13 @@ bool AlpsIsDiscrete(int channel)
     return channel == FrameGobo || channel == FrameTrackEffect;
 }
 
-// Channels of how the light looks, its colour and its cone, which mix as light.
+// Channels of how the light looks, its colour, its cone and the shape of a laser's, which
+// mix as light.
 bool AlpsMixesAsLight(int channel)
 {
     return channel == FrameRed || channel == FrameGreen || channel == FrameBlue
-        || channel == FrameConeWidth || channel == FrameConeLength;
+        || channel == FrameConeWidth || channel == FrameConeLength
+        || channel == FrameLaserFlatness || channel == FrameLaserBeams || channel == FrameLaserThickness;
 }
 
 // Position of a fixture inside a group, or -1 when it is not a member.
@@ -984,6 +1046,11 @@ void AlpsComposeFixture(int fixture, float time, out float result[FrameStride], 
     }
 
     result[FrameBrightness] = 0.0;
+
+    // A mirror ball turns all the time, by the show's time alone, so every visitor and a seek
+    // see it where it is. A gobo effect's turn covers it.
+    float idle = result[FrameGoboRotation] + time * AlpsRead(show.fixtureInfo + fixture * ALPS_FIXTURE_INFO_STRIDE + ALPS_INFO_IDLE_SPIN);
+    result[FrameGoboRotation] = idle - floor(idle / 360.0) * 360.0;
     if (show.bucketCount <= 0 || show.bucketSeconds <= 0.0) return;
 
     int bucket = clamp((int)floor(time / show.bucketSeconds), 0, show.bucketCount - 1);

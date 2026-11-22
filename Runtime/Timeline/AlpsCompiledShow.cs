@@ -41,6 +41,14 @@ namespace AdzukiSoft.ALPS
         /// <summary>Every fixture the show drives, in the index order the arrays use.</summary>
         public readonly List<AlpsFixture> fixtures = new List<AlpsFixture>();
 
+        /// <summary>
+        /// The penlight areas whose slots the show drives, and the penlight section of the
+        /// show data laid out for them (<see cref="AlpsPenlight"/>).
+        /// </summary>
+        public readonly List<AlpsPenlightArea> penlightAreas = new List<AlpsPenlightArea>();
+
+        public float[] penlight = new float[0];
+
         /// <summary>Problems found while compiling. Errors stop a build.</summary>
         public readonly List<string> errors = new List<string>();
 

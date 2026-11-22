@@ -36,6 +36,8 @@ namespace AdzukiSoft.ALPS
             public RenderTexture gpuFramesPrevious;
             public RenderTexture gpuGrid;
             public RenderTexture gpuSpin;
+            public Material gpuPenlightMaterial;
+            public RenderTexture gpuPenlight;
         }
 
         private static readonly Dictionary<PlayableDirector, State> States = new Dictionary<PlayableDirector, State>();
@@ -147,6 +149,12 @@ namespace AdzukiSoft.ALPS
                 state.stale = true;
             }
 
+            // Nothing else notices a penlight area that was moved or reshaped.
+            if (state.show != null && !state.stale && state.show.penlightAreas.Count > 0 && AlpsPenlight.Moved(state.show))
+            {
+                state.stale = true;
+            }
+
             // Every ALPS track calls in, but one evaluation per frame covers them all.
             if (state.lastFrameId == frameId && Mathf.Approximately(state.lastTime, time) && !state.stale && state.revision == Revision)
             {
@@ -166,6 +174,11 @@ namespace AdzukiSoft.ALPS
             state.gpuFramesMaterial.SetFloat("_AlpsTime", time);
             AlpsShowPlayer.BindGrid(state.gpuGrid, state.gpuSpin);
             AlpsShowPlayer.RenderPasses(state.gpuData, state.gpuFramesMaterial, state.gpuGridMaterial, state.gpuFrames, state.gpuGrid, state.gpuSpin);
+            if (state.gpuPenlightMaterial != null)
+            {
+                AlpsShowPlayer.BindPenlight(state.gpuPenlight);
+                AlpsShowPlayer.RenderPenlight(state.gpuFrames, state.gpuPenlightMaterial, state.gpuPenlight);
+            }
 
             // The next frame carries pan and tilt on from this one.
             Graphics.CopyTexture(state.gpuFrames, state.gpuFramesPrevious);
@@ -197,10 +210,22 @@ namespace AdzukiSoft.ALPS
             }
         }
 
+        /// <summary>The penlight texture a director's preview last drew, for tests and debugging.</summary>
+        public static RenderTexture GetPenlight(PlayableDirector director)
+        {
+            return director != null && States.TryGetValue(director, out var state) ? state.gpuPenlight : null;
+        }
+
         /// <summary>The frames target a director's preview last drew, for tests and debugging.</summary>
         public static RenderTexture GetFrames(PlayableDirector director)
         {
             return director != null && States.TryGetValue(director, out var state) ? state.gpuFrames : null;
+        }
+
+        /// <summary>The DMX grid a director's preview last drew, for tests and debugging.</summary>
+        public static RenderTexture GetGrid(PlayableDirector director)
+        {
+            return director != null && States.TryGetValue(director, out var state) ? state.gpuGrid : null;
         }
 
         private static void PurgeDestroyedDirectors()
@@ -285,9 +310,43 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            if (count > AlpsShowPlayer.GpuMaxFixtures)
+            // Only the fixtures that read VRSL's grid take a row of it, in their own order,
+            // since the preview plays one director. The segments of a multi light bar share
+            // the rows of their bar, which stay in one band of the grid.
+            var rows = new int[count];
+            var owned = new Dictionary<Object, int>();
+            var next = 0;
+            var dmxCount = 0;
+            var fits = true;
+            for (var i = 0; i < count; i++)
             {
-                Debug.LogWarning($"[ALPS] A show drives {AlpsShowPlayer.GpuMaxFixtures} fixtures at most, this one has {count}. It is not previewed.");
+                var fixture = show.fixtures[i];
+                if (fixture != null && !fixture.UsesDmxRow)
+                {
+                    rows[i] = -1;
+                    continue;
+                }
+
+                var owner = fixture != null ? fixture.DmxOwner : null;
+                if (owner == null || !owned.TryGetValue(owner, out var row))
+                {
+                    var size = fixture != null ? Mathf.Max(1, fixture.DmxRowCount) : 1;
+                    row = AlpsShowPlayer.FitDmxRows(next, size);
+                    fits &= row < AlpsShowPlayer.GpuDmxRowSpan;
+                    next = row + size;
+                    dmxCount += size;
+                    if (owner != null)
+                    {
+                        owned.Add(owner, row);
+                    }
+                }
+
+                rows[i] = row;
+            }
+
+            if (!fits)
+            {
+                Debug.LogWarning($"[ALPS] A show's fixtures take {AlpsShowPlayer.GpuMaxFixtures} rows of VRSL's DMX grid at most, in three bands that each hold whole multi light bars. This one's take {dmxCount}. It is not previewed.");
                 return;
             }
 
@@ -299,16 +358,13 @@ namespace AdzukiSoft.ALPS
                 return;
             }
 
-            // The preview plays one director, so its fixtures take the rows in their own order.
             var info = new float[count * AlpsShowPlayer.GpuFixtureInfoStride];
-            var rows = new int[count];
             for (var i = 0; i < count; i++)
             {
-                rows[i] = i;
                 var fixture = show.fixtures[i];
                 if (fixture != null)
                 {
-                    fixture.ConfigureGpu(i, state.defaults, i * AlpsShowLayout.FrameStride, info, i * AlpsShowPlayer.GpuFixtureInfoStride);
+                    fixture.ConfigureGpu(rows[i], state.defaults, i * AlpsShowLayout.FrameStride, info, i * AlpsShowPlayer.GpuFixtureInfoStride);
                 }
                 else
                 {
@@ -319,7 +375,7 @@ namespace AdzukiSoft.ALPS
             var data = AlpsShowPlayer.PackShowData(
                 show.clips, show.effects, show.parameters, show.colors, show.gobos, show.positions,
                 show.bucketStart, show.bucketClips, show.bucketSeconds, show.groupCount, show.groupIndex,
-                count, state.defaults, info, rows, new float[count * AlpsShowPlayer.GpuAimStride]);
+                count, state.defaults, info, rows, new float[count * AlpsShowPlayer.GpuAimStride], show.penlight);
             state.gpuData = AlpsShowPlayer.CreateShowTexture(data);
             state.gpuData.hideFlags = HideFlags.HideAndDontSave;
             state.gpuFramesMaterial = new Material(framesShader) { hideFlags = HideFlags.HideAndDontSave };
@@ -333,6 +389,14 @@ namespace AdzukiSoft.ALPS
             state.gpuFramesMaterial.SetFloat("_AlpsFrameRows", state.gpuFrames.height);
             state.gpuFramesMaterial.SetFloat("_AlpsShowToken", 1f);
             state.gpuGridMaterial.SetTexture("_AlpsData", state.gpuData);
+
+            var penlightShader = Shader.Find(AlpsPenlight.GridShader);
+            if (penlightShader != null)
+            {
+                state.gpuPenlightMaterial = new Material(penlightShader) { hideFlags = HideFlags.HideAndDontSave };
+                state.gpuPenlightMaterial.SetTexture("_AlpsData", state.gpuData);
+                state.gpuPenlight = CreateGpuTarget("ALPS Penlight", AlpsShowPlayer.GpuPenlightWidth, AlpsShowPlayer.GpuMaxPenlightAreas);
+            }
         }
 
         /// <summary>A float target read texel by texel, as the GPU evaluator and VRSL read it.</summary>
@@ -360,6 +424,8 @@ namespace AdzukiSoft.ALPS
             DestroyGpuObject(state.gpuFramesPrevious);
             DestroyGpuObject(state.gpuGrid);
             DestroyGpuObject(state.gpuSpin);
+            DestroyGpuObject(state.gpuPenlightMaterial);
+            DestroyGpuObject(state.gpuPenlight);
             state.gpuData = null;
             state.gpuFramesMaterial = null;
             state.gpuGridMaterial = null;
@@ -367,6 +433,8 @@ namespace AdzukiSoft.ALPS
             state.gpuFramesPrevious = null;
             state.gpuGrid = null;
             state.gpuSpin = null;
+            state.gpuPenlightMaterial = null;
+            state.gpuPenlight = null;
         }
 
         private static void DestroyGpuObject(Object target)

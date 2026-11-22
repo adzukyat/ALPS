@@ -30,6 +30,10 @@ namespace AdzukiSoft.ALPS
     {
         public const int AdapterNone = 0;
         public const int AdapterVRSLDmxStatic = 1;
+        public const int AdapterPenlight = 2;
+
+        /// <summary>A segment of a VRSL multi light bar, which shares the bar's rows with the other segments.</summary>
+        public const int AdapterVRSLBarSegment = 3;
 
         /// <summary>Model cone width at which VRSL reaches the widest cone its inspector offers.</summary>
         public const float ModelConeWidthLimit = 90f;
@@ -60,17 +64,143 @@ namespace AdzukiSoft.ALPS
         /// <summary>Floats before the first section of the show data, see AlpsEvaluator.hlsl.</summary>
         public const int GpuHeaderSize = 32;
 
-        /// <summary>Floats per fixture in the fixture info section.</summary>
-        public const int GpuFixtureInfoStride = 4;
+        /// <summary>
+        /// Floats per fixture in the fixture info section: the pan and tilt ranges, which way
+        /// the gobo turns and the DMX step between gobos, then which channels the fixture
+        /// reads (<see cref="InfoLayout"/>), then which segment of its bar a bar segment is,
+        /// then how fast its gobo turns where no gobo effect turns it
+        /// (<see cref="InfoIdleSpin"/>).
+        /// </summary>
+        public const int GpuFixtureInfoStride = 8;
+        public const int InfoPanRange = 0;
+        public const int InfoTiltRange = 1;
+        public const int InfoPanSign = 2;
+        public const int InfoGoboStep = 3;
+        public const int InfoLayout = 4;
+        public const int InfoBarSegment = 5;
+
+        /// <summary>
+        /// Degrees per second of the show's time that the gobo angle turns by where no gobo
+        /// effect covers it, 0 on every fixture but a mirror ball, which VRSL turns all the
+        /// time and which turns by its gobo angle (<see cref="MirrorBallSpinProperty"/>).
+        /// </summary>
+        public const int InfoIdleSpin = 6;
+
+        /// <summary>The 13 channels VRSL's movers and static lights read.</summary>
+        public const int DmxLayoutStandard = 0;
+
+        /// <summary>
+        /// The 12 channels VRSL's laser reads: tilt, pan, cone length, cone width, flatness,
+        /// beam count, which way its beams go round, the colour, the intensity and the beam
+        /// thickness. How far the beams have gone round it reads from the spin grid.
+        /// </summary>
+        public const int DmxLayoutLaser = 1;
+
+        /// <summary>
+        /// The 4 channels a segment of VRSL's multi light bar reads in its 48 channel mode:
+        /// the dimmer and the colour, <see cref="InfoBarSegment"/> times four past the bar's
+        /// first channel.
+        /// </summary>
+        public const int DmxLayoutBarSegment = 2;
+        public const int BarSegmentChannels = 4;
+
+        /// <summary>The channels of a row of the grid, the thirteenth of which only a multi light bar reads.</summary>
+        public const int GpuRowChannels = 13;
+
+        /// <summary>
+        /// What the channel map multiplies a fixture by, leaving room below it for which of
+        /// its channels a cell is.
+        /// </summary>
+        public const int GpuChannelFixtureStep = 16;
+
+        /// <summary>The material property only VRSL's laser shader has, which tells a laser from the other fixtures.</summary>
+        public const string LaserBeamsProperty = "_LaserCount";
+        public const string LaserFlatnessProperty = "_ZConeFlatness";
+        public const string LaserThicknessProperty = "_LaserThickness";
+        public const string LaserTiltProperty = "_XRotation";
+        public const string LaserPanProperty = "_YRotation";
+        public const string LaserConeWidthProperty = "_VertexConeWidth";
+        public const string LaserConeLengthProperty = "_VertexConeLength";
+
+        /// <summary>
+        /// The material property only VRSL's mirror ball shader has, how many degrees a second
+        /// it turns, which tells a mirror ball from the other fixtures. In DMX mode the ball
+        /// turns by the gobo angle the spin grid holds, which turns at this speed where no
+        /// gobo effect turns it.
+        /// </summary>
+        public const string MirrorBallSpinProperty = "_RotationSpeed";
+
+        /// <summary>
+        /// The ends of the laser's cone width. At the lower one its beams run in one line, and
+        /// each unit above it opens the cone by the same amount again.
+        /// </summary>
+        public const float LaserMinConeWidth = -3.75f;
+        public const float LaserMaxConeWidth = 20f;
+
+        /// <summary>
+        /// The radius of the laser's own mesh at its far end over its length, which is how far
+        /// the cone opens at a width of 0 and a length of 0. The model width of a laser is half
+        /// its opening angle in degrees, whatever its length.
+        /// </summary>
+        public const float LaserMeshSlope = 0.511f;
+
+        /// <summary>The shortest and the longest the laser's length channel makes its mesh, as shares of it.</summary>
+        public const float LaserMinStretch = 0.5f;
+        public const float LaserMaxStretch = 6f;
+
+        /// <summary>The angle the laser's pan and tilt channels reach to either side.</summary>
+        public const float LaserAngleRange = 90f;
+
+        /// <summary>The laser's flatness at which its cone is a fan, 100% in the model.</summary>
+        public const float LaserMaxFlatness = 1.999f;
+
+        /// <summary>The fewest and the most beams the laser draws around its cone.</summary>
+        public const float LaserMinBeams = 4f;
+        public const float LaserMaxBeams = 68f;
+
+        /// <summary>
+        /// The thickest beam a laser's material holds, 100% in the model. It is twice what the
+        /// laser's thickness channel reaches at 1 (<see cref="LaserDmxMaxThickness"/>), and the
+        /// laser reads on past that, since the grid holds floats.
+        /// </summary>
+        public const float LaserMaxThickness = 0.1f;
+
+        /// <summary>The thickness the laser's channel gives at 0 and at 1.</summary>
+        public const float LaserDmxMinThickness = 0.0005f;
+        public const float LaserDmxMaxThickness = 0.05f;
 
         /// <summary>Floats per fixture in the aim section, the first three rows of its world to aim matrix.</summary>
         public const int GpuAimStride = 12;
 
-        /// <summary>Most fixtures VRSL's 26 x 240 grid holds, one 13 channel row each within three universes.</summary>
-        public const int GpuMaxFixtures = 118;
+        /// <summary>
+        /// The rows of 13 channels VRSL's 26 x 240 grid holds in its nine universe mode, which
+        /// reads universes 1 to 3 from red, 4 to 6 from green and 7 to 9 from blue
+        /// (<see cref="GpuDmxBandRows"/>). A fixture takes one, and a multi light bar four for
+        /// its twelve segments, all in one band.
+        /// </summary>
+        public const int GpuMaxFixtures = 348;
 
-        /// <summary>RGBA texels per fixture row of the frames target, room for the 13 channels, the aim flag and the show token.</summary>
-        public const int GpuFrameTexels = 4;
+        /// <summary>The colour bands of the grid, three universes each.</summary>
+        public const int GpuDmxBands = 3;
+
+        /// <summary>
+        /// Rows a band spans. VRSL counts a universe as 520 channels, 40 rows, so band k starts
+        /// on row 120k, absolute channel 1560k + 1. Not all of them can be read
+        /// (<see cref="DmxBandRows"/>).
+        /// </summary>
+        public const int GpuDmxBandRows = 120;
+
+        /// <summary>
+        /// Rows from the first to past the last one VRSL reads. A row n reads absolute channel
+        /// 13n + 1 on, and the rows past the end of a band stay empty.
+        /// </summary>
+        public const int GpuDmxRowSpan = 354;
+
+        /// <summary>
+        /// RGBA texels per fixture row of the frames target, room for the 17 channels, the aim
+        /// flag, the show token and the held flag.
+        /// </summary>
+        public const int GpuFrameTexels = 5;
 
         /// <summary>Size of VRSL's horizontal DMX grid, which its shaders' texel maths expects.</summary>
         public const int GpuGridWidth = 26;
@@ -78,6 +208,34 @@ namespace AdzukiSoft.ALPS
 
         /// <summary>Most users one show can track, one shader vector each.</summary>
         public const int GpuMaxTrackedUsers = 8;
+
+        /// <summary>Most penlight areas one show holds, one row of the penlight texture each.</summary>
+        public const int GpuMaxPenlightAreas = 4;
+
+        /// <summary>Most slots one penlight area is cut into, one texel each.</summary>
+        public const int GpuMaxPenlightSlots = 64;
+
+        /// <summary>
+        /// Floats per area in the penlight section of the show data: <see cref="PenlightSlotCount"/>,
+        /// <see cref="PenlightShape"/> and <see cref="PenlightSize"/>, the first three rows of
+        /// its world to area matrix from <see cref="PenlightMatrix"/>, then the show's fixture
+        /// on each slot from <see cref="PenlightSlots"/>.
+        /// </summary>
+        public const int GpuPenlightAreaStride = 16 + GpuMaxPenlightSlots;
+        public const int PenlightSlotCount = 0;
+        public const int PenlightShape = 1;
+        public const int PenlightSize = 2;
+        public const int PenlightMatrix = 4;
+        public const int PenlightSlots = 16;
+
+        /// <summary>
+        /// Width of the penlight texture: a texel per slot, then the three matrix rows and the
+        /// texel holding the slot count, the shape, the size and 1 for an area that is there.
+        /// </summary>
+        public const int GpuPenlightWidth = GpuMaxPenlightSlots + 4;
+
+        /// <summary>The global the penlight texture goes by, which avatars read too.</summary>
+        public const string PenlightTextureProperty = "_Udon_AlpsPenlight";
 
         public PlayableDirector director;
 
@@ -97,13 +255,24 @@ namespace AdzukiSoft.ALPS
 
         public int[] fixtureAdapter = new int[0];
         public VRStageLighting_DMX_Static[] vrslFixtures = new VRStageLighting_DMX_Static[0];
+
+        /// <summary>Which segment of its bar a fixture is, for the ones that are bar segments.</summary>
+        public int[] fixtureSegment = new int[0];
         public Transform[] aimTransforms = new Transform[0];
 
         /// <summary>
         /// The DMX grid row of every fixture. Rows are counted per show, so fixtures of other
-        /// shows of the scene read the same rows.
+        /// shows of the scene read the same rows. The segments of a bar all name the bar's
+        /// first row.
         /// </summary>
         public int[] dmxRows = new int[0];
+
+        /// <summary>
+        /// The show's penlight areas, <see cref="GpuPenlightAreaStride"/> floats each. Their
+        /// matrices are taken from <see cref="penlightTransforms"/> when the player starts.
+        /// </summary>
+        public float[] penlight = new float[0];
+        public Transform[] penlightTransforms = new Transform[0];
 
         /// <summary>
         /// Tells this show's frames from the other shows' in the shared frames targets, so pan
@@ -113,12 +282,16 @@ namespace AdzukiSoft.ALPS
 
         public Material framesMaterial;
         public Material gridMaterial;
+        public Material penlightMaterial;
 
         /// <summary>Two frames targets taken in turn, so a head can carry on from the last frame.</summary>
         public RenderTexture frames;
         public RenderTexture framesPrevious;
         public RenderTexture grid;
         public RenderTexture spin;
+
+        /// <summary>What the penlights read, shared by every show of the scene like the grid.</summary>
+        public RenderTexture penlightTarget;
 
         private Texture2D _data;
         private bool _initialized;
@@ -174,7 +347,15 @@ namespace AdzukiSoft.ALPS
                 if (IsVRSL(i))
                 {
                     CaptureVRSL(vrslFixtures[i], defaults, offset);
-                    CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
+                    if (fixtureAdapter[i] == AdapterVRSLBarSegment)
+                    {
+                        WriteBarSegmentDmxInfo(info, i * GpuFixtureInfoStride, i < fixtureSegment.Length ? fixtureSegment[i] : 0);
+                    }
+                    else
+                    {
+                        CaptureVRSLDmxInfo(vrslFixtures[i], info, i * GpuFixtureInfoStride);
+                    }
+
                     ConfigureVRSLDmx(vrslFixtures[i], row, defaults[offset + AlpsShowLayout.FrameConeMeshLength]);
                 }
                 else
@@ -186,17 +367,26 @@ namespace AdzukiSoft.ALPS
                 if (i < aimTransforms.Length && aimTransforms[i] != null)
                 {
                     WriteAim(aimTransforms[i].worldToLocalMatrix, aim, i * GpuAimStride);
-                    if (IsVRSL(i))
+                    if (fixtureAdapter[i] == AdapterVRSLDmxStatic && IsVRSL(i))
                     {
                         OrientVRSLAim(vrslFixtures[i], aim, i * GpuAimStride);
                     }
                 }
             }
 
+            for (var a = 0; a < penlightTransforms.Length; a++)
+            {
+                var at = a * GpuPenlightAreaStride + PenlightMatrix;
+                if (penlightTransforms[a] != null && at + GpuAimStride <= penlight.Length)
+                {
+                    WriteAim(penlightTransforms[a].worldToLocalMatrix, penlight, at);
+                }
+            }
+
             var data = PackShowData(
                 clips, effects, parameters, colors, gobos, positions,
                 bucketStart, bucketClips, bucketSeconds, groupCount, groupIndex,
-                count, defaults, info, dmxRows, aim);
+                count, defaults, info, dmxRows, aim, penlight);
             _data = CreateShowTexture(data);
 
             _idData = VRCShader.PropertyToID("_AlpsData");
@@ -215,6 +405,11 @@ namespace AdzukiSoft.ALPS
             _trackedPlayers = new VRCPlayerApi[userNames.Length];
             _players = new VRCPlayerApi[82];
             BindGrid(grid, spin);
+            if (penlightTarget != null)
+            {
+                BindPenlight(penlightTarget);
+            }
+
             _initialized = true;
         }
 
@@ -251,6 +446,11 @@ namespace AdzukiSoft.ALPS
             framesMaterial.SetFloat(_idShowToken, showToken);
             gridMaterial.SetTexture(_idData, _data);
             RenderPasses(_data, framesMaterial, gridMaterial, target, grid, spin);
+            if (penlightMaterial != null && penlightTarget != null)
+            {
+                penlightMaterial.SetTexture(_idData, _data);
+                RenderPenlight(target, penlightMaterial, penlightTarget);
+            }
         }
 
         /// <summary>The frames target the last evaluation drew, for tests and debugging.</summary>
@@ -265,6 +465,21 @@ namespace AdzukiSoft.ALPS
             VRCGraphics.Blit(data, frames, framesMaterial, 0);
             VRCGraphics.Blit(frames, grid, gridMaterial, 0);
             VRCGraphics.Blit(frames, spin, gridMaterial, 1);
+        }
+
+        /// <summary>
+        /// Lays the slots of the show's penlight areas out as the penlight texture, from the
+        /// frames <see cref="RenderPasses"/> drew. A show without an area leaves it empty.
+        /// </summary>
+        public static void RenderPenlight(RenderTexture frames, Material penlightMaterial, RenderTexture penlight)
+        {
+            VRCGraphics.Blit(frames, penlight, penlightMaterial, 0);
+        }
+
+        /// <summary>Hands every shader of the world, the avatars' included, the penlight texture.</summary>
+        public static void BindPenlight(RenderTexture penlight)
+        {
+            VRCShader.SetGlobalTexture(VRCShader.PropertyToID(PenlightTextureProperty), penlight);
         }
 
         /// <summary>Points VRSL's DMX textures at the grids.</summary>
@@ -386,6 +601,20 @@ namespace AdzukiSoft.ALPS
         /// </summary>
         public static void OrientVRSLAim(VRStageLighting_DMX_Static fixture, float[] aim, int offset)
         {
+            // A laser's cone rests along its mesh's -Y axis and a positive tilt leans it
+            // toward the mesh's +Z, so the mesh's Z row becomes Y and its Y row, negated, Z.
+            if (GetVRSLLaserMaterial(fixture) != null)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    var y = aim[offset + 4 + i];
+                    aim[offset + 4 + i] = aim[offset + 8 + i];
+                    aim[offset + 8 + i] = -y;
+                }
+
+                return;
+            }
+
             if (fixture.invertPan)
             {
                 for (var i = 0; i < 4; i++)
@@ -410,8 +639,8 @@ namespace AdzukiSoft.ALPS
         /// <summary>
         /// Lays the compiled show out as the floats of the GPU evaluator's data texture: a
         /// header of section offsets, then every array in turn, then the fixture defaults,
-        /// the per fixture DMX info, which fixture sits on each DMX row, and the aim spaces.
-        /// The length is a whole number of texture rows.
+        /// the per fixture DMX info, which fixture reads each channel of the DMX grid, the aim
+        /// spaces and the penlight areas. The length is a whole number of texture rows.
         /// </summary>
         public static float[] PackShowData(
             float[] clips,
@@ -429,7 +658,8 @@ namespace AdzukiSoft.ALPS
             float[] defaults,
             float[] fixtureInfo,
             int[] dmxRows,
-            float[] aim)
+            float[] aim,
+            float[] penlight)
         {
             var clipsAt = GpuHeaderSize;
             var effectsAt = clipsAt + clips.Length;
@@ -443,9 +673,11 @@ namespace AdzukiSoft.ALPS
             var groupIndexAt = groupCountAt + groupCount.Length;
             var defaultsAt = groupIndexAt + groupIndex.Length;
             var fixtureInfoAt = defaultsAt + defaults.Length;
-            var rowFixturesAt = fixtureInfoAt + fixtureInfo.Length;
-            var aimAt = rowFixturesAt + GpuMaxFixtures;
-            var size = aimAt + aim.Length;
+            var channelFixturesAt = fixtureInfoAt + fixtureInfo.Length;
+            var channels = GpuDmxRowSpan * GpuRowChannels;
+            var aimAt = channelFixturesAt + channels;
+            var penlightAt = aimAt + aim.Length;
+            var size = penlightAt + penlight.Length;
             var rows = (size + GpuDataWidth - 1) / GpuDataWidth;
             var data = new float[rows * GpuDataWidth];
 
@@ -468,8 +700,10 @@ namespace AdzukiSoft.ALPS
             data[16] = defaultsAt;
             data[17] = fixtureInfoAt;
             data[18] = groupCount.Length > 0 ? groupIndex.Length / groupCount.Length : 0;
-            data[19] = rowFixturesAt;
+            data[19] = channelFixturesAt;
             data[20] = aimAt;
+            data[21] = penlightAt;
+            data[22] = penlight.Length / GpuPenlightAreaStride;
 
             CopyFloats(clips, data, clipsAt);
             CopyFloats(effects, data, effectsAt);
@@ -484,19 +718,35 @@ namespace AdzukiSoft.ALPS
             CopyFloats(defaults, data, defaultsAt);
             CopyFloats(fixtureInfo, data, fixtureInfoAt);
             CopyFloats(aim, data, aimAt);
+            CopyFloats(penlight, data, penlightAt);
 
-            // Which of the show's fixtures sits on each DMX row, -1 for rows it does not drive.
-            for (var row = 0; row < GpuMaxFixtures; row++)
+            // Which of the show's fixtures reads each channel of the grid and which of its
+            // channels that is, as fixture * GpuChannelFixtureStep + channel, or -1 for the
+            // channels the show does not drive. A fixture reads the first twelve of its row,
+            // and a segment of a bar four of the channels that run on from the bar's first row.
+            for (var channel = 0; channel < channels; channel++)
             {
-                data[rowFixturesAt + row] = -1f;
+                data[channelFixturesAt + channel] = -1f;
             }
 
             for (var i = 0; i < fixtureCount; i++)
             {
                 var row = i < dmxRows.Length ? dmxRows[i] : i;
-                if (row >= 0 && row < GpuMaxFixtures)
+                if (!IsDmxRow(row))
                 {
-                    data[rowFixturesAt + row] = i;
+                    continue;
+                }
+
+                var at = i * GpuFixtureInfoStride;
+                var isSegment = at + InfoBarSegment < fixtureInfo.Length && Mathf.RoundToInt(fixtureInfo[at + InfoLayout]) == DmxLayoutBarSegment;
+                var first = row * GpuRowChannels + (isSegment ? Mathf.RoundToInt(fixtureInfo[at + InfoBarSegment]) * BarSegmentChannels : 0);
+                var count = isSegment ? BarSegmentChannels : GpuRowChannels - 1;
+                for (var channel = 0; channel < count; channel++)
+                {
+                    if (first + channel < channels)
+                    {
+                        data[channelFixturesAt + first + channel] = i * GpuChannelFixtureStep + channel;
+                    }
                 }
             }
 
@@ -537,7 +787,8 @@ namespace AdzukiSoft.ALPS
 
         private bool IsVRSL(int fixture)
         {
-            return fixtureAdapter[fixture] == AdapterVRSLDmxStatic && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null;
+            var adapter = fixtureAdapter[fixture];
+            return (adapter == AdapterVRSLDmxStatic || adapter == AdapterVRSLBarSegment) && fixture < vrslFixtures.Length && vrslFixtures[fixture] != null;
         }
 
         // ==================================================================================
@@ -577,6 +828,7 @@ namespace AdzukiSoft.ALPS
             frame[offset + AlpsShowLayout.FrameGobo] = AlpsShowLayout.GoboOff;
             frame[offset + AlpsShowLayout.FrameBrightnessScale] = 1f;
             frame[offset + AlpsShowLayout.FrameConeMeshLength] = 1f;
+            frame[offset + AlpsShowLayout.FrameLaserBeams] = LaserMinBeams;
         }
 
         /// <summary>Reads a VRSL fixture's fields into model units.</summary>
@@ -600,26 +852,128 @@ namespace AdzukiSoft.ALPS
                 Mathf.InverseLerp(VrslMinConeLength, VrslMaxConeLength, fixture.coneLength) * ModelConeLengthLimit;
             frame[offset + AlpsShowLayout.FrameConeMeshLength] = fixture.maxConeLength;
             frame[offset + AlpsShowLayout.FrameGobo] = fixture.selectGOBO;
+
+            // A laser keeps its pose and its cone on the material, not on the script. Its tilt
+            // is read the other way round, so a positive one raises the cone of a laser that
+            // stands the way its prefab does.
+            var laser = GetVRSLLaserMaterial(fixture);
+            if (laser != null)
+            {
+                // The laser's length is what it adds to its own mesh, as a share of it.
+                var stretch = Mathf.Clamp(1f + laser.GetFloat(LaserConeLengthProperty), LaserMinStretch, LaserMaxStretch);
+                var opening = Mathf.Max(0f, laser.GetFloat(LaserConeWidthProperty) - LaserMinConeWidth) / -LaserMinConeWidth;
+                frame[offset + AlpsShowLayout.FramePan] = laser.GetFloat(LaserPanProperty);
+                frame[offset + AlpsShowLayout.FrameTilt] = -laser.GetFloat(LaserTiltProperty);
+                frame[offset + AlpsShowLayout.FrameConeWidth] = Mathf.Atan(LaserMeshSlope * opening / stretch) * Mathf.Rad2Deg;
+                frame[offset + AlpsShowLayout.FrameConeLength] = stretch * ModelConeLengthLimit;
+                frame[offset + AlpsShowLayout.FrameConeMeshLength] = 1f;
+                frame[offset + AlpsShowLayout.FrameGobo] = AlpsShowLayout.GoboOff;
+
+                // How flat the cone is, how many beams it has and how thick they are, which a
+                // laser no laser effect drives keeps. Its beams stand still.
+                frame[offset + AlpsShowLayout.FrameLaserFlatness] = laser.GetFloat(LaserFlatnessProperty) / LaserMaxFlatness * 100f;
+                frame[offset + AlpsShowLayout.FrameLaserBeams] = laser.GetFloat(LaserBeamsProperty);
+                frame[offset + AlpsShowLayout.FrameLaserThickness] = laser.GetFloat(LaserThicknessProperty) / LaserMaxThickness * 100f;
+            }
+        }
+
+        /// <summary>
+        /// The material of a VRSL laser, or null for any other fixture. The laser reads
+        /// channels of its own, so the grid lays its row out another way
+        /// (<see cref="DmxLayoutLaser"/>).
+        /// </summary>
+        public static Material GetVRSLLaserMaterial(VRStageLighting_DMX_Static fixture)
+        {
+            return GetVRSLMaterialWith(fixture, LaserBeamsProperty);
+        }
+
+        /// <summary>
+        /// The material of a VRSL mirror ball's light, or null for any other fixture. The ball
+        /// reads the standard row and turns by the gobo angle (<see cref="InfoIdleSpin"/>).
+        /// </summary>
+        public static Material GetVRSLMirrorBallMaterial(VRStageLighting_DMX_Static fixture)
+        {
+            return GetVRSLMaterialWith(fixture, MirrorBallSpinProperty);
+        }
+
+        /// <summary>The first material of the fixture's renderers that has <paramref name="property"/>.</summary>
+        private static Material GetVRSLMaterialWith(VRStageLighting_DMX_Static fixture, string property)
+        {
+            if (fixture == null)
+            {
+                return null;
+            }
+
+            var renderers = fixture.objRenderers;
+            if (renderers == null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var material = renderer.sharedMaterial;
+                if (material != null && material.HasProperty(property))
+                {
+                    return material;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
         /// What the DMX grid needs to know about a fixture: its pan and tilt ranges, which way
-        /// its gobo turns, and the DMX step between gobos.
+        /// its gobo turns, and the DMX step between gobos, or that it is a laser. A mirror
+        /// ball also says how fast it turns where no gobo effect turns it.
         /// </summary>
         public static void CaptureVRSLDmxInfo(VRStageLighting_DMX_Static fixture, float[] info, int offset)
         {
-            info[offset] = fixture.maxMinPan / 2f;
-            info[offset + 1] = fixture.maxMinTilt / 2f;
-            info[offset + 2] = fixture.invertPan ? -1f : 1f;
-            info[offset + 3] = fixture.legacyGoboRange ? 42.5f : 30f;
+            WriteNeutralDmxInfo(info, offset);
+            var laser = GetVRSLLaserMaterial(fixture);
+            if (laser != null)
+            {
+                info[offset + InfoPanRange] = LaserAngleRange;
+                info[offset + InfoTiltRange] = LaserAngleRange;
+                info[offset + InfoLayout] = DmxLayoutLaser;
+                return;
+            }
+
+            info[offset + InfoPanRange] = fixture.maxMinPan / 2f;
+            info[offset + InfoTiltRange] = fixture.maxMinTilt / 2f;
+            info[offset + InfoPanSign] = fixture.invertPan ? -1f : 1f;
+            info[offset + InfoGoboStep] = fixture.legacyGoboRange ? 42.5f : 30f;
+
+            var ball = GetVRSLMirrorBallMaterial(fixture);
+            if (ball != null)
+            {
+                info[offset + InfoIdleSpin] = ball.GetFloat(MirrorBallSpinProperty);
+            }
+        }
+
+        /// <summary>What the DMX grid needs to know about a segment of a multi light bar: which one it is.</summary>
+        public static void WriteBarSegmentDmxInfo(float[] info, int offset, int segment)
+        {
+            WriteNeutralDmxInfo(info, offset);
+            info[offset + InfoLayout] = DmxLayoutBarSegment;
+            info[offset + InfoBarSegment] = segment;
         }
 
         public static void WriteNeutralDmxInfo(float[] info, int offset)
         {
-            info[offset] = 90f;
-            info[offset + 1] = -90f;
-            info[offset + 2] = 1f;
-            info[offset + 3] = 30f;
+            info[offset + InfoPanRange] = 90f;
+            info[offset + InfoTiltRange] = -90f;
+            info[offset + InfoPanSign] = 1f;
+            info[offset + InfoGoboStep] = 30f;
+            info[offset + InfoLayout] = DmxLayoutStandard;
+            info[offset + InfoBarSegment] = 0f;
+            info[offset + InfoIdleSpin] = 0f;
         }
 
         /// <summary>
@@ -629,7 +983,9 @@ namespace AdzukiSoft.ALPS
         /// length rides on the fine pan channel: the cone reaches as far as the mesh stretch
         /// that VRSL's cone length via DMX adds to <paramref name="baseConeLength"/>, the
         /// fixture's own mesh length, with the fade along the cone left fully open. That
-        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>).
+        /// option is a material property (<see cref="ConeLengthViaDmxProperty"/>). Every
+        /// fixture reads in nine universe mode, which takes a channel from the colour of the
+        /// grid its band is laid out in, since a fixture in the other mode reads all three.
         /// </summary>
         public static void ConfigureVRSLDmx(VRStageLighting_DMX_Static fixture, int row, float baseConeLength)
         {
@@ -637,7 +993,7 @@ namespace AdzukiSoft.ALPS
             var universe = (channel - 1) / 520 + 1;
             fixture.enableDMXChannels = true;
             fixture.useLegacySectorMode = false;
-            fixture.nineUniverseMode = false;
+            fixture.nineUniverseMode = true;
             fixture.singleChannelMode = false;
             fixture.enableFineChannels = false;
             fixture.enableStrobe = false;
@@ -651,6 +1007,56 @@ namespace AdzukiSoft.ALPS
             fixture.coneLength = VrslMaxConeLength;
             fixture.maxConeLength = baseConeLength;
             fixture._UpdateInstancedProperties();
+        }
+
+        /// <summary>
+        /// The rows of band <paramref name="band"/> VRSL reads all of. Its getValueAtCoords
+        /// takes a channel to a band by universes of 512 channels, so band k ends on absolute
+        /// channel 1536(k + 1), and moves it back by 1560k to read the texel the same channel
+        /// of band 0 is read from. That leaves the band its channels 1 to 1536 - 24k, and a
+        /// row needs twelve of them, a bar's last row nine.
+        /// </summary>
+        public static int DmxBandRows(int band)
+        {
+            return (1536 - 24 * band - (GpuRowChannels - 1)) / GpuRowChannels + 1;
+        }
+
+        /// <summary>Whether VRSL reads all of row <paramref name="row"/>.</summary>
+        public static bool IsDmxRow(int row)
+        {
+            if (row < 0 || row >= GpuDmxRowSpan)
+            {
+                return false;
+            }
+
+            return row % GpuDmxBandRows < DmxBandRows(row / GpuDmxBandRows);
+        }
+
+        /// <summary>
+        /// The first row from <paramref name="row"/> on where <paramref name="size"/> rows in a
+        /// row are all read and in one band, or <see cref="GpuDmxRowSpan"/> when none is left.
+        /// </summary>
+        public static int FitDmxRows(int row, int size)
+        {
+            if (row < 0)
+            {
+                row = 0;
+            }
+
+            while (row < GpuDmxRowSpan)
+            {
+                var band = row / GpuDmxBandRows;
+                var last = row + size - 1;
+                if (IsDmxRow(row) && IsDmxRow(last) && last / GpuDmxBandRows == band)
+                {
+                    return row;
+                }
+
+                // The rows a band reads come first, so nothing later in this band fits.
+                row = (band + 1) * GpuDmxBandRows;
+            }
+
+            return GpuDmxRowSpan;
         }
     }
 }

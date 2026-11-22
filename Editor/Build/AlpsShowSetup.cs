@@ -61,12 +61,33 @@ namespace AdzukiSoft.ALPS.Editor
             playerObject.SetActive(false);
             playerObject.transform.SetParent(director.transform, false);
 
-            player = UdonSharpUndo.AddComponent<AlpsShowPlayer>(playerObject);
+            player = AddPlayer(playerObject);
             player.director = director;
             UdonSharpEditorUtility.CopyProxyToUdon(player);
 
             // Only the scene copy is touched, so the add needs no undo step.
             Undo.ClearUndo(playerObject);
+            return player;
+        }
+
+        /// <summary>
+        /// Adds the player with its Udon behaviour. In play mode UdonSharp's own add also
+        /// initializes the Udon behaviour, and Udon, which takes every behaviour of a scene in
+        /// once the scene is processed, throws on one that already is: it then leaves out the
+        /// behaviours after it and never runs the player's update. So the behaviour is set up
+        /// through the step UdonSharp's add runs before that, which is not public.
+        /// </summary>
+        private static AlpsShowPlayer AddPlayer(GameObject playerObject)
+        {
+            var setup = typeof(UdonSharpEditorUtility).GetMethod(
+                "RunBehaviourSetup", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(UdonSharpBehaviour) }, null);
+            if (!EditorApplication.isPlaying || setup == null)
+            {
+                return UdonSharpUndo.AddComponent<AlpsShowPlayer>(playerObject);
+            }
+
+            var player = playerObject.AddComponent<AlpsShowPlayer>();
+            setup.Invoke(null, new object[] { player });
             return player;
         }
 

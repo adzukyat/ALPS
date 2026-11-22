@@ -86,7 +86,7 @@ Material:
     - _ChannelMode: 3
     - _ClippingThreshold: 0.15
     - _ColorSat: 0
-    - _CurveMod: 5
+    - _CurveMod: 0
     - _Cutoff: 0.5
     - _DMXChannel: 0
     - _DepthOcclusionTestZBias: -0.001
@@ -100,7 +100,7 @@ Material:
     - _EndFadeinDistanceWorldUnit: 0.5
     - _FadeAmt: 0.216
     - _FinalIntensity: 0.438
-    - _FixtureMaxIntensity: 6
+    - _FixtureMaxIntensity: 3
     - _FixutreIntensityMultiplier: 1
     - _FlickResultIntensityLowestPoint: 0.5
     - _FlickerAnimSpeed: 5
